@@ -120,11 +120,14 @@ export default function UsersPage() {
             onResendActivation={handleResendActivation}
           />
 
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalElements={filteredUsers.length}
+          isLoading={isLoading}
+          onPageChange={setCurrentPage}
+        />
+          
         </>
       )}
 

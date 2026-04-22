@@ -55,6 +55,7 @@ export function NotificationsBell() {
   }, []);
 
   const handleNotificationClick = async (notification: NotificationResponse) => {
+  try {
     if (!notification.leida) {
       await submitMarkAsRead(notification.id);
     }
@@ -64,7 +65,10 @@ export function NotificationsBell() {
     if (notification.actionUrl) {
       navigate(notification.actionUrl);
     }
-  };
+  } catch {
+   
+  }
+};
 
   return (
     <div ref={containerRef} className="relative">

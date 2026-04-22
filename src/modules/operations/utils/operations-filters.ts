@@ -16,8 +16,6 @@ export function filterOperations(
     const matchesSearch =
       !search ||
       operation.clienteNombre.toLowerCase().includes(search) ||
-      (operation.clienteTelefono ?? '').toLowerCase().includes(search) ||
-      operation.cuentaDestinoBanco.toLowerCase().includes(search) ||
       operation.socioComercialNombre.toLowerCase().includes(search);
 
     const matchesStatus =

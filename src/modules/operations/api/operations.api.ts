@@ -1,5 +1,5 @@
 import { api } from '@/shared/lib/axios';
-import { ApiResponse } from '@/shared/types/api.types';
+import { ApiResponse } from '@/shared/types/api.types.js';
 import {
   PaymentOperationResponse,
   CreateOperationRequest,
@@ -8,11 +8,46 @@ import {
   OperationPaymentResponse,
   PaymentApiResponse,
   UpdatePaymentStatusRequest,
+  OperationsPageApiResponse,
+  PageResponse,
+  OperationsFilters,
 } from '../types/operations.types.ts';
 
-type OperationsListApiResponse = ApiResponse<PaymentOperationResponse[]>;
-
 const OPERATIONS_BASE_PATH = '/api/operations';
+
+function buildOperationsQuery(
+  page: number,
+  pageSize: number,
+  filters: OperationsFilters,
+) {
+  const params = new URLSearchParams();
+
+  params.append('page', String(page));
+  params.append('size', String(pageSize));
+  params.append('sort', 'createdAt,desc');
+
+  if (filters.search.trim()) {
+    params.append('search', filters.search.trim());
+  }
+
+  if (filters.status !== 'ALL') {
+    params.append('status', filters.status);
+  }
+
+  if (filters.dateFilter) {
+    params.append('dateFilter', filters.dateFilter);
+  }
+
+  if (filters.startDate) {
+    params.append('startDate', filters.startDate);
+  }
+
+  if (filters.endDate) {
+    params.append('endDate', filters.endDate);
+  }
+
+  return params.toString();
+}
 
 export async function createOperation(
   payload: CreateOperationRequest,
@@ -24,14 +59,28 @@ export async function createOperation(
   return response.data.data;
 }
 
-export async function getOperations(): Promise<PaymentOperationResponse[]> {
-  const response = await api.get<OperationsListApiResponse>(OPERATIONS_BASE_PATH);
+export async function getOperations(
+  page: number,
+  pageSize: number,
+  filters: OperationsFilters,
+): Promise<PageResponse<PaymentOperationResponse>> {
+  const query = buildOperationsQuery(page, pageSize, filters);
+
+  const response = await api.get<OperationsPageApiResponse>(
+    `${OPERATIONS_BASE_PATH}?${query}`,
+  );
   return response.data.data;
 }
 
-export async function getMyOperations(): Promise<PaymentOperationResponse[]> {
-  const response = await api.get<OperationsListApiResponse>(
-    `${OPERATIONS_BASE_PATH}/my-operations`,
+export async function getMyOperations(
+  page: number,
+  pageSize: number,
+  filters: OperationsFilters,
+): Promise<PageResponse<PaymentOperationResponse>> {
+  const query = buildOperationsQuery(page, pageSize, filters);
+
+  const response = await api.get<OperationsPageApiResponse>(
+    `${OPERATIONS_BASE_PATH}/my-operations?${query}`,
   );
   return response.data.data;
 }

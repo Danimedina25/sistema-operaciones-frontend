@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Input } from '@/shared/components/ui/Input';
 import { Button } from '@/shared/components/ui/Button';
 
@@ -66,21 +66,22 @@ export function AddOperationPaymentForm({
   onSubmit,
 }: AddOperationPaymentFormProps) {
   const {
-    register,
-    handleSubmit,
-    setValue,
-    control,
-    formState: { errors },
-  } = useForm<AddOperationPaymentFormValues>({
-    defaultValues: {
-      monto: '',
-      tipoPago: '',
-      cuentaDestinoId: '',
-      comprobante: undefined,
-      observaciones: '',
-    },
-    mode: 'onChange',
-  });
+  register,
+  handleSubmit,
+  setValue,
+  control,
+  trigger,
+  formState: { errors },
+} = useForm<AddOperationPaymentFormValues>({
+  defaultValues: {
+    monto: '',
+    tipoPago: '',
+    cuentaDestinoId: '',
+    comprobante: undefined,
+    observaciones: '',
+  },
+  mode: 'onChange',
+});
 
   const [isDragging, setIsDragging] = useState(false);
 
@@ -120,7 +121,9 @@ export function AddOperationPaymentForm({
   }
 
   return (
-    <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+    <form className="space-y-6" 
+       onSubmit={handleSubmit(onSubmit)}
+    >
       <div className="grid gap-3 rounded-xl bg-slate-50 p-4 text-sm md:grid-cols-4">
         <div>
           <span className="block text-slate-500">Monto total requerido</span>
@@ -249,71 +252,73 @@ export function AddOperationPaymentForm({
               Comprobante de pago
             </label>
 
-            <label
-              onDragOver={(event) => {
-                event.preventDefault();
-                setIsDragging(true);
+            <Controller
+              control={control}
+              name="comprobante"
+              rules={{
+                validate: (value) =>
+                  value && value.length > 0
+                    ? true
+                    : 'El comprobante es obligatorio',
               }}
-              onDragLeave={(event) => {
-                event.preventDefault();
-                setIsDragging(false);
-              }}
-              onDrop={(event) => {
-                event.preventDefault();
-                setIsDragging(false);
+              render={({ field }) => (
+                <>
+                  <label
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                      setIsDragging(true);
+                    }}
+                    onDragLeave={(event) => {
+                      event.preventDefault();
+                      setIsDragging(false);
+                    }}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      setIsDragging(false);
 
-                const file = event.dataTransfer.files?.[0];
-                if (!file) return;
+                      const file = event.dataTransfer.files?.[0];
+                      if (!file) return;
 
-                const fileList = buildFileList(file);
+                      const fileList = buildFileList(file);
+                      field.onChange(fileList);
+                    }}
+                    className={`flex min-h-[170px] w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-6 text-center transition ${
+                      isDragging
+                        ? 'border-slate-900 bg-slate-50'
+                        : 'border-slate-300 bg-white hover:border-slate-400'
+                    }`}
+                  >
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.webp"
+                      className="hidden"
+                      onChange={(event) => {
+                        field.onChange(event.target.files ?? undefined);
+                      }}
+                    />
 
-                setValue('comprobante', fileList, {
-                  shouldValidate: true,
-                  shouldDirty: true,
-                  shouldTouch: true,
-                });
-              }}
-              className={`flex min-h-[170px] w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-6 text-center transition ${
-                isDragging
-                  ? 'border-slate-900 bg-slate-50'
-                  : 'border-slate-300 bg-white hover:border-slate-400'
-              }`}
-            >
-              <input
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png,.webp"
-                className="hidden"
-                {...register('comprobante', {
-                  validate: (value) =>
-                    value && value.length > 0
-                      ? true
-                      : 'El comprobante es obligatorio',
-                  onChange: (event) => {
-                    setValue('comprobante', event.target.files ?? undefined, {
-                      shouldValidate: true,
-                      shouldDirty: true,
-                      shouldTouch: true,
-                    });
-                  },
-                })}
-              />
+                    <p className="text-sm font-medium text-slate-700">
+                      Arrastra y suelta el comprobante aquí
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      o haz clic para seleccionar un archivo
+                    </p>
+                    <p className="mt-2 text-xs text-slate-400">
+                      PDF, JPG, JPEG, PNG o WEBP
+                    </p>
+                  </label>
 
-              <p className="text-sm font-medium text-slate-700">
-                Arrastra y suelta el comprobante aquí
-              </p>
-              <p className="mt-1 text-xs text-slate-500">
-                o haz clic para seleccionar un archivo
-              </p>
-              <p className="mt-2 text-xs text-slate-400">
-                PDF, JPG, JPEG, PNG o WEBP
-              </p>
-            </label>
-
-            {comprobante instanceof FileList && comprobante.length > 0 ? (
-              <p className="mt-2 text-xs text-slate-600">
-                Archivo seleccionado: {comprobante[0]?.name}
-              </p>
-            ) : null}
+                  {comprobante instanceof FileList && comprobante.length > 0 ? (
+                   <p className="mt-2 text-xs text-slate-600">
+                    Archivo seleccionado:{' '}
+                    <span className="font-medium text-slate-900">
+                      {comprobante[0]?.name}
+                    </span>
+                  </p>
+                  ) : null}
+                </>
+              )}
+            />
 
             {errors.comprobante ? (
               <p className="mt-1 text-xs text-red-600">

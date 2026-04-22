@@ -7,15 +7,24 @@ import {
 } from '@/modules/operations/utils/operation-formatters';
 import { PaymentOperationResponse } from '../types/operations.types.ts';
 
-
 interface OperationsTableProps {
   operations: PaymentOperationResponse[];
+  currentPage: number;
+  totalPages: number;
+  totalElements: number;
+  isLoading?: boolean;
+  onPageChange: (page: number) => void;
   onViewDetail: (id: number) => void;
   onAddPayment: (id: number) => void;
 }
 
 export function OperationsTable({
   operations,
+  currentPage,
+  totalPages,
+  totalElements,
+  isLoading = false,
+  onPageChange,
   onViewDetail,
   onAddPayment,
 }: OperationsTableProps) {
@@ -91,7 +100,7 @@ export function OperationsTable({
     setMenuPosition(null);
   }
 
-  if (operations.length === 0) {
+  if (!isLoading && operations.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
         No hay operaciones registradas con los filtros seleccionados.
@@ -117,65 +126,75 @@ export function OperationsTable({
           </thead>
 
           <tbody>
-            {operations.map((operation) => {
-              const isMenuOpen = openMenuOperationId === operation.id;
+            {isLoading ? (
+              <tr>
+                <td colSpan={8} className="px-4 py-8 text-center text-sm text-slate-500">
+                  Cargando operaciones...
+                </td>
+              </tr>
+            ) : (
+              operations.map((operation) => {
+                const isMenuOpen = openMenuOperationId === operation.id;
 
-              return (
-                <tr
-                  key={operation.id}
-                  className="border-t border-slate-200 text-sm"
-                >
-                  <td className="px-4 py-4 font-medium text-slate-900">
-                    <div>{operation.clienteNombre}</div>
-                    <div className="mt-1 text-xs font-normal text-slate-400">
-                      #{operation.id}
-                    </div>
-                  </td>
+                return (
+                  <tr
+                    key={operation.id}
+                    className="border-t border-slate-200 text-sm"
+                  >
+                    <td className="px-4 py-4 font-medium text-slate-900">
+                      <div>{operation.clienteNombre}</div>
+                      <div className="mt-1 text-xs font-normal text-slate-400">
+                        #{operation.id}
+                      </div>
+                    </td>
 
-                  <td className="px-4 py-4 text-slate-600">
-                    {operation.socioComercialNombre}
-                  </td>
+                    <td className="px-4 py-4 text-slate-600">
+                      {operation.socioComercialNombre}
+                    </td>
 
-                  <td className="px-4 py-4 text-slate-600">
-                    {formatCurrency(operation.montoTotal)}
-                  </td>
+                    <td className="px-4 py-4 text-slate-600">
+                      {formatCurrency(operation.montoTotal)}
+                    </td>
 
-                  <td className="px-4 py-4 text-slate-600">
-                    <div>
-                      {operation.pagos.length} pago
-                      {operation.pagos.length === 1 ? '' : 's'} registrado
-                      {operation.pagos.length === 1 ? '' : 's'}
-                    </div>
-                    <div className="mt-1 text-xs text-slate-400">
-                      {formatCurrency(operation.montoValidado)} validados
-                    </div>
-                  </td>
+                    <td className="px-4 py-4 text-slate-600">
+                      <div>
+                        {operation.pagos.length} pago
+                        {operation.pagos.length === 1 ? '' : 's'} registrado
+                        {operation.pagos.length === 1 ? '' : 's'}
+                      </div>
+                      <div className="mt-1 text-xs text-slate-400">
+                        {formatCurrency(operation.montoValidado)} validados
+                      </div>
+                    </td>
 
-                  <td className="px-4 py-4 text-slate-600">
-                    <div>{operation.nivelesRedComercial} nivel{operation.nivelesRedComercial > 1 ? 'es' : ''}</div>
-                    <div className="mt-1 text-xs text-slate-400">
-                      {operation.porcentajeComisionAplicado}%
-                    </div>
-                  </td>
+                    <td className="px-4 py-4 text-slate-600">
+                      <div>
+                        {operation.nivelesRedComercial} nivel{operation.nivelesRedComercial > 1 ? 'es' : ''}
+                      </div>
+                      <div className="mt-1 text-xs text-slate-400">
+                        {operation.porcentajeComisionAplicado}%
+                      </div>
+                    </td>
 
-                  <td className="px-4 py-4">
-                    <div className="flex justify-center">
-                      <OperationStatusBadge status={operation.estatus} />
-                    </div>
-                  </td>
+                    <td className="px-4 py-4">
+                      <div className="flex justify-center">
+                        <OperationStatusBadge status={operation.estatus} />
+                      </div>
+                    </td>
 
-                  <td className="px-4 py-4 text-slate-600">
-                    {formatDateTime(operation.createdAt)}
-                  </td>
+                    <td className="px-4 py-4 text-slate-600">
+                      {formatDateTime(operation.createdAt)}
+                    </td>
 
-                  <td className="px-4 py-4 text-right">
-                    <button
-                      type="button"
-                      onClick={(event) => handleToggleMenu(operation.id, event)}
-                      className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
-                    >
-                      Opciones
-                    </button>
+                    <td className="px-4 py-4 text-right">
+                      <button
+                        type="button"
+                        onClick={(event) => handleToggleMenu(operation.id, event)}
+                        className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+                      >
+                        Opciones
+                      </button>
+
                       {isMenuOpen &&
                         menuPosition &&
                         createPortal(
@@ -201,7 +220,7 @@ export function OperationsTable({
                               Ver detalle
                             </button>
 
-                            { operation.estatus !== 'VALIDADA' &&
+                            {operation.estatus !== 'VALIDADA' && (
                               <button
                                 type="button"
                                 onClick={() => {
@@ -212,14 +231,15 @@ export function OperationsTable({
                               >
                                 Registrar pago
                               </button>
-                            }
+                            )}
                           </div>,
                           document.body,
                         )}
-                  </td>
-                </tr>
-              );
-            })}
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>

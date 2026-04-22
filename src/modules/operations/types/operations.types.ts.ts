@@ -20,6 +20,32 @@ export type PaymentType =
   | 'DEPOSITO'
   | 'EFECTIVO';
 
+export type OperationDateFilter =
+  | 'TODAY'
+  | 'THIS_WEEK'
+  | 'THIS_MONTH'
+  | 'LAST_MONTH';
+
+export interface PageResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  first: boolean;
+  last: boolean;
+  numberOfElements: number;
+  empty: boolean;
+}
+
+export interface OperationsFilters {
+  search: string;
+  status: OperationStatus | 'ALL';
+  dateFilter: OperationDateFilter | '';
+  startDate: string;
+  endDate: string;
+}
+
 export interface CreateOperationRequest {
   clienteNombre: string;
   montoTotal: number;
@@ -65,8 +91,6 @@ export interface PaymentOperationResponse {
   montoValidado: number;
   saldoPendiente: number;
   estatus: OperationStatus;
-  cuentaDestinoId: number;
-  cuentaDestinoBanco: string;
   socioComercialId: number;
   socioComercialNombre: string;
   nivelesRedComercial: number;
@@ -78,5 +102,5 @@ export interface PaymentOperationResponse {
 }
 
 export type OperationApiResponse = ApiResponse<PaymentOperationResponse>;
-export type OperationsListApiResponse = ApiResponse<PaymentOperationResponse[]>;
+export type OperationsPageApiResponse = ApiResponse<PageResponse<PaymentOperationResponse>>;
 export type PaymentApiResponse = ApiResponse<OperationPaymentResponse>;

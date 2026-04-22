@@ -445,8 +445,12 @@ export function CreateOperationForm({
 
                     {pagos[index]?.comprobante instanceof FileList &&
                     pagos[index]?.comprobante.length > 0 ? (
+                      
                       <p className="mt-2 text-xs text-slate-600">
-                        Archivo seleccionado: {pagos[index]?.comprobante[0]?.name}
+                        Archivo seleccionado:{' '}
+                        <span className="font-medium text-slate-900">
+                          {pagos[index]?.comprobante[0]?.name}
+                        </span>
                       </p>
                     ) : null}
 
