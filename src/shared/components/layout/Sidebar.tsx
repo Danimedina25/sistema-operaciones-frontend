@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Landmark, LogOut, ReceiptText } from 'lucide-react';
+import { LayoutDashboard, Users, Landmark, LogOut, ReceiptText, UserRound, UserSquare, CreditCard } from 'lucide-react';
 import { paths } from '@/routes/paths';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { cn } from '@/shared/lib/cn';
@@ -28,8 +28,14 @@ const navItems: NavItem[] = [
   {
     to: paths.bankAccounts,
     label: 'Cuentas bancarias',
-    icon: Landmark,
+    icon: CreditCard,
     allowedRoles: ['ADMIN', 'GERENTE', 'AUXILIAR_CUENTAS'],
+  },
+  {
+    to: paths.clientes,
+    label: 'Clientes primarios',
+    icon: UserSquare,
+    allowedRoles: ['ADMIN'],
   },
    {
     to: paths.operations,

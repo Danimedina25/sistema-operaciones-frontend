@@ -47,10 +47,9 @@ export interface OperationsFilters {
 }
 
 export interface CreateOperationRequest {
-  clienteNombre: string;
+  clienteId: number;
   montoTotal: number;
   socioComercialId: number;
-  nivelesRedComercial: number;
   observaciones?: string;
 }
 
@@ -95,6 +94,14 @@ export interface PaymentOperationResponse {
   socioComercialNombre: string;
   nivelesRedComercial: number;
   porcentajeComisionAplicado: number;
+  porcentajeComisionOficina: number;
+
+  porcentajeComisionRedTotal: number;
+  montoComisionRedTotal: number;
+  porcentajeComisionOficinaTotal: number;
+  montoComisionOficinaTotal: number;
+  montoTotalDevolverCliente: number;
+
   observaciones?: string | null;
   pagos: OperationPaymentResponse[];
   createdAt: string;

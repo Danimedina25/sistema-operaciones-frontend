@@ -27,10 +27,9 @@ export function useCreateOperation(options?: UseCreateOperationOptions) {
       setIsSubmitting(true);
 
       const operation = await createOperation({
-        clienteNombre: values.clienteNombre.trim(),
+        clienteId: values.clienteId,
         montoTotal: values.montoTotal,
         socioComercialId: user.userId,
-        nivelesRedComercial: values.nivelesRedComercial,
         observaciones: values.observaciones?.trim() || undefined,
       });
 

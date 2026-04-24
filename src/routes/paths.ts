@@ -6,6 +6,7 @@ export const paths = {
   resetPassword: '/restablecer-password',
   dashboard: '/',
   users: '/usuarios',
+  clientes: '/clientes',
   bankAccounts: '/cuentas-bancarias',
   operations: '/operaciones',
   operationDetail: '/operaciones/:operationId',

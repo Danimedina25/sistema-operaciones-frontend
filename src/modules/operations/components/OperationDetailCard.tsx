@@ -8,26 +8,48 @@ import { OperationStatusBadge } from './OperationStatusBadge.js';
 
 interface OperationDetailCardProps {
   operation: PaymentOperationResponse;
+  canViewFinancialDetails: boolean;
 }
 
 function SummaryItem({
   label,
   value,
+  accent = false,
 }: {
   label: string;
   value: React.ReactNode;
+  accent?: boolean;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+    <div
+      className={`rounded-2xl border p-4 ${
+        accent
+          ? 'border-emerald-200 bg-emerald-50'
+          : 'border-slate-200 bg-slate-50'
+      }`}
+    >
+      <p
+        className={`text-xs font-medium uppercase tracking-wide ${
+          accent ? 'text-emerald-700' : 'text-slate-500'
+        }`}
+      >
         {label}
       </p>
-      <div className="mt-2 text-sm font-medium text-slate-900">{value}</div>
+      <div
+        className={`mt-2 text-sm font-medium ${
+          accent ? 'text-emerald-900' : 'text-slate-900'
+        }`}
+      >
+        {value}
+      </div>
     </div>
   );
 }
 
-export function OperationDetailCard({ operation }: OperationDetailCardProps) {
+export function OperationDetailCard({
+  operation,
+  canViewFinancialDetails,
+}: OperationDetailCardProps) {
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 md:flex-row md:items-start md:justify-between">
@@ -48,48 +70,114 @@ export function OperationDetailCard({ operation }: OperationDetailCardProps) {
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <SummaryItem label="Cliente" value={operation.clienteNombre} />
-        <SummaryItem
-          label="Socio comercial"
-          value={operation.socioComercialNombre}
-        />
-        <SummaryItem
-          label="Cuenta destino"
-          value={operation.cuentaDestinoBanco}
-        />
-        <SummaryItem
-          label="Monto total"
-          value={formatCurrency(operation.montoTotal)}
-        />
-        <SummaryItem
-          label="Monto validado"
-          value={formatCurrency(operation.montoValidado)}
-        />
-        <SummaryItem
-          label="Saldo pendiente"
-          value={formatCurrency(operation.saldoPendiente)}
-        />
-        <SummaryItem
-          label="Estatus"
-          value={operationStatusLabels[operation.estatus] ?? operation.estatus}
-        />
-        <SummaryItem
-          label="Niveles de red socios comerciales"
-          value={`${operation.nivelesRedComercial} nivel${
-            operation.nivelesRedComercial > 1 ? 'es' : ''
-          }`}
-        />
-        <SummaryItem
-          label="Porcentaje de comisión aplicada a red"
-          value={`${operation.porcentajeComisionAplicado}%`}
-        />
-        <SummaryItem label="Creada" value={formatDateTime(operation.createdAt)} />
-        <SummaryItem
-          label="Actualizada"
-          value={formatDateTime(operation.updatedAt)}
-        />
+      <div className="mt-6">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
+          Información general
+        </h3>
+
+        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <SummaryItem label="Cliente primario" value={operation.clienteNombre} />
+
+          {canViewFinancialDetails && (
+            <SummaryItem
+              label="Socio comercial"
+              value={operation.socioComercialNombre}
+            />
+          )}
+
+          <SummaryItem
+            label="Estatus"
+            value={operationStatusLabels[operation.estatus] ?? operation.estatus}
+          />
+
+          <SummaryItem
+            label="Monto total"
+            value={formatCurrency(operation.montoTotal)}
+          />
+
+          {canViewFinancialDetails && (
+            <>
+              <SummaryItem
+                label="Monto validado"
+                value={formatCurrency(operation.montoValidado)}
+              />
+              <SummaryItem
+                label="Saldo pendiente"
+                value={formatCurrency(operation.saldoPendiente)}
+              />
+              <SummaryItem
+                label="Nivel de socios comerciales"
+                value={`${operation.nivelesRedComercial} nivel${
+                  operation.nivelesRedComercial > 1 ? 'es' : ''
+                }`}
+              />
+              <SummaryItem
+                label="Comisión por cada socio comercial"
+                value={`${operation.porcentajeComisionAplicado}%`}
+              />
+              <SummaryItem
+                label="Comisión oficina"
+                value={`${operation.porcentajeComisionOficina}%`}
+              />
+            </>
+          )}
+
+          <SummaryItem
+            label="Creada"
+            value={formatDateTime(operation.createdAt)}
+          />
+          <SummaryItem
+            label="Actualizada"
+            value={formatDateTime(operation.updatedAt)}
+          />
+        </div>
       </div>
+
+      {canViewFinancialDetails && (
+        <>
+          <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+              Retorno estimado al cliente
+            </p>
+            <p className="mt-2 text-3xl font-bold text-emerald-900">
+              {formatCurrency(operation.montoTotalDevolverCliente)}
+            </p>
+            <p className="mt-2 text-sm text-emerald-800">
+              Monto calculado después de descontar comisiones de red y comisión de oficina.
+            </p>
+          </div>
+
+          <div className="mt-8 border-t border-slate-200 pt-6">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
+              Resumen financiero
+            </h3>
+
+            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <SummaryItem
+                label="Porcentaje total comisión socios comerciales"
+                value={`${operation.porcentajeComisionRedTotal}%`}
+              />
+              <SummaryItem
+                label="Comisión total socios comerciales"
+                value={formatCurrency(operation.montoComisionRedTotal)}
+              />
+              <SummaryItem
+                label="Comisión total oficina"
+                value={formatCurrency(operation.montoComisionOficinaTotal)}
+              />
+              <SummaryItem
+                label="Porcentaje comisión oficina"
+                value={`${operation.porcentajeComisionOficinaTotal}%`}
+              />
+              <SummaryItem
+                label="Monto total a devolver al cliente"
+                value={formatCurrency(operation.montoTotalDevolverCliente)}
+                accent
+              />
+            </div>
+          </div>
+        </>
+      )}
 
       <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">

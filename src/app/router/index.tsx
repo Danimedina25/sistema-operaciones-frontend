@@ -12,6 +12,7 @@ import BankAccountsPage from '@/modules/bank-accounts/pages/BankAccountsPage';
 import OperationsPage from '@/modules/operations/pages/OperationsPage';
 import OperationDetailPage from '@/modules/operations/pages/OperationDetailPage';
 import DashboardPage from '@/app/pages/DashboardPage';
+import ClientesPage from '@/modules/clientes/pages/ClientesPage';
 
 export const router = createBrowserRouter([
   {
@@ -48,6 +49,15 @@ export const router = createBrowserRouter([
               {
                 path: paths.users,
                 element: <UsersPage />,
+              },
+            ],
+          },
+           {
+            element: <RoleGuard allowedRoles={['ADMIN']} />,
+            children: [
+              {
+                path: paths.clientes,
+                element: <ClientesPage />,
               },
             ],
           },

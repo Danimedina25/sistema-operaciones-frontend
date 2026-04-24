@@ -1,21 +1,24 @@
 import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/shared/components/ui/Button';
 import { OperationDetailCard } from '@/modules/operations/components/OperationDetailCard';
 import { PaymentsTable } from '@/modules/operations/components/PaymentsTable';
-import { OperationPaymentResponse, PaymentOperationResponse } from '../types/operations.types.ts';
+import { PaymentOperationResponse } from '../types/operations.types.ts';
 
 interface OperationDetailViewProps {
   operation: PaymentOperationResponse;
   onBack: () => void;
   onValidatePayment?: (paymentId: number) => Promise<void> | void;
+  onRejectPayment?: (paymentId: number, motivo: string) => Promise<void> | void;
   processingPaymentId?: number | null;
+  canViewFinancialDetails: boolean;
 }
 
 export function OperationDetailView({
   operation,
   onBack,
   onValidatePayment,
+  onRejectPayment,
   processingPaymentId = null,
+  canViewFinancialDetails,
 }: OperationDetailViewProps) {
   return (
     <div className="space-y-6">
@@ -30,11 +33,15 @@ export function OperationDetailView({
         </button>
       </div>
 
-      <OperationDetailCard operation={operation} />
+      <OperationDetailCard
+        operation={operation}
+        canViewFinancialDetails={canViewFinancialDetails}
+      />
 
       <PaymentsTable
         payments={operation.pagos}
         onValidatePayment={onValidatePayment}
+        onRejectPayment={onRejectPayment}
         processingPaymentId={processingPaymentId}
       />
     </div>

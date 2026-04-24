@@ -91,20 +91,7 @@ const paymentSchema = z
 
 export const createOperationSchema = z
   .object({
-    clienteNombre: z
-      .string()
-      .trim()
-      .min(1, 'El nombre del cliente es obligatorio')
-      .max(150, 'El nombre del cliente no puede exceder 150 caracteres'),
-
-    montoTotal: z.preprocess(
-      parseCurrencyInput,
-      z.number({ error: 'El monto total es obligatorio' }).min(0.01, {
-        error: 'El monto total debe ser mayor a cero',
-      }),
-    ),
-
-    nivelesRedComercial: z.preprocess(
+    clienteId: z.preprocess(
       (value) => {
         if (value === '' || value === null || value === undefined) {
           return undefined;
@@ -113,10 +100,15 @@ export const createOperationSchema = z
         return Number(value);
       },
       z
-        .number({ error: 'La cantidad de niveles es obligatoria' })
-        .int({ error: 'La cantidad de niveles debe ser un número entero' })
-        .min(1, { error: 'La cantidad mínima de niveles es 1' })
-        .max(3, { error: 'La cantidad máxima de niveles es 3' }),
+        .number({ error: 'El cliente es obligatorio' })
+        .min(1, 'El cliente es obligatorio'),
+    ),
+
+    montoTotal: z.preprocess(
+      parseCurrencyInput,
+      z.number({ error: 'El monto total es obligatorio' }).min(0.01, {
+        error: 'El monto total debe ser mayor a cero',
+      }),
     ),
 
     observaciones: z

@@ -1,6 +1,8 @@
 import { OperationDetailView } from '@/modules/operations/components/OperationDetailView';
 import { useOperationDetail } from '@/modules/operations/hooks/use-operation-detail';
 import { useValidatePayment } from '../hooks/use-validate-payment';
+import { useRejectPayment } from '../hooks/use-reject-payment';
+import { useAuth } from '@/modules/auth/store/auth.context';
 
 interface OperationDetailContainerProps {
   operationId: number;
@@ -12,12 +14,26 @@ export function OperationDetailContainer({
   onBack,
 }: OperationDetailContainerProps) {
   const { operation, isLoading, fetchOperation } = useOperationDetail(operationId);
+  const { hasRole } = useAuth();
 
-  const { processingPaymentId, submitValidatePayment } = useValidatePayment({
-    onSuccess: async () => {
-      await fetchOperation();
-    },
-  });
+  const canViewFinancialDetails = !hasRole(['SOCIO_COMERCIAL']);
+
+  const { processingPaymentId: validatingPaymentId, submitValidatePayment } =
+    useValidatePayment({
+      onSuccess: async () => {
+        await fetchOperation();
+      },
+    });
+
+  const { processingPaymentId: rejectingPaymentId, submitRejectPayment } =
+    useRejectPayment({
+      onSuccess: async () => {
+        await fetchOperation();
+      },
+    });
+
+  const activeProcessingPaymentId =
+    validatingPaymentId ?? rejectingPaymentId ?? null;
 
   if (isLoading) {
     return (
@@ -50,7 +66,9 @@ export function OperationDetailContainer({
       operation={operation}
       onBack={onBack}
       onValidatePayment={submitValidatePayment}
-      processingPaymentId={processingPaymentId}
+      onRejectPayment={submitRejectPayment}
+      processingPaymentId={activeProcessingPaymentId}
+      canViewFinancialDetails={canViewFinancialDetails}
     />
   );
 }

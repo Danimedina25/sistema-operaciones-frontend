@@ -9,17 +9,18 @@ import {
   type CreateOperationFormValues,
 } from '@/modules/operations/schemas/create-operation.schema';
 
+
 interface SelectOption {
   id: number;
   label: string;
 }
+
 interface CreateOperationFormProps {
   isSubmitting: boolean;
   bankAccounts: SelectOption[];
-  clientSuggestions: string[];
+  clientes: SelectOption[];
   onSubmit: (values: CreateOperationFormValues) => Promise<void>;
 }
-
 function normalizeCurrencyInput(value: string) {
   const cleaned = value.replace(/[^\d.]/g, '');
 
@@ -53,10 +54,10 @@ function formatCurrencyDisplay(value: number) {
 }
 
 export function CreateOperationForm({
-  isSubmitting,
-  bankAccounts,
-  clientSuggestions,
-  onSubmit,
+    isSubmitting,
+    bankAccounts,
+    clientes,
+    onSubmit,
 }: CreateOperationFormProps) {
   const {
     register,
@@ -68,9 +69,8 @@ export function CreateOperationForm({
   } = useForm<CreateOperationFormInput, unknown, CreateOperationFormValues>({
     resolver: zodResolver(createOperationSchema),
     defaultValues: {
-      clienteNombre: '',
+      clienteId: undefined,
       montoTotal: '',
-      nivelesRedComercial: 1,
       observaciones: '',
       pagos: [
         {
@@ -146,18 +146,23 @@ export function CreateOperationForm({
               Nombre del cliente
             </label>
             <>
-              <Input
-                list="client-name-suggestions"
-                placeholder="Nombre completo del cliente"
-                error={errors.clienteNombre?.message}
-                {...register('clienteNombre')}
-              />
+            <select
+              className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
+              {...register('clienteId')}
+            >
+              <option value="">Selecciona un cliente</option>
+              {clientes.map((cliente) => (
+                <option key={cliente.id} value={cliente.id}>
+                  {cliente.label}
+                </option>
+              ))}
+            </select>
 
-              <datalist id="client-name-suggestions">
-                {clientSuggestions.map((name) => (
-                  <option key={name} value={name} />
-                ))}
-              </datalist>
+            {errors.clienteId ? (
+              <p className="mt-1 text-xs text-red-600">
+                {errors.clienteId.message}
+              </p>
+            ) : null}
             </>
           </div>
 
@@ -175,25 +180,6 @@ export function CreateOperationForm({
                 void handleCurrencyChange('montoTotal', event.target.value);
               }}
             />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Socios comerciales involucrados
-            </label>
-            <select
-              className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
-              {...register('nivelesRedComercial')}
-            >
-              <option value={1}>1</option>
-              <option value={2}>2</option>
-              <option value={3}>3</option>
-            </select>
-            {errors.nivelesRedComercial ? (
-              <p className="mt-1 text-xs text-red-600">
-                {errors.nivelesRedComercial.message}
-              </p>
-            ) : null}
           </div>
         </div>
 

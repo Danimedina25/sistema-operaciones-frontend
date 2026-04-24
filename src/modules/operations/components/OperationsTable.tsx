@@ -114,7 +114,7 @@ export function OperationsTable({
         <table className="min-w-full">
           <thead className="bg-slate-50">
             <tr className="text-left text-sm text-slate-600">
-              <th className="px-4 py-3 font-medium text-center">Cliente</th>
+              <th className="px-4 py-3 font-medium text-center">Cliente primario</th>
               <th className="px-4 py-3 font-medium text-center">Socio comercial</th>
               <th className="px-4 py-3 font-medium text-center">Monto total</th>
               <th className="px-4 py-3 font-medium text-center">Pagos registrados</th>
@@ -134,6 +134,7 @@ export function OperationsTable({
               </tr>
             ) : (
               operations.map((operation) => {
+                console.log(operation)
                 const isMenuOpen = openMenuOperationId === operation.id;
 
                 return (
@@ -220,7 +221,7 @@ export function OperationsTable({
                               Ver detalle
                             </button>
 
-                            {operation.estatus !== 'VALIDADA' && (
+                            {(operation.saldoPendiente > 0) && (
                               <button
                                 type="button"
                                 onClick={() => {

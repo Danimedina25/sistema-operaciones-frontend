@@ -16,6 +16,7 @@ import {
   PaymentOperationResponse,
 } from '../types/operations.types.ts';
 import { useFrequentClientNames } from '../hooks/use-frequently-client-names.js';
+import { useClientes } from '@/modules/clientes/hooks/use-clientes.js';
 
 const initialFilters: OperationsFiltersType = {
   search: '',
@@ -34,6 +35,10 @@ export default function OperationsPage() {
   const [selectedOperation, setSelectedOperation] = useState<PaymentOperationResponse | null>(null);
 
   const { clientNames: frequentClientNames } = useFrequentClientNames();
+  const {
+    clientes: clientesCatalog,
+    isLoading: isLoadingClientes,
+  } = useClientes();
 
   const {
     operations,
@@ -44,6 +49,15 @@ export default function OperationsPage() {
     totalElements,
     setCurrentPage,
   } = useOperations(filters);
+
+  const clientes = useMemo(() => {
+    return clientesCatalog
+      .filter((cliente) => cliente.activo)
+      .map((cliente) => ({
+        id: cliente.id,
+        label: cliente.nombre,
+      }));
+  }, [clientesCatalog]);
 
   const { isSubmitting: isSubmittingPayment, submitAddOperationPayment } =
     useAddOperationPayment({
@@ -132,17 +146,17 @@ export default function OperationsPage() {
         title="Crear nueva operación"
         onClose={() => setIsCreateModalOpen(false)}
       >
-        {isLoadingBankAccounts ? (
+      {isLoadingBankAccounts || isLoadingClientes ? (
           <div className="py-8 text-center text-sm text-slate-500">
             Cargando cuentas bancarias...
           </div>
         ) : (
           <CreateOperationForm
-            isSubmitting={isSubmitting}
-            bankAccounts={bankAccounts}
-            clientSuggestions={frequentClientNames}
-            onSubmit={submitCreateOperation}
-          />
+          isSubmitting={isSubmitting}
+          bankAccounts={bankAccounts}
+          clientes={clientes}
+          onSubmit={submitCreateOperation}
+        />
         )}
       </Modal>
 
