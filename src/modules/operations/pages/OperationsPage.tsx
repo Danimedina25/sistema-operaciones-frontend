@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Pagination } from '@/shared/components/ui/Pagination';
@@ -38,8 +38,12 @@ export default function OperationsPage() {
   const {
     clientes: clientesCatalog,
     isLoading: isLoadingClientes,
+    fetchClientes
   } = useClientes();
 
+  useEffect(()=>{
+    fetchClientes()
+  }, [])
   const {
     operations,
     isLoading,
@@ -102,15 +106,10 @@ export default function OperationsPage() {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-2xl bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Operaciones</h1>
-          <p className="mt-2 text-sm text-slate-500">
-            Consulta operaciones registradas y crea nuevas operaciones y pagos.
-          </p>
-        </div>
+    <div className="space-y-3">
+      <div className="relative flex items-center rounded-2xl bg-white p-4 shadow-sm">
 
+        {/* Botón (igual que lo tienes) */}
         <button
           type="button"
           onClick={() => setIsCreateModalOpen(true)}
@@ -118,32 +117,61 @@ export default function OperationsPage() {
         >
           Nueva operación
         </button>
+
+        {/* Texto centrado real */}
+        <div className="absolute left-1/2 -translate-x-1/2 text-center">
+          <h1 className="text-lg font-semibold text-slate-900">
+            Operaciones
+          </h1>
+          <p className="text-xs text-slate-500">
+            Gestiona operaciones y registra comprobantes
+          </p>
+        </div>
+
       </div>
 
+    <section className="rounded-2xl bg-white p-4 shadow-sm">
+     <div className="mb-5">
+      <h2 className="text-lg font-semibold text-slate-900">
+        Filtros de búsqueda
+      </h2>
+    </div>
+
       <OperationsFilters filters={filters} onChange={setFilters} />
+    </section>
 
-      <OperationsTable
-        operations={operations}
-        isLoading={isLoading}
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalElements={totalElements}
-        onPageChange={setCurrentPage}
-        onViewDetail={(id) => navigate(buildOperationDetailPath(id))}
-        onAddPayment={handleOpenAddPayment}
-      />
+      <section className="rounded-2xl bg-white p-4 shadow-sm">
+        <div className="mb-5">
+          <h2 className="text-lg font-semibold text-slate-900">
+            Listado de operaciones
+          </h2>
+        </div>
 
-      <Pagination
-        currentPage={currentPage + 1}
-        totalPages={totalPages}
-        totalElements={totalElements}
-        isLoading={isLoading}
-        onPageChange={(page) => setCurrentPage(page - 1)}
-      />
+        <OperationsTable
+          operations={operations}
+          isLoading={isLoading}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalElements={totalElements}
+          onPageChange={setCurrentPage}
+          onViewDetail={(id) => navigate(buildOperationDetailPath(id))}
+          onAddPayment={handleOpenAddPayment}
+        />
+
+        <div className="mt-5">
+          <Pagination
+            currentPage={currentPage + 1}
+            totalPages={totalPages}
+            totalElements={totalElements}
+            isLoading={isLoading}
+            onPageChange={(page) => setCurrentPage(page - 1)}
+          />
+        </div>
+      </section>
 
       <Modal
         open={isCreateModalOpen}
-        title="Crear nueva operación"
+        title="Nueva operación"
         onClose={() => setIsCreateModalOpen(false)}
       >
       {isLoadingBankAccounts || isLoadingClientes ? (
@@ -162,7 +190,7 @@ export default function OperationsPage() {
 
       <Modal
         open={isAddPaymentModalOpen}
-        title="Registrar pago"
+        title="Agregar comprobante"
         onClose={() => {
           setIsAddPaymentModalOpen(false);
           setSelectedOperation(null);

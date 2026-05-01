@@ -29,8 +29,8 @@ const paymentSchema = z
   .object({
     monto: z.preprocess(
       parseCurrencyInput,
-      z.number({ error: 'El monto del pago es obligatorio' }).min(0, {
-        error: 'El monto del pago no puede ser negativo',
+      z.number({ error: 'El monto del comprobante es obligatorio' }).min(0, {
+        error: 'El monto del comprobante no puede ser negativo',
       }),
     ),
 

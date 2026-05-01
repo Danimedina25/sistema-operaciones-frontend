@@ -61,7 +61,7 @@ export function NotificationsDropdown({
           onClick={() => void onMarkAllAsRead()}
           className="text-xs font-medium text-slate-700 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isMarkingAllAsRead ? 'Marcando...' : 'Marcar todas'}
+          {isMarkingAllAsRead ? 'Marcando...' : 'Marcar todas como leídas'}
         </button>
       </div>
 

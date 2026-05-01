@@ -147,7 +147,7 @@ export function AddOperationPaymentForm({
         </div>
 
         <div>
-          <span className="block text-slate-500">Faltante después del pago</span>
+          <span className="block text-slate-500">Faltante después del comprobante</span>
           <span className="font-semibold text-slate-900">
             ${formatCurrencyDisplay(faltanteDespuesDelPago)}
           </span>
@@ -156,7 +156,7 @@ export function AddOperationPaymentForm({
 
       {excedeSaldoPendiente ? (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          El monto del pago excede el saldo pendiente por $
+          El monto del comprobante excede el saldo pendiente por $
           {formatCurrencyDisplay(excedente)}.
         </div>
       ) : null}
@@ -165,7 +165,7 @@ export function AddOperationPaymentForm({
         <div className="space-y-4">
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">
-              Monto del pago
+              Monto del comprobante
             </label>
             <Input
               type="text"
@@ -227,12 +227,12 @@ export function AddOperationPaymentForm({
 
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">
-              Tipo de pago
+              Tipo de comprobante
             </label>
             <select
               className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
               {...register('tipoPago', {
-                required: 'El tipo de pago es obligatorio',
+                required: 'El tipo de comprobante es obligatorio',
               })}
             >
               <option value="">Selecciona un tipo</option>
@@ -348,7 +348,7 @@ export function AddOperationPaymentForm({
           disabled={excedeSaldoPendiente}
           className="w-full justify-center"
         >
-          Registrar pago
+          Registrar
         </Button>
       </div>
     </form>

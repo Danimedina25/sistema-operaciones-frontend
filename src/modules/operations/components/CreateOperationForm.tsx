@@ -134,11 +134,65 @@ export function CreateOperationForm({
   }
 
   return (
-    <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-      <div className="rounded-2xl border border-slate-200 p-5">
-        <h3 className="mb-4 text-base font-semibold text-slate-900">
-          Datos generales de la operación
-        </h3>
+   <form className="space-y-4 pb-0" onSubmit={handleSubmit(onSubmit)}>
+      <div className="sticky top-0 z-50 -mx-5 -mt-5 rounded-b-2xl border-b border-slate-200 bg-white px-5 py-4 shadow-lg before:absolute before:inset-x-0 before:-top-10 before:h-10 before:bg-white">
+        <div className="relative grid items-center gap-6 text-sm md:grid-cols-4">
+          <div className="text-center">
+            <span className="block text-slate-500">Monto total requerido</span>
+            <span className="text-base font-semibold text-slate-900">
+              ${formatCurrencyDisplay(montoTotal)}
+            </span>
+          </div>
+
+          <div className="text-center">
+            <span className="block text-slate-500">Suma de comprobantes</span>
+            <span className={excedeMontoTotal ? 'text-base font-semibold text-red-600' : 'text-base font-semibold text-slate-900'}>
+              ${formatCurrencyDisplay(totalPagos)}
+            </span>
+          </div>
+
+          <div className="text-center">
+            <span className="block text-slate-500">
+              {excedeMontoTotal ? 'Excedente' : 'Faltante'}
+            </span>
+            <span className={excedeMontoTotal ? 'text-base font-semibold text-red-600' : 'text-base font-semibold text-emerald-700'}>
+              ${formatCurrencyDisplay(excedeMontoTotal ? excedente : saldoDisponible)}
+            </span>
+          </div>
+
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              onClick={() => {
+                append({
+                  monto: '',
+                  tipoPago: '',
+                  cuentaDestinoId: undefined,
+                  comprobante: undefined,
+                  observaciones: '',
+                });
+
+                void trigger('pagos');
+              }}
+            >
+              Agregar comprobante
+            </Button>
+          </div>
+        </div>
+
+        {excedeMontoTotal ? (
+          <div className="relative mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            La suma de los comprobantes excede el monto total de la operación por $
+            {formatCurrencyDisplay(excedente)}.
+          </div>
+        ) : null}
+      </div>
+      <div className="mt-6 rounded-2xl border border-slate-200 p-5">
+       <div className="mb-4 flex items-center justify-between gap-3">
+          <h3 className="text-base font-semibold text-slate-900">
+            Datos generales de la operación
+          </h3>
+        </div>
 
         <div className="grid gap-5 md:grid-cols-2">
           <div className="md:col-span-2">
@@ -200,67 +254,16 @@ export function CreateOperationForm({
           ) : null}
         </div>
       </div>
-
+        <div className="mb-5 text-center">
+          <h3 className="text-lg font-semibold text-slate-900">
+            Comprobantes de la operación
+          </h3>
+          <p className="mx-auto mt-1 max-w-2xl text-sm text-slate-500">
+            Todos los comprobantes pertenecen a la misma operación. Cada uno puede ir
+            a una cuenta distinta.
+          </p>
+        </div>
       <div className="rounded-2xl border border-slate-200 p-5">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div>
-            <h3 className="text-base font-semibold text-slate-900">
-              Pagos de la operación
-            </h3>
-            <p className="text-sm text-slate-500">
-              Todos los pagos pertenecen a la misma operación. Cada pago puede ir
-              a una cuenta distinta.
-            </p>
-          </div>
-
-        <Button
-          type="button"
-          onClick={() => {
-            append({
-              monto: '',
-              tipoPago: '',
-              cuentaDestinoId: undefined,
-              comprobante: undefined,
-              observaciones: '',
-            });
-
-            void trigger('pagos');
-          }}
-        >
-          Agregar pago
-        </Button>
-        </div>
-
-        <div className="mb-5 grid gap-3 rounded-xl bg-slate-50 p-4 text-sm md:grid-cols-3">
-          <div>
-            <span className="block text-slate-500">Monto total requerido</span>
-            <span className="font-semibold text-slate-900">
-              ${formatCurrencyDisplay(montoTotal)}
-            </span>
-          </div>
-
-          <div>
-            <span className="block text-slate-500">Suma de pagos</span>
-            <span className="font-semibold text-slate-900">
-              ${formatCurrencyDisplay(totalPagos)}
-            </span>
-          </div>
-
-          <div>
-            <span className="block text-slate-500">Faltante</span>
-            <span className="font-semibold text-slate-900">
-              ${formatCurrencyDisplay(saldoDisponible)}
-            </span>
-          </div>
-        </div>
-
-        {excedeMontoTotal ? (
-          <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            La suma de los pagos excede el monto total de la operación por $
-            {formatCurrencyDisplay(excedente)}.
-          </div>
-        ) : null}
-
         <div className="space-y-4">
           {fields.map((field, index) => {
             const pagoErrors = errors.pagos?.[index];
@@ -294,7 +297,7 @@ export function CreateOperationForm({
                 <div className="space-y-4">
                   <div>
                     <label className="mb-2 block text-sm font-medium text-slate-700">
-                      Monto del pago
+                      Monto del comprobante
                     </label>
                     <Input
                       type="text"
@@ -336,7 +339,7 @@ export function CreateOperationForm({
 
                   <div>
                     <label className="mb-2 block text-sm font-medium text-slate-700">
-                      Tipo de pago
+                      Tipo de comprobante
                     </label>
                     <select
                       className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
@@ -362,7 +365,7 @@ export function CreateOperationForm({
                 <div className="space-y-4">
                   <div>
                     <label className="mb-2 block text-sm font-medium text-slate-700">
-                      Comprobante de pago
+                      Imagen del comprobante
                     </label>
 
                     <label
@@ -456,7 +459,7 @@ export function CreateOperationForm({
 
                 <div className="lg:col-span-2">
                   <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Observaciones del pago
+                    Observaciones 
                   </label>
                   <textarea
                     rows={3}
@@ -481,14 +484,14 @@ export function CreateOperationForm({
         ) : null}
       </div>
 
-     <div className="w-full">
+      <div className="sticky bottom-0 z-30 -mx-5 border-t border-slate-200 bg-white/95 px-5 py-3 shadow-[0_-8px_20px_rgba(15,23,42,0.08)] backdrop-blur">
         <Button
           type="submit"
           isLoading={isSubmitting}
           disabled={excedeMontoTotal || !!errors.pagos?.message}
           className="w-full justify-center"
         >
-          Crear operación
+          Registrar
         </Button>
       </div>
     </form>

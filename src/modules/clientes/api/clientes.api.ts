@@ -7,7 +7,7 @@ import type {
   UpdateClienteRequest,
 } from '@/modules/clientes/types/clientes.types';
 
-const CLIENTES_BASE_PATH = '/api/admin/clientes';
+const CLIENTES_BASE_PATH = '/api/clientes';
 
 export async function getClientes(): Promise<ClienteResponse[]> {
   const response = await api.get<ClientesListApiResponse>(CLIENTES_BASE_PATH);
