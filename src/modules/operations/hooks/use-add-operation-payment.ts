@@ -51,7 +51,7 @@ export function useAddOperationPayment(options?: UseAddOperationPaymentOptions) 
         observaciones: values.observaciones?.trim() || undefined,
       });
 
-      toast.success('Pago registrado correctamente');
+      toast.success('Comprobante registrado correctamente');
       await options?.onSuccess?.();
     } catch (error) {
       toast.error(getApiErrorMessage(error));

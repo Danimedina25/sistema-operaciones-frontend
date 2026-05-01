@@ -50,6 +50,11 @@ export function OperationDetailCard({
   operation,
   canViewFinancialDetails,
 }: OperationDetailCardProps) {
+  const shouldShowUpdatedAt =
+    operation.updatedAt &&
+    operation.createdAt &&
+    new Date(operation.updatedAt).getTime() !==
+      new Date(operation.createdAt).getTime();
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 md:flex-row md:items-start md:justify-between">
@@ -58,7 +63,7 @@ export function OperationDetailCard({
             Operación #{operation.id}
           </p>
           <h2 className="mt-1 text-2xl font-semibold text-slate-900">
-            {operation.clienteNombre}
+            Cliente: {operation.clienteNombre}
           </h2>
           <p className="mt-2 text-sm text-slate-500">
             Registrada el {formatDateTime(operation.createdAt)}
@@ -76,18 +81,12 @@ export function OperationDetailCard({
         </h3>
 
         <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <SummaryItem label="Cliente primario" value={operation.clienteNombre} />
+          {/* <SummaryItem label="Cliente primario" value={operation.clienteNombre} /> */}
 
-          {canViewFinancialDetails && (
-            <SummaryItem
-              label="Socio comercial"
-              value={operation.socioComercialNombre}
-            />
-          )}
-
+          
           <SummaryItem
-            label="Estatus"
-            value={operationStatusLabels[operation.estatus] ?? operation.estatus}
+            label="Socio comercial"
+            value={operation.socioComercialNombre}
           />
 
           <SummaryItem
@@ -95,16 +94,22 @@ export function OperationDetailCard({
             value={formatCurrency(operation.montoTotal)}
           />
 
-          {canViewFinancialDetails && (
-            <>
-              <SummaryItem
+        <SummaryItem
+            label="Estatus"
+            value={operationStatusLabels[operation.estatus] ?? operation.estatus}
+          />
+
+
+          <SummaryItem
                 label="Monto validado"
                 value={formatCurrency(operation.montoValidado)}
               />
-              <SummaryItem
-                label="Saldo pendiente"
+          <SummaryItem
+                label="Monto pendiente por validar"
                 value={formatCurrency(operation.saldoPendiente)}
               />
+          {canViewFinancialDetails && (
+            <>
               <SummaryItem
                 label="Nivel de socios comerciales"
                 value={`${operation.nivelesRedComercial} nivel${
@@ -121,33 +126,20 @@ export function OperationDetailCard({
               />
             </>
           )}
-
-          <SummaryItem
-            label="Creada"
-            value={formatDateTime(operation.createdAt)}
-          />
           <SummaryItem
             label="Actualizada"
-            value={formatDateTime(operation.updatedAt)}
+            value={
+              shouldShowUpdatedAt
+                ? formatDateTime(operation.updatedAt)
+                : '-'
+            }
           />
         </div>
       </div>
 
       {canViewFinancialDetails && (
         <>
-          <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
-            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-              Retorno estimado al cliente
-            </p>
-            <p className="mt-2 text-3xl font-bold text-emerald-900">
-              {formatCurrency(operation.montoTotalDevolverCliente)}
-            </p>
-            <p className="mt-2 text-sm text-emerald-800">
-              Monto calculado después de descontar comisiones de red y comisión de oficina.
-            </p>
-          </div>
-
-          <div className="mt-8 border-t border-slate-200 pt-6">
+         <div className="mt-8 border-t border-slate-200 pt-6">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
               Resumen financiero
             </h3>
@@ -169,12 +161,19 @@ export function OperationDetailCard({
                 label="Porcentaje comisión oficina"
                 value={`${operation.porcentajeComisionOficinaTotal}%`}
               />
-              <SummaryItem
-                label="Monto total a devolver al cliente"
-                value={formatCurrency(operation.montoTotalDevolverCliente)}
-                accent
-              />
             </div>
+          </div>
+
+          <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+              Retorno estimado al cliente
+            </p>
+            <p className="mt-2 text-3xl font-bold text-emerald-900">
+              {formatCurrency(operation.montoTotalDevolverCliente)}
+            </p>
+            <p className="mt-2 text-sm text-emerald-800">
+              Monto calculado después de descontar comisiones de red y comisión de oficina.
+            </p>
           </div>
         </>
       )}

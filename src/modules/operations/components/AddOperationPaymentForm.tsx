@@ -20,7 +20,7 @@ interface AddOperationPaymentFormProps {
   isSubmitting: boolean;
   bankAccounts: SelectOption[];
   montoTotal: number;
-  montoValidado: number;
+  montoRegistrado: number;
   saldoPendiente: number;
   onSubmit: (values: AddOperationPaymentFormValues) => Promise<void>;
 }
@@ -61,7 +61,7 @@ export function AddOperationPaymentForm({
   isSubmitting,
   bankAccounts,
   montoTotal,
-  montoValidado,
+  montoRegistrado,
   saldoPendiente,
   onSubmit,
 }: AddOperationPaymentFormProps) {
@@ -133,9 +133,9 @@ export function AddOperationPaymentForm({
         </div>
 
         <div>
-          <span className="block text-slate-500">Monto validado</span>
+          <span className="block text-slate-500">Monto registrado</span>
           <span className="font-semibold text-slate-900">
-            ${formatCurrencyDisplay(montoValidado)}
+            ${formatCurrencyDisplay(montoRegistrado)}
           </span>
         </div>
 

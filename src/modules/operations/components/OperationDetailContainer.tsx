@@ -3,15 +3,18 @@ import { useOperationDetail } from '@/modules/operations/hooks/use-operation-det
 import { useValidatePayment } from '../hooks/use-validate-payment';
 import { useRejectPayment } from '../hooks/use-reject-payment';
 import { useAuth } from '@/modules/auth/store/auth.context';
+import { PaymentOperationResponse } from '../types/operations.types.ts';
 
 interface OperationDetailContainerProps {
   operationId: number;
   onBack: () => void;
+  onAddPayment: (operation: PaymentOperationResponse) => void;
 }
 
 export function OperationDetailContainer({
   operationId,
   onBack,
+  onAddPayment
 }: OperationDetailContainerProps) {
   const { operation, isLoading, fetchOperation } = useOperationDetail(operationId);
   const { hasRole } = useAuth();
@@ -65,6 +68,7 @@ export function OperationDetailContainer({
     <OperationDetailView
       operation={operation}
       onBack={onBack}
+      onAddPayment={() => onAddPayment(operation)}
       onValidatePayment={submitValidatePayment}
       onRejectPayment={submitRejectPayment}
       processingPaymentId={activeProcessingPaymentId}

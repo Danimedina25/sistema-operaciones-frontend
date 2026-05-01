@@ -88,7 +88,9 @@ export interface PaymentOperationResponse {
   clienteNombre: string;
   montoTotal: number;
   montoValidado: number;
+  montoRegistrado: number;
   saldoPendiente: number;
+  saldoPendientePorRegistrar:number;
   estatus: OperationStatus;
   socioComercialId: number;
   socioComercialNombre: string;

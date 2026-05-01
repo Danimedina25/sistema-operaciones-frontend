@@ -205,8 +205,8 @@ export default function OperationsPage() {
             isSubmitting={isSubmittingPayment}
             bankAccounts={bankAccounts}
             montoTotal={selectedOperation.montoTotal}
-            montoValidado={selectedOperation.montoValidado}
-            saldoPendiente={selectedOperation.saldoPendiente}
+            montoRegistrado={selectedOperation.montoRegistrado}
+            saldoPendiente={selectedOperation.saldoPendientePorRegistrar}
             onSubmit={(values) =>
               submitAddOperationPayment(selectedOperation.id, values)
             }

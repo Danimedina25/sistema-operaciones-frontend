@@ -13,6 +13,8 @@ interface PaymentsTableProps {
   onValidatePayment?: (paymentId: number) => Promise<void> | void;
   onRejectPayment?: (paymentId: number, motivo: string) => Promise<void> | void;
   processingPaymentId?: number | null;
+  montoPendientePorRegistrar?:number | null;
+  onAddPayment?: () => void;
 }
 
 type PaymentActionType = 'VALIDATE' | 'REJECT';
@@ -27,12 +29,15 @@ export function PaymentsTable({
   onValidatePayment,
   onRejectPayment,
   processingPaymentId = null,
+  montoPendientePorRegistrar = null,
+  onAddPayment
 }: PaymentsTableProps) {
   const { hasRole } = useAuth();
 
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [rejectReasonError, setRejectReasonError] = useState('');
+  const canAddPayment = (montoPendientePorRegistrar ?? 0) > 0;
 
   const canValidatePayments = hasRole([
     'JEFA_CAJAS',
@@ -106,28 +111,56 @@ export function PaymentsTable({
 
   const confirmDescription =
     pendingAction?.action === 'VALIDATE'
-      ? '¿Estás seguro de que deseas validar este pago? Esta acción actualizará el estatus del pago.'
-      : '¿Estás seguro de que deseas rechazar este pago? Esta acción cambiará el estatus del pago a rechazado.';
+      ? '¿Estás seguro de que deseas validar este comprobante? Esta acción actualizará el estatus.'
+      : '¿Estás seguro de que deseas rechazar este comprobante? Esta acción cambiará el estatus a rechazado.';
 
   const confirmButtonText =
     pendingAction?.action === 'VALIDATE'
       ? isConfirmingAction
         ? 'Validando...'
-        : 'Sí, validar pago'
+        : 'Sí, validar comprobante'
       : isConfirmingAction
         ? 'Rechazando...'
-        : 'Sí, rechazar pago';
+        : 'Sí, rechazar comprobante';
 
   return (
     <>
       <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 px-6 py-4">
-          <h3 className="text-lg font-semibold text-slate-900">
-            Pagos registrados
-          </h3>
-          <p className="mt-1 text-sm text-slate-500">
-            Historial completo de pagos, validaciones y comprobantes.
-          </p>
+        <div className="px-6 py-5">
+          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+                        <div className="text-left">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                Comprobantes
+              </p>
+
+              <h3 className="mt-1 text-xl font-semibold text-slate-900">
+                Historial completo de comprobantes y validaciones
+              </h3>
+            </div>
+
+            <div className="flex flex-col items-start gap-2 md:items-end">
+              <div className="text-left md:text-right">
+                <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                  Pendiente de registro en comprobantes
+                </p>
+
+                <p className="mt-0.5 text-base font-semibold text-amber-700">
+                  {formatCurrency(montoPendientePorRegistrar ?? 0)}
+                </p>
+              </div>
+
+              {canAddPayment && onAddPayment ? (
+                <button
+                  type="button"
+                  onClick={onAddPayment}
+                  className="inline-flex min-w-[180px] items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
+                >
+                  Agregar comprobante
+                </button>
+              ) : null}
+            </div>
+          </div>
+          <div className="mt-5 h-px w-full bg-slate-200" />
         </div>
 
         <div className="overflow-x-auto">
@@ -136,7 +169,7 @@ export function PaymentsTable({
               <tr className="text-left text-sm text-slate-600">
                 <th className="px-4 py-3 font-medium">Monto</th>
                 <th className="px-4 py-3 font-medium">Tipo</th>
-                <th className="px-4 py-3 font-medium">Estatus</th>
+                <th className="px-4 py-3 font-medium">Estatus de validación</th>
                 <th className="px-4 py-3 font-medium">Observaciones</th>
                 <th className="px-4 py-3 font-medium">Fecha pago</th>
                 <th className="px-4 py-3 font-medium">Validado por</th>
@@ -180,7 +213,7 @@ export function PaymentsTable({
                     </td>
 
                     <td className="px-4 py-4 text-slate-600">
-                      {payment.validadoPorNombre ?? 'Pendiente'}
+                      {payment.validadoPorNombre ?? '-'}
                     </td>
 
                     <td className="px-4 py-4 text-slate-600">
@@ -210,7 +243,7 @@ export function PaymentsTable({
                               }
                               className="inline-flex rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                              {isProcessing ? 'Validando...' : 'Validar pago'}
+                              {isProcessing ? 'Validando...' : 'Validar'}
                             </button>
 
                             <button
@@ -221,7 +254,7 @@ export function PaymentsTable({
                               }
                               className="inline-flex rounded-lg bg-rose-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                              {isProcessing ? 'Procesando...' : 'Rechazar pago'}
+                              {isProcessing ? 'Procesando...' : 'Rechazar'}
                             </button>
                           </div>
                         ) : (

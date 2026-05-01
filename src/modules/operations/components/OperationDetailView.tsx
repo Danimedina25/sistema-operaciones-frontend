@@ -9,6 +9,7 @@ interface OperationDetailViewProps {
   onValidatePayment?: (paymentId: number) => Promise<void> | void;
   onRejectPayment?: (paymentId: number, motivo: string) => Promise<void> | void;
   processingPaymentId?: number | null;
+  onAddPayment: (operationId: number) => void;
   canViewFinancialDetails: boolean;
 }
 
@@ -18,6 +19,7 @@ export function OperationDetailView({
   onValidatePayment,
   onRejectPayment,
   processingPaymentId = null,
+  onAddPayment,
   canViewFinancialDetails,
 }: OperationDetailViewProps) {
   return (
@@ -41,7 +43,9 @@ export function OperationDetailView({
       <PaymentsTable
         payments={operation.pagos}
         onValidatePayment={onValidatePayment}
+        onAddPayment={() => onAddPayment(operation.id)}
         onRejectPayment={onRejectPayment}
+        montoPendientePorRegistrar={operation.saldoPendientePorRegistrar}
         processingPaymentId={processingPaymentId}
       />
     </div>

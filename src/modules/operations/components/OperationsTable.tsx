@@ -117,7 +117,7 @@ export function OperationsTable({
               <th className="px-4 py-3 font-medium text-center">Cliente primario</th>
               <th className="px-4 py-3 font-medium text-center">Socio comercial</th>
               <th className="px-4 py-3 font-medium text-center">Monto total</th>
-              <th className="px-4 py-3 font-medium text-center">Pagos registrados</th>
+              <th className="px-4 py-3 font-medium text-center">Comprobantes</th>
               <th className="px-4 py-3 font-medium text-center">Red comercial</th>
               <th className="px-4 py-3 font-medium text-center">Estatus</th>
               <th className="px-4 py-3 font-medium text-center">Creada</th>
@@ -159,7 +159,7 @@ export function OperationsTable({
 
                     <td className="px-4 py-4 text-slate-600">
                       <div>
-                        {operation.pagos.length} pago
+                        {operation.pagos.length} comprobante
                         {operation.pagos.length === 1 ? '' : 's'} registrado
                         {operation.pagos.length === 1 ? '' : 's'}
                       </div>
@@ -221,7 +221,7 @@ export function OperationsTable({
                               Ver detalle
                             </button>
 
-                            {(operation.saldoPendiente > 0) && (
+                            {(operation.saldoPendientePorRegistrar > 0) && (
                               <button
                                 type="button"
                                 onClick={() => {
