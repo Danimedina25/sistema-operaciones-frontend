@@ -175,7 +175,7 @@ export function CreateOperationForm({
                 void trigger('pagos');
               }}
             >
-              Agregar comprobante
+              Registrar pago de ingreso
             </Button>
           </div>
         </div>

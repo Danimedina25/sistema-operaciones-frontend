@@ -43,6 +43,12 @@ const navItems: NavItem[] = [
     icon: ReceiptText,
     allowedRoles: ['ADMIN', 'GERENTE', 'SOCIO_COMERCIAL'],
   },
+  {
+    to: paths.devolutions,
+    label: 'Devoluciones',
+    icon: ReceiptText,
+    allowedRoles: ['ADMIN', 'GERENTE', 'SOCIO_COMERCIAL'],
+  },
 ];
 
 export function Sidebar() {

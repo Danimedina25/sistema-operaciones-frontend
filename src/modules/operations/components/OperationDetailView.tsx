@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { OperationDetailCard } from '@/modules/operations/components/OperationDetailCard';
 import { PaymentsTable } from '@/modules/operations/components/PaymentsTable';
@@ -11,6 +12,8 @@ interface OperationDetailViewProps {
   processingPaymentId?: number | null;
   onAddPayment: (operationId: number) => void;
   canViewFinancialDetails: boolean;
+  onOperationUpdated?: () => void | Promise<void>;
+  scrollToPayments?: boolean;
 }
 
 export function OperationDetailView({
@@ -21,7 +24,24 @@ export function OperationDetailView({
   processingPaymentId = null,
   onAddPayment,
   canViewFinancialDetails,
+  onOperationUpdated,
+  scrollToPayments = false,
 }: OperationDetailViewProps) {
+  const paymentsSectionRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!scrollToPayments) return;
+
+    const timeoutId = window.setTimeout(() => {
+      paymentsSectionRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }, 100);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [scrollToPayments, operation.id]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 text-sm text-slate-500">
@@ -38,16 +58,19 @@ export function OperationDetailView({
       <OperationDetailCard
         operation={operation}
         canViewFinancialDetails={canViewFinancialDetails}
+        onOperationUpdated={onOperationUpdated}
       />
 
-      <PaymentsTable
-        payments={operation.pagos}
-        onValidatePayment={onValidatePayment}
-        onAddPayment={() => onAddPayment(operation.id)}
-        onRejectPayment={onRejectPayment}
-        montoPendientePorRegistrar={operation.saldoPendientePorRegistrar}
-        processingPaymentId={processingPaymentId}
-      />
+      <div ref={paymentsSectionRef}>
+        <PaymentsTable
+          payments={operation.pagos}
+          onValidatePayment={onValidatePayment}
+          onAddPayment={() => onAddPayment(operation.id)}
+          onRejectPayment={onRejectPayment}
+          montoPendientePorRegistrar={operation.saldoPendientePorRegistrar}
+          processingPaymentId={processingPaymentId}
+        />
+      </div>
     </div>
   );
 }

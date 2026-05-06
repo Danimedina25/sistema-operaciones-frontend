@@ -65,6 +65,7 @@ export function OperationsFilters({
 
   function handleClearFilters() {
     onChange({
+      operationId: 0,
       search: '',
       status: 'ALL',
       dateFilter: '',
@@ -81,7 +82,7 @@ export function OperationsFilters({
           Buscar
         </label>
         <Input
-          placeholder="Cliente o Socio comercial"
+          placeholder="Folio, Cliente o Socio comercial"
           value={filters.search}
           className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
           onChange={(e) =>

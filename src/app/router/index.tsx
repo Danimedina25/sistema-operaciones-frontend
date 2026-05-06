@@ -91,6 +91,25 @@ export const router = createBrowserRouter([
               },
             ],
           },
+          {
+            element: <RoleGuard allowedRoles={['ADMIN', 'GERENTE', 'SOCIO_COMERCIAL']} />,
+            children: [
+              {
+                path: paths.devolutions,
+                element: <OperationsPage />,
+              },
+            ],
+          },
+
+          {
+            element: <RoleGuard allowedRoles={['ADMIN', 'GERENTE', 'SOCIO_COMERCIAL', 'JEFA_CAJAS', 'AUXILIAR_CUENTAS']} />,
+            children: [
+              {
+                path: paths.devolutionDetail,
+                element: <OperationDetailPage />,
+              },
+            ],
+          },
         ],
       },
     ],

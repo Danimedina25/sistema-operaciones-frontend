@@ -130,23 +130,29 @@ export function PaymentsTable({
           <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
                         <div className="text-left">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                Comprobantes
+                Ingreso
               </p>
 
               <h3 className="mt-1 text-xl font-semibold text-slate-900">
-                Historial completo de comprobantes y validaciones
+                Historial de comprobantes y validaciones
               </h3>
             </div>
 
             <div className="flex flex-col items-start gap-2 md:items-end">
               <div className="text-left md:text-right">
                 <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
-                  Pendiente de registro en comprobantes
+                  Pendiente de registro en ingreso
                 </p>
 
                 <p className="mt-0.5 text-base font-semibold text-amber-700">
                   {formatCurrency(montoPendientePorRegistrar ?? 0)}
                 </p>
+
+                {montoPendientePorRegistrar === 0 && (
+                  <p className="mt-1 text-sm font-medium text-green-600">
+                   No hay más pagos de ingreso por registrar
+                  </p>
+                )}
               </div>
 
               {canAddPayment && onAddPayment ? (
@@ -155,7 +161,7 @@ export function PaymentsTable({
                   onClick={onAddPayment}
                   className="inline-flex min-w-[180px] items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
                 >
-                  Agregar comprobante
+                  Registrar pago de ingreso
                 </button>
               ) : null}
             </div>
@@ -241,7 +247,7 @@ export function PaymentsTable({
                               onClick={() =>
                                 openConfirmModal(payment.id, 'VALIDATE')
                               }
-                              className="inline-flex rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="flex-1 inline-flex justify-center rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               {isProcessing ? 'Validando...' : 'Validar'}
                             </button>
@@ -252,7 +258,7 @@ export function PaymentsTable({
                               onClick={() =>
                                 openConfirmModal(payment.id, 'REJECT')
                               }
-                              className="inline-flex rounded-lg bg-rose-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="flex-1 inline-flex justify-center rounded-lg bg-rose-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               {isProcessing ? 'Procesando...' : 'Rechazar'}
                             </button>

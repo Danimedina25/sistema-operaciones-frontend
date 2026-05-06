@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { paths } from '@/routes/paths';
 import { Modal } from '@/shared/components/ui/Modal';
 import { OperationDetailContainer } from '../components/OperationDetailContainer';
@@ -10,6 +10,8 @@ import { PaymentOperationResponse } from '../types/operations.types.ts';
 
 export default function OperationDetailPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const scrollToPayments = Boolean(location.state?.scrollToPayments);
   const { operationId } = useParams<{ operationId: string }>();
   const [isAddPaymentModalOpen, setIsAddPaymentModalOpen] = useState(false);
   const [selectedOperation, setSelectedOperation] =
@@ -51,19 +53,20 @@ export default function OperationDetailPage() {
 
   return (
     <>
-      <OperationDetailContainer
-        key={refreshKey}
-        operationId={parsedOperationId}
-        onBack={() => navigate(paths.operations)}
-        onAddPayment={(operation) => {
-          setSelectedOperation(operation);
-          setIsAddPaymentModalOpen(true);
-        }}
-      />
+    <OperationDetailContainer
+      key={refreshKey}
+      operationId={parsedOperationId}
+      scrollToPayments={scrollToPayments}
+      onBack={() => navigate(paths.operations)}
+      onAddPayment={(operation) => {
+        setSelectedOperation(operation);
+        setIsAddPaymentModalOpen(true);
+      }}
+    />
 
       <Modal
         open={isAddPaymentModalOpen}
-        title="Agregar comprobante"
+        title="Registrar pago de ingreso"
         onClose={() => {
           setIsAddPaymentModalOpen(false);
           setSelectedOperation(null);

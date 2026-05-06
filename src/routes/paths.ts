@@ -10,6 +10,8 @@ export const paths = {
   bankAccounts: '/cuentas-bancarias',
   operations: '/operaciones',
   operationDetail: '/operaciones/:operationId',
+  devolutions: '/devolutions',
+  devolutionDetail: '/operaciones/:operationId',
 } as const;
 
 export const buildOperationDetailPath = (id: number | string) =>

@@ -30,6 +30,11 @@ function buildOperationsQuery(
     params.append('search', filters.search.trim());
   }
 
+  if(filters.search && !isNaN(Number(filters.search.trim()))){
+      console.log("jojo", filters.search)
+    params.append('operationId', filters.search.trim());
+  }
+
   if (filters.status !== 'ALL') {
     params.append('status', filters.status);
   }
@@ -114,6 +119,16 @@ export async function rejectPayment(
     `${OPERATIONS_BASE_PATH}/payments/${paymentId}/reject`,
     payload,
   );
+  return response.data.data;
+}
+
+export async function markOperationAsInvoiced(
+  operationId: number,
+): Promise<PaymentOperationResponse> {
+  const response = await api.patch<OperationApiResponse>(
+    `${OPERATIONS_BASE_PATH}/${operationId}/invoice`,
+  );
+
   return response.data.data;
 }
 

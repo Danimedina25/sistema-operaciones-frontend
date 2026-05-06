@@ -2,7 +2,7 @@ import { ApiResponse } from '@/shared/types/api.types';
 
 export type OperationStatus =
   | 'PENDIENTE_VALIDACION'
-  | 'PAGO_PARCIAL'
+  | 'INGRESO_PARCIAL'
   | 'VALIDADA'
   | 'RECHAZADA'
   | 'FACTURADA'
@@ -39,6 +39,7 @@ export interface PageResponse<T> {
 }
 
 export interface OperationsFilters {
+  operationId: number;
   search: string;
   status: OperationStatus | 'ALL';
   dateFilter: OperationDateFilter | '';

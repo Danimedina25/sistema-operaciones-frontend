@@ -20,5 +20,5 @@ export const operationStatusLabels: Record<OperationStatus, string> = {
   RETORNO_PENDIENTE: 'Retorno pendiente',
   RETORNO_PARCIAL: 'Retorno parcial',
   COMPLETADA: 'Completado',
-  PAGO_PARCIAL: 'Pago parcial'
+  INGRESO_PARCIAL: 'Ingreso parcial'
 };

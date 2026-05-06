@@ -19,6 +19,7 @@ import { useFrequentClientNames } from '../hooks/use-frequently-client-names.js'
 import { useClientes } from '@/modules/clientes/hooks/use-clientes.js';
 
 const initialFilters: OperationsFiltersType = {
+  operationId: 0,
   search: '',
   status: 'ALL',
   dateFilter: 'THIS_MONTH',
@@ -154,8 +155,15 @@ export default function OperationsPage() {
           totalPages={totalPages}
           totalElements={totalElements}
           onPageChange={setCurrentPage}
-          onViewDetail={(id) => navigate(buildOperationDetailPath(id))}
+          onViewDetail={(id, scrollToPayments = false) => {
+            navigate(buildOperationDetailPath(id), {
+              state: {
+                scrollToPayments,
+              },
+            });
+          }}
           onAddPayment={handleOpenAddPayment}
+          onOperationUpdated={() => fetchOperations(currentPage)}
         />
 
         <div className="mt-5">
@@ -190,7 +198,7 @@ export default function OperationsPage() {
 
       <Modal
         open={isAddPaymentModalOpen}
-        title="Agregar comprobante"
+        title="Registrar pago de ingreso"
         onClose={() => {
           setIsAddPaymentModalOpen(false);
           setSelectedOperation(null);

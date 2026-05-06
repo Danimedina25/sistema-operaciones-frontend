@@ -6,6 +6,8 @@ import {
   formatDateTime,
 } from '@/modules/operations/utils/operation-formatters';
 import { PaymentOperationResponse } from '../types/operations.types.ts';
+import { useMarkOperationAsInvoiced } from '../hooks/use-mark-operations-as-invoiced.js';
+import { useAuth } from '@/modules/auth/store/auth.context.js';
 
 interface OperationsTableProps {
   operations: PaymentOperationResponse[];
@@ -14,8 +16,9 @@ interface OperationsTableProps {
   totalElements: number;
   isLoading?: boolean;
   onPageChange: (page: number) => void;
-  onViewDetail: (id: number) => void;
+  onViewDetail: (id: number, scrollToPayments?: boolean) => void;
   onAddPayment: (id: number) => void;
+  onOperationUpdated?: () => void | Promise<void>;
 }
 
 export function OperationsTable({
@@ -27,6 +30,7 @@ export function OperationsTable({
   onPageChange,
   onViewDetail,
   onAddPayment,
+  onOperationUpdated,
 }: OperationsTableProps) {
   const [openMenuOperationId, setOpenMenuOperationId] = useState<number | null>(null);
   const [menuPosition, setMenuPosition] = useState<{
@@ -36,6 +40,15 @@ export function OperationsTable({
   } | null>(null);
 
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const { processingOperationId, submitMarkAsInvoiced } =
+  useMarkOperationAsInvoiced({
+    onSuccess: onOperationUpdated,
+  });
+
+  const { hasRole } = useAuth();
+
+  const isSocioComercial = hasRole(['SOCIO_COMERCIAL']);
+  const canManageOperationFlow = !isSocioComercial;
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -117,8 +130,9 @@ export function OperationsTable({
               <th className="px-4 py-3 font-medium text-center">Cliente primario</th>
               <th className="px-4 py-3 font-medium text-center">Socio comercial</th>
               <th className="px-4 py-3 font-medium text-center">Monto total</th>
-              <th className="px-4 py-3 font-medium text-center">Comprobantes</th>
-              <th className="px-4 py-3 font-medium text-center">Red comercial</th>
+              <th className="px-4 py-3 font-medium text-center">Monto ingresado</th>
+             {/*  <th className="px-4 py-3 font-medium text-center">Red comercial</th> */}
+              <th className="px-4 py-3 font-medium text-center">Monto retornado</th>
               <th className="px-4 py-3 font-medium text-center">Estatus</th>
               <th className="px-4 py-3 font-medium text-center">Creada</th>
               <th className="px-4 py-3 font-medium text-center">Acciones</th>
@@ -134,7 +148,6 @@ export function OperationsTable({
               </tr>
             ) : (
               operations.map((operation) => {
-                console.log(operation)
                 const isMenuOpen = openMenuOperationId === operation.id;
 
                 return (
@@ -159,7 +172,7 @@ export function OperationsTable({
 
                     <td className="px-4 py-4 text-slate-600">
                       <div>
-                        {operation.pagos.length} comprobante
+                        {operation.pagos.length} pago
                         {operation.pagos.length === 1 ? '' : 's'} registrado
                         {operation.pagos.length === 1 ? '' : 's'}
                       </div>
@@ -168,12 +181,18 @@ export function OperationsTable({
                       </div>
                     </td>
 
-                    <td className="px-4 py-4 text-slate-600">
+{/*                     <td className="px-4 py-4 text-slate-600">
                       <div>
                         {operation.nivelesRedComercial} nivel{operation.nivelesRedComercial > 1 ? 'es' : ''}
                       </div>
                       <div className="mt-1 text-xs text-slate-400">
                         {operation.porcentajeComisionAplicado}%
+                      </div>
+                    </td>
+ */}
+                    <td className="px-4 py-4 text-slate-600">
+                      <div className="mt-1 text-xs text-slate-400">
+                        {formatCurrency(operation.montoValidado)} 
                       </div>
                     </td>
 
@@ -216,10 +235,41 @@ export function OperationsTable({
                                 onViewDetail(operation.id);
                                 closeMenu();
                               }}
-                              className="block w-full px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50"
+                              className="block w-full px-4 py-2.5 text-left text-sm font-medium transition hover:bg-slate-50"
                             >
                               Ver detalle
                             </button>
+
+                            {canManageOperationFlow &&
+                            (operation.estatus === 'PENDIENTE_VALIDACION' ||
+                              operation.estatus === 'INGRESO_PARCIAL') && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    onViewDetail(operation.id, true);
+                                    closeMenu();
+                                  }}
+                                  className="block w-full px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                                >
+                                  Validar pagos de ingreso
+                                </button>
+                              )}
+
+                            {canManageOperationFlow && operation.estatus === 'VALIDADA' && (
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  await submitMarkAsInvoiced(operation.id);
+                                  closeMenu();
+                                }}
+                                disabled={processingOperationId === operation.id}
+                                className="block w-full px-4 py-2.5 text-left text-sm font-medium  transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {processingOperationId === operation.id
+                                  ? 'Facturando...'
+                                  : 'Marcar como facturada'}
+                              </button>
+                            )}
 
                             {(operation.saldoPendientePorRegistrar > 0) && (
                               <button
@@ -228,9 +278,9 @@ export function OperationsTable({
                                   onAddPayment(operation.id);
                                   closeMenu();
                                 }}
-                                className="block w-full px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50"
+                                className="block w-full px-4 py-2.5 text-left text-sm font-medium  transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-60"
                               >
-                                Agregar comprobante
+                                Registrar pago de ingreso
                               </button>
                             )}
                           </div>,

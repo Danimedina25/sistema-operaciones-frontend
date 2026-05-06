@@ -9,12 +9,14 @@ interface OperationDetailContainerProps {
   operationId: number;
   onBack: () => void;
   onAddPayment: (operation: PaymentOperationResponse) => void;
+  scrollToPayments?: boolean;
 }
 
 export function OperationDetailContainer({
   operationId,
   onBack,
-  onAddPayment
+  onAddPayment,
+  scrollToPayments = false,
 }: OperationDetailContainerProps) {
   const { operation, isLoading, fetchOperation } = useOperationDetail(operationId);
   const { hasRole } = useAuth();
@@ -65,14 +67,16 @@ export function OperationDetailContainer({
   }
 
   return (
-    <OperationDetailView
-      operation={operation}
-      onBack={onBack}
-      onAddPayment={() => onAddPayment(operation)}
-      onValidatePayment={submitValidatePayment}
-      onRejectPayment={submitRejectPayment}
-      processingPaymentId={activeProcessingPaymentId}
-      canViewFinancialDetails={canViewFinancialDetails}
-    />
+  <OperationDetailView
+    operation={operation}
+    onBack={onBack}
+    onAddPayment={() => onAddPayment(operation)}
+    onValidatePayment={submitValidatePayment}
+    onRejectPayment={submitRejectPayment}
+    processingPaymentId={activeProcessingPaymentId}
+    canViewFinancialDetails={canViewFinancialDetails}
+    onOperationUpdated={fetchOperation}
+    scrollToPayments={scrollToPayments}
+  />
   );
 }
