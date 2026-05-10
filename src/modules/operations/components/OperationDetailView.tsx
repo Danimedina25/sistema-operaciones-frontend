@@ -2,15 +2,21 @@ import { useEffect, useRef } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { OperationDetailCard } from '@/modules/operations/components/OperationDetailCard';
 import { PaymentsTable } from '@/modules/operations/components/PaymentsTable';
-import { PaymentOperationResponse } from '../types/operations.types.ts';
+import {
+  PaymentOperationResponse,
+  ReturnPaymentResponse,
+} from '../types/operations.types.ts';
+import { ReturnPaymentsTable } from './returns/ReturnPaymentsTable.js';
 
 interface OperationDetailViewProps {
   operation: PaymentOperationResponse;
+  returns?: ReturnPaymentResponse[];
   onBack: () => void;
   onValidatePayment?: (paymentId: number) => Promise<void> | void;
   onRejectPayment?: (paymentId: number, motivo: string) => Promise<void> | void;
   processingPaymentId?: number | null;
   onAddPayment: (operationId: number) => void;
+  onAddReturnPayment: (montoPendienteARetornar: number) => void;
   canViewFinancialDetails: boolean;
   onOperationUpdated?: () => void | Promise<void>;
   scrollToPayments?: boolean;
@@ -18,11 +24,13 @@ interface OperationDetailViewProps {
 
 export function OperationDetailView({
   operation,
+  returns = [],
   onBack,
   onValidatePayment,
   onRejectPayment,
   processingPaymentId = null,
   onAddPayment,
+  onAddReturnPayment,
   canViewFinancialDetails,
   onOperationUpdated,
   scrollToPayments = false,
@@ -41,6 +49,16 @@ export function OperationDetailView({
 
     return () => window.clearTimeout(timeoutId);
   }, [scrollToPayments, operation.id]);
+
+  const totalRetornado = returns.reduce(
+    (total, item) => total + item.monto,
+    0,
+  );
+
+  const montoPendientePorRetornar = Math.max(
+    (operation.montoTotalDevolverCliente ?? 0) - totalRetornado,
+    0,
+  );
 
   return (
     <div className="space-y-6">
@@ -71,6 +89,13 @@ export function OperationDetailView({
           processingPaymentId={processingPaymentId}
         />
       </div>
+
+      <ReturnPaymentsTable
+        returns={returns}
+        montoPendientePorRetornar={montoPendientePorRetornar}
+        onAddReturnPayment={onAddReturnPayment}
+        canAddReturn={montoPendientePorRetornar > 0 && (operation.estatus === 'FACTURADA' || operation.estatus === 'RETORNO_PARCIAL')}
+      />
     </div>
   );
 }

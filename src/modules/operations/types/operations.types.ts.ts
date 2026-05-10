@@ -6,7 +6,6 @@ export type OperationStatus =
   | 'VALIDADA'
   | 'RECHAZADA'
   | 'FACTURADA'
-  | 'RETORNO_PENDIENTE'
   | 'RETORNO_PARCIAL'
   | 'COMPLETADA';
 
@@ -72,6 +71,9 @@ export interface OperationPaymentResponse {
   monto: number;
   tipoPago: PaymentType;
   comprobanteUrl: string;
+  cuentaDestinoId: number;
+  cuentaDestinoBanco: string;
+  cuentaDestinoTitular: string;
   estatus: PaymentStatus;
   observaciones?: string | null;
   registradoPorId: number;
@@ -111,6 +113,34 @@ export interface PaymentOperationResponse {
   updatedAt: string;
 }
 
+
+export interface CreateReturnPaymentRequest {
+  monto: number;
+  tipoPago: PaymentType;
+  cuentaOrigenId?: number | null;
+  cuentaDestinoCliente?: string | null;
+  comprobanteUrl?: string | null;
+  observaciones?: string | null;
+}
+
+export interface ReturnPaymentResponse {
+  id: number;
+  operationId: number;
+  monto: number;
+  tipoPago: PaymentType;
+  cuentaOrigenId?: number | null;
+  cuentaOrigenNombre?: string | null;
+  cuentaDestinoCliente?: string | null;
+  comprobanteUrl?: string | null;
+  observaciones?: string | null;
+  registradoPorId: number;
+  registradoPorNombre: string;
+  fechaRetorno: string;
+  createdAt: string;
+}
+
 export type OperationApiResponse = ApiResponse<PaymentOperationResponse>;
 export type OperationsPageApiResponse = ApiResponse<PageResponse<PaymentOperationResponse>>;
 export type PaymentApiResponse = ApiResponse<OperationPaymentResponse>;
+export type ReturnPaymentApiResponse = ApiResponse<ReturnPaymentResponse>;
+export type ReturnPaymentsListApiResponse = ApiResponse<ReturnPaymentResponse[]>;

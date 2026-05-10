@@ -10,7 +10,6 @@ const statusStyles: Record<OperationStatus, string> = {
   VALIDADA: 'bg-emerald-100 text-emerald-800',
   RECHAZADA: 'bg-red-100 text-red-800',
   FACTURADA: 'bg-violet-100 text-violet-800',
-  RETORNO_PENDIENTE: 'bg-orange-100 text-orange-800',
   RETORNO_PARCIAL: 'bg-cyan-100 text-cyan-800',
   COMPLETADA: 'bg-slate-200 text-slate-800',
 };

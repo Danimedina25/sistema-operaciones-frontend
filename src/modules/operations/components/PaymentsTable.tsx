@@ -175,7 +175,7 @@ export function PaymentsTable({
               <tr className="text-left text-sm text-slate-600">
                 <th className="px-4 py-3 font-medium">Monto</th>
                 <th className="px-4 py-3 font-medium">Tipo</th>
-                <th className="px-4 py-3 font-medium">Estatus de validación</th>
+                <th className="px-4 py-3 font-medium">Cuenta destino</th>
                 <th className="px-4 py-3 font-medium">Observaciones</th>
                 <th className="px-4 py-3 font-medium">Fecha pago</th>
                 <th className="px-4 py-3 font-medium">Validado por</th>
@@ -204,6 +204,18 @@ export function PaymentsTable({
 
                     <td className="px-4 py-4 text-slate-600">
                       {paymentTypeLabels[payment.tipoPago]}
+                    </td>
+
+                    <td className="px-4 py-4">
+                      <div className="flex flex-col">
+                        <span className="font-medium text-slate-900">
+                          {payment.cuentaDestinoBanco}
+                        </span>
+
+                        <span className="text-xs text-slate-500">
+                          {payment.cuentaDestinoTitular}
+                        </span>
+                      </div>
                     </td>
 
                     <td className="px-4 py-4">

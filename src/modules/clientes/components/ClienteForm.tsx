@@ -44,26 +44,39 @@ export function ClienteForm({
   });
 
   useEffect(() => {
-    if (initialValues) {
+    if (!initialValues) {
       reset({
-        nombre: initialValues.nombre,
-        activo: initialValues.activo ?? true,
-        nivelesRedComercial: initialValues.nivelesRedComercial,
-        porcentajeComisionAplicado: initialValues.porcentajeComisionAplicado,
+        nombre: '',
+        activo: true,
+        nivelesRedComercial: 1,
+        porcentajeComisionAplicado: 0,
       });
+
       return;
     }
 
     reset({
-      nombre: '',
-      activo: true,
-      nivelesRedComercial: 1,
-      porcentajeComisionAplicado: 0,
+      nombre: initialValues.nombre,
+      activo: initialValues.activo ?? true,
+      nivelesRedComercial: initialValues.nivelesRedComercial,
+      porcentajeComisionAplicado: initialValues.porcentajeComisionAplicado,
     });
-  }, [initialValues, reset]);
+  }, [
+    initialValues?.nombre,
+    initialValues?.activo,
+    initialValues?.nivelesRedComercial,
+    initialValues?.porcentajeComisionAplicado,
+    reset,
+  ]);
+
+  const handleFormSubmit = async (values: UpdateClienteFormValues) => {
+    await onSubmit(values);
+
+    reset(values);
+  };
 
   return (
-    <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
+    <form className="space-y-5" onSubmit={handleSubmit(handleFormSubmit)}>
       <div>
         <label className="mb-2 block text-sm font-medium text-slate-700">
           Nombre del cliente
@@ -79,9 +92,12 @@ export function ClienteForm({
         <label className="mb-2 block text-sm font-medium text-slate-700">
           Niveles de red comercial
         </label>
+
         <select
           className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
-          {...register('nivelesRedComercial')}
+          {...register('nivelesRedComercial', {
+            valueAsNumber: true,
+          })}
         >
           <option value="">Selecciona niveles</option>
           <option value="1">1 nivel</option>
@@ -100,6 +116,7 @@ export function ClienteForm({
         <label className="mb-2 block text-sm font-medium text-slate-700">
           Porcentaje de comisión por nivel
         </label>
+
         <Input
           type="number"
           step="0.01"
@@ -107,8 +124,11 @@ export function ClienteForm({
           max="100"
           placeholder="Ej. 1.00"
           error={errors.porcentajeComisionAplicado?.message}
-          {...register('porcentajeComisionAplicado')}
+          {...register('porcentajeComisionAplicado', {
+            valueAsNumber: true,
+          })}
         />
+
         <p className="mt-1 text-xs text-slate-500">
           Este porcentaje se multiplicará por los niveles de red comercial.
         </p>

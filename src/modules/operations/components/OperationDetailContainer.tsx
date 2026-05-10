@@ -4,11 +4,13 @@ import { useValidatePayment } from '../hooks/use-validate-payment';
 import { useRejectPayment } from '../hooks/use-reject-payment';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { PaymentOperationResponse } from '../types/operations.types.ts';
+import { useReturnsByOperationId } from '../hooks/returns/use-operation-returns';
 
 interface OperationDetailContainerProps {
   operationId: number;
   onBack: () => void;
   onAddPayment: (operation: PaymentOperationResponse) => void;
+  onAddReturnPayment: (operation: PaymentOperationResponse, montoPendienteARetornar: number) => void;
   scrollToPayments?: boolean;
 }
 
@@ -16,9 +18,18 @@ export function OperationDetailContainer({
   operationId,
   onBack,
   onAddPayment,
+  onAddReturnPayment,
   scrollToPayments = false,
 }: OperationDetailContainerProps) {
-  const { operation, isLoading, fetchOperation } = useOperationDetail(operationId);
+  const { operation, isLoading, fetchOperation } =
+    useOperationDetail(operationId);
+
+  const {
+    data: returns = [],
+    isLoading: isLoadingReturns,
+    refetch: refetchReturns,
+  } = useReturnsByOperationId(operationId);
+
   const { hasRole } = useAuth();
 
   const canViewFinancialDetails = !hasRole(['SOCIO_COMERCIAL']);
@@ -40,7 +51,7 @@ export function OperationDetailContainer({
   const activeProcessingPaymentId =
     validatingPaymentId ?? rejectingPaymentId ?? null;
 
-  if (isLoading) {
+  if (isLoading || isLoadingReturns) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-sm">
         Cargando detalle de la operación...
@@ -67,16 +78,21 @@ export function OperationDetailContainer({
   }
 
   return (
-  <OperationDetailView
-    operation={operation}
-    onBack={onBack}
-    onAddPayment={() => onAddPayment(operation)}
-    onValidatePayment={submitValidatePayment}
-    onRejectPayment={submitRejectPayment}
-    processingPaymentId={activeProcessingPaymentId}
-    canViewFinancialDetails={canViewFinancialDetails}
-    onOperationUpdated={fetchOperation}
-    scrollToPayments={scrollToPayments}
-  />
+    <OperationDetailView
+      operation={operation}
+      returns={returns}
+      onBack={onBack}
+      onAddPayment={() => onAddPayment(operation)}
+      onAddReturnPayment={( montoPendienteARetornar: number) => onAddReturnPayment(operation, montoPendienteARetornar)}
+      onValidatePayment={submitValidatePayment}
+      onRejectPayment={submitRejectPayment}
+      processingPaymentId={activeProcessingPaymentId}
+      canViewFinancialDetails={canViewFinancialDetails}
+      onOperationUpdated={async () => {
+        await fetchOperation();
+        await refetchReturns();
+      }}
+      scrollToPayments={scrollToPayments}
+    />
   );
 }

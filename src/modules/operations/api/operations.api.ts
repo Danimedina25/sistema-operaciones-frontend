@@ -11,9 +11,14 @@ import {
   OperationsPageApiResponse,
   PageResponse,
   OperationsFilters,
+  ReturnPaymentResponse,
+  ReturnPaymentsListApiResponse,
+  CreateReturnPaymentRequest,
+  ReturnPaymentApiResponse,
 } from '../types/operations.types.ts';
 
 const OPERATIONS_BASE_PATH = '/api/operations';
+const RETURNS_BASE_PATH = `${OPERATIONS_BASE_PATH}/returns`;
 
 function buildOperationsQuery(
   page: number,
@@ -31,7 +36,6 @@ function buildOperationsQuery(
   }
 
   if(filters.search && !isNaN(Number(filters.search.trim()))){
-      console.log("jojo", filters.search)
     params.append('operationId', filters.search.trim());
   }
 
@@ -147,5 +151,52 @@ export async function getFrequentClientNames(): Promise<string[]> {
   const response = await api.get<FrequentClientsApiResponse>(
     `${OPERATIONS_BASE_PATH}/frequent-clients`,
   );
+  return response.data.data;
+}
+
+export async function getOperationsReadyForReturn(
+  page: number,
+  pageSize: number,
+  filters: OperationsFilters,
+): Promise<PageResponse<PaymentOperationResponse>> {
+
+  const query = buildOperationsQuery(page, pageSize, filters);
+
+  const response = await api.get<OperationsPageApiResponse>(
+    `${RETURNS_BASE_PATH}/ready?${query}`,
+  );
+
+  return response.data.data;
+}
+
+export async function registerReturnPayment(
+  operationId: number,
+  payload: CreateReturnPaymentRequest,
+): Promise<ReturnPaymentResponse> {
+  const response = await api.post<ReturnPaymentApiResponse>(
+    `${RETURNS_BASE_PATH}/${operationId}`,
+    payload,
+  );
+
+  return response.data.data;
+}
+
+export async function getReturnOperationById(
+  operationId: number,
+): Promise<PaymentOperationResponse> {
+  const response = await api.get<OperationApiResponse>(
+    `${RETURNS_BASE_PATH}/${operationId}`,
+  );
+
+  return response.data.data;
+}
+
+export async function getReturnsByOperationId(
+  operationId: number,
+): Promise<ReturnPaymentResponse[]> {
+  const response = await api.get<ReturnPaymentsListApiResponse>(
+    `${RETURNS_BASE_PATH}/${operationId}/payments`,
+  );
+
   return response.data.data;
 }
