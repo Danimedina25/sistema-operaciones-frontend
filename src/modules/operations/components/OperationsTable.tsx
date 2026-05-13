@@ -19,6 +19,7 @@ interface OperationsTableProps {
   onViewDetail: (id: number, scrollToPayments?: boolean) => void;
   onAddPayment: (id: number) => void;
   onOperationUpdated?: () => void | Promise<void>;
+  onEditOperation?: (operationId: number) => void;
 }
 
 export function OperationsTable({
@@ -31,6 +32,7 @@ export function OperationsTable({
   onViewDetail,
   onAddPayment,
   onOperationUpdated,
+  onEditOperation
 }: OperationsTableProps) {
   const [openMenuOperationId, setOpenMenuOperationId] = useState<number | null>(null);
   const [menuPosition, setMenuPosition] = useState<{
@@ -49,6 +51,10 @@ export function OperationsTable({
 
   const isSocioComercial = hasRole(['SOCIO_COMERCIAL']);
   const canManageOperationFlow = !isSocioComercial;
+
+  const canEditOperation = (status: string) => {
+    return status === 'PENDIENTE_VALIDACION' || status === 'INGRESO_PARCIAL';
+  };
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -255,22 +261,6 @@ export function OperationsTable({
                                 </button>
                               )}
 
-                            {canManageOperationFlow && operation.estatus === 'VALIDADA' && (
-                              <button
-                                type="button"
-                                onClick={async () => {
-                                  await submitMarkAsInvoiced(operation.id);
-                                  closeMenu();
-                                }}
-                                disabled={processingOperationId === operation.id}
-                                className="block w-full px-4 py-2.5 text-left text-sm font-medium  transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-60"
-                              >
-                                {processingOperationId === operation.id
-                                  ? 'Facturando...'
-                                  : 'Marcar como facturada'}
-                              </button>
-                            )}
-
                             {(operation.saldoPendientePorRegistrar > 0) && (
                               <button
                                 type="button"
@@ -283,6 +273,16 @@ export function OperationsTable({
                                 Registrar pago de ingreso
                               </button>
                             )}
+
+                            {canEditOperation(operation.estatus) ? (
+                              <button
+                                type="button"
+                                onClick={() => onEditOperation?.(operation.id)}
+                                className="block w-full px-4 py-2.5 text-left text-sm font-medium  transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                Editar
+                              </button>
+                            ) : null}
                           </div>,
                           document.body,
                         )}

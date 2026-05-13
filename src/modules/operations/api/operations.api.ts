@@ -15,6 +15,8 @@ import {
   ReturnPaymentsListApiResponse,
   CreateReturnPaymentRequest,
   ReturnPaymentApiResponse,
+  UpdateOperationRequest,
+  UpdateOperationPaymentRequest,
 } from '../types/operations.types.ts';
 
 const OPERATIONS_BASE_PATH = '/api/operations';
@@ -68,6 +70,18 @@ export async function createOperation(
   return response.data.data;
 }
 
+export async function updateOperation(
+  operationId: number,
+  payload: UpdateOperationRequest,
+): Promise<PaymentOperationResponse> {
+  const response = await api.put<OperationApiResponse>(
+    `${OPERATIONS_BASE_PATH}/${operationId}`,
+    payload,
+  );
+
+  return response.data.data;
+}
+
 export async function getOperations(
   page: number,
   pageSize: number,
@@ -101,6 +115,18 @@ export async function addOperationPayment(
     `${OPERATIONS_BASE_PATH}/payments`,
     payload,
   );
+  return response.data.data;
+}
+
+export async function updateOperationPayment(
+  paymentId: number,
+  payload: UpdateOperationPaymentRequest,
+): Promise<OperationPaymentResponse> {
+  const response = await api.put<PaymentApiResponse>(
+    `${OPERATIONS_BASE_PATH}/payments/${paymentId}`,
+    payload,
+  );
+
   return response.data.data;
 }
 

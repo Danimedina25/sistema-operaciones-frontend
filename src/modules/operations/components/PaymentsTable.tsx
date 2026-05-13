@@ -15,6 +15,7 @@ interface PaymentsTableProps {
   processingPaymentId?: number | null;
   montoPendientePorRegistrar?:number | null;
   onAddPayment?: () => void;
+  onEditPayment?: (paymentId: number) => void;
 }
 
 type PaymentActionType = 'VALIDATE' | 'REJECT';
@@ -30,7 +31,8 @@ export function PaymentsTable({
   onRejectPayment,
   processingPaymentId = null,
   montoPendientePorRegistrar = null,
-  onAddPayment
+  onAddPayment,
+  onEditPayment
 }: PaymentsTableProps) {
   const { hasRole } = useAuth();
 
@@ -180,7 +182,8 @@ export function PaymentsTable({
                 <th className="px-4 py-3 font-medium">Fecha pago</th>
                 <th className="px-4 py-3 font-medium">Validado por</th>
                 <th className="px-4 py-3 font-medium">Fecha validación</th>
-                <th className="px-4 py-3 font-medium">Comprobante</th>
+                <th className="px-4 py-3 font-medium">Estatus</th>
+                <th className="px-4 py-3 font-medium">Opciones</th>
                 {canValidatePayments ? (
                   <th className="px-4 py-3 font-medium">Acciones</th>
                 ) : null}
@@ -209,7 +212,7 @@ export function PaymentsTable({
                     <td className="px-4 py-4">
                       <div className="flex flex-col">
                         <span className="font-medium text-slate-900">
-                          {payment.cuentaDestinoBanco}
+                          {payment.cuentaDestinoBanco ?? '-'}
                         </span>
 
                         <span className="text-xs text-slate-500">
@@ -218,13 +221,9 @@ export function PaymentsTable({
                       </div>
                     </td>
 
-                    <td className="px-4 py-4">
-                      <PaymentStatusBadge status={payment.estatus} />
-                    </td>
-
                     <td className="px-4 py-4 text-slate-600">
-                      {payment.observaciones ?? ''}
-                    </td>             
+                      {payment.observaciones ?? '-'}
+                    </td>  
 
                     <td className="px-4 py-4 text-slate-600">
                       {formatDateTime(payment.fechaPago)}
@@ -239,15 +238,31 @@ export function PaymentsTable({
                     </td>
 
                     <td className="px-4 py-4">
+                      <PaymentStatusBadge status={payment.estatus} />
+                    </td>
+
+                  <td className="px-4 py-4">
+                    <div className="flex w-[170px] flex-col gap-2">
                       <a
                         href={payment.comprobanteUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-200"
+                        className="inline-flex w-full items-center justify-center rounded-lg bg-amber-100 px-3 py-2 text-sm font-medium text-amber-700 transition hover:bg-amber-200"
                       >
                         Ver comprobante
                       </a>
-                    </td>
+
+                      {isPendingValidation && onEditPayment ? (
+                        <button
+                          type="button"
+                          onClick={() => onEditPayment(payment.id)}
+                          className="inline-flex w-full items-center justify-center rounded-lg bg-amber-100 px-3 py-2 text-sm font-medium text-amber-700 transition hover:bg-amber-200"
+                        >
+                          Editar pago
+                        </button>
+                      ) : null}
+                    </div>
+                  </td>
 
                     {canValidatePayments ? (
                       <td className="px-4 py-4">

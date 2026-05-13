@@ -17,6 +17,8 @@ import {
 } from '../types/operations.types.ts';
 import { useFrequentClientNames } from '../hooks/use-frequently-client-names.js';
 import { useClientes } from '@/modules/clientes/hooks/use-clientes.js';
+import { useUpdateOperation } from '../hooks/use-update-operation.js';
+import { UpdateOperationForm } from '../components/UpdateOperationForm.js';
 
 const initialFilters: OperationsFiltersType = {
   operationId: 0,
@@ -34,6 +36,9 @@ export default function OperationsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isAddPaymentModalOpen, setIsAddPaymentModalOpen] = useState(false);
   const [selectedOperation, setSelectedOperation] = useState<PaymentOperationResponse | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [operationToEdit, setOperationToEdit] =
+    useState<PaymentOperationResponse | null>(null);
 
   const { clientNames: frequentClientNames } = useFrequentClientNames();
   const {
@@ -41,6 +46,15 @@ export default function OperationsPage() {
     isLoading: isLoadingClientes,
     fetchClientes
   } = useClientes();
+
+  const { isSubmitting: isSubmittingUpdate, submitUpdateOperation } =
+  useUpdateOperation({
+    onSuccess: async () => {
+      setIsEditModalOpen(false);
+      setOperationToEdit(null);
+      await fetchOperations(currentPage);
+    },
+  });
 
   useEffect(()=>{
     fetchClientes()
@@ -82,6 +96,21 @@ export default function OperationsPage() {
 
     setSelectedOperation(operation);
     setIsAddPaymentModalOpen(true);
+  }
+
+  function handleOpenEditOperation(operationId: number) {
+    const operation = operations.find((item) => item.id === operationId);
+
+    if (!operation) return;
+
+    const canEdit =
+      operation.estatus === 'PENDIENTE_VALIDACION' ||
+      operation.estatus === 'INGRESO_PARCIAL';
+
+    if (!canEdit) return;
+
+    setOperationToEdit(operation);
+    setIsEditModalOpen(true);
   }
 
   const {
@@ -163,6 +192,7 @@ export default function OperationsPage() {
             });
           }}
           onAddPayment={handleOpenAddPayment}
+          onEditOperation={handleOpenEditOperation}
           onOperationUpdated={() => fetchOperations(currentPage)}
         />
 
@@ -193,6 +223,30 @@ export default function OperationsPage() {
           clientes={clientes}
           onSubmit={submitCreateOperation}
         />
+        )}
+      </Modal>
+
+      <Modal
+        open={isEditModalOpen}
+        title="Editar operación"
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setOperationToEdit(null);
+        }}
+      >
+        {isLoadingClientes || operationToEdit === null ? (
+          <div className="py-8 text-center text-sm text-slate-500">
+            Cargando formulario...
+          </div>
+        ) : (
+          <UpdateOperationForm
+            operation={operationToEdit}
+            isSubmitting={isSubmittingUpdate}
+            clientes={clientes}
+            onSubmit={(values) =>
+              submitUpdateOperation(operationToEdit.id, values)
+            }
+          />
         )}
       </Modal>
 

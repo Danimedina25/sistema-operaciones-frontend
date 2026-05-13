@@ -13,6 +13,7 @@ import OperationsPage from '@/modules/operations/pages/OperationsPage';
 import OperationDetailPage from '@/modules/operations/pages/OperationDetailPage';
 import DashboardPage from '@/app/pages/DashboardPage';
 import ClientesPage from '@/modules/clientes/pages/ClientesPage';
+import ReturnsPage from '@/modules/operations/pages/ReturnsPage';
 
 export const router = createBrowserRouter([
   {
@@ -96,7 +97,7 @@ export const router = createBrowserRouter([
             children: [
               {
                 path: paths.devolutions,
-                element: <OperationsPage />,
+                element: <ReturnsPage />,
               },
             ],
           },

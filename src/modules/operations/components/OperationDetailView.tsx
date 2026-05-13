@@ -20,6 +20,7 @@ interface OperationDetailViewProps {
   canViewFinancialDetails: boolean;
   onOperationUpdated?: () => void | Promise<void>;
   scrollToPayments?: boolean;
+  onEditPayment?: (paymentId: number) => void;
 }
 
 export function OperationDetailView({
@@ -34,6 +35,7 @@ export function OperationDetailView({
   canViewFinancialDetails,
   onOperationUpdated,
   scrollToPayments = false,
+  onEditPayment
 }: OperationDetailViewProps) {
   const paymentsSectionRef = useRef<HTMLDivElement | null>(null);
 
@@ -80,10 +82,11 @@ export function OperationDetailView({
       />
 
       <div ref={paymentsSectionRef}>
-        <PaymentsTable
+       <PaymentsTable
           payments={operation.pagos}
           onValidatePayment={onValidatePayment}
           onAddPayment={() => onAddPayment(operation.id)}
+          onEditPayment={onEditPayment}
           onRejectPayment={onRejectPayment}
           montoPendientePorRegistrar={operation.saldoPendientePorRegistrar}
           processingPaymentId={processingPaymentId}
@@ -94,7 +97,7 @@ export function OperationDetailView({
         returns={returns}
         montoPendientePorRetornar={montoPendientePorRetornar}
         onAddReturnPayment={onAddReturnPayment}
-        canAddReturn={montoPendientePorRetornar > 0 && (operation.estatus === 'FACTURADA' || operation.estatus === 'RETORNO_PARCIAL')}
+        canAddReturn={montoPendientePorRetornar > 0 && (operation.estatus === 'VALIDADA' || operation.estatus === 'RETORNO_PARCIAL')}
       />
     </div>
   );

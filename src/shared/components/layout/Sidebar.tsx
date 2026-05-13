@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Landmark, LogOut, ReceiptText, UserRound, UserSquare, CreditCard } from 'lucide-react';
+import { LayoutDashboard, Users, Landmark, LogOut, ReceiptText, UserRound, UserSquare, CreditCard, RotateCcw, HandCoins, BadgeDollarSign, BanknoteArrowDown } from 'lucide-react';
 import { paths } from '@/routes/paths';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { cn } from '@/shared/lib/cn';
@@ -40,13 +40,13 @@ const navItems: NavItem[] = [
    {
     to: paths.operations,
     label: 'Operaciones',
-    icon: ReceiptText,
+    icon: BadgeDollarSign,
     allowedRoles: ['ADMIN', 'GERENTE', 'SOCIO_COMERCIAL'],
   },
   {
     to: paths.devolutions,
-    label: 'Devoluciones',
-    icon: ReceiptText,
+    label: 'Retornos',
+    icon: BanknoteArrowDown,
     allowedRoles: ['ADMIN', 'GERENTE', 'SOCIO_COMERCIAL'],
   },
 ];

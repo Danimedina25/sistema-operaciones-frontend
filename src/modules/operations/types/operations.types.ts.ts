@@ -5,7 +5,6 @@ export type OperationStatus =
   | 'INGRESO_PARCIAL'
   | 'VALIDADA'
   | 'RECHAZADA'
-  | 'FACTURADA'
   | 'RETORNO_PARCIAL'
   | 'COMPLETADA';
 
@@ -53,6 +52,13 @@ export interface CreateOperationRequest {
   observaciones?: string;
 }
 
+export interface UpdateOperationRequest {
+  clienteId: number;
+  montoTotal: number;
+  socioComercialId: number;
+  observaciones?: string;
+}
+
 export interface AddPaymentRequest {
   operacionId: number;
   monto: number;
@@ -61,7 +67,13 @@ export interface AddPaymentRequest {
   comprobanteUrl: string;
   observaciones?: string;
 }
-
+export interface UpdateOperationPaymentRequest {
+  monto: number;
+  tipoPago: PaymentType;
+  cuentaDestinoId: number;
+  comprobanteUrl: string;
+  observaciones?: string;
+}
 export interface UpdatePaymentStatusRequest {
   observaciones?: string;
 }
@@ -88,6 +100,7 @@ export interface OperationPaymentResponse {
 
 export interface PaymentOperationResponse {
   id: number;
+  clienteId: number;
   clienteNombre: string;
   montoTotal: number;
   montoValidado: number;

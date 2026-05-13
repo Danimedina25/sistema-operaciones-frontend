@@ -12,6 +12,7 @@ interface OperationDetailContainerProps {
   onAddPayment: (operation: PaymentOperationResponse) => void;
   onAddReturnPayment: (operation: PaymentOperationResponse, montoPendienteARetornar: number) => void;
   scrollToPayments?: boolean;
+  onEditPayment: (operation: PaymentOperationResponse, paymentId: number) => void;
 }
 
 export function OperationDetailContainer({
@@ -20,6 +21,7 @@ export function OperationDetailContainer({
   onAddPayment,
   onAddReturnPayment,
   scrollToPayments = false,
+  onEditPayment
 }: OperationDetailContainerProps) {
   const { operation, isLoading, fetchOperation } =
     useOperationDetail(operationId);
@@ -78,12 +80,15 @@ export function OperationDetailContainer({
   }
 
   return (
-    <OperationDetailView
+   <OperationDetailView
       operation={operation}
       returns={returns}
       onBack={onBack}
       onAddPayment={() => onAddPayment(operation)}
-      onAddReturnPayment={( montoPendienteARetornar: number) => onAddReturnPayment(operation, montoPendienteARetornar)}
+      onEditPayment={(paymentId) => onEditPayment(operation, paymentId)}
+      onAddReturnPayment={(montoPendienteARetornar: number) =>
+        onAddReturnPayment(operation, montoPendienteARetornar)
+      }
       onValidatePayment={submitValidatePayment}
       onRejectPayment={submitRejectPayment}
       processingPaymentId={activeProcessingPaymentId}

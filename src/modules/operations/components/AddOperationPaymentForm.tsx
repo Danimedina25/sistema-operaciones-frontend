@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Input } from '@/shared/components/ui/Input';
 import { Button } from '@/shared/components/ui/Button';
@@ -27,13 +27,15 @@ interface AddOperationPaymentFormProps {
 
 function normalizeCurrencyInput(value: string) {
   const cleaned = value.replace(/[^\d.]/g, '');
-
   const parts = cleaned.split('.');
   const integerPart = parts[0] ?? '';
   const decimalPart = parts[1] ?? '';
 
   const normalizedInteger = integerPart.replace(/^0+(?=\d)/, '') || '0';
-  const formattedInteger = normalizedInteger.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const formattedInteger = normalizedInteger.replace(
+    /\B(?=(\d{3})+(?!\d))/g,
+    ',',
+  );
 
   if (parts.length === 1) {
     return formattedInteger;
@@ -57,6 +59,11 @@ function formatCurrencyDisplay(value: number) {
   });
 }
 
+function isImageFile(file?: File | null) {
+  if (!file) return false;
+  return file.type.startsWith('image/');
+}
+
 export function AddOperationPaymentForm({
   isSubmitting,
   bankAccounts,
@@ -66,24 +73,26 @@ export function AddOperationPaymentForm({
   onSubmit,
 }: AddOperationPaymentFormProps) {
   const {
-  register,
-  handleSubmit,
-  setValue,
-  control,
-  trigger,
-  formState: { errors },
-} = useForm<AddOperationPaymentFormValues>({
-  defaultValues: {
-    monto: '',
-    tipoPago: '',
-    cuentaDestinoId: '',
-    comprobante: undefined,
-    observaciones: '',
-  },
-  mode: 'onChange',
-});
+    register,
+    handleSubmit,
+    setValue,
+    control,
+    formState: { errors },
+  } = useForm<AddOperationPaymentFormValues>({
+    defaultValues: {
+      monto: '',
+      tipoPago: '',
+      cuentaDestinoId: '',
+      comprobante: undefined,
+      observaciones: '',
+    },
+    mode: 'onChange',
+  });
 
   const [isDragging, setIsDragging] = useState(false);
+  const [selectedPreviewUrl, setSelectedPreviewUrl] = useState<string | null>(
+    null,
+  );
 
   const montoRaw = useWatch({
     control,
@@ -94,6 +103,37 @@ export function AddOperationPaymentForm({
     control,
     name: 'comprobante',
   });
+
+  const tipoPago = useWatch({
+    control,
+    name: 'tipoPago',
+  });
+
+  const esEfectivo = tipoPago === 'EFECTIVO';
+
+  const requiereComprobante =
+    tipoPago === 'TRANSFERENCIA' || tipoPago === 'DEPOSITO';
+
+  const selectedFile =
+    comprobante instanceof FileList && comprobante.length > 0
+      ? comprobante[0]
+      : null;
+
+  const selectedReceiptIsImage = isImageFile(selectedFile);
+
+  useEffect(() => {
+    if (!selectedFile || !selectedReceiptIsImage) {
+      setSelectedPreviewUrl(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(selectedFile);
+    setSelectedPreviewUrl(objectUrl);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [selectedFile, selectedReceiptIsImage]);
 
   const montoCapturado = parseCurrency(montoRaw);
   const excedeSaldoPendiente = montoCapturado > saldoPendiente;
@@ -121,9 +161,7 @@ export function AddOperationPaymentForm({
   }
 
   return (
-    <form className="space-y-6" 
-       onSubmit={handleSubmit(onSubmit)}
-    >
+    <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
       <div className="grid gap-3 rounded-xl bg-slate-50 p-4 text-sm md:grid-cols-4">
         <div>
           <span className="block text-slate-500">Monto total requerido</span>
@@ -147,7 +185,9 @@ export function AddOperationPaymentForm({
         </div>
 
         <div>
-          <span className="block text-slate-500">Faltante después del comprobante</span>
+          <span className="block text-slate-500">
+            Faltante después del comprobante
+          </span>
           <span className="font-semibold text-slate-900">
             ${formatCurrencyDisplay(faltanteDespuesDelPago)}
           </span>
@@ -167,6 +207,7 @@ export function AddOperationPaymentForm({
             <label className="mb-2 block text-sm font-medium text-slate-700">
               Monto del comprobante
             </label>
+
             <Input
               type="text"
               inputMode="decimal"
@@ -176,6 +217,7 @@ export function AddOperationPaymentForm({
                 required: 'El monto es obligatorio',
                 validate: (value) => {
                   const parsed = Number(value.replace(/,/g, ''));
+
                   if (Number.isNaN(parsed) || parsed <= 0) {
                     return 'El monto debe ser mayor a cero';
                   }
@@ -201,34 +243,9 @@ export function AddOperationPaymentForm({
 
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">
-              Cuenta destino
-            </label>
-            <select
-              className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
-              {...register('cuentaDestinoId', {
-                required: 'La cuenta destino es obligatoria',
-                validate: (value) =>
-                  Number(value) > 0 || 'La cuenta destino es obligatoria',
-              })}
-            >
-              <option value="">Selecciona una cuenta</option>
-              {bankAccounts.map((account) => (
-                <option key={account.id} value={account.id}>
-                  {account.label}
-                </option>
-              ))}
-            </select>
-            {errors.cuentaDestinoId ? (
-              <p className="mt-1 text-xs text-red-600">
-                {errors.cuentaDestinoId.message}
-              </p>
-            ) : null}
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
               Tipo de comprobante
             </label>
+
             <select
               className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
               {...register('tipoPago', {
@@ -240,10 +257,47 @@ export function AddOperationPaymentForm({
               <option value="TRANSFERENCIA">Transferencia</option>
               <option value="DEPOSITO">Depósito</option>
             </select>
+
             {errors.tipoPago ? (
-              <p className="mt-1 text-xs text-red-600">{errors.tipoPago.message}</p>
+              <p className="mt-1 text-xs text-red-600">
+                {errors.tipoPago.message}
+              </p>
             ) : null}
           </div>
+
+          {!esEfectivo ? (
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                Cuenta destino
+              </label>
+
+              <select
+                className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
+                {...register('cuentaDestinoId', {
+                  validate: (value) => {
+                    if (!requiereComprobante) return true;
+
+                    return (
+                      Number(value) > 0 || 'La cuenta destino es obligatoria'
+                    );
+                  },
+                })}
+              >
+                <option value="">Selecciona una cuenta</option>
+                {bankAccounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.label}
+                  </option>
+                ))}
+              </select>
+
+              {errors.cuentaDestinoId ? (
+                <p className="mt-1 text-xs text-red-600">
+                  {errors.cuentaDestinoId.message}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         <div className="space-y-4">
@@ -252,14 +306,58 @@ export function AddOperationPaymentForm({
               Comprobante de pago
             </label>
 
+            {selectedFile ? (
+              <div className="mb-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
+                    {selectedPreviewUrl ? (
+                      <img
+                        src={selectedPreviewUrl}
+                        alt="Comprobante seleccionado"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="px-2 text-center text-xs font-medium text-slate-500">
+                        Archivo seleccionado
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-slate-800">
+                      Comprobante seleccionado
+                    </p>
+
+                    <p className="mt-1 truncate text-xs text-slate-500">
+                      {selectedFile.name}
+                    </p>
+
+                    {selectedPreviewUrl ? (
+                      <a
+                        href={selectedPreviewUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-3 inline-flex rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-200"
+                      >
+                        Ver imagen
+                      </a>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
             <Controller
               control={control}
               name="comprobante"
               rules={{
-                validate: (value) =>
-                  value && value.length > 0
+                validate: (value) => {
+                  if (!requiereComprobante) return true;
+
+                  return value && value.length > 0
                     ? true
-                    : 'El comprobante es obligatorio',
+                    : 'El comprobante es obligatorio';
+                },
               }}
               render={({ field }) => (
                 <>
@@ -308,13 +406,13 @@ export function AddOperationPaymentForm({
                     </p>
                   </label>
 
-                  {comprobante instanceof FileList && comprobante.length > 0 ? (
-                   <p className="mt-2 text-xs text-slate-600">
-                    Archivo seleccionado:{' '}
-                    <span className="font-medium text-slate-900">
-                      {comprobante[0]?.name}
-                    </span>
-                  </p>
+                  {selectedFile ? (
+                    <p className="mt-2 text-xs text-slate-600">
+                      Archivo seleccionado:{' '}
+                      <span className="font-medium text-slate-900">
+                        {selectedFile.name}
+                      </span>
+                    </p>
                   ) : null}
                 </>
               )}
@@ -332,6 +430,7 @@ export function AddOperationPaymentForm({
           <label className="mb-2 block text-sm font-medium text-slate-700">
             Observaciones
           </label>
+
           <textarea
             rows={3}
             placeholder="Opcional"
