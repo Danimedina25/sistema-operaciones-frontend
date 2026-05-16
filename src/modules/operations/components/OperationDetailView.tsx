@@ -12,11 +12,13 @@ interface OperationDetailViewProps {
   operation: PaymentOperationResponse;
   returns?: ReturnPaymentResponse[];
   onBack: () => void;
+  backLabel?: string;
   onValidatePayment?: (paymentId: number) => Promise<void> | void;
   onRejectPayment?: (paymentId: number, motivo: string) => Promise<void> | void;
   processingPaymentId?: number | null;
   onAddPayment: (operationId: number) => void;
-  onAddReturnPayment: (montoPendienteARetornar: number) => void;
+  onAddReturnPayment?: (montoPendienteARetornar: number) => void;
+  canRequestReturn?: boolean;
   canViewFinancialDetails: boolean;
   onOperationUpdated?: () => void | Promise<void>;
   scrollToPayments?: boolean;
@@ -27,6 +29,7 @@ export function OperationDetailView({
   operation,
   returns = [],
   onBack,
+  backLabel = 'Operaciones',
   onValidatePayment,
   onRejectPayment,
   processingPaymentId = null,
@@ -35,7 +38,8 @@ export function OperationDetailView({
   canViewFinancialDetails,
   onOperationUpdated,
   scrollToPayments = false,
-  onEditPayment
+  onEditPayment,
+  canRequestReturn = false,
 }: OperationDetailViewProps) {
   const paymentsSectionRef = useRef<HTMLDivElement | null>(null);
 
@@ -52,8 +56,16 @@ export function OperationDetailView({
     return () => window.clearTimeout(timeoutId);
   }, [scrollToPayments, operation.id]);
 
-  const totalRetornado = returns.reduce(
-    (total, item) => total + item.monto,
+  const totalRetornado = returns
+  .filter((item) => item.estatus === 'REALIZADO')
+  .reduce((total, item) => total + item.monto, 0);  
+  
+  const totalRetornoComprometido = returns
+  .filter((item) => item.estatus === 'SOLICITADO' || item.estatus === 'REALIZADO')
+  .reduce((total, item) => total + item.monto, 0);
+
+  const montoPendientePorSolicitar = Math.max(
+    (operation.montoTotalDevolverCliente ?? 0) - totalRetornoComprometido,
     0,
   );
 
@@ -71,7 +83,7 @@ export function OperationDetailView({
           className="inline-flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-slate-100 hover:text-slate-900"
         >
           <ArrowLeft className="h-4 w-4" />
-          Operaciones
+          {backLabel}
         </button>
       </div>
 
@@ -93,12 +105,21 @@ export function OperationDetailView({
         />
       </div>
 
-      <ReturnPaymentsTable
-        returns={returns}
-        montoPendientePorRetornar={montoPendientePorRetornar}
-        onAddReturnPayment={onAddReturnPayment}
-        canAddReturn={montoPendientePorRetornar > 0 && (operation.estatus === 'VALIDADA' || operation.estatus === 'RETORNO_PARCIAL')}
-      />
+    <ReturnPaymentsTable
+      returns={returns}
+      montoPendientePorRetornar={montoPendientePorSolicitar}
+      onAddReturnPayment={onAddReturnPayment}
+      canAddReturn={
+        canRequestReturn &&
+        !!onAddReturnPayment &&
+        montoPendientePorSolicitar > 0 &&
+        (
+          operation.estatus === 'VALIDADA' ||
+          operation.estatus === 'RETORNO_SOLICITADO' ||
+          operation.estatus === 'RETORNO_PARCIAL'
+        )
+      }
+    />
     </div>
   );
 }

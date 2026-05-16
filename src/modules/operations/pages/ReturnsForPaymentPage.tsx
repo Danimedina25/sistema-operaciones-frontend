@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { OperationsFilters } from '@/modules/operations/components/OperationsFilters';
-import { useOperationsReadyForReturn } from '../hooks/returns/use-operation-returns';
+import { useOperationsWithRequestedReturns } from '../hooks/returns/use-operation-returns';
 import {
   OperationsFilters as OperationsFiltersType,
   PaymentOperationResponse,
@@ -22,7 +22,7 @@ const initialFilters: OperationsFiltersType = {
 
 const PAGE_SIZE = 10;
 
-export default function ReturnsPage() {
+export default function ReturnsForPaymentPage() {
   const navigate = useNavigate();
 
   const [filters, setFilters] =
@@ -34,7 +34,7 @@ export default function ReturnsPage() {
     data,
     isLoading,
     refetch,
-  } = useOperationsReadyForReturn(currentPage, PAGE_SIZE, filters);
+  } = useOperationsWithRequestedReturns(currentPage, PAGE_SIZE, filters);
 
   const operations = data?.content ?? [];
   const totalPages = data?.totalPages ?? 0;
@@ -45,10 +45,10 @@ export default function ReturnsPage() {
       <div className="relative flex items-center rounded-2xl bg-white p-4 shadow-sm">
         <div>
           <h1 className="text-lg font-semibold text-slate-900">
-            Retornos
+            Retornos solicitados
           </h1>
           <p className="text-xs text-slate-500">
-            Operaciones listas para retornar dinero al cliente primario
+            Operaciones con retornos solicitados pendientes de realizar
           </p>
         </div>
       </div>
@@ -71,11 +71,11 @@ export default function ReturnsPage() {
 
       <section className="rounded-2xl bg-white p-4 shadow-sm">
         <div className="mb-5">
-          <h2 className="text-lg font-semibold text-slate-900">
-            Operaciones pendientes de retorno
+         <h2 className="text-lg font-semibold text-slate-900">
+            Operaciones con retornos solicitados
           </h2>
           <p className="text-xs text-slate-500">
-            Revisa las operaciones con saldo listo para devolver al cliente.
+            Revisa las operaciones donde el socio comercial ya indicó cómo desea el retorno.
           </p>
         </div>
 
@@ -84,6 +84,10 @@ export default function ReturnsPage() {
           isLoading={isLoading}
           onViewDetail={(operationId) => {
             navigate(`/retornos/${operationId}`);
+          }}
+          onRequestReturn={(operationId) => {
+            alert(operationId)
+            //navigate(buildReturnRequestDetailPath(operationId));
           }}
         />
 

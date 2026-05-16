@@ -2,19 +2,35 @@
 
 import { useQuery } from '@tanstack/react-query';
 
+import {
+  getOperationsAvailableToRequestReturn,
+  getOperationsWithRequestedReturns,
+  getReturnOperationById,
+  getReturnsByOperationId,
+} from '../../api/operations.api';
 import { OperationsFilters } from '../../types/operations.types.ts';
-import { getOperationsReadyForReturn, getReturnOperationById, getReturnsByOperationId } from '../../api/operations.api.js';
 
-
-export function useOperationsReadyForReturn(
+export function useOperationsAvailableToRequestReturn(
   page: number,
   pageSize: number,
   filters: OperationsFilters,
 ) {
   return useQuery({
-    queryKey: ['operations-ready-for-return', page, pageSize, filters],
+    queryKey: ['operations-available-to-request-return', page, pageSize, filters],
     queryFn: () =>
-      getOperationsReadyForReturn(page, pageSize, filters),
+      getOperationsAvailableToRequestReturn(page, pageSize, filters),
+  });
+}
+
+export function useOperationsWithRequestedReturns(
+  page: number,
+  pageSize: number,
+  filters: OperationsFilters,
+) {
+  return useQuery({
+    queryKey: ['operations-with-requested-returns', page, pageSize, filters],
+    queryFn: () =>
+      getOperationsWithRequestedReturns(page, pageSize, filters),
   });
 }
 

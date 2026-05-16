@@ -1,19 +1,28 @@
 import { createBrowserRouter } from 'react-router-dom';
 import { paths } from '@/routes/paths';
+
 import { ProtectedRoute } from '@/routes/guards/ProtectedRoute';
 import { PublicOnlyRoute } from '@/routes/guards/PublicOnlyRoute';
 import { RoleGuard } from '@/routes/guards/RoleGuard';
+
 import { AdminLayout } from '@/shared/components/layout/AdminLayout';
+
 import LoginPage from '@/modules/auth/pages/LoginPage';
 import ActivateAccountPage from '@/modules/auth/pages/ActivateAccountPage';
 import VerifyEmailPage from '@/modules/auth/pages/VerifyEmailPage';
+
+import DashboardPage from '@/app/pages/DashboardPage';
+
 import UsersPage from '@/modules/users/pages/UsersPage';
+import ClientesPage from '@/modules/clientes/pages/ClientesPage';
+
 import BankAccountsPage from '@/modules/bank-accounts/pages/BankAccountsPage';
+
 import OperationsPage from '@/modules/operations/pages/OperationsPage';
 import OperationDetailPage from '@/modules/operations/pages/OperationDetailPage';
-import DashboardPage from '@/app/pages/DashboardPage';
-import ClientesPage from '@/modules/clientes/pages/ClientesPage';
-import ReturnsPage from '@/modules/operations/pages/ReturnsPage';
+
+import ReturnsForRequestPage from '@/modules/operations/pages/ReturnsForRequestPage';
+import ReturnsForPaymentPage from '@/modules/operations/pages/ReturnsForPaymentPage';
 
 export const router = createBrowserRouter([
   {
@@ -25,14 +34,17 @@ export const router = createBrowserRouter([
       },
     ],
   },
+
   {
     path: paths.activateAccount,
     element: <ActivateAccountPage />,
   },
+
   {
     path: paths.verifyEmail,
     element: <VerifyEmailPage />,
   },
+
   {
     element: <ProtectedRoute />,
     children: [
@@ -53,8 +65,11 @@ export const router = createBrowserRouter([
               },
             ],
           },
-           {
-            element: <RoleGuard allowedRoles={['ADMIN']} />,
+
+          {
+            element: (
+              <RoleGuard allowedRoles={['ADMIN', 'SOCIO_COMERCIAL']} />
+            ),
             children: [
               {
                 path: paths.clientes,
@@ -64,7 +79,15 @@ export const router = createBrowserRouter([
           },
 
           {
-            element: <RoleGuard allowedRoles={['ADMIN', 'GERENTE', 'AUXILIAR_CUENTAS']} />,
+            element: (
+              <RoleGuard
+                allowedRoles={[
+                  'ADMIN',
+                  'GERENTE',
+                  'AUXILIAR_CUENTAS',
+                ]}
+              />
+            ),
             children: [
               {
                 path: paths.bankAccounts,
@@ -74,7 +97,15 @@ export const router = createBrowserRouter([
           },
 
           {
-            element: <RoleGuard allowedRoles={['ADMIN', 'GERENTE', 'SOCIO_COMERCIAL']} />,
+            element: (
+              <RoleGuard
+                allowedRoles={[
+                  'ADMIN',
+                  'GERENTE',
+                  'SOCIO_COMERCIAL',
+                ]}
+              />
+            ),
             children: [
               {
                 path: paths.operations,
@@ -84,7 +115,17 @@ export const router = createBrowserRouter([
           },
 
           {
-            element: <RoleGuard allowedRoles={['ADMIN', 'GERENTE', 'SOCIO_COMERCIAL', 'JEFA_CAJAS', 'AUXILIAR_CUENTAS']} />,
+            element: (
+              <RoleGuard
+                allowedRoles={[
+                  'ADMIN',
+                  'GERENTE',
+                  'SOCIO_COMERCIAL',
+                  'JEFA_CAJAS',
+                  'AUXILIAR_CUENTAS',
+                ]}
+              />
+            ),
             children: [
               {
                 path: paths.operationDetail,
@@ -92,19 +133,47 @@ export const router = createBrowserRouter([
               },
             ],
           },
+
           {
-            element: <RoleGuard allowedRoles={['ADMIN', 'GERENTE', 'SOCIO_COMERCIAL']} />,
+            element: (
+              <RoleGuard
+                allowedRoles={[
+                  'ADMIN',
+                  'GERENTE',
+                  'SOCIO_COMERCIAL',
+                ]}
+              />
+            ),
             children: [
               {
-                path: paths.devolutions,
-                element: <ReturnsPage />,
+                path: paths.returnsforrequest,
+                element: <ReturnsForRequestPage />,
+              },
+
+              {
+                path: paths.returnRequestDetail,
+                element: <OperationDetailPage />,
               },
             ],
           },
 
           {
-            element: <RoleGuard allowedRoles={['ADMIN', 'GERENTE', 'SOCIO_COMERCIAL', 'JEFA_CAJAS', 'AUXILIAR_CUENTAS']} />,
+            element: (
+              <RoleGuard
+                allowedRoles={[
+                  'ADMIN',
+                  'GERENTE',
+                  'JEFA_CAJAS',
+                  'AUXILIAR_CUENTAS',
+                ]}
+              />
+            ),
             children: [
+              {
+                path: paths.returnsforpayment,
+                element: <ReturnsForPaymentPage />,
+              },
+
               {
                 path: paths.devolutionDetail,
                 element: <OperationDetailPage />,

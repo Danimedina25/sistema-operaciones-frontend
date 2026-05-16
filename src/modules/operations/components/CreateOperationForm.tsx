@@ -84,6 +84,18 @@ export function CreateOperationForm({
     },
     mode: 'onChange',
   });
+  const [clienteSearch, setClienteSearch] = useState('');
+  const [showClienteOptions, setShowClienteOptions] = useState(false);
+
+  const filteredClientes = useMemo(() => {
+    const search = clienteSearch.trim().toLowerCase();
+
+    if (!search) return clientes;
+
+    return clientes.filter((cliente) =>
+      cliente.label.toLowerCase().includes(search),
+    );
+  }, [clientes, clienteSearch]);
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -200,25 +212,68 @@ export function CreateOperationForm({
               Nombre del cliente
             </label>
             <>
-            <select
-              className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
-              {...register('clienteId')}
-            >
-              <option value="">Selecciona un cliente</option>
-              {clientes.map((cliente) => (
-                <option key={cliente.id} value={cliente.id}>
-                  {cliente.label}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <Input
+                type="text"
+                placeholder="Buscar cliente..."
+                value={clienteSearch}
+                onFocus={() => setShowClienteOptions(true)}
+                onBlur={() => {
+                  setTimeout(() => {
+                    setShowClienteOptions(false);
+                  }, 150);
+                }}
+                onChange={(event) => {
+                  setClienteSearch(event.target.value);
+                  setShowClienteOptions(true);
+                  setValue('clienteId', undefined, {
+                    shouldValidate: false,
+                    shouldDirty: true,
+                    shouldTouch: false,
+                  });
+                }}
+              />
 
-            {errors.clienteId ? (
-              <p className="mt-1 text-xs text-red-600">
-                {errors.clienteId.message}
-              </p>
-            ) : null}
+              {showClienteOptions ? (
+                <div className="absolute z-50 mt-2 max-h-60 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
+                  {filteredClientes.length > 0 ? (
+                    filteredClientes.map((cliente) => (
+                      <button
+                        key={cliente.id}
+                        type="button"
+                        className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                        onClick={() => {
+                          setClienteSearch(cliente.label);
+
+                          setValue('clienteId', cliente.id, {
+                            shouldValidate: true,
+                            shouldDirty: true,
+                            shouldTouch: true,
+                          });
+
+                          setShowClienteOptions(false);
+                          void trigger('clienteId');
+                        }}
+                      >
+                        {cliente.label}
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-4 py-3 text-sm text-slate-500">
+                      No se encontraron clientes
+                    </div>
+                  )}
+                </div>
+              ) : null}
+            </div>
             </>
           </div>
+
+          {errors.clienteId ? (
+            <p className="mt-1 text-xs text-red-600">
+              {errors.clienteId.message}
+            </p>
+          ) : null}
 
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">

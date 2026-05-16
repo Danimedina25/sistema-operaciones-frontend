@@ -11,6 +11,7 @@ export interface ClienteResponse {
 }
 
 export interface CreateClienteRequest {
+  userId: number
   nombre: string;
   nivelesRedComercial: number;
   porcentajeComisionAplicado: number;

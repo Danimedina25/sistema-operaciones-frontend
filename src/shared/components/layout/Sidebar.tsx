@@ -33,9 +33,9 @@ const navItems: NavItem[] = [
   },
   {
     to: paths.clientes,
-    label: 'Clientes primarios',
+    label: 'Clientes',
     icon: UserSquare,
-    allowedRoles: ['ADMIN'],
+    allowedRoles: ['ADMIN', 'GERENTE', 'SOCIO_COMERCIAL'],
   },
    {
     to: paths.operations,
@@ -44,10 +44,16 @@ const navItems: NavItem[] = [
     allowedRoles: ['ADMIN', 'GERENTE', 'SOCIO_COMERCIAL'],
   },
   {
-    to: paths.devolutions,
-    label: 'Retornos',
+    to: paths.returnsforrequest,
+    label: 'Retornos por solicitar',
     icon: BanknoteArrowDown,
     allowedRoles: ['ADMIN', 'GERENTE', 'SOCIO_COMERCIAL'],
+  },
+  {
+    to: paths.returnsforpayment,
+    label: 'Retornos por pagar',
+    icon: BanknoteArrowDown,
+    allowedRoles: ['ADMIN', 'GERENTE'],
   },
 ];
 

@@ -15,6 +15,7 @@ import { ClienteForm } from '../components/ClienteForm';
 import { ClientesFilters } from '../components/ClientesFilters';
 import { ClientesTable } from '../components/ClientesTable';
 import { CreateClienteForm } from '../components/CreateClienteForm';
+import { useAuth } from '@/modules/auth/store/auth.context';
 
 const initialFilters: ClientesFiltersType = {
   search: '',
@@ -36,21 +37,30 @@ export default function ClientesPage() {
     isLoading,
     processingClienteId,
     fetchClientes,
+    fetchMyClientes,
     handleActivate,
     handleDeactivate,
   } = useClientes();
 
+  const { user } = useAuth();
+
   const { isSubmitting: isCreating, submitCreateCliente } = useCreateCliente({
     onSuccess: async () => {
       setIsCreateModalOpen(false);
-      await fetchClientes();
+       if(user?.roles.includes('SOCIO_COMERCIAL'))
+        void fetchMyClientes();
+      else
+        await fetchClientes();
     },
   });
 
   const { isSubmitting: isUpdating, submitUpdateCliente } = useUpdateCliente({
     onSuccess: async () => {
       setEditingCliente(null);
-      await fetchClientes();
+      if(user?.roles.includes('SOCIO_COMERCIAL'))
+        void fetchMyClientes();
+      else
+        await fetchClientes();
     },
   });
 
@@ -75,14 +85,14 @@ export default function ClientesPage() {
       <div className="flex flex-col gap-4 rounded-2xl bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-xl font-semibold text-slate-900">
-            Clientes primarios
+            Clientes
           </h1>
           <p className="mt-2 text-sm text-slate-500">
             Administra clientes, niveles de red comercial y porcentajes de comisión.
           </p>
         </div>
 
-        <CanAccess roles={['ADMIN', 'GERENTE']}>
+        <CanAccess roles={['ADMIN', 'GERENTE',  'SOCIO_COMERCIAL']}>
           <button
             type="button"
             onClick={() => setIsCreateModalOpen(true)}

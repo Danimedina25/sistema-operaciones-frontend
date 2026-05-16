@@ -30,7 +30,7 @@ export const createClienteSchema = z.object({
     },
     z
       .number({ error: 'El porcentaje de comisión es obligatorio' })
-      .min(0, 'El porcentaje no puede ser negativo')
+      .min(0.01, 'El porcentaje debe ser mayor a 0')
       .max(100, 'El porcentaje no puede ser mayor a 100'),
   ),
 });

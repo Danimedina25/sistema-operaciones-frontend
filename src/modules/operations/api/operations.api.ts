@@ -17,6 +17,7 @@ import {
   ReturnPaymentApiResponse,
   UpdateOperationRequest,
   UpdateOperationPaymentRequest,
+  RealizeReturnPaymentRequest,
 } from '../types/operations.types.ts';
 
 const OPERATIONS_BASE_PATH = '/api/operations';
@@ -180,27 +181,52 @@ export async function getFrequentClientNames(): Promise<string[]> {
   return response.data.data;
 }
 
-export async function getOperationsReadyForReturn(
+export async function getOperationsAvailableToRequestReturn(
   page: number,
   pageSize: number,
   filters: OperationsFilters,
 ): Promise<PageResponse<PaymentOperationResponse>> {
-
   const query = buildOperationsQuery(page, pageSize, filters);
 
   const response = await api.get<OperationsPageApiResponse>(
-    `${RETURNS_BASE_PATH}/ready?${query}`,
+    `${RETURNS_BASE_PATH}/available-to-request?${query}`,
   );
 
   return response.data.data;
 }
 
-export async function registerReturnPayment(
+export async function getOperationsWithRequestedReturns(
+  page: number,
+  pageSize: number,
+  filters: OperationsFilters,
+): Promise<PageResponse<PaymentOperationResponse>> {
+  const query = buildOperationsQuery(page, pageSize, filters);
+
+  const response = await api.get<OperationsPageApiResponse>(
+    `${RETURNS_BASE_PATH}/requested?${query}`,
+  );
+
+  return response.data.data;
+}
+
+export async function requestReturnPayment(
   operationId: number,
   payload: CreateReturnPaymentRequest,
 ): Promise<ReturnPaymentResponse> {
   const response = await api.post<ReturnPaymentApiResponse>(
-    `${RETURNS_BASE_PATH}/${operationId}`,
+    `${RETURNS_BASE_PATH}/${operationId}/request`,
+    payload,
+  );
+
+  return response.data.data;
+}
+
+export async function realizeReturnPayment(
+  returnPaymentId: number,
+  payload: RealizeReturnPaymentRequest,
+): Promise<ReturnPaymentResponse> {
+  const response = await api.patch<ReturnPaymentApiResponse>(
+    `${RETURNS_BASE_PATH}/payments/${returnPaymentId}/realize`,
     payload,
   );
 

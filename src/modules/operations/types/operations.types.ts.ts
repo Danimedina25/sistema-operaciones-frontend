@@ -5,6 +5,7 @@ export type OperationStatus =
   | 'INGRESO_PARCIAL'
   | 'VALIDADA'
   | 'RECHAZADA'
+  | 'RETORNO_SOLICITADO'
   | 'RETORNO_PARCIAL'
   | 'COMPLETADA';
 
@@ -12,6 +13,10 @@ export type PaymentStatus =
   | 'PENDIENTE_VALIDACION'
   | 'VALIDADA'
   | 'RECHAZADA';
+
+export type ReturnPaymentStatus =
+  | 'SOLICITADO'
+  | 'REALIZADO';
 
 export type PaymentType =
   | 'TRANSFERENCIA'
@@ -130,8 +135,12 @@ export interface PaymentOperationResponse {
 export interface CreateReturnPaymentRequest {
   monto: number;
   tipoPago: PaymentType;
-  cuentaOrigenId?: number | null;
   cuentaDestinoCliente?: string | null;
+  observaciones?: string | null;
+}
+
+export interface RealizeReturnPaymentRequest {
+  cuentaOrigenId?: number | null;
   comprobanteUrl?: string | null;
   observaciones?: string | null;
 }
@@ -141,14 +150,25 @@ export interface ReturnPaymentResponse {
   operationId: number;
   monto: number;
   tipoPago: PaymentType;
+  estatus: ReturnPaymentStatus;
+
   cuentaOrigenId?: number | null;
   cuentaOrigenNombre?: string | null;
+  cuentaOrigenBanco?: string | null;
+
   cuentaDestinoCliente?: string | null;
   comprobanteUrl?: string | null;
   observaciones?: string | null;
-  registradoPorId: number;
-  registradoPorNombre: string;
-  fechaRetorno: string;
+
+  solicitadoPorId?: number | null;
+  solicitadoPorNombre?: string | null;
+
+  pagadoPorId?: number | null;
+  pagadoPorNombre?: string | null;
+
+  fechaSolicitud: string;
+  fechaPago?: string | null;
+
   createdAt: string;
 }
 

@@ -19,6 +19,7 @@ import { useFrequentClientNames } from '../hooks/use-frequently-client-names.js'
 import { useClientes } from '@/modules/clientes/hooks/use-clientes.js';
 import { useUpdateOperation } from '../hooks/use-update-operation.js';
 import { UpdateOperationForm } from '../components/UpdateOperationForm.js';
+import { useAuth } from '@/modules/auth/store/auth.context.js';
 
 const initialFilters: OperationsFiltersType = {
   operationId: 0,
@@ -44,7 +45,8 @@ export default function OperationsPage() {
   const {
     clientes: clientesCatalog,
     isLoading: isLoadingClientes,
-    fetchClientes
+    fetchClientes,
+    fetchMyClientes
   } = useClientes();
 
   const { isSubmitting: isSubmittingUpdate, submitUpdateOperation } =
@@ -56,9 +58,15 @@ export default function OperationsPage() {
     },
   });
 
+  const {user } = useAuth();
+
   useEffect(()=>{
-    fetchClientes()
+    if(user?.roles.includes('SOCIO_COMERCIAL'))
+        void fetchMyClientes();
+      else
+        fetchClientes();
   }, [])
+  
   const {
     operations,
     isLoading,

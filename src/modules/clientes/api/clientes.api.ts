@@ -14,6 +14,11 @@ export async function getClientes(): Promise<ClienteResponse[]> {
   return response.data.data;
 }
 
+export async function getMyClientes(user_id: number): Promise<ClienteResponse[]> {
+  const response = await api.get<ClientesListApiResponse>(`${CLIENTES_BASE_PATH}/my_clients/${user_id}`,);
+  return response.data.data;
+}
+
 export async function getClientesActivos(): Promise<ClienteResponse[]> {
   const response = await api.get<ClientesListApiResponse>(
     `${CLIENTES_BASE_PATH}/active`,

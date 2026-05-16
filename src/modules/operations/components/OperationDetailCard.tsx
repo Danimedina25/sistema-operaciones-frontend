@@ -183,8 +183,12 @@ export function OperationDetailCard({
                 value={`${operation.porcentajeComisionOficinaTotal}%`}
               />
 
-              <SummaryItem
-                label="Porcentaje total descontado al cliente"
+             <SummaryItem
+                label={
+                  operation.estatus === 'COMPLETADA'
+                    ? 'Porcentaje total descontado al cliente'
+                    : 'Porcentaje total a descontar al cliente'
+                }
                 value={`${
                   operation.porcentajeComisionOficinaTotal +
                   operation.porcentajeComisionRedTotal
@@ -204,8 +208,12 @@ export function OperationDetailCard({
               />
 
               <SummaryItem
-                label="Total descontado al cliente"
-                value={formatCurrency(
+                label={
+                  operation.estatus === 'COMPLETADA'
+                    ? 'Total descontado al cliente'
+                    : 'Total a descontar al cliente'
+                }
+                 value={formatCurrency(
                   operation.montoComisionOficinaTotal +
                     operation.montoComisionRedTotal,
                 )}
@@ -224,7 +232,7 @@ export function OperationDetailCard({
             </p>
 
             <p className="mt-2 text-sm text-amber-800">
-              Monto calculado después de descontar comisiones de red y
+              Monto calculado después de descontar comisiones de socios comerciales y
               comisión de oficina.
             </p>
           </div>

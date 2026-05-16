@@ -11,6 +11,7 @@ const statusStyles: Record<OperationStatus, string> = {
   RECHAZADA: 'bg-red-100 text-red-800',
   RETORNO_PARCIAL: 'bg-cyan-100 text-cyan-800',
   COMPLETADA: 'bg-slate-200 text-slate-800',
+  RETORNO_SOLICITADO: 'bg-orange-100 text-orange-800',
 };
 
 export function OperationStatusBadge({ status }: OperationStatusBadgeProps) {

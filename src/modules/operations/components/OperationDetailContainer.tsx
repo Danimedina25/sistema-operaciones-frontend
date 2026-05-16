@@ -9,8 +9,12 @@ import { useReturnsByOperationId } from '../hooks/returns/use-operation-returns'
 interface OperationDetailContainerProps {
   operationId: number;
   onBack: () => void;
+  backLabel?: string;
   onAddPayment: (operation: PaymentOperationResponse) => void;
-  onAddReturnPayment: (operation: PaymentOperationResponse, montoPendienteARetornar: number) => void;
+  onAddReturnPayment?: (
+    operation: PaymentOperationResponse,
+    montoPendienteARetornar: number,
+  ) => void;
   scrollToPayments?: boolean;
   onEditPayment: (operation: PaymentOperationResponse, paymentId: number) => void;
 }
@@ -18,11 +22,17 @@ interface OperationDetailContainerProps {
 export function OperationDetailContainer({
   operationId,
   onBack,
+  backLabel = 'Operaciones',
   onAddPayment,
   onAddReturnPayment,
   scrollToPayments = false,
   onEditPayment
 }: OperationDetailContainerProps) {
+  const { hasRole } = useAuth();
+
+  const canViewFinancialDetails = !hasRole(['SOCIO_COMERCIAL']);
+  const canRequestReturn = hasRole(['SOCIO_COMERCIAL']);
+
   const { operation, isLoading, fetchOperation } =
     useOperationDetail(operationId);
 
@@ -31,10 +41,6 @@ export function OperationDetailContainer({
     isLoading: isLoadingReturns,
     refetch: refetchReturns,
   } = useReturnsByOperationId(operationId);
-
-  const { hasRole } = useAuth();
-
-  const canViewFinancialDetails = !hasRole(['SOCIO_COMERCIAL']);
 
   const { processingPaymentId: validatingPaymentId, submitValidatePayment } =
     useValidatePayment({
@@ -80,19 +86,24 @@ export function OperationDetailContainer({
   }
 
   return (
-   <OperationDetailView
+    <OperationDetailView
       operation={operation}
       returns={returns}
       onBack={onBack}
       onAddPayment={() => onAddPayment(operation)}
       onEditPayment={(paymentId) => onEditPayment(operation, paymentId)}
-      onAddReturnPayment={(montoPendienteARetornar: number) =>
-        onAddReturnPayment(operation, montoPendienteARetornar)
+      onAddReturnPayment={
+        canRequestReturn && onAddReturnPayment
+          ? (montoPendienteARetornar: number) =>
+              onAddReturnPayment(operation, montoPendienteARetornar)
+          : undefined
       }
+      backLabel={backLabel}
       onValidatePayment={submitValidatePayment}
       onRejectPayment={submitRejectPayment}
       processingPaymentId={activeProcessingPaymentId}
       canViewFinancialDetails={canViewFinancialDetails}
+      canRequestReturn={canRequestReturn}
       onOperationUpdated={async () => {
         await fetchOperation();
         await refetchReturns();
