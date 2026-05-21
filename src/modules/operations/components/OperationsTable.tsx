@@ -43,9 +43,9 @@ export function OperationsTable({
 
   const menuRef = useRef<HTMLDivElement | null>(null);
   const { processingOperationId, submitMarkAsInvoiced } =
-  useMarkOperationAsInvoiced({
-    onSuccess: onOperationUpdated,
-  });
+    useMarkOperationAsInvoiced({
+      onSuccess: onOperationUpdated,
+    });
 
   const { hasRole } = useAuth();
 
@@ -135,12 +135,12 @@ export function OperationsTable({
             <tr className="text-left text-sm text-slate-600">
               <th className="px-4 py-3 font-medium text-center">Cliente primario</th>
               <th className="px-4 py-3 font-medium text-center">Socio comercial</th>
+              <th className="px-4 py-3 font-medium text-center">Fecha de creación</th>
               <th className="px-4 py-3 font-medium text-center">Monto total</th>
               <th className="px-4 py-3 font-medium text-center">Monto ingresado</th>
-             {/*  <th className="px-4 py-3 font-medium text-center">Red comercial</th> */}
+              {/*  <th className="px-4 py-3 font-medium text-center">Red comercial</th> */}
               <th className="px-4 py-3 font-medium text-center">Monto retornado</th>
               <th className="px-4 py-3 font-medium text-center">Estatus</th>
-              <th className="px-4 py-3 font-medium text-center">Creada</th>
               <th className="px-4 py-3 font-medium text-center">Acciones</th>
             </tr>
           </thead>
@@ -173,6 +173,10 @@ export function OperationsTable({
                     </td>
 
                     <td className="px-4 py-4 text-slate-600">
+                      {formatDateTime(operation.createdAt)}
+                    </td>
+
+                    <td className="px-4 py-4 text-slate-600">
                       {formatCurrency(operation.montoTotal)}
                     </td>
 
@@ -187,7 +191,7 @@ export function OperationsTable({
                       </div>
                     </td>
 
-{/*                     <td className="px-4 py-4 text-slate-600">
+                    {/*                     <td className="px-4 py-4 text-slate-600">
                       <div>
                         {operation.nivelesRedComercial} nivel{operation.nivelesRedComercial > 1 ? 'es' : ''}
                       </div>
@@ -198,7 +202,7 @@ export function OperationsTable({
  */}
                     <td className="px-4 py-4 text-slate-600">
                       <div className="mt-1 text-xs text-slate-400">
-                        {formatCurrency(operation.montoValidado)} 
+                        {formatCurrency(operation.montoRetornado)}
                       </div>
                     </td>
 
@@ -206,10 +210,6 @@ export function OperationsTable({
                       <div className="flex justify-center">
                         <OperationStatusBadge status={operation.estatus} />
                       </div>
-                    </td>
-
-                    <td className="px-4 py-4 text-slate-600">
-                      {formatDateTime(operation.createdAt)}
                     </td>
 
                     <td className="px-4 py-4 text-right">
@@ -247,8 +247,8 @@ export function OperationsTable({
                             </button>
 
                             {canManageOperationFlow &&
-                            (operation.estatus === 'PENDIENTE_VALIDACION' ||
-                              operation.estatus === 'INGRESO_PARCIAL') && (
+                              (operation.estatus === 'PENDIENTE_VALIDACION' ||
+                                operation.estatus === 'INGRESO_PARCIAL') && (
                                 <button
                                   type="button"
                                   onClick={() => {

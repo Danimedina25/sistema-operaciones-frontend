@@ -16,6 +16,7 @@ export const operationStatusLabels: Record<OperationStatus, string> = {
   PENDIENTE_VALIDACION: 'Pendiente validación',
   VALIDADA: 'Validado',
   RECHAZADA: 'Rechazado',
+  RETORNO_SOLICITADO: 'Retorno solicitado',
   RETORNO_PARCIAL: 'Retorno parcial',
   COMPLETADA: 'Completado',
   INGRESO_PARCIAL: 'Ingreso parcial'

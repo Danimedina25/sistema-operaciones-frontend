@@ -3,14 +3,20 @@ import toast from 'react-hot-toast';
 
 import { requestReturnPayment } from '@/modules/operations/api/operations.api';
 import { getApiErrorMessage } from '@/shared/utils/errors';
-import { AddReturnPaymentFormValues } from '../../components/AddReturnPaymentForm';
+import { RequestReturnFormValues } from '../../components/returns/RequestReturnForm';
 
 interface UseRequestReturnPaymentOptions {
   onSuccess?: () => void | Promise<void>;
 }
 
-function parseCurrency(value: string) {
-  return Number(value.replace(/,/g, ''));
+function cleanText(value?: string) {
+  const cleaned = value?.trim();
+  return cleaned ? cleaned : undefined;
+}
+
+function cleanNumbers(value?: string) {
+  const cleaned = value?.replace(/\s/g, '').trim();
+  return cleaned ? cleaned : undefined;
 }
 
 export function useRequestReturnPayment(
@@ -20,24 +26,25 @@ export function useRequestReturnPayment(
 
   const submitRequestReturnPayment = async (
     operationId: number,
-    values: AddReturnPaymentFormValues,
+    values: RequestReturnFormValues,
   ) => {
     try {
-      if (!values.tipoPago) {
-        throw new Error('El tipo de retorno es obligatorio');
-      }
-
       setIsSubmitting(true);
 
-      const isCash = values.tipoPago === 'EFECTIVO';
-
       await requestReturnPayment(operationId, {
-        monto: parseCurrency(values.monto),
-        tipoPago: values.tipoPago,
-        cuentaDestinoCliente: isCash
-          ? null
-          : values.cuentaDestinoCliente?.replace(/\s/g, ''),
-        observaciones: values.observaciones?.trim() || undefined,
+        pagos: values.pagos.map((pago) => {
+          const isCash = pago.tipoPago === 'EFECTIVO';
+
+          return {
+            monto: pago.monto,
+            tipoPago: pago.tipoPago,
+            banco: isCash ? undefined : cleanText(pago.banco),
+            titular: isCash ? undefined : cleanText(pago.titular),
+            cuenta: isCash ? undefined : cleanNumbers(pago.cuenta),
+            clabe: isCash ? undefined : cleanNumbers(pago.clabe),
+            observaciones: cleanText(pago.observaciones),
+          };
+        }),
       });
 
       toast.success('Solicitud de retorno registrada correctamente');

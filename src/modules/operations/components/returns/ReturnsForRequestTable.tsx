@@ -4,7 +4,8 @@ import {
   formatCurrency,
   formatDateTime,
 } from '@/modules/operations/utils/operation-formatters';
-import { PaymentOperationResponse } from '../../types/operations.types.ts';
+import { PaymentOperationResponse } from '../../types/operations.types.ts.js';
+import { useEffect } from 'react';
 
 interface ReturnsTableProps {
   operations: PaymentOperationResponse[];
@@ -13,24 +14,29 @@ interface ReturnsTableProps {
   onRequestReturn: (operationId: number) => void;
 }
 
-export function ReturnsTable({
+export function ReturnsForRequestTable({
   operations,
   isLoading,
   onViewDetail,
   onRequestReturn
 }: ReturnsTableProps) {
+
+  useEffect(() => {
+    console.log("Operations:", operations);
+  }, [operations]);
+
   if (!isLoading && operations.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
         <HandCoins className="mx-auto mb-3 h-8 w-8 text-slate-400" />
 
         <p className="text-sm font-medium text-slate-700">
-          No hay operaciones listas para retorno
+          No hay operaciones listas para solicitar retorno
         </p>
 
         <p className="mt-1 text-xs text-slate-500">
-          Cuando una operación tenga dinero pendiente por devolver al cliente,
-          aparecerá aquí.
+          Cuando una operación tenga dinero pendiente por devolver al cliente y que no haya sido
+          solicitado, aparecerá aquí.
         </p>
       </div>
     );
@@ -51,11 +57,11 @@ export function ReturnsTable({
               </th>
 
               <th className="px-4 py-3 font-medium text-center">
-                Monto total
+                Fecha de creación
               </th>
 
               <th className="px-4 py-3 font-medium text-center">
-                Monto validado
+                Monto total
               </th>
 
               <th className="px-4 py-3 font-medium text-center">
@@ -63,15 +69,19 @@ export function ReturnsTable({
               </th>
 
               <th className="px-4 py-3 font-medium text-center">
-                Estatus
+                Monto solicitado
               </th>
 
               <th className="px-4 py-3 font-medium text-center">
-                Creada
+                Monto retornado
               </th>
 
               <th className="px-4 py-3 font-medium text-center">
-                Solicitud
+                Estatus solicitud
+              </th>
+
+              <th className="px-4 py-3 font-medium text-center">
+                Acciones
               </th>
             </tr>
           </thead>
@@ -105,16 +115,12 @@ export function ReturnsTable({
                     {operation.socioComercialNombre}
                   </td>
 
-                  <td className="px-4 py-4 text-slate-600">
-                    {formatCurrency(operation.montoTotal)}
+                   <td className="px-4 py-4 text-slate-600">
+                    {formatDateTime(operation.createdAt)}
                   </td>
 
-                  <td className="px-4 py-4 text-slate-600">
-                    <div>{formatCurrency(operation.montoValidado)}</div>
-
-                    <div className="mt-1 text-xs text-slate-400">
-                      validado
-                    </div>
+                  <td className="px-4 py-4 font-semibold text-slate-600">
+                    {formatCurrency(operation.montoTotal)}
                   </td>
 
                   <td className="px-4 py-4 text-slate-600">
@@ -127,34 +133,45 @@ export function ReturnsTable({
                     </div>
                   </td>
 
-                  <td className="px-4 py-4">
-                    <div className="flex justify-center">
-                      <OperationStatusBadge status={operation.estatus} />
+                  <td className="px-4 py-4 text-slate-600">
+                    <div>{formatCurrency(operation.montoSolicitadoRetorno)}</div>
+
+                    <div className="mt-1 text-xs text-slate-400">
+                      solicitado
                     </div>
                   </td>
 
                   <td className="px-4 py-4 text-slate-600">
-                    {formatDateTime(operation.createdAt)}
+                    <div>{formatCurrency(operation.montoRetornado)}</div>
+
+                    <div className="mt-1 text-xs text-slate-400">
+                      retornado
+                    </div>
                   </td>
 
-                 <td className="px-4 py-4 text-center">
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
+                  <td className="px-4 py-4">
+                    <div className="flex justify-center">
+                      <OperationStatusBadge status={operation.estatus} isReturn />
+                    </div>
+                  </td>
 
-                        if (operation.estatus === 'VALIDADA') {
+                  <td className="px-4 py-4 text-center">
+                    {operation.montoTotalDevolverCliente - operation.montoSolicitadoRetorno > 0 ? (
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
                           onRequestReturn(operation.id);
-                        } else {
-                          onViewDetail(operation.id);
-                        }
-                      }}
-                      className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
-                    >
-                      {operation.estatus === 'VALIDADA'
-                        ? 'Solicitar retorno'
-                        : 'Ver retorno'}
-                    </button>
+                        }}
+                        className="inline-flex items-center gap-2 rounded-lg border border-violet-200 bg-violet-100 text-violet-800 px-3 py-2 text-xs font-semibold transition hover:bg-violet-200"
+                      >
+                        Solicitar
+                      </button>
+                    ) : (
+                      <span className="text-xs font-medium text-slate-400">
+                        Solicitado
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))

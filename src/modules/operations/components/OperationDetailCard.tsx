@@ -6,6 +6,8 @@ import {
 import { PaymentOperationResponse } from '../types/operations.types.ts';
 import { OperationStatusBadge } from './OperationStatusBadge.js';
 import { useMarkOperationAsInvoiced } from '../hooks/use-mark-operations-as-invoiced.js';
+import { useLocation } from 'react-router-dom';
+import { paths } from '@/routes/paths.js';
 
 interface OperationDetailCardProps {
   operation: PaymentOperationResponse;
@@ -69,12 +71,18 @@ export function OperationDetailCard({
     operation.updatedAt &&
     operation.createdAt &&
     new Date(operation.updatedAt).getTime() !==
-      new Date(operation.createdAt).getTime();
+    new Date(operation.createdAt).getTime();
 
   const { processingOperationId, submitMarkAsInvoiced } =
     useMarkOperationAsInvoiced({
       onSuccess: onOperationUpdated,
     });
+
+  const location = useLocation();
+
+  const isReturnRequestDetail = location.pathname.startsWith(
+    paths.returnsforrequest,
+  );
 
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -94,7 +102,10 @@ export function OperationDetailCard({
         </div>
 
         <div className="self-start">
-          <OperationStatusBadge status={operation.estatus} />
+          <OperationStatusBadge
+            status={operation.estatus}
+            isReturn={isReturnRequestDetail}
+          />
         </div>
       </div>
 
@@ -130,16 +141,15 @@ export function OperationDetailCard({
 
           <SummaryItem
             label="Monto pendiente por validar"
-            value={formatCurrency(operation.saldoPendiente)}
+            value={formatCurrency(operation.saldoPendientePorValidar)}
           />
 
           {canViewFinancialDetails && (
             <>
               <SummaryItem
                 label="Nivel de socios comerciales"
-                value={`${operation.nivelesRedComercial} nivel${
-                  operation.nivelesRedComercial > 1 ? 'es' : ''
-                }`}
+                value={`${operation.nivelesRedComercial} nivel${operation.nivelesRedComercial > 1 ? 'es' : ''
+                  }`}
               />
 
               <SummaryItem
@@ -183,16 +193,15 @@ export function OperationDetailCard({
                 value={`${operation.porcentajeComisionOficinaTotal}%`}
               />
 
-             <SummaryItem
+              <SummaryItem
                 label={
                   operation.estatus === 'COMPLETADA'
                     ? 'Porcentaje total descontado al cliente'
                     : 'Porcentaje total a descontar al cliente'
                 }
-                value={`${
-                  operation.porcentajeComisionOficinaTotal +
+                value={`${operation.porcentajeComisionOficinaTotal +
                   operation.porcentajeComisionRedTotal
-                }%`}
+                  }%`}
               />
 
               <SummaryItem
@@ -213,9 +222,9 @@ export function OperationDetailCard({
                     ? 'Total descontado al cliente'
                     : 'Total a descontar al cliente'
                 }
-                 value={formatCurrency(
+                value={formatCurrency(
                   operation.montoComisionOficinaTotal +
-                    operation.montoComisionRedTotal,
+                  operation.montoComisionRedTotal,
                 )}
                 variant="blue"
               />

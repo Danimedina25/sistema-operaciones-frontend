@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowDown, ArrowLeft } from 'lucide-react';
 import { OperationDetailCard } from '@/modules/operations/components/OperationDetailCard';
 import { PaymentsTable } from '@/modules/operations/components/PaymentsTable';
 import {
@@ -7,6 +7,7 @@ import {
   ReturnPaymentResponse,
 } from '../types/operations.types.ts';
 import { ReturnPaymentsTable } from './returns/ReturnPaymentsTable.js';
+import { useAuth } from '@/modules/auth/store/auth.context.js';
 
 interface OperationDetailViewProps {
   operation: PaymentOperationResponse;
@@ -17,11 +18,13 @@ interface OperationDetailViewProps {
   onRejectPayment?: (paymentId: number, motivo: string) => Promise<void> | void;
   processingPaymentId?: number | null;
   onAddPayment: (operationId: number) => void;
-  onAddReturnPayment?: (montoPendienteARetornar: number) => void;
+  onAddRequestReturnPayment?: (operation: PaymentOperationResponse, montoPendientePorSolicitar: number) => void;
+  onPayReturn?: (returnPayment: ReturnPaymentResponse) => void;
   canRequestReturn?: boolean;
   canViewFinancialDetails: boolean;
   onOperationUpdated?: () => void | Promise<void>;
   scrollToPayments?: boolean;
+  scrollToReturns?: boolean;
   onEditPayment?: (paymentId: number) => void;
 }
 
@@ -34,14 +37,40 @@ export function OperationDetailView({
   onRejectPayment,
   processingPaymentId = null,
   onAddPayment,
-  onAddReturnPayment,
+  onAddRequestReturnPayment,
+  onPayReturn,
   canViewFinancialDetails,
   onOperationUpdated,
   scrollToPayments = false,
+  scrollToReturns = false,
   onEditPayment,
   canRequestReturn = false,
 }: OperationDetailViewProps) {
   const paymentsSectionRef = useRef<HTMLDivElement | null>(null);
+  const returnsSectionRef = useRef<HTMLDivElement | null>(null);
+  const [showScrollDownButton, setShowScrollDownButton] = useState(true);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const returnsElement = returnsSectionRef.current;
+
+    if (!returnsElement) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setShowScrollDownButton(!entry.isIntersecting);
+      },
+      {
+        threshold: 0.15,
+      },
+    );
+
+    observer.observe(returnsElement);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [operation.id]);
 
   useEffect(() => {
     if (!scrollToPayments) return;
@@ -56,24 +85,32 @@ export function OperationDetailView({
     return () => window.clearTimeout(timeoutId);
   }, [scrollToPayments, operation.id]);
 
-  const totalRetornado = returns
-  .filter((item) => item.estatus === 'REALIZADO')
-  .reduce((total, item) => total + item.monto, 0);  
-  
-  const totalRetornoComprometido = returns
-  .filter((item) => item.estatus === 'SOLICITADO' || item.estatus === 'REALIZADO')
-  .reduce((total, item) => total + item.monto, 0);
+  useEffect(() => {
+    if (!scrollToReturns) return;
+
+    const timeoutId = window.setTimeout(() => {
+      returnsSectionRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }, 100);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [scrollToReturns, operation.id]);
+
+  function scrollToTables() {
+    returnsSectionRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  }
 
   const montoPendientePorSolicitar = Math.max(
-    (operation.montoTotalDevolverCliente ?? 0) - totalRetornoComprometido,
+    operation.montoTotalDevolverCliente - operation.montoSolicitadoRetorno,
     0,
   );
 
-  const montoPendientePorRetornar = Math.max(
-    (operation.montoTotalDevolverCliente ?? 0) - totalRetornado,
-    0,
-  );
-
+  const montoPendientePorRetornar = operation.saldoPendienteRetornar
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 text-sm text-slate-500">
@@ -94,7 +131,7 @@ export function OperationDetailView({
       />
 
       <div ref={paymentsSectionRef}>
-       <PaymentsTable
+        <PaymentsTable
           payments={operation.pagos}
           onValidatePayment={onValidatePayment}
           onAddPayment={() => onAddPayment(operation.id)}
@@ -105,21 +142,36 @@ export function OperationDetailView({
         />
       </div>
 
-    <ReturnPaymentsTable
-      returns={returns}
-      montoPendientePorRetornar={montoPendientePorSolicitar}
-      onAddReturnPayment={onAddReturnPayment}
-      canAddReturn={
-        canRequestReturn &&
-        !!onAddReturnPayment &&
-        montoPendientePorSolicitar > 0 &&
-        (
-          operation.estatus === 'VALIDADA' ||
-          operation.estatus === 'RETORNO_SOLICITADO' ||
-          operation.estatus === 'RETORNO_PARCIAL'
-        )
-      }
-    />
+      <div ref={returnsSectionRef}>
+        <ReturnPaymentsTable
+          returns={returns}
+          montoPendientePorRetornar={montoPendientePorRetornar}
+          montoPendientePorSolicitar={montoPendientePorSolicitar}
+          onAddRequestReturnPayment={() => {
+            onAddRequestReturnPayment?.(operation, montoPendientePorSolicitar);
+          }}
+          canManageReturnPayments={(user?.roles?.includes('ADMIN') || user?.roles?.includes('JEFA_CAJAS')) ?? false}
+          onPayReturn={onPayReturn}
+          operationStatus={operation.estatus}
+        />
+      </div>
+
+      {showScrollDownButton && (
+        <button
+          type="button"
+          onClick={() => {
+            returnsSectionRef.current?.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start',
+            });
+          }}
+          className="fixed bottom-6 right-6 z-40 inline-flex h-12 w-12 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg transition hover:bg-slate-800"
+          aria-label="Ir a retornos"
+          title="Ir a retornos"
+        >
+          <ArrowDown className="h-5 w-5" />
+        </button>
+      )}
     </div>
   );
 }

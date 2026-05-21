@@ -1,5 +1,17 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Landmark, LogOut, ReceiptText, UserRound, UserSquare, CreditCard, RotateCcw, HandCoins, BadgeDollarSign, BanknoteArrowDown } from 'lucide-react';
+import {
+  LayoutDashboard,
+  Users,
+  Landmark,
+  LogOut,
+  UserSquare,
+  CreditCard,
+  CircleDollarSign,
+  ClipboardList,
+  HandCoins,
+  WalletCards,
+} from 'lucide-react';
+
 import { paths } from '@/routes/paths';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { cn } from '@/shared/lib/cn';
@@ -28,7 +40,7 @@ const navItems: NavItem[] = [
   {
     to: paths.bankAccounts,
     label: 'Cuentas bancarias',
-    icon: CreditCard,
+    icon: Landmark,
     allowedRoles: ['ADMIN', 'GERENTE', 'AUXILIAR_CUENTAS'],
   },
   {
@@ -37,22 +49,22 @@ const navItems: NavItem[] = [
     icon: UserSquare,
     allowedRoles: ['ADMIN', 'GERENTE', 'SOCIO_COMERCIAL'],
   },
-   {
+  {
     to: paths.operations,
     label: 'Operaciones',
-    icon: BadgeDollarSign,
+    icon: ClipboardList,
     allowedRoles: ['ADMIN', 'GERENTE', 'SOCIO_COMERCIAL'],
   },
   {
     to: paths.returnsforrequest,
     label: 'Retornos por solicitar',
-    icon: BanknoteArrowDown,
+    icon: HandCoins,
     allowedRoles: ['ADMIN', 'GERENTE', 'SOCIO_COMERCIAL'],
   },
   {
     to: paths.returnsforpayment,
     label: 'Retornos por pagar',
-    icon: BanknoteArrowDown,
+    icon: WalletCards,
     allowedRoles: ['ADMIN', 'GERENTE'],
   },
 ];
@@ -68,7 +80,10 @@ export function Sidebar() {
   return (
     <aside className="flex h-full w-72 flex-shrink-0 flex-col border-r border-slate-200 bg-white">
       <div className="border-b border-slate-200 px-6 py-5">
-        <h1 className="text-xl font-bold text-slate-900">Sistema de operaciones</h1>
+        <h1 className="text-xl font-bold text-slate-900">
+          Sistema de operaciones
+        </h1>
+
         <p className="mt-1 text-sm text-slate-500">
           {user ? formatRoles(user.roles) : 'Panel administrativo'}
         </p>

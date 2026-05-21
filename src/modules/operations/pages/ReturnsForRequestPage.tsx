@@ -8,10 +8,12 @@ import {
   OperationsFilters as OperationsFiltersType,
   PaymentOperationResponse,
 } from '../types/operations.types.ts';
-import { ReturnsTable } from '../components/returns/ReturnsTable';
-import { buildOperationDetailPath, buildReturnRequestDetailPath } from '@/routes/paths';
+import { ReturnsForRequestTable } from '../components/returns/ReturnsForRequestTable';
+import { buildReturnRequestDetailPath } from '@/routes/paths';
 import { Modal } from '@/shared/components/ui/Modal';
 import { RequestReturnForm } from '../components/returns/RequestReturnForm';
+import { useRequestReturnPayment } from '../hooks/returns/use-request-return-payment';
+import { RequestReturnModal } from '../components/returns/RequestReturnModal';
 
 
 const initialFilters: OperationsFiltersType = {
@@ -38,6 +40,15 @@ export default function ReturnsForRequestPage() {
     isLoading,
     refetch,
   } = useOperationsAvailableToRequestReturn(currentPage, PAGE_SIZE, filters);
+
+  const { isSubmitting, submitRequestReturnPayment } =
+  useRequestReturnPayment({
+    onSuccess: async () => {
+      setIsRequestReturnModalOpen(false);
+      setSelectedOperation(null);
+      await refetch();
+    },
+  });
 
   const [isRequestReturnModalOpen, setIsRequestReturnModalOpen] = useState(false);
   const [selectedOperation, setSelectedOperation] =
@@ -82,6 +93,7 @@ export default function ReturnsForRequestPage() {
             setFilters(newFilters);
             setCurrentPage(0);
           }}
+          showEstatusFilter={false}
         />
       </section>
 
@@ -95,7 +107,7 @@ export default function ReturnsForRequestPage() {
           </p>
         </div>
 
-        <ReturnsTable
+        <ReturnsForRequestTable
           operations={operations}
           isLoading={isLoading}
           onViewDetail={(operationId) => {
@@ -115,37 +127,16 @@ export default function ReturnsForRequestPage() {
         </div>
       </section>
 
-      <Modal
+      <RequestReturnModal
         open={isRequestReturnModalOpen}
-        title="Solicitar retorno"
+        operation={selectedOperation}
+        isSubmitting={isSubmitting}
         onClose={() => {
           setIsRequestReturnModalOpen(false);
           setSelectedOperation(null);
         }}
-      >
-        {selectedOperation === null ? (
-          <div className="py-8 text-center text-sm text-slate-500">
-            Cargando formulario...
-          </div>
-        ) : (
-          <RequestReturnForm
-            isSubmitting={false}
-            montoTotalRetornar={selectedOperation.montoTotalDevolverCliente}
-            clienteNombre={selectedOperation.clienteNombre}
-            operationId={selectedOperation.id}
-            onSubmit={async (values) => {
-              console.log('Solicitud de retorno:', values);
-
-              // Aquí después llamas tu hook/API:
-              // await submitRequestReturn(selectedOperation.id, values);
-
-              setIsRequestReturnModalOpen(false);
-              setSelectedOperation(null);
-              await refetch();
-            }}
-          />
-        )}
-      </Modal>
+        onSubmit={submitRequestReturnPayment}
+      />
     </div>
   );
 }

@@ -8,7 +8,8 @@ import {
   OperationsFilters as OperationsFiltersType,
   PaymentOperationResponse,
 } from '../types/operations.types.ts';
-import { ReturnsTable } from '../components/returns/ReturnsTable';
+import { ReturnsForPaymentTable } from '../components/returns/ReturnsForPaymentTable';
+import { buildReturnPaymentDetailPath, buildReturnRequestDetailPath } from '@/routes/paths';
 
 
 const initialFilters: OperationsFiltersType = {
@@ -66,12 +67,13 @@ export default function ReturnsForPaymentPage() {
             setFilters(newFilters);
             setCurrentPage(0);
           }}
+          showEstatusFilter={false}
         />
       </section>
 
       <section className="rounded-2xl bg-white p-4 shadow-sm">
         <div className="mb-5">
-         <h2 className="text-lg font-semibold text-slate-900">
+          <h2 className="text-lg font-semibold text-slate-900">
             Operaciones con retornos solicitados
           </h2>
           <p className="text-xs text-slate-500">
@@ -79,15 +81,15 @@ export default function ReturnsForPaymentPage() {
           </p>
         </div>
 
-        <ReturnsTable
+        <ReturnsForPaymentTable
           operations={operations}
           isLoading={isLoading}
-          onViewDetail={(operationId) => {
-            navigate(`/retornos/${operationId}`);
-          }}
-          onRequestReturn={(operationId) => {
-            alert(operationId)
-            //navigate(buildReturnRequestDetailPath(operationId));
+          onReturnPayments={(operationId, scrollToReturns = false) => {
+            navigate(buildReturnPaymentDetailPath(operationId), {
+              state: {
+                scrollToReturns,
+              },
+            });
           }}
         />
 

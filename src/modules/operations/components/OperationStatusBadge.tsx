@@ -2,6 +2,7 @@ import { OperationStatus } from "../types/operations.types.ts";
 
 interface OperationStatusBadgeProps {
   status: OperationStatus;
+  isReturn?: boolean;
 }
 
 const statusStyles: Record<OperationStatus, string> = {
@@ -14,12 +15,37 @@ const statusStyles: Record<OperationStatus, string> = {
   RETORNO_SOLICITADO: 'bg-orange-100 text-orange-800',
 };
 
-export function OperationStatusBadge({ status }: OperationStatusBadgeProps) {
+const statusLabels: Record<OperationStatus, string> = {
+  PENDIENTE_VALIDACION: 'Pendiente validación',
+  INGRESO_PARCIAL: 'Ingreso parcial',
+  VALIDADA: 'Validada',
+  RECHAZADA: 'Rechazada',
+  RETORNO_PARCIAL: 'Retorno parcial',
+  COMPLETADA: 'Completada',
+  RETORNO_SOLICITADO: 'Retorno solicitado',
+};
+
+export function OperationStatusBadge({
+  status,
+  isReturn,
+}: OperationStatusBadgeProps) {
+
+  const isPendingReturnRequest =
+    isReturn && status === 'VALIDADA';
+
+  const label = isPendingReturnRequest
+    ? 'Retorno por solicitar'
+    : statusLabels[status];
+
+  const style = isPendingReturnRequest
+    ? 'bg-violet-100 text-violet-800'
+    : statusStyles[status];
+
   return (
     <span
-      className={`inline-flex min-w-[140px] items-center justify-center text-center rounded-full px-3 py-1 text-xs font-medium ${statusStyles[status]}`}
+      className={`inline-flex min-w-[140px] items-center justify-center rounded-full px-3 py-1 text-center text-xs font-medium ${style}`}
     >
-      {status.replace('_', ' ')}
+      {label}
     </span>
   );
 }

@@ -107,36 +107,58 @@ export interface PaymentOperationResponse {
   id: number;
   clienteId: number;
   clienteNombre: string;
+
   montoTotal: number;
   montoValidado: number;
   montoRegistrado: number;
-  saldoPendiente: number;
-  saldoPendientePorRegistrar:number;
+
+  saldoPendientePorValidar: number;
+  saldoPendientePorRegistrar: number;
+
   estatus: OperationStatus;
+
   socioComercialId: number;
   socioComercialNombre: string;
+
   nivelesRedComercial: number;
+
   porcentajeComisionAplicado: number;
   porcentajeComisionOficina: number;
 
   porcentajeComisionRedTotal: number;
   montoComisionRedTotal: number;
+
   porcentajeComisionOficinaTotal: number;
   montoComisionOficinaTotal: number;
+
   montoTotalDevolverCliente: number;
 
+  // NUEVOS CAMPOS
+  montoSolicitadoRetorno: number;
+  montoRetornado: number;
+  saldoPendienteRetornar: number;
+
   observaciones?: string | null;
+
   pagos: OperationPaymentResponse[];
+
   createdAt: string;
   updatedAt: string;
 }
 
 
-export interface CreateReturnPaymentRequest {
+export interface CreateReturnPaymentItemRequest {
   monto: number;
   tipoPago: PaymentType;
-  cuentaDestinoCliente?: string | null;
+  banco?: string | null;
+  titular?: string | null;
+  cuenta?: string | null;
+  clabe?: string | null;
   observaciones?: string | null;
+}
+
+export interface CreateReturnPaymentRequest {
+  pagos: CreateReturnPaymentItemRequest[];
 }
 
 export interface RealizeReturnPaymentRequest {
@@ -175,5 +197,6 @@ export interface ReturnPaymentResponse {
 export type OperationApiResponse = ApiResponse<PaymentOperationResponse>;
 export type OperationsPageApiResponse = ApiResponse<PageResponse<PaymentOperationResponse>>;
 export type PaymentApiResponse = ApiResponse<OperationPaymentResponse>;
-export type ReturnPaymentApiResponse = ApiResponse<ReturnPaymentResponse>;
+export type ReturnRequestPaymentApiResponse = ApiResponse<ReturnPaymentResponse[]>;
+export type ReturnRealizePaymentApiResponse = ApiResponse<ReturnPaymentResponse>;
 export type ReturnPaymentsListApiResponse = ApiResponse<ReturnPaymentResponse[]>;

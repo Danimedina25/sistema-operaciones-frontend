@@ -33,6 +33,8 @@ interface RequestReturnFormProps {
   operationId: number;
   clienteNombre: string;
   montoTotalRetornar: number;
+  montoSolicitado: number;
+  faltaPorSolicitar: number;
   isSubmitting: boolean;
   onSubmit: (values: RequestReturnFormValues) => Promise<void>;
 }
@@ -91,6 +93,8 @@ export function RequestReturnForm({
   operationId,
   clienteNombre,
   montoTotalRetornar,
+  montoSolicitado,
+  faltaPorSolicitar,
   isSubmitting,
   onSubmit,
 }: RequestReturnFormProps) {
@@ -159,13 +163,13 @@ export function RequestReturnForm({
     }, 0);
   }, [pagos]);
 
-  const saldoPendiente = Math.max(montoTotalRetornar - totalSolicitado, 0);
-  const excedente = Math.max(totalSolicitado - montoTotalRetornar, 0);
+  const saldoPendiente = Math.max(faltaPorSolicitar - totalSolicitado, 0);
+  const excedente = Math.max(totalSolicitado - faltaPorSolicitar, 0);
 
   const solicitudCompleta =
-    totalSolicitado === montoTotalRetornar && montoTotalRetornar > 0;
+  totalSolicitado === faltaPorSolicitar && faltaPorSolicitar > 0;
 
-  const excedeMonto = totalSolicitado > montoTotalRetornar;
+  const excedeMonto = totalSolicitado > faltaPorSolicitar;
 
  function updatePago(
   paymentId: string,
@@ -279,7 +283,7 @@ export function RequestReturnForm({
         <div>
           <span className="block text-slate-500">Monto solicitado</span>
           <span className="font-semibold text-slate-900">
-            ${formatCurrencyDisplay(totalSolicitado)}
+            ${formatCurrencyDisplay(montoSolicitado)}
           </span>
         </div>
 
@@ -290,7 +294,7 @@ export function RequestReturnForm({
               saldoPendiente === 0 ? 'text-emerald-700' : 'text-slate-900'
             }`}
           >
-            ${formatCurrencyDisplay(saldoPendiente)}
+            ${formatCurrencyDisplay(faltaPorSolicitar)}
           </span>
         </div>
       </div>
@@ -301,12 +305,12 @@ export function RequestReturnForm({
           {formatCurrencyDisplay(excedente)}.
         </div>
       ) : null}
-
+{/* 
       {solicitudCompleta ? (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
           El monto total a retornar ya está completamente distribuido.
         </div>
-      ) : null}
+      ) : null} */}
 
       <div className="space-y-4">
         {pagos.map((pago, index) => {
@@ -482,15 +486,17 @@ export function RequestReturnForm({
         })}
       </div>
 
+      {
+      (saldoPendiente <= 0) ? null :
       <button
         type="button"
         onClick={addPago}
-        disabled={saldoPendiente <= 0}
         className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <Plus className="h-4 w-4" />
         Agregar otro pago
       </button>
+      }
 
       <Button
         type="submit"

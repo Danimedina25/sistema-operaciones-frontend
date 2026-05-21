@@ -14,10 +14,11 @@ import {
   ReturnPaymentResponse,
   ReturnPaymentsListApiResponse,
   CreateReturnPaymentRequest,
-  ReturnPaymentApiResponse,
+  RealizeReturnPaymentRequest,
   UpdateOperationRequest,
   UpdateOperationPaymentRequest,
-  RealizeReturnPaymentRequest,
+  ReturnRequestPaymentApiResponse,
+  ReturnRealizePaymentApiResponse,
 } from '../types/operations.types.ts';
 
 const OPERATIONS_BASE_PATH = '/api/operations';
@@ -212,8 +213,8 @@ export async function getOperationsWithRequestedReturns(
 export async function requestReturnPayment(
   operationId: number,
   payload: CreateReturnPaymentRequest,
-): Promise<ReturnPaymentResponse> {
-  const response = await api.post<ReturnPaymentApiResponse>(
+): Promise<ReturnPaymentResponse[]> {
+  const response = await api.post<ReturnRequestPaymentApiResponse>(
     `${RETURNS_BASE_PATH}/${operationId}/request`,
     payload,
   );
@@ -225,7 +226,7 @@ export async function realizeReturnPayment(
   returnPaymentId: number,
   payload: RealizeReturnPaymentRequest,
 ): Promise<ReturnPaymentResponse> {
-  const response = await api.patch<ReturnPaymentApiResponse>(
+  const response = await api.patch<ReturnRealizePaymentApiResponse>(
     `${RETURNS_BASE_PATH}/payments/${returnPaymentId}/realize`,
     payload,
   );

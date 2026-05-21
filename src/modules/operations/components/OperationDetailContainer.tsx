@@ -3,7 +3,7 @@ import { useOperationDetail } from '@/modules/operations/hooks/use-operation-det
 import { useValidatePayment } from '../hooks/use-validate-payment';
 import { useRejectPayment } from '../hooks/use-reject-payment';
 import { useAuth } from '@/modules/auth/store/auth.context';
-import { PaymentOperationResponse } from '../types/operations.types.ts';
+import { PaymentOperationResponse, ReturnPaymentResponse } from '../types/operations.types.ts';
 import { useReturnsByOperationId } from '../hooks/returns/use-operation-returns';
 
 interface OperationDetailContainerProps {
@@ -15,7 +15,10 @@ interface OperationDetailContainerProps {
     operation: PaymentOperationResponse,
     montoPendienteARetornar: number,
   ) => void;
+  onAddRequestReturnPayment?: (operation: PaymentOperationResponse, montoPendientePorSolicitar: number) => void;
+  onPayReturn?: (returnPayment: ReturnPaymentResponse) => void;
   scrollToPayments?: boolean;
+  scrollToReturns?: boolean;
   onEditPayment: (operation: PaymentOperationResponse, paymentId: number) => void;
 }
 
@@ -25,13 +28,17 @@ export function OperationDetailContainer({
   backLabel = 'Operaciones',
   onAddPayment,
   onAddReturnPayment,
+  onAddRequestReturnPayment,
+  onPayReturn,
   scrollToPayments = false,
+  scrollToReturns = false,
   onEditPayment
 }: OperationDetailContainerProps) {
   const { hasRole } = useAuth();
 
   const canViewFinancialDetails = !hasRole(['SOCIO_COMERCIAL']);
-  const canRequestReturn = hasRole(['SOCIO_COMERCIAL']);
+  const canRequestReturn = hasRole(['SOCIO_COMERCIAL']) || hasRole(['ADMIN']);
+  const canPayReturn = hasRole(['ADMIN']);
 
   const { operation, isLoading, fetchOperation } =
     useOperationDetail(operationId);
@@ -92,12 +99,13 @@ export function OperationDetailContainer({
       onBack={onBack}
       onAddPayment={() => onAddPayment(operation)}
       onEditPayment={(paymentId) => onEditPayment(operation, paymentId)}
-      onAddReturnPayment={
-        canRequestReturn && onAddReturnPayment
-          ? (montoPendienteARetornar: number) =>
-              onAddReturnPayment(operation, montoPendienteARetornar)
+      onAddRequestReturnPayment={
+        canRequestReturn && onAddRequestReturnPayment
+          ? (operation: PaymentOperationResponse, montoPendientePorSolicitar: number) =>
+            onAddRequestReturnPayment(operation, montoPendientePorSolicitar)
           : undefined
       }
+      onPayReturn={canPayReturn && onPayReturn ? (returnPayment) => onPayReturn(returnPayment) : undefined}
       backLabel={backLabel}
       onValidatePayment={submitValidatePayment}
       onRejectPayment={submitRejectPayment}
@@ -109,6 +117,7 @@ export function OperationDetailContainer({
         await refetchReturns();
       }}
       scrollToPayments={scrollToPayments}
+      scrollToReturns={scrollToReturns}
     />
   );
 }

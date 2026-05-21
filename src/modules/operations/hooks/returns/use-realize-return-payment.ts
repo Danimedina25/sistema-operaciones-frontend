@@ -6,11 +6,11 @@ import { uploadOperationProof } from '@/modules/operations/api/operations-storag
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { getApiErrorMessage } from '@/shared/utils/errors';
 
-interface RealizeReturnPaymentValues {
+export interface RealizeReturnPaymentValues {
   operationId: number;
-  cuentaOrigenId?: number | null;
-  comprobante?: FileList;
-  observaciones?: string | null;
+  cuentaOrigenId?: string;
+  comprobante: FileList;
+  observaciones?: string;
 }
 
 interface UseRealizeReturnPaymentOptions {
@@ -32,24 +32,25 @@ export function useRealizeReturnPayment(
         throw new Error('No se pudo identificar el usuario autenticado');
       }
 
-      setIsSubmitting(true);
-
       const comprobante = values.comprobante?.item(0);
-      let comprobanteUrl: string | undefined;
 
-      if (comprobante) {
-        const uploadResult = await uploadOperationProof({
-          file: comprobante,
-          userId: user.userId,
-          operationId: values.operationId,
-        });
-
-        comprobanteUrl = uploadResult.downloadUrl;
+      if (!comprobante) {
+        throw new Error('El comprobante es obligatorio');
       }
 
+      setIsSubmitting(true);
+
+      const uploadResult = await uploadOperationProof({
+        file: comprobante,
+        userId: user.userId,
+        operationId: values.operationId,
+      });
+
       await realizeReturnPayment(returnPaymentId, {
-        cuentaOrigenId: values.cuentaOrigenId ?? null,
-        comprobanteUrl,
+        cuentaOrigenId: values.cuentaOrigenId
+          ? Number(values.cuentaOrigenId)
+          : null,
+        comprobanteUrl: uploadResult.downloadUrl,
         observaciones: values.observaciones?.trim() || undefined,
       });
 

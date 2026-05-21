@@ -5,21 +5,66 @@ import {
   formatCurrency,
   formatDateTime,
 } from '@/modules/operations/utils/operation-formatters';
-import { ReturnPaymentResponse } from '../../types/operations.types.ts';
+import {
+  OperationStatus,
+  ReturnPaymentResponse,
+} from '../../types/operations.types.ts';
 
 interface ReturnPaymentsTableProps {
   returns: ReturnPaymentResponse[];
   montoPendientePorRetornar?: number | null;
-  onAddReturnPayment?: (montoPendienteARetornar: number) => void;
-  canAddReturn?: boolean;
+  montoPendientePorSolicitar?: number | null;
+  onAddRequestReturnPayment?: (montoPendientePorSolicitar: number) => void;
+  canManageReturnPayments?: boolean;
+  onPayReturn?: (returnPayment: ReturnPaymentResponse) => void;
+  operationStatus?: OperationStatus;
 }
+
 export function ReturnPaymentsTable({
   returns,
   montoPendientePorRetornar = null,
-  onAddReturnPayment,
-  canAddReturn = false
+  montoPendientePorSolicitar = null,
+  onAddRequestReturnPayment,
+  canManageReturnPayments = false,
+  onPayReturn,
+  operationStatus,
 }: ReturnPaymentsTableProps) {
-    
+  const hasPendingAmountToRequest = (montoPendientePorSolicitar ?? 0) > 0;
+  const hasPendingAmountToPay = (montoPendientePorRetornar ?? 0) > 0;
+
+  const operationIsValidated = operationStatus === 'VALIDADA';
+  const operationIsCompleted = operationStatus === 'COMPLETADA';
+
+  const hasRequestedReturns = returns.some(
+    (returnPayment) =>
+      returnPayment.estatus === 'SOLICITADO' ||
+      returnPayment.estatus === 'REALIZADO',
+  );
+
+  const hasPendingRequestedReturns = returns.some(
+    (returnPayment) => returnPayment.estatus === 'SOLICITADO',
+  );
+
+  const canRequestReturns =
+    operationIsValidated &&
+    hasPendingAmountToRequest &&
+    !!onAddRequestReturnPayment;
+
+  const canPayReturns =
+    hasPendingAmountToPay &&
+    canManageReturnPayments &&
+    hasPendingRequestedReturns &&
+    !!onPayReturn;
+
+  const requestStatusMessage =
+    !hasPendingAmountToRequest || hasRequestedReturns || operationIsCompleted
+      ? 'Se ha solicitado el retorno completo'
+      : 'No se pueden solicitar retornos todavía';
+
+  const paymentStatusMessage = !hasPendingAmountToPay
+    ? 'Se han pagado todos los retornos'
+    : montoPendientePorRetornar === montoPendientePorSolicitar ? 'No se pueden pagar retornos todavía' : null;
+
   return (
     <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
       <div className="px-6 py-5">
@@ -34,31 +79,60 @@ export function ReturnPaymentsTable({
             </h3>
           </div>
 
-          <div className="flex flex-col items-start gap-2 md:items-end">
-            <div className="text-left md:text-right">
+          <div className="grid w-full grid-cols-1 items-start gap-10 md:w-auto md:grid-cols-[1fr_1fr]">
+            <div className="flex flex-col items-start md:items-center">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                Pendiente por solicitar
+              </p>
+
+              <p
+                className={`mt-0.5 text-base font-semibold ${
+                  hasPendingAmountToRequest ? 'text-violet-700' : 'text-slate-400'
+                }`}
+              >
+                {formatCurrency(montoPendientePorSolicitar ?? 0)}
+              </p>
+
+              <div className="mt-1 flex h-[28px] items-center">
+                {canRequestReturns ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onAddRequestReturnPayment?.(
+                        montoPendientePorSolicitar ?? 0,
+                      )
+                    }
+                    className="inline-flex min-w-[95px] items-center justify-center rounded-lg border-violet-200 bg-violet-100 px-3 py-1.5 text-xs font-semibold text-violet-800 transition hover:bg-violet-200"
+                  >
+                    Solicitar retorno
+                  </button>
+                ) : (
+                  <p className="text-xs font-medium text-slate-400">
+                    {requestStatusMessage}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-col items-start md:items-center">
               <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
                 Pendiente por retornar
               </p>
 
-              <p className="mt-0.5 text-base font-semibold text-amber-700">
-                {formatCurrency(montoPendientePorRetornar?? 0)}
+              <p
+                className={`mt-0.5 text-base font-semibold ${
+                  hasPendingAmountToPay ? 'text-amber-700' : 'text-slate-400'
+                }`}
+              >
+                {formatCurrency(montoPendientePorRetornar ?? 0)}
               </p>
 
-              {montoPendientePorRetornar === 0 && (
-                <p className="mt-1 text-sm font-medium text-green-600">
-                  Se ha retornado el monto completo al cliente 
+              <div className="mt-1 flex h-[28px] items-center">
+                <p className="text-xs font-medium text-slate-400">
+                  {paymentStatusMessage}
                 </p>
-              )}
+              </div>
             </div>
-            {canAddReturn && onAddReturnPayment ? (
-              <button
-                type="button"
-                onClick={() => onAddReturnPayment(montoPendientePorRetornar ?? 0)}
-                className="inline-flex min-w-[180px] items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
-              >
-                Solicitar retorno
-              </button>
-            ) : null}
           </div>
         </div>
 
@@ -77,120 +151,113 @@ export function ReturnPaymentsTable({
             <thead className="bg-slate-50">
               <tr className="text-left text-sm text-slate-600">
                 <th className="px-4 py-3 font-medium">Monto</th>
-
                 <th className="px-4 py-3 font-medium">Estatus</th>
-
                 <th className="px-4 py-3 font-medium">Tipo</th>
-
-                <th className="px-4 py-3 font-medium">Cuenta origen</th>
-
                 <th className="px-4 py-3 font-medium">Cuenta destino</th>
-
                 <th className="px-4 py-3 font-medium">Solicitado por</th>
-
                 <th className="px-4 py-3 font-medium">Fecha solicitud</th>
-
-                <th className="px-4 py-3 font-medium">Realizado por</th>
-
-                <th className="px-4 py-3 font-medium">Fecha pago</th>
-
+                <th className="px-4 py-3 font-medium">Pagado por</th>
+                <th className="px-4 py-3 font-medium">Fecha retorno</th>
                 <th className="px-4 py-3 font-medium">Observaciones</th>
-
                 <th className="px-4 py-3 font-medium">Comprobante</th>
+
+                {canPayReturns && (
+                  <th className="px-4 py-3 font-medium">Acciones</th>
+                )}
               </tr>
             </thead>
 
-           <tbody>
-            {returns.map((returnPayment) => (
-              <tr
-                key={returnPayment.id}
-                className="border-t border-slate-200 text-sm"
-              >
-                <td className="px-4 py-4 font-medium text-slate-900">
-                  {formatCurrency(returnPayment.monto)}
-                </td>
+            <tbody>
+              {returns.map((returnPayment) => (
+                <tr
+                  key={returnPayment.id}
+                  className="border-t border-slate-200 text-sm"
+                >
+                  <td className="px-4 py-4 font-medium text-slate-900">
+                    {formatCurrency(returnPayment.monto)}
+                  </td>
 
-                <td className="px-4 py-4">
-                  <span
-                    className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                      returnPayment.estatus === 'REALIZADO'
-                        ? 'bg-green-50 text-green-700'
-                        : 'bg-amber-50 text-amber-700'
-                    }`}
-                  >
-                    {returnPayment.estatus === 'REALIZADO'
-                      ? 'Realizado'
-                      : 'Solicitado'}
-                  </span>
-                </td>
-
-                <td className="px-4 py-4 text-slate-600">
-                  {paymentTypeLabels[returnPayment.tipoPago]}
-                </td>
-
-                <td className="px-4 py-4">
-                  {returnPayment.cuentaOrigenId ? (
-                    <div className="flex flex-col">
-                      <span className="font-medium text-slate-900">
-                        {returnPayment.cuentaOrigenNombre}
-                      </span>
-
-                      <span className="text-xs text-slate-500">
-                        ID: {returnPayment.cuentaOrigenId}
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-slate-400">-</span>
-                  )}
-                </td>
-
-                <td className="px-4 py-4 text-slate-600">
-                  {returnPayment.cuentaDestinoCliente ?? '-'}
-                </td>
-
-                <td className="px-4 py-4 text-slate-600">
-                  {returnPayment.solicitadoPorNombre ?? '-'}
-                </td>
-
-                <td className="px-4 py-4 text-slate-600">
-                  {returnPayment.fechaSolicitud
-                    ? formatDateTime(returnPayment.fechaSolicitud)
-                    : '-'}
-                </td>
-
-                <td className="px-4 py-4 text-slate-600">
-                  {returnPayment.pagadoPorNombre ?? '-'}
-                </td>
-
-                <td className="px-4 py-4 text-slate-600">
-                  {returnPayment.fechaPago
-                    ? formatDateTime(returnPayment.fechaPago)
-                    : '-'}
-                </td>
-
-                <td className="px-4 py-4 text-slate-600">
-                  {returnPayment.observaciones ?? '-'}
-                </td>
-
-                <td className="px-4 py-4">
-                  {returnPayment.comprobanteUrl ? (
-                    <a
-                      href={returnPayment.comprobanteUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-200"
+                  <td className="px-4 py-4">
+                    <span
+                      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                        returnPayment.estatus === 'REALIZADO'
+                          ? 'bg-green-50 text-green-700'
+                          : 'bg-amber-50 text-amber-700'
+                      }`}
                     >
-                      Ver comprobante
-                    </a>
-                  ) : (
-                    <span className="text-sm text-slate-400">
-                      Sin comprobante
+                      {returnPayment.estatus === 'REALIZADO'
+                        ? 'Realizado'
+                        : 'Solicitado'}
                     </span>
+                  </td>
+
+                  <td className="px-4 py-4 text-slate-600">
+                    {paymentTypeLabels[returnPayment.tipoPago]}
+                  </td>
+
+                  <td className="px-4 py-4 text-slate-600">
+                    {returnPayment.cuentaDestinoCliente ?? '-'}
+                  </td>
+
+                  <td className="px-4 py-4 text-slate-600">
+                    {returnPayment.solicitadoPorNombre ?? '-'}
+                  </td>
+
+                  <td className="px-4 py-4 text-slate-600">
+                    {returnPayment.fechaSolicitud
+                      ? formatDateTime(returnPayment.fechaSolicitud)
+                      : '-'}
+                  </td>
+
+                  <td className="px-4 py-4 text-slate-600">
+                    {returnPayment.pagadoPorNombre ?? '-'}
+                  </td>
+
+                  <td className="px-4 py-4 text-slate-600">
+                    {returnPayment.fechaPago
+                      ? formatDateTime(returnPayment.fechaPago)
+                      : '-'}
+                  </td>
+
+                  <td className="px-4 py-4 text-slate-600">
+                    {returnPayment.observaciones ?? '-'}
+                  </td>
+
+                  <td className="px-4 py-4">
+                    {returnPayment.comprobanteUrl ? (
+                      <a
+                        href={returnPayment.comprobanteUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-200"
+                      >
+                        Ver comprobante
+                      </a>
+                    ) : (
+                      <span className="text-sm text-slate-400">
+                        Sin comprobante
+                      </span>
+                    )}
+                  </td>
+
+                  {canPayReturns && (
+                    <td className="px-4 py-4">
+                      {returnPayment.estatus === 'SOLICITADO' ? (
+                        <button
+                          type="button"
+                          onClick={() => onPayReturn?.(returnPayment)}
+                          className="inline-flex min-w-[95px] items-center justify-center rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+                        >
+                          Pagar retorno
+                        </button>
+                      ) : (
+                        <span className="text-sm text-slate-400">-</span>
+                      )}
+                    </td>
                   )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
+                </tr>
+              ))}
+            </tbody>
           </table>
         </div>
       )}

@@ -6,42 +6,51 @@ import { OperationDetailContainer } from '../components/OperationDetailContainer
 import { AddOperationPaymentForm } from '../components/AddOperationPaymentForm';
 import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts';
 import { useAddOperationPayment } from '../hooks/use-add-operation-payment';
-import { OperationPaymentResponse, PaymentOperationResponse } from '../types/operations.types.ts';
-import { AddReturnPaymentForm } from '../components/AddReturnPaymentForm';
+import { OperationPaymentResponse, PaymentOperationResponse, ReturnPaymentResponse } from '../types/operations.types.ts';
 import { useUpdateOperationPayment } from '../hooks/use-update-operation-payment';
 import { UpdateOperationPaymentForm } from '../components/UpdateOperationPaymentForm';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { useRequestReturnPayment } from '../hooks/returns/use-request-return-payment';
+import { RequestReturnModal } from '../components/returns/RequestReturnModal';
+import { RealizeReturnPaymentModal } from '../components/returns/RealizeReturnPaymentModal';
+import { useRealizeReturnPayment } from '../hooks/returns/use-realize-return-payment';
 
 export default function OperationDetailPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const scrollToPayments = Boolean(location.state?.scrollToPayments);
+  const scrollToReturns = Boolean(location.state?.scrollToReturns);
   const isReturnRequestDetail =
     location.pathname.startsWith(paths.returnsforrequest);
   const isReturnPaymentDetail =
     location.pathname.startsWith(paths.returnsforpayment);
   const backLabel = isReturnRequestDetail
-  ? 'Retornos por solicitar'
-  : isReturnPaymentDetail
-    ? 'Retornos por pagar'
-    : 'Operaciones';
+    ? 'Retornos por solicitar'
+    : isReturnPaymentDetail
+      ? 'Retornos por pagar'
+      : 'Operaciones';
   const { operationId } = useParams<{ operationId: string }>();
   const [isAddPaymentModalOpen, setIsAddPaymentModalOpen] = useState(false);
   const [selectedOperation, setSelectedOperation] =
     useState<PaymentOperationResponse | null>(null);
   const [isAddReturnModalOpen, setIsAddReturnModalOpen] = useState(false);
+  const [isPayReturnModalOpen, setIsPayReturnModalOpen] = useState(false);
+  const [selectedReturnPayment, setSelectedReturnPayment] =
+    useState<ReturnPaymentResponse | null>(null);
   const [selectedReturnOperation, setSelectedReturnOperation] =
-  useState<PaymentOperationResponse | null>(null);
+    useState<PaymentOperationResponse | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [montoPendienteARetornar, setMontoPendienteARetornar] = useState(0);
   const [isEditPaymentModalOpen, setIsEditPaymentModalOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] =
     useState<OperationPaymentResponse | null>(null);
   const { user } = useAuth();
 
   const canRequestReturn = user?.roles?.some(
-    (role) => role === 'SOCIO_COMERCIAL',
+    (role) => role === 'SOCIO_COMERCIAL' || role === 'ADMIN',
+  );
+
+  const canPayReturn = user?.roles?.some(
+    (role) => role === 'ADMIN' || role === 'GERENTE',
   );
 
   const parsedOperationId = Number(operationId);
@@ -90,6 +99,17 @@ export default function OperationDetailPage() {
     },
   });
 
+  const {
+    isSubmitting: isSubmittingRealizeReturn,
+    submitRealizeReturnPayment,
+  } = useRealizeReturnPayment({
+    onSuccess: async () => {
+      setIsPayReturnModalOpen(false);
+      setSelectedReturnPayment(null);
+      setRefreshKey((prev) => prev + 1);
+    },
+  });
+
   if (!operationId || Number.isNaN(parsedOperationId)) {
     return (
       <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
@@ -104,6 +124,7 @@ export default function OperationDetailPage() {
         key={refreshKey}
         operationId={parsedOperationId}
         scrollToPayments={scrollToPayments}
+        scrollToReturns={scrollToReturns}
         backLabel={backLabel}
         onBack={() => {
           if (isReturnRequestDetail) {
@@ -133,11 +154,26 @@ export default function OperationDetailPage() {
         }}
         onAddReturnPayment={
           canRequestReturn
-            ? (operation, montoPendienteARetornar) => {
-                setMontoPendienteARetornar(montoPendienteARetornar);
-                setSelectedReturnOperation(operation);
-                setIsAddReturnModalOpen(true);
-              }
+            ? (operation) => {
+              setSelectedReturnOperation(operation);
+              setIsAddReturnModalOpen(true);
+            }
+            : undefined
+        }
+        onAddRequestReturnPayment={
+          canRequestReturn
+            ? (operation) => {
+              setSelectedReturnOperation(operation);
+              setIsAddReturnModalOpen(true);
+            }
+            : undefined
+        }
+        onPayReturn={
+          canPayReturn
+            ? (returnPayment) => {
+              setSelectedReturnPayment(returnPayment);
+              setIsPayReturnModalOpen(true);
+            }
             : undefined
         }
       />
@@ -178,8 +214,8 @@ export default function OperationDetailPage() {
         }}
       >
         {isLoadingBankAccounts ||
-        selectedOperation === null ||
-        selectedPayment === null ? (
+          selectedOperation === null ||
+          selectedPayment === null ? (
           <div className="py-8 text-center text-sm text-slate-500">
             Cargando formulario...
           </div>
@@ -200,30 +236,27 @@ export default function OperationDetailPage() {
         )}
       </Modal>
 
-      <Modal
+      <RequestReturnModal
         open={isAddReturnModalOpen}
-        title="Solicitar retorno"
+        operation={selectedReturnOperation}
+        isSubmitting={isSubmitting}
         onClose={() => {
           setIsAddReturnModalOpen(false);
           setSelectedReturnOperation(null);
         }}
-      >
-        {selectedReturnOperation === null ? (
-          <div className="py-8 text-center text-sm text-slate-500">
-            Cargando formulario...
-          </div>
-        ) : (
-          <AddReturnPaymentForm
-            isSubmitting={isSubmitting}
-            bankAccounts={bankAccounts}
-            montoTotalDevolver={selectedReturnOperation.montoTotalDevolverCliente ?? 0}
-            saldoPendiente={montoPendienteARetornar ?? 0}
-            onSubmit={(values) =>
-              submitRequestReturnPayment(selectedReturnOperation.id, values)
-            }
-          />
-        )}
-      </Modal>
+        onSubmit={submitRequestReturnPayment}
+      />
+
+      <RealizeReturnPaymentModal
+        open={isPayReturnModalOpen}
+        returnPayment={selectedReturnPayment}
+        isSubmitting={isSubmittingRealizeReturn}
+        onClose={() => {
+          setIsPayReturnModalOpen(false);
+          setSelectedReturnPayment(null);
+        }}
+        onSubmit={submitRealizeReturnPayment}
+      />
     </>
   );
 }
