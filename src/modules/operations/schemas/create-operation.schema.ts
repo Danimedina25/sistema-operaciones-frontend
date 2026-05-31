@@ -61,15 +61,18 @@ const paymentSchema = z
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['tipoPago'],
-          message: 'El tipo de pago es obligatorio cuando el monto es mayor a cero',
+          message: 'El tipo de pago es obligatorio',
         });
       }
-
-      if (!value.cuentaDestinoId || value.cuentaDestinoId < 1) {
+      if (
+        value.tipoPago !== 'EFECTIVO' &&
+        (!value.cuentaDestinoId || value.cuentaDestinoId < 1)
+      ) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['cuentaDestinoId'],
-          message: 'La cuenta destino es obligatoria cuando el monto es mayor a cero',
+          message:
+            'La cuenta destino es obligatoria para transferencias y depósitos',
         });
       }
 
@@ -111,6 +114,36 @@ export const createOperationSchema = z
       }),
     ),
 
+    socioComercialNivel2Id: z.preprocess(
+      (value) => {
+        if (
+          value === '' ||
+          value === null ||
+          value === undefined
+        ) {
+          return undefined;
+        }
+
+        return Number(value);
+      },
+      z.number().optional(),
+    ),
+
+    socioComercialNivel3Id: z.preprocess(
+      (value) => {
+        if (
+          value === '' ||
+          value === null ||
+          value === undefined
+        ) {
+          return undefined;
+        }
+
+        return Number(value);
+      },
+      z.number().optional(),
+    ),
+
     observaciones: z
       .string()
       .max(500, 'Las observaciones no pueden exceder 500 caracteres')
@@ -137,6 +170,18 @@ export const createOperationSchema = z
         code: z.ZodIssueCode.custom,
         path: ['pagos'],
         message: 'Debes registrar al menos un pago con monto mayor a cero y su comprobante',
+      });
+    }
+
+    if (
+      value.socioComercialNivel3Id &&
+      !value.socioComercialNivel2Id
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['socioComercialNivel3Id'],
+        message:
+          'Debe seleccionar un socio comercial nivel 2 antes del nivel 3',
       });
     }
   });

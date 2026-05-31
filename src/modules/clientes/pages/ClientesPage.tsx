@@ -85,10 +85,10 @@ export default function ClientesPage() {
       <div className="flex flex-col gap-4 rounded-2xl bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-xl font-semibold text-slate-900">
-            Clientes
+           {user?.roles.includes('SOCIO_COMERCIAL') ? 'Mis' : ''} Clientes
           </h1>
           <p className="mt-2 text-sm text-slate-500">
-            Administra clientes, niveles de red comercial y porcentajes de comisión.
+            Administra clientes, niveles de socios comerciales y porcentajes de comisión.
           </p>
         </div>
 

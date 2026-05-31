@@ -1,27 +1,32 @@
+// src/modules/socioscomerciales/components/CommercialPartnersTable.tsx
+
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { StatusBadge } from '@/shared/components/ui/StatusBadge';
-import type { ClienteResponse } from '@/modules/clientes/types/clientes.types';
-import { ClienteStatusBadge } from './ClienteStatusBadge';
 
-interface ClientesTableProps {
-  clientes: ClienteResponse[];
-  processingClienteId: number | null;
-  onEdit: (cliente: ClienteResponse) => void;
-  onActivate: (clienteId: number) => void;
-  onDeactivate: (clienteId: number) => void;
+import { StatusBadge } from '@/shared/components/ui/StatusBadge';
+
+import type {
+  CommercialPartnerResponse,
+} from '@/modules/socioscomerciales/types/socioscomerciales.types';
+
+interface CommercialPartnersTableProps {
+  commercialPartners: CommercialPartnerResponse[];
+  processingPartnerId: number | null;
+  onEdit: (partner: CommercialPartnerResponse) => void;
+  onActivate: (partnerId: number) => void;
+  onDeactivate: (partnerId: number) => void;
 }
 
-export function ClientesTable({
-  clientes,
-  processingClienteId,
+export function CommercialPartnersTable({
+  commercialPartners,
+  processingPartnerId,
   onEdit,
   onActivate,
   onDeactivate,
-}: ClientesTableProps) {
-  const [openMenuClienteId, setOpenMenuClienteId] = useState<number | null>(
-    null,
-  );
+}: CommercialPartnersTableProps) {
+  const [openMenuPartnerId, setOpenMenuPartnerId] =
+    useState<number | null>(null);
+
   const [menuPosition, setMenuPosition] = useState<{
     top: number;
     left: number;
@@ -32,39 +37,31 @@ export function ClientesTable({
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setOpenMenuClienteId(null);
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node)
+      ) {
+        setOpenMenuPartnerId(null);
         setMenuPosition(null);
       }
     }
 
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  useEffect(() => {
-    function handleCloseMenu() {
-      setOpenMenuClienteId(null);
-      setMenuPosition(null);
-    }
-
-    window.addEventListener('scroll', handleCloseMenu, true);
-    window.addEventListener('resize', handleCloseMenu);
 
     return () => {
-      window.removeEventListener('scroll', handleCloseMenu, true);
-      window.removeEventListener('resize', handleCloseMenu);
+      document.removeEventListener(
+        'mousedown',
+        handleClickOutside,
+      );
     };
   }, []);
 
   function handleToggleMenu(
-    clienteId: number,
+    partnerId: number,
     event: React.MouseEvent<HTMLButtonElement>,
   ) {
-    if (openMenuClienteId === clienteId) {
-      setOpenMenuClienteId(null);
+    if (openMenuPartnerId === partnerId) {
+      setOpenMenuPartnerId(null);
       setMenuPosition(null);
       return;
     }
@@ -72,8 +69,10 @@ export function ClientesTable({
     const rect = event.currentTarget.getBoundingClientRect();
 
     const menuWidth = 208;
-    const estimatedMenuHeight = 120;
+    const estimatedMenuHeight = 180;
+
     const spaceBelow = window.innerHeight - rect.bottom;
+
     const openUp = spaceBelow < estimatedMenuHeight;
 
     setMenuPosition({
@@ -82,18 +81,18 @@ export function ClientesTable({
       openUp,
     });
 
-    setOpenMenuClienteId(clienteId);
+    setOpenMenuPartnerId(partnerId);
   }
 
   function closeMenu() {
-    setOpenMenuClienteId(null);
+    setOpenMenuPartnerId(null);
     setMenuPosition(null);
   }
 
-  if (clientes.length === 0) {
+  if (commercialPartners.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
-        No se encontraron clientes con los filtros seleccionados.
+        No se encontraron socios comerciales.
       </div>
     );
   }
@@ -105,48 +104,72 @@ export function ClientesTable({
           <thead className="bg-slate-50">
             <tr className="text-left text-sm text-slate-600">
               <th className="px-4 py-3 font-medium">Nombre</th>
-              <th className="px-4 py-3 font-medium">Niveles de socios comerciales</th>
-              <th className="px-4 py-3 font-medium">Comisión</th>
+              <th className="px-4 py-3 font-medium">
+                Cuenta bancaria
+              </th>
+              <th className="px-4 py-3 font-medium">Banco</th>
+              <th className="px-4 py-3 font-medium">
+                Titular
+              </th>
+              <th className="px-4 py-3 font-medium">
+                Nivel
+              </th>
               <th className="px-4 py-3 font-medium">Estado</th>
-              <th className="px-4 py-3 font-medium text-right">Acciones</th>
+              <th className="px-4 py-3 font-medium text-right">
+                Acciones
+              </th>
             </tr>
           </thead>
 
           <tbody>
-            {clientes.map((cliente) => {
-              const isProcessing = processingClienteId === cliente.id;
-              const isMenuOpen = openMenuClienteId === cliente.id;
+            {commercialPartners.map((partner) => {
+              const isProcessing =
+                processingPartnerId === partner.id;
+
+              const isMenuOpen =
+                openMenuPartnerId === partner.id;
 
               return (
                 <tr
-                  key={cliente.id}
+                  key={partner.id}
                   className="border-t border-slate-200 text-sm"
                 >
                   <td className="px-4 py-4 font-medium text-slate-900">
-                    {cliente.nombre}
+                    {partner.nombre}
                   </td>
 
                   <td className="px-4 py-4 text-slate-600">
-                    {cliente.nivelesRedComercial} nivel
-                    {cliente.nivelesRedComercial > 1 ? 'es' : ''}
+                    {partner.cuentaBancaria}
                   </td>
 
                   <td className="px-4 py-4 text-slate-600">
-                    {cliente.porcentajeComisionAplicado}%
+                    {partner.banco}
+                  </td>
+
+                  <td className="px-4 py-4 text-slate-600">
+                    {partner.titularCuenta}
+                  </td>
+
+                  <td className="px-4 py-4 text-slate-600">
+                    {partner.nivel}
                   </td>
 
                   <td className="px-4 py-4">
-                    <ClienteStatusBadge active={cliente.activo} />
+                    <StatusBadge active={partner.activo} />
                   </td>
 
                   <td className="px-4 py-4 text-right">
                     <button
                       type="button"
                       disabled={isProcessing}
-                      onClick={(event) => handleToggleMenu(cliente.id, event)}
+                      onClick={(event) =>
+                        handleToggleMenu(partner.id, event)
+                      }
                       className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
                     >
-                      {isProcessing ? 'Procesando...' : 'Opciones'}
+                      {isProcessing
+                        ? 'Procesando...'
+                        : 'Opciones'}
                     </button>
 
                     {isMenuOpen &&
@@ -166,7 +189,7 @@ export function ClientesTable({
                           <button
                             type="button"
                             onClick={() => {
-                              onEdit(cliente);
+                              onEdit(partner);
                               closeMenu();
                             }}
                             className="block w-full px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50"
@@ -174,11 +197,11 @@ export function ClientesTable({
                             Editar
                           </button>
 
-                          {cliente.activo ? (
+                          {partner.activo ? (
                             <button
                               type="button"
                               onClick={() => {
-                                onDeactivate(cliente.id);
+                                onDeactivate(partner.id);
                                 closeMenu();
                               }}
                               className="block w-full px-4 py-2.5 text-left text-sm text-red-700 transition hover:bg-red-50"
@@ -189,7 +212,7 @@ export function ClientesTable({
                             <button
                               type="button"
                               onClick={() => {
-                                onActivate(cliente.id);
+                                onActivate(partner.id);
                                 closeMenu();
                               }}
                               className="block w-full px-4 py-2.5 text-left text-sm text-emerald-700 transition hover:bg-emerald-50"

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Input } from '@/shared/components/ui/Input';
@@ -13,12 +13,14 @@ import {
 interface SelectOption {
   id: number;
   label: string;
+  nivelesRedComercial?: number;
 }
 
 interface CreateOperationFormProps {
   isSubmitting: boolean;
   bankAccounts: SelectOption[];
   clientes: SelectOption[];
+  commercialPartners: CommercialPartnerOption[];
   onSubmit: (values: CreateOperationFormValues) => Promise<void>;
 }
 function normalizeCurrencyInput(value: string) {
@@ -38,6 +40,12 @@ function normalizeCurrencyInput(value: string) {
   return `${formattedInteger}.${decimalPart.slice(0, 2)}`;
 }
 
+interface CommercialPartnerOption {
+  id: number;
+  nombre: string;
+  nivel: 2 | 3;
+}
+
 function parseCurrency(value: unknown) {
   if (typeof value === 'number') return value;
   if (typeof value !== 'string') return 0;
@@ -54,10 +62,11 @@ function formatCurrencyDisplay(value: number) {
 }
 
 export function CreateOperationForm({
-    isSubmitting,
-    bankAccounts,
-    clientes,
-    onSubmit,
+  isSubmitting,
+  bankAccounts,
+  clientes,
+  commercialPartners,
+  onSubmit,
 }: CreateOperationFormProps) {
   const {
     register,
@@ -72,6 +81,8 @@ export function CreateOperationForm({
       clienteId: undefined,
       montoTotal: '',
       observaciones: '',
+      socioComercialNivel2Id: undefined,
+      socioComercialNivel3Id: undefined,
       pagos: [
         {
           monto: '',
@@ -86,6 +97,10 @@ export function CreateOperationForm({
   });
   const [clienteSearch, setClienteSearch] = useState('');
   const [showClienteOptions, setShowClienteOptions] = useState(false);
+
+  useEffect(() => {
+    console.log('Commercial Partners:', commercialPartners);
+  }, [commercialPartners]);
 
   const filteredClientes = useMemo(() => {
     const search = clienteSearch.trim().toLowerCase();
@@ -123,6 +138,32 @@ export function CreateOperationForm({
   const saldoDisponible = Math.max(montoTotal - totalPagos, 0);
   const excedeMontoTotal = totalPagos > montoTotal;
   const excedente = excedeMontoTotal ? totalPagos - montoTotal : 0;
+  const [nivelesRedComercialCliente, setNivelesRedComercialCliente] = useState<number | null>(null);
+  const sociosNivel2 = useMemo(
+    () =>
+      commercialPartners.filter(
+        (partner) => partner.nivel === 2,
+      ),
+    [commercialPartners],
+  );
+
+  const sociosNivel3 = useMemo(
+    () =>
+      commercialPartners.filter(
+        (partner) => partner.nivel === 3,
+      ),
+    [commercialPartners],
+  );
+
+  const faltaSocioNivel2 =
+    nivelesRedComercialCliente !== null &&
+    nivelesRedComercialCliente >= 2 &&
+    sociosNivel2.length === 0;
+
+  const faltaSocioNivel3 =
+    nivelesRedComercialCliente !== null &&
+    nivelesRedComercialCliente >= 3 &&
+    sociosNivel3.length === 0;
 
   const handleCurrencyChange = async (
     path: `montoTotal` | `pagos.${number}.monto`,
@@ -146,7 +187,7 @@ export function CreateOperationForm({
   }
 
   return (
-   <form className="space-y-4 pb-0" onSubmit={handleSubmit(onSubmit)}>
+    <form className="space-y-4 pb-0" onSubmit={handleSubmit(onSubmit)}>
       <div className="sticky top-0 z-50 -mx-5 -mt-5 rounded-b-2xl border-b border-slate-200 bg-white px-5 py-4 shadow-lg before:absolute before:inset-x-0 before:-top-10 before:h-10 before:bg-white">
         <div className="relative grid items-center gap-6 text-sm md:grid-cols-4">
           <div className="text-center">
@@ -200,7 +241,7 @@ export function CreateOperationForm({
         ) : null}
       </div>
       <div className="mt-6 rounded-2xl border border-slate-200 p-5">
-       <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="mb-4 flex items-center justify-between gap-3">
           <h3 className="text-base font-semibold text-slate-900">
             Datos generales de la operación
           </h3>
@@ -212,60 +253,69 @@ export function CreateOperationForm({
               Nombre del cliente
             </label>
             <>
-            <div className="relative">
-              <Input
-                type="text"
-                placeholder="Buscar cliente..."
-                value={clienteSearch}
-                onFocus={() => setShowClienteOptions(true)}
-                onBlur={() => {
-                  setTimeout(() => {
-                    setShowClienteOptions(false);
-                  }, 150);
-                }}
-                onChange={(event) => {
-                  setClienteSearch(event.target.value);
-                  setShowClienteOptions(true);
-                  setValue('clienteId', undefined, {
-                    shouldValidate: false,
-                    shouldDirty: true,
-                    shouldTouch: false,
-                  });
-                }}
-              />
+              <div className="relative">
+                <Input
+                  type="text"
+                  placeholder="Buscar cliente..."
+                  value={clienteSearch}
+                  onFocus={() => setShowClienteOptions(true)}
+                  onBlur={() => {
+                    setTimeout(() => {
+                      setShowClienteOptions(false);
+                    }, 150);
+                  }}
+                  onChange={(event) => {
+                    setClienteSearch(event.target.value);
+                    setShowClienteOptions(true);
+                    setValue('clienteId', undefined, {
+                      shouldValidate: false,
+                      shouldDirty: true,
+                      shouldTouch: false,
+                    });
+                  }}
+                />
 
-              {showClienteOptions ? (
-                <div className="absolute z-50 mt-2 max-h-60 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
-                  {filteredClientes.length > 0 ? (
-                    filteredClientes.map((cliente) => (
-                      <button
-                        key={cliente.id}
-                        type="button"
-                        className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-                        onClick={() => {
-                          setClienteSearch(cliente.label);
+                {showClienteOptions ? (
+                  <div className="absolute z-50 mt-2 max-h-60 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
+                    {filteredClientes.length > 0 ? (
+                      filteredClientes.map((cliente) => (
+                        <button
+                          key={cliente.id}
+                          type="button"
+                          className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                          onClick={() => {
+                            setClienteSearch(cliente.label);
+                            setNivelesRedComercialCliente(cliente.nivelesRedComercial ?? null);
+                            setValue('clienteId', cliente.id, {
+                              shouldValidate: true,
+                              shouldDirty: true,
+                              shouldTouch: true,
+                            });
+                            setValue(
+                              'socioComercialNivel2Id',
+                              undefined,
+                            );
 
-                          setValue('clienteId', cliente.id, {
-                            shouldValidate: true,
-                            shouldDirty: true,
-                            shouldTouch: true,
-                          });
+                            setValue(
+                              'socioComercialNivel3Id',
+                              undefined,
+                            );
 
-                          setShowClienteOptions(false);
-                          void trigger('clienteId');
-                        }}
-                      >
-                        {cliente.label}
-                      </button>
-                    ))
-                  ) : (
-                    <div className="px-4 py-3 text-sm text-slate-500">
-                      No se encontraron clientes
-                    </div>
-                  )}
-                </div>
-              ) : null}
-            </div>
+                            setShowClienteOptions(false);
+                            void trigger('clienteId');
+                          }}
+                        >
+                          {cliente.label}
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-4 py-3 text-sm text-slate-500">
+                        No se encontraron clientes
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+              </div>
             </>
           </div>
 
@@ -275,21 +325,131 @@ export function CreateOperationForm({
             </p>
           ) : null}
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Monto total
-            </label>
-            <Input
-              type="text"
-              inputMode="decimal"
-              placeholder="1,000.00"
-              error={errors.montoTotal?.message}
-              {...register('montoTotal')}
-              onChange={(event) => {
-                void handleCurrencyChange('montoTotal', event.target.value);
-              }}
-            />
-          </div>
+          {nivelesRedComercialCliente !== null && (
+            <div >
+              <p className="text-sm text-slate-600">
+                Este cliente tiene{' '}
+                <span className="font-semibold text-slate-900">
+                  {nivelesRedComercialCliente}
+                </span>{' '}
+                {nivelesRedComercialCliente === 1
+                  ? 'nivel de socios comerciales'
+                  : 'niveles de socios comerciales'}
+                .
+              </p>
+            </div>
+          )}
+
+
+          {faltaSocioNivel2 && (
+            <div className="md:col-span-2 mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4">
+              <p className="text-sm font-medium text-amber-800">
+                Este cliente requiere un socio comercial de nivel 2.
+              </p>
+
+              <p className="mt-1 text-sm text-amber-700">
+                Debes registrar al menos un socio comercial de nivel 2 en el módulo
+                "Mi red de socios comerciales" antes de poder utilizar este cliente en una
+                operación.
+              </p>
+            </div>
+          )}
+
+          {faltaSocioNivel3 && (
+            <div className="md:col-span-2 mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4">
+              <p className="text-sm font-medium text-amber-800">
+                Este cliente requiere un socio comercial de nivel 3.
+              </p>
+
+              <p className="mt-1 text-sm text-amber-700">
+                Debes registrar al menos un socio comercial de nivel 3 en el módulo
+                "Mis socios comerciales" antes de poder utilizar este cliente en una
+                operación.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {nivelesRedComercialCliente !== null &&
+          nivelesRedComercialCliente >= 2 && (
+            <div className="mt-5">
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                Socio comercial nivel 2
+              </label>
+
+              <select
+                className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
+                {...register('socioComercialNivel2Id')}
+              >
+                <option value="">
+                  Selecciona un socio comercial
+                </option>
+
+                {sociosNivel2.map((partner) => (
+                  <option
+                    key={partner.id}
+                    value={partner.id}
+                  >
+                    {partner.nombre}
+                  </option>
+                ))}
+              </select>
+
+              {errors.socioComercialNivel2Id && (
+                <p className="mt-1 text-xs text-red-600">
+                  {errors.socioComercialNivel2Id.message}
+                </p>
+              )}
+            </div>
+          )}
+
+        {nivelesRedComercialCliente !== null &&
+          nivelesRedComercialCliente >= 3 && (
+            <div className="mt-5">
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                Socio comercial nivel 3
+              </label>
+
+              <select
+                className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
+                {...register('socioComercialNivel3Id')}
+              >
+                <option value="">
+                  Selecciona un socio comercial
+                </option>
+
+                {sociosNivel3.map((partner) => (
+                  <option
+                    key={partner.id}
+                    value={partner.id}
+                  >
+                    {partner.nombre}
+                  </option>
+                ))}
+              </select>
+
+              {errors.socioComercialNivel3Id && (
+                <p className="mt-1 text-xs text-red-600">
+                  {errors.socioComercialNivel3Id.message}
+                </p>
+              )}
+            </div>
+          )}
+
+        <div className="mt-5">
+          <label className="mb-2 block text-sm font-medium text-slate-700">
+            Monto total
+          </label>
+          <Input
+            type="text"
+            inputMode="decimal"
+            placeholder="1,000.00"
+            error={errors.montoTotal?.message}
+            {...register('montoTotal')}
+            onChange={(event) => {
+              void handleCurrencyChange('montoTotal', event.target.value);
+            }}
+          />
         </div>
 
         <div className="mt-5">
@@ -309,20 +469,21 @@ export function CreateOperationForm({
           ) : null}
         </div>
       </div>
-        <div className="mb-5 text-center">
-          <h3 className="text-lg font-semibold text-slate-900">
-            Comprobantes de la operación
-          </h3>
-          <p className="mx-auto mt-1 max-w-2xl text-sm text-slate-500">
-            Todos los comprobantes pertenecen a la misma operación. Cada uno puede ir
-            a una cuenta distinta.
-          </p>
-        </div>
+      <div className="mb-5 text-center">
+        <h3 className="text-lg font-semibold text-slate-900">
+          Comprobantes de la operación
+        </h3>
+        <p className="mx-auto mt-1 max-w-2xl text-sm text-slate-500">
+          Todos los comprobantes pertenecen a la misma operación. Cada uno puede ir
+          a una cuenta distinta.
+        </p>
+      </div>
       <div className="rounded-2xl border border-slate-200 p-5">
         <div className="space-y-4">
           {fields.map((field, index) => {
             const pagoErrors = errors.pagos?.[index];
             const pagoMonto = parseCurrency(pagos[index]?.monto);
+            const tipoPagoActual = pagos[index]?.tipoPago;
 
             return (
               <div
@@ -348,187 +509,202 @@ export function CreateOperationForm({
                   ) : null}
                 </div>
 
-              <div className="grid gap-6 lg:grid-cols-2">
-                <div className="space-y-4">
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-700">
-                      Monto del comprobante
-                    </label>
-                    <Input
-                      type="text"
-                      inputMode="decimal"
-                      placeholder="1,000.00"
-                      error={pagoErrors?.monto?.message}
-                      {...register(`pagos.${index}.monto`)}
-                      onChange={(event) => {
-                        void handleCurrencyChange(`pagos.${index}.monto`, event.target.value);
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-700">
-                      Cuenta destino
-                    </label>
-                    <select
-                      className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
-                      {...register(`pagos.${index}.cuentaDestinoId`, {
-                        onChange: () => {
-                          void trigger('pagos');
-                        },
-                      })}
-                    >
-                      <option value="">Selecciona una cuenta</option>
-                      {bankAccounts.map((account) => (
-                        <option key={account.id} value={account.id}>
-                          {account.label}
-                        </option>
-                      ))}
-                    </select>
-                    {pagoErrors?.cuentaDestinoId ? (
-                      <p className="mt-1 text-xs text-red-600">
-                        {pagoErrors.cuentaDestinoId.message}
-                      </p>
-                    ) : null}
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-700">
-                      Tipo de comprobante
-                    </label>
-                    <select
-                      className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
-                      {...register(`pagos.${index}.tipoPago`, {
-                        onChange: () => {
-                          void trigger('pagos');
-                        },
-                      })}
-                    >
-                      <option value="">Selecciona un tipo</option>
-                      <option value="EFECTIVO">Efectivo</option>
-                      <option value="TRANSFERENCIA">Transferencia</option>
-                      <option value="DEPOSITO">Depósito</option>
-                    </select>
-                    {pagoErrors?.tipoPago ? (
-                      <p className="mt-1 text-xs text-red-600">
-                        {pagoErrors.tipoPago.message}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-700">
-                      Imagen del comprobante
-                    </label>
-
-                    <label
-                      onDragOver={(event) => {
-                        event.preventDefault();
-                        setDraggingIndex(index);
-                      }}
-                      onDragLeave={(event) => {
-                        event.preventDefault();
-                        if (draggingIndex === index) {
-                          setDraggingIndex(null);
-                        }
-                      }}
-                      onDrop={(event) => {
-                        event.preventDefault();
-                        setDraggingIndex(null);
-
-                        const file = event.dataTransfer.files?.[0];
-                        if (!file) return;
-
-                        const fileList = buildFileList(file);
-
-                        setValue(`pagos.${index}.comprobante`, fileList, {
-                          shouldValidate: true,
-                          shouldDirty: true,
-                          shouldTouch: true,
-                        });
-
-                        void trigger('pagos');
-                      }}
-                      className={`flex min-h-[170px] w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-6 text-center transition ${
-                        draggingIndex === index
-                          ? 'border-slate-900 bg-slate-50'
-                          : 'border-slate-300 bg-white hover:border-slate-400'
-                      }`}
-                    >
-                      <input
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png,.webp"
-                        className="hidden"
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-700">
+                        Monto del comprobante
+                      </label>
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="1,000.00"
+                        error={pagoErrors?.monto?.message}
+                        {...register(`pagos.${index}.monto`)}
                         onChange={(event) => {
-                          setValue(
-                            `pagos.${index}.comprobante`,
-                            event.target.files ?? undefined,
-                            {
-                              shouldValidate: true,
-                              shouldDirty: true,
-                              shouldTouch: true,
+                          void handleCurrencyChange(`pagos.${index}.monto`, event.target.value);
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-700">
+                        Tipo de comprobante
+                      </label>
+                      <select
+                        className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
+                        {...register(`pagos.${index}.tipoPago`, {
+                          onChange: (event) => {
+                            if (event.target.value === 'EFECTIVO') {
+                              setValue(
+                                `pagos.${index}.cuentaDestinoId`,
+                                undefined,
+                                {
+                                  shouldValidate: true,
+                                  shouldDirty: true,
+                                },
+                              );
+                            }
+
+                            void trigger('pagos');
+                          },
+                        })}
+                      >
+                        <option value="">Selecciona un tipo</option>
+                        <option value="EFECTIVO">Efectivo</option>
+                        <option value="TRANSFERENCIA">Transferencia</option>
+                        <option value="DEPOSITO">Depósito</option>
+                      </select>
+                      {pagoErrors?.tipoPago ? (
+                        <p className="mt-1 text-xs text-red-600">
+                          {pagoErrors.tipoPago.message}
+                        </p>
+                      ) : null}
+                    </div>
+
+                    {tipoPagoActual !== 'EFECTIVO' && (
+                      <div>
+                        <label className="mb-2 block text-sm font-medium text-slate-700">
+                          Cuenta destino
+                        </label>
+
+                        <select
+                          className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
+                          {...register(`pagos.${index}.cuentaDestinoId`, {
+                            onChange: () => {
+                              void trigger('pagos');
                             },
-                          );
+                          })}
+                        >
+                          <option value="">Selecciona una cuenta</option>
+
+                          {bankAccounts.map((account) => (
+                            <option key={account.id} value={account.id}>
+                              {account.label}
+                            </option>
+                          ))}
+                        </select>
+
+                        {pagoErrors?.cuentaDestinoId ? (
+                          <p className="mt-1 text-xs text-red-600">
+                            {pagoErrors.cuentaDestinoId.message}
+                          </p>
+                        ) : null}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-700">
+                        Imagen del comprobante
+                      </label>
+
+                      <label
+                        onDragOver={(event) => {
+                          event.preventDefault();
+                          setDraggingIndex(index);
+                        }}
+                        onDragLeave={(event) => {
+                          event.preventDefault();
+                          if (draggingIndex === index) {
+                            setDraggingIndex(null);
+                          }
+                        }}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          setDraggingIndex(null);
+
+                          const file = event.dataTransfer.files?.[0];
+                          if (!file) return;
+
+                          const fileList = buildFileList(file);
+
+                          setValue(`pagos.${index}.comprobante`, fileList, {
+                            shouldValidate: true,
+                            shouldDirty: true,
+                            shouldTouch: true,
+                          });
 
                           void trigger('pagos');
                         }}
-                      />
+                        className={`flex min-h-[170px] w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-6 text-center transition ${draggingIndex === index
+                          ? 'border-slate-900 bg-slate-50'
+                          : 'border-slate-300 bg-white hover:border-slate-400'
+                          }`}
+                      >
+                        <input
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png,.webp"
+                          className="hidden"
+                          onChange={(event) => {
+                            setValue(
+                              `pagos.${index}.comprobante`,
+                              event.target.files ?? undefined,
+                              {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                                shouldTouch: true,
+                              },
+                            );
 
-                      <p className="text-sm font-medium text-slate-700">
-                        Arrastra y suelta el comprobante aquí
-                      </p>
-                      <p className="mt-1 text-xs text-slate-500">
-                        o haz clic para seleccionar un archivo
-                      </p>
-                      <p className="mt-2 text-xs text-slate-400">
-                        PDF, JPG, JPEG, PNG o WEBP
-                      </p>
+                            void trigger('pagos');
+                          }}
+                        />
+
+                        <p className="text-sm font-medium text-slate-700">
+                          Arrastra y suelta el comprobante aquí
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          o haz clic para seleccionar un archivo
+                        </p>
+                        <p className="mt-2 text-xs text-slate-400">
+                          PDF, JPG, JPEG, PNG o WEBP
+                        </p>
+                      </label>
+
+                      {pagos[index]?.comprobante instanceof FileList &&
+                        pagos[index]?.comprobante.length > 0 ? (
+
+                        <p className="mt-2 text-xs text-slate-600">
+                          Archivo seleccionado:{' '}
+                          <span className="font-medium text-slate-900">
+                            {pagos[index]?.comprobante[0]?.name}
+                          </span>
+                        </p>
+                      ) : null}
+
+                      {pagoErrors?.comprobante ? (
+                        <p className="mt-1 text-xs text-red-600">
+                          {pagoErrors.comprobante.message as string}
+                        </p>
+                      ) : null}
+
+                      {pagoMonto <= 0 ? (
+                        <p className="mt-1 text-xs text-slate-500">
+                          El comprobante será obligatorio cuando el monto sea mayor a cero.
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="lg:col-span-2">
+                    <label className="mb-2 block text-sm font-medium text-slate-700">
+                      Observaciones
                     </label>
-
-                    {pagos[index]?.comprobante instanceof FileList &&
-                    pagos[index]?.comprobante.length > 0 ? (
-                      
-                      <p className="mt-2 text-xs text-slate-600">
-                        Archivo seleccionado:{' '}
-                        <span className="font-medium text-slate-900">
-                          {pagos[index]?.comprobante[0]?.name}
-                        </span>
-                      </p>
-                    ) : null}
-
-                    {pagoErrors?.comprobante ? (
+                    <textarea
+                      rows={3}
+                      placeholder="Opcional"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-900"
+                      {...register(`pagos.${index}.observaciones`)}
+                    />
+                    {pagoErrors?.observaciones ? (
                       <p className="mt-1 text-xs text-red-600">
-                        {pagoErrors.comprobante.message as string}
-                      </p>
-                    ) : null}
-
-                    {pagoMonto <= 0 ? (
-                      <p className="mt-1 text-xs text-slate-500">
-                        El comprobante será obligatorio cuando el monto sea mayor a cero.
+                        {pagoErrors.observaciones.message}
                       </p>
                     ) : null}
                   </div>
                 </div>
-
-                <div className="lg:col-span-2">
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Observaciones 
-                  </label>
-                  <textarea
-                    rows={3}
-                    placeholder="Opcional"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-900"
-                    {...register(`pagos.${index}.observaciones`)}
-                  />
-                  {pagoErrors?.observaciones ? (
-                    <p className="mt-1 text-xs text-red-600">
-                      {pagoErrors.observaciones.message}
-                    </p>
-                  ) : null}
-                </div>
-              </div>
               </div>
             );
           })}
@@ -543,7 +719,12 @@ export function CreateOperationForm({
         <Button
           type="submit"
           isLoading={isSubmitting}
-          disabled={excedeMontoTotal || !!errors.pagos?.message}
+          disabled={
+            excedeMontoTotal ||
+            !!errors.pagos?.message ||
+            faltaSocioNivel2 ||
+            faltaSocioNivel3
+          }
           className="w-full justify-center"
         >
           Registrar

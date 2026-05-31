@@ -77,6 +77,7 @@ export function AddOperationPaymentForm({
     handleSubmit,
     setValue,
     control,
+    trigger,
     formState: { errors },
   } = useForm<AddOperationPaymentFormValues>({
     defaultValues: {
@@ -111,8 +112,7 @@ export function AddOperationPaymentForm({
 
   const esEfectivo = tipoPago === 'EFECTIVO';
 
-  const requiereComprobante =
-    tipoPago === 'TRANSFERENCIA' || tipoPago === 'DEPOSITO';
+  const requiereComprobante = true;
 
   const selectedFile =
     comprobante instanceof FileList && comprobante.length > 0
@@ -250,6 +250,10 @@ export function AddOperationPaymentForm({
               className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
               {...register('tipoPago', {
                 required: 'El tipo de comprobante es obligatorio',
+                onChange: async () => {
+                  await trigger('comprobante');
+                  await trigger('cuentaDestinoId');
+                },
               })}
             >
               <option value="">Selecciona un tipo</option>
@@ -380,11 +384,10 @@ export function AddOperationPaymentForm({
                       const fileList = buildFileList(file);
                       field.onChange(fileList);
                     }}
-                    className={`flex min-h-[170px] w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-6 text-center transition ${
-                      isDragging
-                        ? 'border-slate-900 bg-slate-50'
-                        : 'border-slate-300 bg-white hover:border-slate-400'
-                    }`}
+                    className={`flex min-h-[170px] w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-6 text-center transition ${isDragging
+                      ? 'border-slate-900 bg-slate-50'
+                      : 'border-slate-300 bg-white hover:border-slate-400'
+                      }`}
                   >
                     <input
                       type="file"

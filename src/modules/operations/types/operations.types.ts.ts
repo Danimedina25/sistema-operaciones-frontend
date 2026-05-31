@@ -53,14 +53,24 @@ export interface OperationsFilters {
 export interface CreateOperationRequest {
   clienteId: number;
   montoTotal: number;
+
   socioComercialId: number;
+
+  socioComercialNivel2Id?: number | null;
+  socioComercialNivel3Id?: number | null;
+
   observaciones?: string;
 }
 
 export interface UpdateOperationRequest {
   clienteId: number;
   montoTotal: number;
+
   socioComercialId: number;
+
+  socioComercialNivel2Id?: number | null;
+  socioComercialNivel3Id?: number | null;
+
   observaciones?: string;
 }
 
@@ -68,7 +78,7 @@ export interface AddPaymentRequest {
   operacionId: number;
   monto: number;
   tipoPago: PaymentType;
-  cuentaDestinoId: number;
+  cuentaDestinoId: number | undefined | null;
   comprobanteUrl: string;
   observaciones?: string;
 }
@@ -119,6 +129,12 @@ export interface PaymentOperationResponse {
 
   socioComercialId: number;
   socioComercialNombre: string;
+
+  socioComercialNivel2Id?: number | null;
+  socioComercialNivel2Nombre?: string | null;
+
+  socioComercialNivel3Id?: number | null;
+  socioComercialNivel3Nombre?: string | null;
 
   nivelesRedComercial: number;
 

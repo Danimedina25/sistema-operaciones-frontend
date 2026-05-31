@@ -46,13 +46,13 @@ export function CreateClienteForm({
 
       <div>
         <label className="mb-2 block text-sm font-medium text-slate-700">
-          Niveles de red comercial
+          Niveles de socios comerciales
         </label>
         <select
           className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
           {...register('nivelesRedComercial')}
         >
-          <option value="">Selecciona niveles</option>
+          <option value="">Selecciona niveles de socios comerciales</option>
           <option value="1">1 nivel</option>
           <option value="2">2 niveles</option>
           <option value="3">3 niveles</option>
@@ -79,7 +79,7 @@ export function CreateClienteForm({
           {...register('porcentajeComisionAplicado')}
         />
         <p className="mt-1 text-xs text-slate-500">
-          Este porcentaje se multiplicará por los niveles de red comercial.
+          Este porcentaje se multiplicará por los niveles de socios comerciales.
         </p>
       </div>
 

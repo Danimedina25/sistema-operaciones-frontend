@@ -20,6 +20,7 @@ import { useClientes } from '@/modules/clientes/hooks/use-clientes.js';
 import { useUpdateOperation } from '../hooks/use-update-operation.js';
 import { UpdateOperationForm } from '../components/UpdateOperationForm.js';
 import { useAuth } from '@/modules/auth/store/auth.context.js';
+import { useCommercialPartners } from '@/modules/socioscomerciales/hooks/use-commercial-partners.js';
 
 const initialFilters: OperationsFiltersType = {
   operationId: 0,
@@ -50,23 +51,28 @@ export default function OperationsPage() {
   } = useClientes();
 
   const { isSubmitting: isSubmittingUpdate, submitUpdateOperation } =
-  useUpdateOperation({
-    onSuccess: async () => {
-      setIsEditModalOpen(false);
-      setOperationToEdit(null);
-      await fetchOperations(currentPage);
-    },
-  });
+    useUpdateOperation({
+      onSuccess: async () => {
+        setIsEditModalOpen(false);
+        setOperationToEdit(null);
+        await fetchOperations(currentPage);
+      },
+    });
 
-  const {user } = useAuth();
+  const {
+    commercialPartners,
+  } = useCommercialPartners();
 
-  useEffect(()=>{
-    if(user?.roles.includes('SOCIO_COMERCIAL'))
-        void fetchMyClientes();
-      else
-        fetchClientes();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user?.roles.includes('SOCIO_COMERCIAL'))
+      void fetchMyClientes();
+
+    else
+      fetchClientes();
   }, [])
-  
+
   const {
     operations,
     isLoading,
@@ -83,6 +89,7 @@ export default function OperationsPage() {
       .map((cliente) => ({
         id: cliente.id,
         label: cliente.nombre,
+        nivelesRedComercial: cliente.nivelesRedComercial,
       }));
   }, [clientesCatalog]);
 
@@ -168,15 +175,15 @@ export default function OperationsPage() {
 
       </div>
 
-    <section className="rounded-2xl bg-white p-4 shadow-sm">
-     <div className="mb-5">
-      <h2 className="text-lg font-semibold text-slate-900">
-        Filtros de búsqueda
-      </h2>
-    </div>
+      <section className="rounded-2xl bg-white p-4 shadow-sm">
+        <div className="mb-5">
+          <h2 className="text-lg font-semibold text-slate-900">
+            Filtros de búsqueda
+          </h2>
+        </div>
 
-      <OperationsFilters filters={filters} onChange={setFilters} />
-    </section>
+        <OperationsFilters filters={filters} onChange={setFilters} />
+      </section>
 
       <section className="rounded-2xl bg-white p-4 shadow-sm">
         <div className="mb-5">
@@ -220,17 +227,18 @@ export default function OperationsPage() {
         title="Nueva operación"
         onClose={() => setIsCreateModalOpen(false)}
       >
-      {isLoadingBankAccounts || isLoadingClientes ? (
+        {isLoadingBankAccounts || isLoadingClientes ? (
           <div className="py-8 text-center text-sm text-slate-500">
             Cargando cuentas bancarias...
           </div>
         ) : (
           <CreateOperationForm
-          isSubmitting={isSubmitting}
-          bankAccounts={bankAccounts}
-          clientes={clientes}
-          onSubmit={submitCreateOperation}
-        />
+            isSubmitting={isSubmitting}
+            bankAccounts={bankAccounts}
+            clientes={clientes}
+            commercialPartners={commercialPartners}
+            onSubmit={submitCreateOperation}
+          />
         )}
       </Modal>
 
@@ -251,6 +259,7 @@ export default function OperationsPage() {
             operation={operationToEdit}
             isSubmitting={isSubmittingUpdate}
             clientes={clientes}
+            commercialPartners={commercialPartners}
             onSubmit={(values) =>
               submitUpdateOperation(operationToEdit.id, values)
             }

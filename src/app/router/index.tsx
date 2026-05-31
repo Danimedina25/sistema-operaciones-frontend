@@ -23,6 +23,7 @@ import OperationDetailPage from '@/modules/operations/pages/OperationDetailPage'
 
 import ReturnsForRequestPage from '@/modules/operations/pages/ReturnsForRequestPage';
 import ReturnsForPaymentPage from '@/modules/operations/pages/ReturnsForPaymentPage';
+import CommercialPartnersPage from '@/modules/socioscomerciales/pages/CommercialPartnersPage';
 
 export const router = createBrowserRouter([
   {
@@ -74,6 +75,18 @@ export const router = createBrowserRouter([
               {
                 path: paths.clientes,
                 element: <ClientesPage />,
+              },
+            ],
+          },
+
+           {
+            element: (
+              <RoleGuard allowedRoles={['ADMIN', 'SOCIO_COMERCIAL']} />
+            ),
+            children: [
+              {
+                path: paths.mycomercialpartners,
+                element: <CommercialPartnersPage />,
               },
             ],
           },

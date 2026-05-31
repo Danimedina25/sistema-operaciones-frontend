@@ -50,6 +50,12 @@ const navItems: NavItem[] = [
     allowedRoles: ['ADMIN', 'GERENTE', 'SOCIO_COMERCIAL'],
   },
   {
+    to: paths.mycomercialpartners,
+    label: 'Mi red de socios comerciales',
+    icon: UserSquare,
+    allowedRoles: ['ADMIN', 'SOCIO_COMERCIAL'],
+  },
+  {
     to: paths.operations,
     label: 'Operaciones',
     icon: ClipboardList,

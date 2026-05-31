@@ -28,6 +28,8 @@ export function useUpdateOperation(options?: UseUpdateOperationOptions) {
             clienteId: values.clienteId,
             montoTotal: values.montoTotal,
             socioComercialId: user.userId,
+            socioComercialNivel2Id: values.socioComercialNivel2Id,
+            socioComercialNivel3Id: values.socioComercialNivel3Id,
             observaciones: values.observaciones?.trim() || undefined,
         });
 

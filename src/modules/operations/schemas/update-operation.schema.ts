@@ -23,11 +23,54 @@ export const updateOperationSchema = z.object({
       message: 'El monto total debe ser mayor a cero',
     }),
 
+  socioComercialNivel2Id: z.preprocess(
+    (value) => {
+      if (
+        value === '' ||
+        value === null ||
+        value === undefined
+      ) {
+        return undefined;
+      }
+
+      return Number(value);
+    },
+    z.number().optional(),
+  ),
+
+  socioComercialNivel3Id: z.preprocess(
+    (value) => {
+      if (
+        value === '' ||
+        value === null ||
+        value === undefined
+      ) {
+        return undefined;
+      }
+
+      return Number(value);
+    },
+    z.number().optional(),
+  ),
+
   observaciones: z
     .string()
     .max(500, 'Las observaciones no pueden exceder 500 caracteres')
     .optional(),
-});
+})
+  .superRefine((value, ctx) => {
+    if (
+      value.socioComercialNivel3Id &&
+      !value.socioComercialNivel2Id
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['socioComercialNivel3Id'],
+        message:
+          'Debe seleccionar un socio comercial nivel 2 antes del nivel 3',
+      });
+    }
+  });
 
 export type UpdateOperationFormInput = z.input<typeof updateOperationSchema>;
 export type UpdateOperationFormValues = z.output<typeof updateOperationSchema>;

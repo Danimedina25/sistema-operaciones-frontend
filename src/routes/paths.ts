@@ -10,6 +10,7 @@ export const paths = {
   users: '/usuarios',
   clientes: '/clientes',
   bankAccounts: '/cuentas-bancarias',
+  mycomercialpartners: '/socioscomerciales',
 
   operations: '/operaciones',
   operationDetail: '/operaciones/:operationId',

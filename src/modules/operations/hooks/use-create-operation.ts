@@ -14,29 +14,34 @@ interface UseCreateOperationOptions {
   onSuccess?: (operationId: number) => void | Promise<void>;
 }
 
+interface ValidatedPayment {
+  monto: number;
+  tipoPago: PaymentType;
+  cuentaDestinoId?: number;
+  comprobante: File;
+  observaciones?: string;
+}
+
 export function useCreateOperation(options?: UseCreateOperationOptions) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
 
-  const submitCreateOperation = async (values: CreateOperationFormValues) => {
+  const submitCreateOperation = async (
+    values: CreateOperationFormValues,
+  ) => {
     try {
       if (!user?.userId) {
-        throw new Error('No se pudo identificar el usuario autenticado');
+        toast.error('No se pudo identificar el usuario autenticado');
+        return;
       }
 
-      setIsSubmitting(true);
-
-      const operation = await createOperation({
-        clienteId: values.clienteId,
-        montoTotal: values.montoTotal,
-        socioComercialId: user.userId,
-        observaciones: values.observaciones?.trim() || undefined,
-      });
+      /**
+       * VALIDAR TODO ANTES DE LLAMAR APIS
+       */
+      const pagosValidados: ValidatedPayment[] = [];
 
       for (const pago of values.pagos) {
-        if (pago.monto <= 0) {
-          continue;
-        }
+        if (pago.monto <= 0) continue;
 
         const comprobante =
           pago.comprobante instanceof File
@@ -46,25 +51,58 @@ export function useCreateOperation(options?: UseCreateOperationOptions) {
               : null;
 
         if (!comprobante) {
-          throw new Error(
+          toast.error(
             'Falta el comprobante de uno de los pagos con monto mayor a cero',
           );
+          return;
         }
 
         if (!pago.tipoPago) {
-          throw new Error(
+          toast.error(
             'Falta el tipo de pago en uno de los pagos con monto mayor a cero',
           );
+          return;
         }
 
-        if (!pago.cuentaDestinoId) {
-          throw new Error(
+        if (
+          pago.tipoPago !== 'EFECTIVO' &&
+          !pago.cuentaDestinoId
+        ) {
+          toast.error(
             'Falta la cuenta destino en uno de los pagos con monto mayor a cero',
           );
+          return;
         }
 
+        pagosValidados.push({
+          monto: pago.monto,
+          tipoPago: pago.tipoPago as PaymentType,
+          cuentaDestinoId: pago.cuentaDestinoId,
+          comprobante, // aquí ya es File
+          observaciones: pago.observaciones?.trim() || undefined,
+        });
+      }
+
+      setIsSubmitting(true);
+
+      /**
+       * CREAR OPERACIÓN
+       */
+      const operation = await createOperation({
+        clienteId: values.clienteId,
+        montoTotal: values.montoTotal,
+        socioComercialId: user.userId,
+        socioComercialNivel2Id: values.socioComercialNivel2Id,
+        socioComercialNivel3Id: values.socioComercialNivel3Id,
+        observaciones: values.observaciones?.trim() || undefined,
+      });
+
+      /**
+       * REGISTRAR PAGOS
+       */
+      for (const pago of pagosValidados) {
         const uploadResult = await uploadOperationProof({
-          file: comprobante,
+          file: pago.comprobante,
           userId: user.userId,
           operationId: operation.id,
         });
@@ -72,18 +110,18 @@ export function useCreateOperation(options?: UseCreateOperationOptions) {
         await addOperationPayment({
           operacionId: operation.id,
           monto: pago.monto,
-          tipoPago: pago.tipoPago as PaymentType,
+          tipoPago: pago.tipoPago,
           cuentaDestinoId: pago.cuentaDestinoId,
           comprobanteUrl: uploadResult.downloadUrl,
-          observaciones: pago.observaciones?.trim() || undefined,
+          observaciones: pago.observaciones,
         });
       }
 
       toast.success('Operación creada correctamente');
+
       await options?.onSuccess?.(operation.id);
     } catch (error) {
       toast.error(getApiErrorMessage(error));
-      throw error;
     } finally {
       setIsSubmitting(false);
     }

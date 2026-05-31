@@ -176,6 +176,92 @@ export function OperationDetailCard({
       </div>
 
       {canViewFinancialDetails && (
+        <div className="mt-8 border-t border-slate-200 pt-6">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
+            Red comercial asignada
+          </h3>
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                Configuración de red comercial
+              </p>
+
+              <p className="mt-2 text-sm text-slate-700">
+                Esta operación utiliza{' '}
+                <span className="font-semibold">
+                  {operation.nivelesRedComercial}
+                </span>{' '}
+                {operation.nivelesRedComercial === 1
+                  ? 'nivel de socios comerciales'
+                  : 'niveles de socios comerciales'}
+                .
+              </p>
+            </div>
+
+            <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="rounded-xl border border-slate-200 bg-white p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">
+                    N1
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                      Socio comercial nivel 1
+                    </p>
+
+                    <p className="mt-1 text-sm font-semibold text-slate-900">
+                      {operation.socioComercialNombre}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {operation.socioComercialNivel2Nombre && (
+                <div className="rounded-xl border border-slate-200 bg-white p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-600 text-xs font-bold text-white">
+                      N2
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                        Socio comercial nivel 2
+                      </p>
+
+                      <p className="mt-1 text-sm font-semibold text-slate-900">
+                        {operation.socioComercialNivel2Nombre}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {operation.socioComercialNivel3Nombre && (
+                <div className="rounded-xl border border-slate-200 bg-white p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white">
+                      N3
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                        Socio comercial nivel 3
+                      </p>
+
+                      <p className="mt-1 text-sm font-semibold text-slate-900">
+                        {operation.socioComercialNivel3Nombre}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {canViewFinancialDetails && (
         <>
           <div className="mt-8 border-t border-slate-200 pt-6">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
