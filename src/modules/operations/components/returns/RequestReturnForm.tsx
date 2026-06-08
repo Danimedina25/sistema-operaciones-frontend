@@ -165,10 +165,6 @@ export function RequestReturnForm({
 
   const saldoPendiente = Math.max(faltaPorSolicitar - totalSolicitado, 0);
   const excedente = Math.max(totalSolicitado - faltaPorSolicitar, 0);
-
-  const solicitudCompleta =
-  totalSolicitado === faltaPorSolicitar && faltaPorSolicitar > 0;
-
   const excedeMonto = totalSolicitado > faltaPorSolicitar;
 
  function updatePago(
@@ -294,7 +290,7 @@ export function RequestReturnForm({
               saldoPendiente === 0 ? 'text-emerald-700' : 'text-slate-900'
             }`}
           >
-            ${formatCurrencyDisplay(faltaPorSolicitar)}
+            ${formatCurrencyDisplay(saldoPendiente)}
           </span>
         </div>
       </div>

@@ -36,30 +36,6 @@ export function CommercialPartnersFilters({
 
       <div>
         <label className="mb-2 block text-sm font-medium text-slate-700">
-          Nivel
-        </label>
-
-        <select
-          className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
-          value={filters.nivel}
-          onChange={(e) =>
-            onChange({
-              ...filters,
-              nivel:
-                e.target.value === 'ALL'
-                  ? 'ALL'
-                  : (Number(e.target.value) as 2 | 3),
-            })
-          }
-        >
-          <option value="ALL">Todos</option>
-          <option value="2">Nivel 2</option>
-          <option value="3">Nivel 3</option>
-        </select>
-      </div>
-
-      <div>
-        <label className="mb-2 block text-sm font-medium text-slate-700">
           Estado
         </label>
 

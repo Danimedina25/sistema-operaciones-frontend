@@ -19,8 +19,10 @@ interface UserFormProps {
     roleId: number;
     activo?: boolean;
     roleName?: string;
-    commissionPercentage?: number;
     appliesToNetwork?: boolean;
+    cuentaBancaria?: string;
+    banco?: string;
+    titularCuenta?: string;
   };
 }
 
@@ -44,19 +46,24 @@ export function UserForm({
       roleId: '' as unknown as number,
       roleName: '',
       activo: true,
-      commissionPercentage: undefined,
       appliesToNetwork: true,
+      cuentaBancaria: '',
+      banco: '',
+      titularCuenta: '',
     },
     mode: 'onBlur',
   });
 
   const selectedRoleId = watch('roleId');
 
+  const roleName = watch('roleName');
+
   const selectedRole = USER_ROLE_OPTIONS.find(
     (role) => role.id === Number(selectedRoleId),
   );
 
-  const isSocioComercial = selectedRole?.name === 'SOCIO_COMERCIAL';
+  const isSocioComercial =
+    roleName === 'SOCIO_COMERCIAL';
 
   useEffect(() => {
     if (initialValues) {
@@ -65,8 +72,10 @@ export function UserForm({
         roleId: initialValues.roleId as unknown as number,
         roleName: initialValues.roleName ?? '',
         activo: initialValues.activo ?? true,
-        commissionPercentage: initialValues.commissionPercentage,
         appliesToNetwork: initialValues.appliesToNetwork ?? true,
+        cuentaBancaria: initialValues.cuentaBancaria ?? '',
+        banco: initialValues.banco ?? '',
+        titularCuenta: initialValues.titularCuenta ?? '',
       });
       return;
     }
@@ -76,29 +85,65 @@ export function UserForm({
       roleId: '' as unknown as number,
       roleName: '',
       activo: true,
-      commissionPercentage: undefined,
       appliesToNetwork: true,
     });
   }, [initialValues, reset]);
-
   useEffect(() => {
-    setValue('roleName', selectedRole?.name ?? '', {
-      shouldValidate: true,
-      shouldDirty: false,
-    });
+    if (!selectedRole) {
+      return;
+    }
 
-    if (!isSocioComercial) {
-      setValue('commissionPercentage', undefined, {
+    setValue(
+      'roleName',
+      selectedRole.name,
+      {
         shouldValidate: true,
         shouldDirty: false,
-      });
+      },
+    );
 
-      setValue('appliesToNetwork', true, {
-        shouldValidate: false,
-        shouldDirty: false,
-      });
+    if (!isSocioComercial) {
+      setValue(
+        'appliesToNetwork',
+        true,
+        {
+          shouldValidate: false,
+          shouldDirty: false,
+        },
+      );
+
+      setValue(
+        'cuentaBancaria',
+        '',
+        {
+          shouldValidate: false,
+          shouldDirty: false,
+        },
+      );
+
+      setValue(
+        'banco',
+        '',
+        {
+          shouldValidate: false,
+          shouldDirty: false,
+        },
+      );
+
+      setValue(
+        'titularCuenta',
+        '',
+        {
+          shouldValidate: false,
+          shouldDirty: false,
+        },
+      );
     }
-  }, [selectedRole, isSocioComercial, setValue]);
+  }, [
+    selectedRole,
+    isSocioComercial,
+    setValue,
+  ]);
 
   return (
     <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
@@ -135,34 +180,57 @@ export function UserForm({
         ) : null}
       </div>
 
+
       {isSocioComercial && (
         <>
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">
-              Porcentaje de comisión
+              Cuenta bancaria
             </label>
-            <Input
-              type="number"
-              step="0.01"
-              min="0.01"
-              max="100"
-              placeholder="Ej. 8.50"
-              error={errors.commissionPercentage?.message}
-              {...register('commissionPercentage')}
+
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={18}
+              placeholder="CLABE interbancaria"
+              {...register('cuentaBancaria')}
+              onInput={(e) => {
+                e.currentTarget.value =
+                  e.currentTarget.value.replace(/\D/g, '');
+              }}
+              className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-slate-400"
             />
-            <p className="mt-1 text-xs text-slate-500">
-              Este porcentaje se aplicará al socio comercial y a su red.
-            </p>
+
+            {errors.cuentaBancaria && (
+              <p className="mt-1 text-xs text-red-600">
+                {errors.cuentaBancaria.message}
+              </p>
+            )}
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-slate-700">
-            <input
-              type="checkbox"
-              className="h-4 w-4 rounded border-slate-300"
-              {...register('appliesToNetwork')}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Banco
+            </label>
+
+            <Input
+              placeholder="Nombre del banco"
+              error={errors.banco?.message}
+              {...register('banco')}
             />
-            Aplicar a toda su red
-          </label>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Titular de la cuenta
+            </label>
+
+            <Input
+              placeholder="Nombre del titular"
+              error={errors.titularCuenta?.message}
+              {...register('titularCuenta')}
+            />
+          </div>
         </>
       )}
 

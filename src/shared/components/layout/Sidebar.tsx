@@ -3,13 +3,13 @@ import {
   LayoutDashboard,
   Users,
   Landmark,
-  LogOut,
   UserSquare,
-  CreditCard,
-  CircleDollarSign,
+  Network,
   ClipboardList,
   HandCoins,
   WalletCards,
+  BadgeDollarSign,
+  LogOut
 } from 'lucide-react';
 
 import { paths } from '@/routes/paths';
@@ -52,7 +52,7 @@ const navItems: NavItem[] = [
   {
     to: paths.mycomercialpartners,
     label: 'Mi red de socios comerciales',
-    icon: UserSquare,
+    icon: Network,
     allowedRoles: ['ADMIN', 'SOCIO_COMERCIAL'],
   },
   {
@@ -69,12 +69,17 @@ const navItems: NavItem[] = [
   },
   {
     to: paths.returnsforpayment,
-    label: 'Retornos por pagar',
+    label: 'Retornos por registrar',
     icon: WalletCards,
     allowedRoles: ['ADMIN', 'GERENTE'],
   },
+  {
+    to: paths.comisionessocios,
+    label: 'Pago de comisiones a socios comerciales',
+    icon: BadgeDollarSign,
+    allowedRoles: ['ADMIN', 'GERENTE', 'JEFA_CAJAS'],
+  },
 ];
-
 export function Sidebar() {
   const { logout, user, hasRole } = useAuth();
 

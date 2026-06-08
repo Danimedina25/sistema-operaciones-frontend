@@ -7,7 +7,6 @@ import type {
 export interface CommercialPartnersFilters {
   search: string;
   status: 'ALL' | 'ACTIVE' | 'INACTIVE';
-  nivel: 'ALL' | 2 | 3;
 }
 
 export function filterCommercialPartners(
@@ -29,11 +28,7 @@ export function filterCommercialPartners(
       (filters.status === 'ACTIVE' && partner.activo) ||
       (filters.status === 'INACTIVE' && !partner.activo);
 
-    const matchesNivel =
-      filters.nivel === 'ALL' ||
-      partner.nivel === filters.nivel;
-
-    return matchesSearch && matchesStatus &&
-      matchesNivel;
+  
+    return matchesSearch && matchesStatus;
   });
 }

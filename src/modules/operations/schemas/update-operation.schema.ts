@@ -70,6 +70,18 @@ export const updateOperationSchema = z.object({
           'Debe seleccionar un socio comercial nivel 2 antes del nivel 3',
       });
     }
+
+    if (
+      value.socioComercialNivel2Id === value.socioComercialNivel3Id &&
+      value.socioComercialNivel2Id !== undefined
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['socioComercialNivel3Id'],
+        message:
+          'No puede seleccionar el mismo socio comercial en ambos niveles',
+      });
+    }
   });
 
 export type UpdateOperationFormInput = z.input<typeof updateOperationSchema>;

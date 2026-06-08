@@ -49,6 +49,10 @@ export function ReturnsForRequestTable({
           <thead className="bg-slate-50">
             <tr className="text-left text-sm text-slate-600">
               <th className="px-4 py-3 font-medium text-center">
+                Folio
+              </th>
+
+              <th className="px-4 py-3 font-medium text-center">
                 Cliente primario
               </th>
 
@@ -104,18 +108,19 @@ export function ReturnsForRequestTable({
                   className="cursor-pointer border-t border-slate-200 text-sm transition hover:bg-slate-50"
                 >
                   <td className="px-4 py-4 font-medium text-slate-900">
-                    <div>{operation.clienteNombre}</div>
-
                     <div className="mt-1 text-xs font-normal text-slate-400">
-                      #{operation.id}
+                      {operation.id}
                     </div>
+                  </td>
+                  <td className="px-4 py-4 font-medium text-slate-900">
+                    <div>{operation.clienteNombre}</div>
                   </td>
 
                   <td className="px-4 py-4 text-slate-600">
                     {operation.socioComercialNombre}
                   </td>
 
-                   <td className="px-4 py-4 text-slate-600">
+                  <td className="px-4 py-4 text-slate-600">
                     {formatDateTime(operation.createdAt)}
                   </td>
 

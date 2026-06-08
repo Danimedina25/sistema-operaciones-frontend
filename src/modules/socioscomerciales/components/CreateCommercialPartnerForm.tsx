@@ -11,6 +11,7 @@ import {
   type CreateCommercialPartnerFormInput,
   type CreateCommercialPartnerFormValues,
 } from '@/modules/socioscomerciales/schemas/create-commercial-partner.schema';
+import { capitalizeOnChange, capitalizeWords } from '@/shared/utils/text.utils';
 
 interface CreateCommercialPartnerFormProps {
   isSubmitting: boolean;
@@ -26,6 +27,7 @@ export function CreateCommercialPartnerForm({
 }: CreateCommercialPartnerFormProps) {
   const {
     register,
+    setValue,
     handleSubmit,
     formState: { errors },
   } = useForm<
@@ -39,7 +41,6 @@ export function CreateCommercialPartnerForm({
       cuentaBancaria: '',
       banco: '',
       titularCuenta: '',
-      nivel: 2,
       activo: true,
     },
     mode: 'onChange',
@@ -58,7 +59,9 @@ export function CreateCommercialPartnerForm({
         <Input
           placeholder="Nombre del socio comercial"
           error={errors.nombre?.message}
-          {...register('nombre')}
+          {...register('nombre', {
+            onChange: capitalizeOnChange(setValue, 'nombre'),
+          })}
         />
       </div>
 
@@ -91,7 +94,9 @@ export function CreateCommercialPartnerForm({
         <Input
           placeholder="Nombre del banco"
           error={errors.banco?.message}
-          {...register('banco')}
+          {...register('banco', {
+            onChange: capitalizeOnChange(setValue, 'banco'),
+          })}
         />
       </div>
 
@@ -103,29 +108,10 @@ export function CreateCommercialPartnerForm({
         <Input
           placeholder="Nombre del titular"
           error={errors.titularCuenta?.message}
-          {...register('titularCuenta')}
+          {...register('titularCuenta', {
+            onChange: capitalizeOnChange(setValue, 'titularCuenta'),
+          })}
         />
-      </div>
-
-      <div>
-        <label className="mb-2 block text-sm font-medium text-slate-700">
-          Nivel
-        </label>
-
-        <select
-          className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
-          {...register('nivel')}
-        >
-          <option value="">Selecciona un nivel</option>
-          <option value="2">Nivel 2</option>
-          <option value="3">Nivel 3</option>
-        </select>
-
-        {errors.nivel && (
-          <p className="mt-1 text-xs text-red-600">
-            {errors.nivel.message}
-          </p>
-        )}
       </div>
 
       <div className="flex justify-end">

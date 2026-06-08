@@ -271,7 +271,7 @@ export function OperationDetailCard({
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               <SummaryItem
                 label="Porcentaje comisiones socios comerciales"
-                value={`${operation.porcentajeComisionRedTotal}%`}
+                value={`${operation.porcentajeComisionRedTotal}% (${operation.porcentajeComisionAplicado}% a cada uno)`}
               />
 
               <SummaryItem
@@ -292,7 +292,7 @@ export function OperationDetailCard({
 
               <SummaryItem
                 label="Total comisiones socios comerciales"
-                value={formatCurrency(operation.montoComisionRedTotal)}
+                value={formatCurrency(operation.montoComisionRedTotal) + ` ($${operation.montoComisionRedTotal / operation.nivelesRedComercial} a cada uno)`}
                 variant="amber"
               />
 

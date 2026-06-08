@@ -8,7 +8,6 @@ export interface CommercialPartnerResponse {
   cuentaBancaria: string;
   banco: string;
   titularCuenta: string;
-  nivel: 2 | 3;
   activo: boolean;
 
   socioComercialId: number;
@@ -20,7 +19,6 @@ export interface CreateCommercialPartnerRequest {
   cuentaBancaria: string;
   banco: string;
   titularCuenta: string;
-  nivel: 2 | 3;
   activo?: boolean;
 }
 
@@ -29,7 +27,6 @@ export interface UpdateCommercialPartnerRequest {
   cuentaBancaria: string;
   banco: string;
   titularCuenta: string;
-  nivel: 2 | 3;
   activo?: boolean;
 }
 

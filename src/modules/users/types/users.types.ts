@@ -4,8 +4,13 @@ import { ApiResponse } from '@/shared/types/api.types';
 export interface CommercialSettingsResponse {
   id: number;
   userId: number;
-  commissionPercentage: number;
+
   appliesToNetwork: boolean;
+
+  cuentaBancaria: string;
+  banco: string;
+  titularCuenta: string;
+
   createdAt: string;
   updatedAt: string;
 }
@@ -26,16 +31,22 @@ export interface CreateUserRequest {
   nombre: string;
   correo: string;
   roleId: number;
-  commissionPercentage?: number;
+
   appliesToNetwork?: boolean;
+
+  cuentaBancaria?: string;
+  banco?: string;
+  titularCuenta?: string;
 }
 
 export interface UpdateUserRequest {
   nombre: string;
   activo?: boolean;
   roleId: number;
-  commissionPercentage?: number;
   appliesToNetwork?: boolean;
+  cuentaBancaria?: string;
+  banco?: string;
+  titularCuenta?: string;
 }
 
 export interface UpdateUserEmailRequest {
@@ -51,6 +62,9 @@ export interface UserCreatedResponse {
   debeCambiarPassword: boolean;
   correoVerificado: boolean;
   activationUrl: string;
+  cuentaBancaria?: string;
+  banco?: string;
+  titularCuenta?: string;
 }
 
 export type UsersListApiResponse = ApiResponse<UserResponse[]>;

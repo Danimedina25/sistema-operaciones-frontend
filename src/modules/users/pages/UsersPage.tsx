@@ -155,10 +155,13 @@ export default function UsersPage() {
               roleId: editingUser.roleId,
               activo: editingUser.activo,
               roleName: editingUser.roleName,
-              commissionPercentage:
-                editingUser.commercialSettings?.commissionPercentage,
               appliesToNetwork:
                 editingUser.commercialSettings?.appliesToNetwork ?? true,
+              cuentaBancaria:
+                editingUser.commercialSettings?.cuentaBancaria ?? '',
+              banco: editingUser.commercialSettings?.banco ?? '',
+              titularCuenta:
+                editingUser.commercialSettings?.titularCuenta ?? ''
             }}
             onSubmit={(values) => submitUpdateUser(editingUser, values)}
             submitLabel="Guardar cambios"

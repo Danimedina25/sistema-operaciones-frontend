@@ -1,0 +1,321 @@
+import { useEffect, useState } from 'react';
+
+import { Modal } from '@/shared/components/ui/Modal';
+
+import type {
+  CommissionBeneficiaryResponse,
+} from '../types/commercial-partner-commissions.types';
+
+interface PayCommissionModalProps {
+  open: boolean;
+
+  beneficiary: CommissionBeneficiaryResponse | null;
+
+  isSubmitting?: boolean;
+
+  onClose: () => void;
+
+  onSubmit: (
+    paymentProof: File,
+  ) => Promise<void>;
+}
+
+function formatCurrency(
+  value: number,
+) {
+  return new Intl.NumberFormat(
+    'es-MX',
+    {
+      style: 'currency',
+      currency: 'MXN',
+    },
+  ).format(value);
+}
+
+function isImageFile(
+  file?: File | null,
+) {
+  if (!file) return false;
+
+  return file.type.startsWith(
+    'image/',
+  );
+}
+
+export function PayCommissionModal({
+  open,
+  beneficiary,
+  isSubmitting = false,
+  onClose,
+  onSubmit,
+}: PayCommissionModalProps) {
+  const [
+    paymentProofFile,
+    setPaymentProofFile,
+  ] = useState<File | null>(
+    null,
+  );
+
+  const [
+    previewUrl,
+    setPreviewUrl,
+  ] = useState<string | null>(
+    null,
+  );
+
+  const [isDragging,
+    setIsDragging] =
+    useState(false);
+
+  useEffect(() => {
+    if (
+      !paymentProofFile ||
+      !isImageFile(
+        paymentProofFile,
+      )
+    ) {
+      setPreviewUrl(null);
+
+      return;
+    }
+
+    const objectUrl =
+      URL.createObjectURL(
+        paymentProofFile,
+      );
+
+    setPreviewUrl(objectUrl);
+
+    return () =>
+      URL.revokeObjectURL(
+        objectUrl,
+      );
+  }, [paymentProofFile]);
+
+  useEffect(() => {
+    if (open) {
+      setPaymentProofFile(
+        null,
+      );
+
+      setPreviewUrl(
+        null,
+      );
+    }
+  }, [open]);
+
+  return (
+    <Modal
+      open={open}
+      title="Registrar Pago de Comisión"
+      onClose={onClose}
+    >
+      {!beneficiary ? null : (
+        <div className="space-y-5">
+          <div className="grid gap-3 rounded-xl bg-slate-50 p-4 text-sm">
+            <div>
+              <span className="font-medium">
+                Beneficiario:
+              </span>{' '}
+              {beneficiary.nombre}
+            </div>
+
+            <div>
+              <span className="font-medium">
+                Nivel:
+              </span>{' '}
+              {beneficiary.nivel}
+            </div>
+
+            <div>
+              <span className="font-medium">
+                Banco:
+              </span>{' '}
+              {beneficiary.banco}
+            </div>
+
+            <div>
+              <span className="font-medium">
+                Cuenta:
+              </span>{' '}
+              {beneficiary.cuentaBancaria}
+            </div>
+
+            <div>
+              <span className="font-medium">
+                Titular:
+              </span>{' '}
+              {beneficiary.titularCuenta}
+            </div>
+
+            <div>
+              <span className="font-medium">
+                Comisión:
+              </span>{' '}
+              {formatCurrency(
+                beneficiary.commissionAmount,
+              )}
+            </div>
+          </div>
+
+          <div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                Comprobante de pago
+              </label>
+
+              {paymentProofFile && (
+                <div className="mb-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                  <div className="flex items-start gap-3">
+
+                    <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
+
+                      {previewUrl ? (
+                        <img
+                          src={previewUrl}
+                          alt="Comprobante"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span className="px-2 text-center text-xs font-medium text-slate-500">
+                          Archivo seleccionado
+                        </span>
+                      )}
+
+                    </div>
+
+                    <div className="flex-1">
+
+                      <p className="text-sm font-semibold text-slate-800">
+                        Comprobante seleccionado
+                      </p>
+
+                      <p className="mt-1 truncate text-xs text-slate-500">
+                        {paymentProofFile.name}
+                      </p>
+
+                      {previewUrl && (
+                        <a
+                          href={previewUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-3 inline-flex rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-200"
+                        >
+                          Ver imagen
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <label
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  setIsDragging(false);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDragging(false);
+
+                  const file =
+                    e.dataTransfer.files?.[0];
+
+                  if (!file) {
+                    return;
+                  }
+
+                  setPaymentProofFile(
+                    file,
+                  );
+                }}
+                className={`flex min-h-[170px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-6 text-center transition ${isDragging
+                  ? 'border-slate-900 bg-slate-50'
+                  : 'border-slate-300 bg-white hover:border-slate-400'
+                  }`}
+              >
+                <input
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png,.webp"
+                  className="hidden"
+                  onChange={(
+                    event,
+                  ) => {
+                    const file =
+                      event.target
+                        .files?.[0];
+
+                    if (!file) {
+                      return;
+                    }
+
+                    setPaymentProofFile(
+                      file,
+                    );
+                  }}
+                />
+
+                <p className="text-sm font-medium text-slate-700">
+                  Arrastra y suelta el comprobante aquí
+                </p>
+
+                <p className="mt-1 text-xs text-slate-500">
+                  o haz clic para seleccionar un archivo
+                </p>
+
+                <p className="mt-2 text-xs text-slate-400">
+                  PDF, JPG, JPEG, PNG o WEBP
+                </p>
+              </label>
+
+              {paymentProofFile && (
+                <p className="mt-2 text-xs text-slate-600">
+                  Archivo seleccionado:{' '}
+                  <span className="font-medium text-slate-900">
+                    {paymentProofFile.name}
+                  </span>
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="button"
+              disabled={
+                !paymentProofFile ||
+                isSubmitting
+              }
+              onClick={() => {
+                if (!paymentProofFile) {
+                  return;
+                }
+
+                void onSubmit(
+                  paymentProofFile,
+                );
+              }}
+              className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+            >
+              {isSubmitting
+                ? 'Registrando...'
+                : 'Confirmar pago'}
+            </button>
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+}

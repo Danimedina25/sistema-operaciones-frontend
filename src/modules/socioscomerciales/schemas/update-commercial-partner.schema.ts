@@ -26,27 +26,7 @@ export const updateCommercialPartnerSchema = z.object({
     .min(1, 'El titular de la cuenta es obligatorio')
     .max(150, 'El titular de la cuenta no puede exceder 150 caracteres'),
 
-  activo: z.boolean().optional(),
-
-  nivel: z.preprocess(
-    (value) => {
-      if (
-        value === '' ||
-        value === null ||
-        value === undefined
-      ) {
-        return undefined;
-      }
-
-      return Number(value);
-    },
-    z.number({
-      error: 'Debe seleccionar un nivel',
-    }).refine(
-      (value) => value === 2 || value === 3,
-      'Debe seleccionar un nivel válido',
-    ),
-  )
+  activo: z.boolean().optional()
 });
 
 export type UpdateCommercialPartnerFormInput =

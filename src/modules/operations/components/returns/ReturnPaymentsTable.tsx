@@ -45,10 +45,6 @@ export function ReturnPaymentsTable({
     (returnPayment) => returnPayment.estatus === 'SOLICITADO',
   );
 
-  const canRequestReturns =
-    operationIsValidated &&
-    hasPendingAmountToRequest &&
-    !!onAddRequestReturnPayment;
 
   const canPayReturns =
     hasPendingAmountToPay &&
@@ -56,14 +52,34 @@ export function ReturnPaymentsTable({
     hasPendingRequestedReturns &&
     !!onPayReturn;
 
-  const requestStatusMessage =
-    !hasPendingAmountToRequest || hasRequestedReturns || operationIsCompleted
-      ? 'Se ha solicitado el retorno completo'
-      : 'No se pueden solicitar retornos todavía';
+  const canOperationRequestReturns =
+    operationStatus === 'VALIDADA' ||
+    operationStatus === 'RETORNO_SOLICITADO';
+
+  const canRequestReturns =
+    canOperationRequestReturns &&
+    hasPendingAmountToRequest &&
+    !!onAddRequestReturnPayment;
+
+  let requestStatusMessage: string | null = null;
+
+  if (!canOperationRequestReturns) {
+    requestStatusMessage = 'No se pueden solicitar retornos todavía';
+  } else if (!hasPendingAmountToRequest) {
+    requestStatusMessage = 'Se ha solicitado el retorno completo';
+  }
 
   const paymentStatusMessage = !hasPendingAmountToPay
     ? 'Se han pagado todos los retornos'
-    : montoPendientePorRetornar === montoPendientePorSolicitar ? 'No se pueden pagar retornos todavía' : null;
+    : montoPendientePorRetornar === montoPendientePorSolicitar ? 'No se pueden registrar retornos todavía' : null;
+
+  console.log({
+    montoPendientePorSolicitar,
+    hasPendingAmountToRequest,
+    canRequestReturns,
+    onAddRequestReturnPayment: !!onAddRequestReturnPayment,
+    operationStatus,
+  });
 
   return (
     <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
@@ -75,7 +91,7 @@ export function ReturnPaymentsTable({
             </p>
 
             <h3 className="mt-1 text-xl font-semibold text-slate-900">
-              Historial de pagos de retorno al cliente
+              Retornos de dinero al cliente
             </h3>
           </div>
 
@@ -86,9 +102,8 @@ export function ReturnPaymentsTable({
               </p>
 
               <p
-                className={`mt-0.5 text-base font-semibold ${
-                  hasPendingAmountToRequest ? 'text-violet-700' : 'text-slate-400'
-                }`}
+                className={`mt-0.5 text-base font-semibold ${hasPendingAmountToRequest ? 'text-violet-700' : 'text-slate-400'
+                  }`}
               >
                 {formatCurrency(montoPendientePorSolicitar ?? 0)}
               </p>
@@ -106,11 +121,11 @@ export function ReturnPaymentsTable({
                   >
                     Solicitar retorno
                   </button>
-                ) : (
+                ) : requestStatusMessage ? (
                   <p className="text-xs font-medium text-slate-400">
                     {requestStatusMessage}
                   </p>
-                )}
+                ) : null}
               </div>
             </div>
 
@@ -120,9 +135,8 @@ export function ReturnPaymentsTable({
               </p>
 
               <p
-                className={`mt-0.5 text-base font-semibold ${
-                  hasPendingAmountToPay ? 'text-amber-700' : 'text-slate-400'
-                }`}
+                className={`mt-0.5 text-base font-semibold ${hasPendingAmountToPay ? 'text-amber-700' : 'text-slate-400'
+                  }`}
               >
                 {formatCurrency(montoPendientePorRetornar ?? 0)}
               </p>
@@ -179,11 +193,10 @@ export function ReturnPaymentsTable({
 
                   <td className="px-4 py-4">
                     <span
-                      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                        returnPayment.estatus === 'REALIZADO'
-                          ? 'bg-green-50 text-green-700'
-                          : 'bg-amber-50 text-amber-700'
-                      }`}
+                      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${returnPayment.estatus === 'REALIZADO'
+                        ? 'bg-green-50 text-green-700'
+                        : 'bg-amber-50 text-amber-700'
+                        }`}
                     >
                       {returnPayment.estatus === 'REALIZADO'
                         ? 'Realizado'
@@ -248,7 +261,7 @@ export function ReturnPaymentsTable({
                           onClick={() => onPayReturn?.(returnPayment)}
                           className="inline-flex min-w-[95px] items-center justify-center rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700"
                         >
-                          Pagar retorno
+                          Registrar retorno
                         </button>
                       ) : (
                         <span className="text-sm text-slate-400">-</span>

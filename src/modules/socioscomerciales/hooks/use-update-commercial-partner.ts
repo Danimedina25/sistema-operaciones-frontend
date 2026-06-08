@@ -30,7 +30,6 @@ export function useUpdateCommercialPartner(
         cuentaBancaria: values.cuentaBancaria.trim(),
         banco: values.banco.trim(),
         titularCuenta: values.titularCuenta.trim(),
-        nivel: values.nivel,
         activo: values.activo,
       });
 

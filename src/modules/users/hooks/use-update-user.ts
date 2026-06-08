@@ -19,21 +19,34 @@ export function useUpdateUser(options?: UseUpdateUserOptions) {
     try {
       setIsSubmitting(true);
 
-      const isSocioComercial = values.roleName === 'SOCIO_COMERCIAL';
+      const isSocioComercial =
+        values.roleName === 'SOCIO_COMERCIAL';
 
       const updatedUser = await updateUser(user.id, {
         nombre: values.nombre.trim(),
         roleId: values.roleId,
         activo: values.activo,
-        commissionPercentage: isSocioComercial
-          ? values.commissionPercentage
-          : undefined,
+
         appliesToNetwork: isSocioComercial
           ? values.appliesToNetwork
           : undefined,
+
+        cuentaBancaria: isSocioComercial
+          ? values.cuentaBancaria?.trim() || undefined
+          : undefined,
+
+        banco: isSocioComercial
+          ? values.banco?.trim() || undefined
+          : undefined,
+
+        titularCuenta: isSocioComercial
+          ? values.titularCuenta?.trim() || undefined
+          : undefined,
       });
 
-      toast.success(`Usuario ${updatedUser.nombre} actualizado correctamente`);
+      toast.success(
+        `Usuario ${updatedUser.nombre} actualizado correctamente`,
+      );
 
       if (options?.onSuccess) {
         await options.onSuccess();

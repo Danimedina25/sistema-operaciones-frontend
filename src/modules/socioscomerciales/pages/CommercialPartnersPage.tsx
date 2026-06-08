@@ -29,7 +29,6 @@ import { useUpdateCommercialPartner } from '../hooks/use-update-commercial-partn
 const initialFilters: CommercialPartnersFiltersType = {
   search: '',
   status: 'ALL',
-   nivel: 'ALL',
 };
 
 export default function CommercialPartnersPage() {
@@ -166,7 +165,6 @@ export default function CommercialPartnersPage() {
               cuentaBancaria: editingPartner.cuentaBancaria,
               banco: editingPartner.banco,
               titularCuenta: editingPartner.titularCuenta,
-              nivel: editingPartner.nivel,
               activo: editingPartner.activo,
             }}
             onSubmit={(values) =>

@@ -32,7 +32,6 @@ export function CreateUserForm({
       correo: '',
       roleId: '' as unknown as number,
       roleName: '',
-      commissionPercentage: undefined,
       appliesToNetwork: true,
     },
     mode: 'onBlur',
@@ -53,11 +52,6 @@ export function CreateUserForm({
     });
 
     if (!isSocioComercial) {
-      setValue('commissionPercentage', undefined, {
-        shouldValidate: true,
-        shouldDirty: false,
-      });
-
       setValue('appliesToNetwork', true, {
         shouldValidate: false,
         shouldDirty: false,
@@ -118,30 +112,42 @@ export function CreateUserForm({
         <>
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">
-              Porcentaje de comisión
+              Cuenta bancaria del socio comercial
             </label>
-            <Input
-              type="number"
-              step="0.01"
-              min="0.01"
-              max="100"
-              placeholder="Ej. 8.50"
-              error={errors.commissionPercentage?.message}
-              {...register('commissionPercentage')}
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={18}
+              placeholder="CLABE interbancaria"
+              {...register('cuentaBancaria')}
+              onInput={(e) => {
+                e.currentTarget.value = e.currentTarget.value.replace(/\D/g, '');
+              }}
+              className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-slate-400"
             />
-            <p className="mt-1 text-xs text-slate-500">
-              Este porcentaje se aplicará al socio comercial y a su red.
-            </p>
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-slate-700">
-            <input
-              type="checkbox"
-              className="h-4 w-4 rounded border-slate-300"
-              {...register('appliesToNetwork')}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Banco del socio comercial
+            </label>
+            <Input
+              placeholder="Nombre del banco"
+              error={errors.banco?.message}
+              {...register('banco')}
             />
-            Aplicar a toda su red
-          </label>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Titular de la cuenta del socio comercial
+            </label>
+            <Input
+              placeholder="Nombre del titular"
+              error={errors.titularCuenta?.message}
+              {...register('titularCuenta')}
+            />
+          </div>
         </>
       )}
 

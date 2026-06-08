@@ -28,26 +28,59 @@ export const createUserSchema = z
 
     roleName: z.string().optional(),
 
-    commissionPercentage: z.preprocess(
-      (value) => {
-        if (value === '' || value === null || value === undefined) {
-          return undefined;
-        }
-
-        return Number(value);
-      },
-      z.number().positive('El porcentaje debe ser mayor a 0').max(100, 'El porcentaje no puede ser mayor a 100').optional(),
-    ),
-
     appliesToNetwork: z.boolean().optional().default(true),
+
+    cuentaBancaria: z
+      .string()
+      .trim()
+      .regex(
+        /^\d{18}$/,
+        'La CLABE interbancaria debe contener exactamente 18 dígitos',
+      )
+      .optional(),
+
+    banco: z
+      .string()
+      .max(
+        100,
+        'El banco no puede exceder 100 caracteres',
+      )
+      .optional(),
+
+    titularCuenta: z
+      .string()
+      .max(
+        150,
+        'El titular de la cuenta no puede exceder 150 caracteres',
+      )
+      .optional(),
   })
   .superRefine((values, ctx) => {
     if (values.roleName === 'SOCIO_COMERCIAL') {
-      if (values.commissionPercentage === undefined) {
+      if (!values.cuentaBancaria?.trim()) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          path: ['commissionPercentage'],
-          message: 'El porcentaje de comisión es obligatorio para un socio comercial',
+          path: ['cuentaBancaria'],
+          message:
+            'La cuenta bancaria es obligatoria para un socio comercial',
+        });
+      }
+
+      if (!values.banco?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['banco'],
+          message:
+            'El banco es obligatorio para un socio comercial',
+        });
+      }
+
+      if (!values.titularCuenta?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['titularCuenta'],
+          message:
+            'El titular de la cuenta es obligatorio para un socio comercial',
         });
       }
     }

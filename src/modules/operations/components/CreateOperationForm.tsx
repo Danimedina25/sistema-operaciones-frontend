@@ -43,7 +43,6 @@ function normalizeCurrencyInput(value: string) {
 interface CommercialPartnerOption {
   id: number;
   nombre: string;
-  nivel: 2 | 3;
 }
 
 function parseCurrency(value: unknown) {
@@ -139,31 +138,29 @@ export function CreateOperationForm({
   const excedeMontoTotal = totalPagos > montoTotal;
   const excedente = excedeMontoTotal ? totalPagos - montoTotal : 0;
   const [nivelesRedComercialCliente, setNivelesRedComercialCliente] = useState<number | null>(null);
-  const sociosNivel2 = useMemo(
-    () =>
-      commercialPartners.filter(
-        (partner) => partner.nivel === 2,
-      ),
-    [commercialPartners],
-  );
 
-  const sociosNivel3 = useMemo(
-    () =>
-      commercialPartners.filter(
-        (partner) => partner.nivel === 3,
-      ),
-    [commercialPartners],
-  );
+  const socioComercialNivel2Id = useWatch({
+    control,
+    name: 'socioComercialNivel2Id',
+  });
 
-  const faltaSocioNivel2 =
-    nivelesRedComercialCliente !== null &&
-    nivelesRedComercialCliente >= 2 &&
-    sociosNivel2.length === 0;
+  const socioComercialNivel3Id = useWatch({
+    control,
+    name: 'socioComercialNivel3Id',
+  });
 
-  const faltaSocioNivel3 =
-    nivelesRedComercialCliente !== null &&
-    nivelesRedComercialCliente >= 3 &&
-    sociosNivel3.length === 0;
+  const sociosNivel2Disponibles = useMemo(() => {
+    return commercialPartners.filter(
+      (partner) => String(partner.id) !== String(socioComercialNivel3Id),
+    );
+  }, [commercialPartners, socioComercialNivel3Id]);
+
+  const sociosNivel3Disponibles = useMemo(() => {
+    return commercialPartners.filter(
+      (partner) => String(partner.id) !== String(socioComercialNivel2Id),
+    );
+  }, [commercialPartners, socioComercialNivel2Id]);
+
 
   const handleCurrencyChange = async (
     path: `montoTotal` | `pagos.${number}.monto`,
@@ -339,35 +336,6 @@ export function CreateOperationForm({
               </p>
             </div>
           )}
-
-
-          {faltaSocioNivel2 && (
-            <div className="md:col-span-2 mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4">
-              <p className="text-sm font-medium text-amber-800">
-                Este cliente requiere un socio comercial de nivel 2.
-              </p>
-
-              <p className="mt-1 text-sm text-amber-700">
-                Debes registrar al menos un socio comercial de nivel 2 en el módulo
-                "Mi red de socios comerciales" antes de poder utilizar este cliente en una
-                operación.
-              </p>
-            </div>
-          )}
-
-          {faltaSocioNivel3 && (
-            <div className="md:col-span-2 mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4">
-              <p className="text-sm font-medium text-amber-800">
-                Este cliente requiere un socio comercial de nivel 3.
-              </p>
-
-              <p className="mt-1 text-sm text-amber-700">
-                Debes registrar al menos un socio comercial de nivel 3 en el módulo
-                "Mis socios comerciales" antes de poder utilizar este cliente en una
-                operación.
-              </p>
-            </div>
-          )}
         </div>
 
         {nivelesRedComercialCliente !== null &&
@@ -385,7 +353,7 @@ export function CreateOperationForm({
                   Selecciona un socio comercial
                 </option>
 
-                {sociosNivel2.map((partner) => (
+                {sociosNivel2Disponibles.map((partner) => (
                   <option
                     key={partner.id}
                     value={partner.id}
@@ -418,7 +386,7 @@ export function CreateOperationForm({
                   Selecciona un socio comercial
                 </option>
 
-                {sociosNivel3.map((partner) => (
+                {sociosNivel3Disponibles.map((partner) => (
                   <option
                     key={partner.id}
                     value={partner.id}
@@ -721,9 +689,7 @@ export function CreateOperationForm({
           isLoading={isSubmitting}
           disabled={
             excedeMontoTotal ||
-            !!errors.pagos?.message ||
-            faltaSocioNivel2 ||
-            faltaSocioNivel3
+            !!errors.pagos?.message
           }
           className="w-full justify-center"
         >

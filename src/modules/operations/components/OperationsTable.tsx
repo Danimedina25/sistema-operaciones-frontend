@@ -133,6 +133,7 @@ export function OperationsTable({
         <table className="min-w-full">
           <thead className="bg-slate-50">
             <tr className="text-left text-sm text-slate-600">
+              <th className="px-4 py-3 font-medium text-center">Folio</th>
               <th className="px-4 py-3 font-medium text-center">Cliente primario</th>
               <th className="px-4 py-3 font-medium text-center">Socio comercial</th>
               <th className="px-4 py-3 font-medium text-center">Fecha de creación</th>
@@ -162,10 +163,12 @@ export function OperationsTable({
                     className="border-t border-slate-200 text-sm"
                   >
                     <td className="px-4 py-4 font-medium text-slate-900">
-                      <div>{operation.clienteNombre}</div>
                       <div className="mt-1 text-xs font-normal text-slate-400">
-                        #{operation.id}
+                        {operation.id}
                       </div>
+                    </td>
+                    <td className="px-4 py-4 font-medium text-slate-900">
+                      <div>{operation.clienteNombre}</div>
                     </td>
 
                     <td className="px-4 py-4 text-slate-600">

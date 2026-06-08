@@ -24,6 +24,7 @@ import OperationDetailPage from '@/modules/operations/pages/OperationDetailPage'
 import ReturnsForRequestPage from '@/modules/operations/pages/ReturnsForRequestPage';
 import ReturnsForPaymentPage from '@/modules/operations/pages/ReturnsForPaymentPage';
 import CommercialPartnersPage from '@/modules/socioscomerciales/pages/CommercialPartnersPage';
+import CommercialPartnerCommissionsPage from '@/modules/comisionessocioscomerciales/pages/CommercialPartnerCommissionsPage';
 
 export const router = createBrowserRouter([
   {
@@ -191,6 +192,25 @@ export const router = createBrowserRouter([
                 path: paths.devolutionDetail,
                 element: <OperationDetailPage />,
               },
+            ],
+          },
+
+           {
+            element: (
+              <RoleGuard
+                allowedRoles={[
+                  'ADMIN',
+                  'GERENTE',
+                  'JEFA_CAJAS',
+                  'AUXILIAR_CUENTAS',
+                ]}
+              />
+            ),
+            children: [
+              {
+                path: paths.comisionessocios,
+                element: <CommercialPartnerCommissionsPage />,
+              }
             ],
           },
         ],

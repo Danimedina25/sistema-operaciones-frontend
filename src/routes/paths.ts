@@ -23,6 +23,8 @@ export const paths = {
 
   devolutionDetail:
     '/retornos-por-pagar/:operationId',
+
+  comisionessocios: '/comisiones-socios',
 } as const;
 
 export const buildOperationDetailPath = (

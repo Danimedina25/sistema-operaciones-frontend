@@ -15,17 +15,28 @@ export function useCreateUser(options?: UseCreateUserOptions) {
     try {
       setIsSubmitting(true);
 
-      const isSocioComercial = values.roleName === 'SOCIO_COMERCIAL';
+      const isSocioComercial =
+        values.roleName === 'SOCIO_COMERCIAL';
 
       const result = await createUser({
         nombre: values.nombre.trim(),
         correo: values.correo.trim().toLowerCase(),
         roleId: values.roleId,
-        commissionPercentage: isSocioComercial
-          ? values.commissionPercentage
-          : undefined,
+
         appliesToNetwork: isSocioComercial
           ? values.appliesToNetwork
+          : undefined,
+
+        cuentaBancaria: isSocioComercial
+          ? values.cuentaBancaria?.trim() || undefined
+          : undefined,
+
+        banco: isSocioComercial
+          ? values.banco?.trim() || undefined
+          : undefined,
+
+        titularCuenta: isSocioComercial
+          ? values.titularCuenta?.trim() || undefined
           : undefined,
       });
 

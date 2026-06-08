@@ -1,4 +1,4 @@
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { useEffect, useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Input } from '@/shared/components/ui/Input';
@@ -20,7 +20,6 @@ interface SelectOption {
 interface CommercialPartnerOption {
   id: number;
   nombre: string;
-  nivel: 2 | 3;
 }
 
 interface UpdateOperationFormProps {
@@ -60,6 +59,7 @@ export function UpdateOperationForm({
 }: UpdateOperationFormProps) {
   const {
     register,
+    control,
     handleSubmit,
     setValue,
     formState: { errors },
@@ -100,31 +100,27 @@ export function UpdateOperationForm({
     );
   }, [clientes, clienteSearch]);
 
-  const sociosNivel2 = useMemo(
-    () =>
-      commercialPartners.filter(
-        (partner) => partner.nivel === 2,
-      ),
-    [commercialPartners],
-  );
+  const socioComercialNivel2Id = useWatch({
+    control,
+    name: 'socioComercialNivel2Id',
+  });
 
-  const sociosNivel3 = useMemo(
-    () =>
-      commercialPartners.filter(
-        (partner) => partner.nivel === 3,
-      ),
-    [commercialPartners],
-  );
+  const socioComercialNivel3Id = useWatch({
+    control,
+    name: 'socioComercialNivel3Id',
+  });
 
-  const faltaSocioNivel2 =
-    nivelesRedComercialCliente !== null &&
-    nivelesRedComercialCliente >= 2 &&
-    sociosNivel2.length === 0;
+  const sociosNivel2Disponibles = useMemo(() => {
+    return commercialPartners.filter(
+      (partner) => String(partner.id) !== String(socioComercialNivel3Id),
+    );
+  }, [commercialPartners, socioComercialNivel3Id]);
 
-  const faltaSocioNivel3 =
-    nivelesRedComercialCliente !== null &&
-    nivelesRedComercialCliente >= 3 &&
-    sociosNivel3.length === 0;
+  const sociosNivel3Disponibles = useMemo(() => {
+    return commercialPartners.filter(
+      (partner) => String(partner.id) !== String(socioComercialNivel2Id),
+    );
+  }, [commercialPartners, socioComercialNivel2Id]);
 
   const handleCurrencyChange = (rawValue: string) => {
     setValue('montoTotal', normalizeCurrencyInput(rawValue), {
@@ -243,23 +239,6 @@ export function UpdateOperationForm({
             </div>
           )}
 
-          {faltaSocioNivel2 && (
-            <div className="md:col-span-2 mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4">
-              <p className="text-sm font-medium text-amber-800">
-                Este cliente requiere un socio comercial de nivel 2.
-              </p>
-            </div>
-          )}
-
-          {faltaSocioNivel3 && (
-            <div className="md:col-span-2 mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4">
-              <p className="text-sm font-medium text-amber-800">
-                Este cliente requiere un socio comercial de nivel 3.
-              </p>
-            </div>
-          )}
-
-
           {esAdmin && (
             <div className="md:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
               <p className="text-sm font-medium text-slate-800">
@@ -270,7 +249,7 @@ export function UpdateOperationForm({
                 {esSocioComercialNivel1DeLaOperacion ? 'Eres tu ' + operation.socioComercialNombre : operation.socioComercialNombre}
               </p>
 
-             {/*  {esSocioComercialNivel1DeLaOperacion? nivelesRedComercialCliente && nivelesRedComercialCliente >= 2 ? (
+              {/*  {esSocioComercialNivel1DeLaOperacion? nivelesRedComercialCliente && nivelesRedComercialCliente >= 2 ? (
                 <p className="mt-2 text-sm font-medium text-emerald-700">
                   Tú eres el socio comercial nivel 1 de esta operación y puedes modificar
                   los socios comerciales de nivel 2 y 3.
@@ -292,7 +271,6 @@ export function UpdateOperationForm({
                 </label>
 
                 <select
-                  disabled={!puedeEditarRedComercial}
                   className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
                   {...register('socioComercialNivel2Id')}
                 >
@@ -300,7 +278,7 @@ export function UpdateOperationForm({
                     Selecciona un socio comercial
                   </option>
 
-                  {sociosNivel2.map((partner) => (
+                  {sociosNivel2Disponibles.map((partner) => (
                     <option
                       key={partner.id}
                       value={partner.id}
@@ -320,7 +298,6 @@ export function UpdateOperationForm({
                 </label>
 
                 <select
-                  disabled={!puedeEditarRedComercial}
                   className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
                   {...register('socioComercialNivel3Id')}
                 >
@@ -328,7 +305,7 @@ export function UpdateOperationForm({
                     Selecciona un socio comercial
                   </option>
 
-                  {sociosNivel3.map((partner) => (
+                  {sociosNivel3Disponibles.map((partner) => (
                     <option
                       key={partner.id}
                       value={partner.id}
@@ -380,10 +357,6 @@ export function UpdateOperationForm({
         <Button
           type="submit"
           isLoading={isSubmitting}
-          disabled={
-            faltaSocioNivel2 ||
-            faltaSocioNivel3
-          }
           className="w-full justify-center"
         >
           Guardar cambios

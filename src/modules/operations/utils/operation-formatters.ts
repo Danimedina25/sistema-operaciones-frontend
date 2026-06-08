@@ -6,11 +6,17 @@ export function formatCurrency(value: number) {
   }).format(value);
 }
 
-export function formatDateTime(value?: string | null) {
+export function formatDateTime(
+  value?: string | null,
+) {
   if (!value) return '—';
 
-  return new Intl.DateTimeFormat('es-MX', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value));
+  return new Intl.DateTimeFormat(
+    'es-MX',
+    {
+      dateStyle: 'medium',
+    },
+  ).format(
+    new Date(value),
+  );
 }

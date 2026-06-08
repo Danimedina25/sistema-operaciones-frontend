@@ -41,6 +41,9 @@ export function ReturnsForPaymentTable({
         <table className="min-w-full">
           <thead className="bg-slate-50">
             <tr className="text-left text-sm text-slate-600">
+               <th className="px-4 py-3 font-medium text-center">
+                Folio
+              </th>
               <th className="px-4 py-3 font-medium text-center">
                 Cliente primario
               </th>
@@ -97,18 +100,19 @@ export function ReturnsForPaymentTable({
                   className="cursor-pointer border-t border-slate-200 text-sm transition hover:bg-slate-50"
                 >
                   <td className="px-4 py-4 font-medium text-slate-900">
-                    <div>{operation.clienteNombre}</div>
-
                     <div className="mt-1 text-xs font-normal text-slate-400">
-                      #{operation.id}
+                      {operation.id}
                     </div>
+                  </td>
+                  <td className="px-4 py-4 font-medium text-slate-900">
+                    <div>{operation.clienteNombre}</div>
                   </td>
 
                   <td className="px-4 py-4 text-slate-600">
                     {operation.socioComercialNombre}
                   </td>
 
-                   <td className="px-4 py-4 text-slate-600">
+                  <td className="px-4 py-4 text-slate-600">
                     {formatDateTime(operation.createdAt)}
                   </td>
 
@@ -150,14 +154,14 @@ export function ReturnsForPaymentTable({
 
                   <td className="px-4 py-4 text-center">
                     <button
-                        type="button"
-                        onClick={(event) => {
-                          onReturnPayments(operation.id);
-                        }}
-                        className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-100 text-blue-800 px-3 py-2 text-xs font-semibold transition hover:bg-blue-200"
-                      >
-                        Retornar pago
-                      </button>
+                      type="button"
+                      onClick={(event) => {
+                        onReturnPayments(operation.id);
+                      }}
+                      className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-100 text-blue-800 px-3 py-2 text-xs font-semibold transition hover:bg-blue-200"
+                    >
+                      Retornar pago
+                    </button>
                   </td>
                 </tr>
               ))

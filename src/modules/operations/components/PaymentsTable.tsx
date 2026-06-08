@@ -136,7 +136,7 @@ export function PaymentsTable({
               </p>
 
               <h3 className="mt-1 text-xl font-semibold text-slate-900">
-                Historial de comprobantes y validaciones
+                Comprobantes y validaciones de ingreso de dinero
               </h3>
             </div>
 

@@ -36,7 +36,7 @@ export function RealizeReturnPaymentModal({
     }, [accounts]);
 
     return (
-        <Modal open={open} title="Pagar retorno" onClose={onClose}>
+        <Modal open={open} title="Registrar retorno" onClose={onClose}>
             {returnPayment === null ? (
                 <div className="py-8 text-center text-sm text-slate-500">
                     Cargando formulario...

@@ -27,7 +27,7 @@ export default function OperationDetailPage() {
   const backLabel = isReturnRequestDetail
     ? 'Retornos por solicitar'
     : isReturnPaymentDetail
-      ? 'Retornos por pagar'
+      ? 'Retornos por registrar'
       : 'Operaciones';
   const { operationId } = useParams<{ operationId: string }>();
   const [isAddPaymentModalOpen, setIsAddPaymentModalOpen] = useState(false);

@@ -290,7 +290,7 @@ export function RealizeReturnPaymentForm({
                 isLoading={isSubmitting}
                 className="w-full justify-center"
             >
-                Registrar pago
+                Registrar
             </Button>
         </form>
     );
