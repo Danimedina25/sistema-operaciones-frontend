@@ -1,16 +1,12 @@
-import {
-    CommissionBeneficiaryResponse,
+import type {
+    CommissionPartnerSummaryResponse,
 } from '../types/commercial-partner-commissions.types';
 
-import {
-    CommissionBeneficiaryStatusBadge,
-} from './CommissionBeneficiaryStatusBadge';
+interface Props {
+    beneficiaries: CommissionPartnerSummaryResponse[];
 
-interface CommissionBeneficiariesTableProps {
-    beneficiaries: CommissionBeneficiaryResponse[];
-
-    onPayCommission: (
-        beneficiary: CommissionBeneficiaryResponse,
+    onPayBeneficiary: (
+        beneficiary: CommissionPartnerSummaryResponse,
     ) => void;
 }
 
@@ -28,20 +24,26 @@ function formatCurrency(
 
 export function CommissionBeneficiariesTable({
     beneficiaries,
-    onPayCommission,
-}: CommissionBeneficiariesTableProps) {
+    onPayBeneficiary,
+}: Props) {
+
+    if (!beneficiaries.length) {
+        return null;
+    }
+
     return (
         <div className="rounded-2xl border border-slate-200 bg-white">
+
             <div className="overflow-x-auto">
+
                 <table className="min-w-full">
+
                     <thead className="bg-slate-50">
+
                         <tr className="text-left text-sm text-slate-600">
-                            <th className="px-4 py-3">
-                                Nivel
-                            </th>
 
                             <th className="px-4 py-3">
-                                Nombre
+                                Beneficiario
                             </th>
 
                             <th className="px-4 py-3">
@@ -53,112 +55,156 @@ export function CommissionBeneficiariesTable({
                             </th>
 
                             <th className="px-4 py-3">
-                                Titular
+                                Operaciones
                             </th>
 
                             <th className="px-4 py-3">
-                                Porcentaje
+                                Pendiente
                             </th>
 
                             <th className="px-4 py-3">
-                                Comisión
+                                Pagado
                             </th>
 
                             <th className="px-4 py-3">
-                                Estatus
+                                Total
                             </th>
 
                             <th className="px-4 py-3">
+                                Comisiones pendientes
+                            </th>
+
+                            <th className="px-4 py-3 text-center">
                                 Acción
                             </th>
+
                         </tr>
+
                     </thead>
 
                     <tbody>
+
                         {beneficiaries.map(
-                            (beneficiary) => {
-                                const isPaid =
-                                    beneficiary.status ===
-                                    'PAID';
+                            beneficiary => {
+
+                                const canPay =
+                                    beneficiary.commissionIdsToPay
+                                        ?.length > 0;
 
                                 return (
+
                                     <tr
-                                        key={
-                                            beneficiary.commissionId
-                                        }
+                                        key={`${beneficiary.beneficiaryType}-${beneficiary.beneficiaryId}`}
                                         className="border-t border-slate-200 text-sm"
                                     >
+
                                         <td className="px-4 py-4">
-                                            Nivel{' '}
-                                            {
-                                                beneficiary.nivel
-                                            }
+
+                                            <div className="font-medium">
+                                                {beneficiary.nombre}
+                                            </div>
+
+                                            <div className="text-xs text-slate-500">
+
+                                                {beneficiary.beneficiaryType ===
+                                                    'COMMERCIAL_PARTNER'
+                                                    ? 'Socio comercial'
+                                                    : 'Usuario'}
+
+                                            </div>
+
                                         </td>
 
                                         <td className="px-4 py-4">
-                                            {beneficiary.nombre}
+                                            {beneficiary.banco ?? '-'}
                                         </td>
 
                                         <td className="px-4 py-4">
-                                            {beneficiary.banco}
+                                            {beneficiary.cuentaBancaria ?? '-'}
                                         </td>
 
                                         <td className="px-4 py-4">
-                                            {
-                                                beneficiary.cuentaBancaria
-                                            }
+                                            {beneficiary.totalOperaciones}
                                         </td>
 
-                                        <td className="px-4 py-4">
-                                            {
-                                                beneficiary.titularCuenta
-                                            }
-                                        </td>
+                                        <td className="px-4 py-4 font-medium text-amber-700">
 
-                                        <td className="px-4 py-4">
-                                            {
-                                                beneficiary.commissionPercentage
-                                            }
-                                            %
-                                        </td>
-
-                                        <td className="px-4 py-4">
                                             {formatCurrency(
-                                                beneficiary.commissionAmount,
+                                                beneficiary.totalPendientes,
                                             )}
+
+                                        </td>
+
+                                        <td className="px-4 py-4 text-emerald-700">
+
+                                            {formatCurrency(
+                                                beneficiary.totalPagadas,
+                                            )}
+
+                                        </td>
+
+                                        <td className="px-4 py-4 font-medium">
+
+                                            {formatCurrency(
+                                                beneficiary.totalComisiones,
+                                            )}
+
                                         </td>
 
                                         <td className="px-4 py-4">
-                                            <CommissionBeneficiaryStatusBadge
-                                                status={
-                                                    beneficiary.status
-                                                }
-                                            />
+
+                                            {
+                                                beneficiary.totalComisionesPendientes
+                                            }
+
                                         </td>
 
-                                        <td className="px-4 py-4">
-                                            <button
-                                                type="button"
-                                                disabled={isPaid}
-                                                onClick={() =>
-                                                    onPayCommission(
-                                                        beneficiary,
-                                                    )
-                                                }
-                                                className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
-                                            >
-                                                {isPaid
-                                                    ? 'Pagada'
-                                                    : 'Pagar'}
-                                            </button>
+                                        <td className="px-4 py-4 text-center">
+
+                                            {canPay ? (
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        onPayBeneficiary(
+                                                            beneficiary,
+                                                        )
+                                                    }
+                                                    className="rounded-lg border border-emerald-200 px-3 py-1.5 text-xs font-medium transition hover:bg-emerald-50"
+                                                >
+                                                    Pagar
+                                                </button>
+
+                                            ) : (
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        window.open(
+                                                            beneficiary.paymentProofUrl!,
+                                                            '_blank',
+                                                        )
+                                                    }
+                                                    className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-100"
+                                                >
+                                                    Ver comprobante
+                                                </button>
+
+                                            )}
+
                                         </td>
                                     </tr>
+
                                 );
                             },
                         )}
+
                     </tbody>
+
                 </table>
+
             </div>
+
         </div>
     );
 }

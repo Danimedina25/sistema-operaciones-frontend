@@ -52,12 +52,12 @@ export function CommissionOperationsTable({
                 Cliente
               </th>
 
-               <th className="px-4 py-3 text-center">
+              <th className="px-4 py-3 text-center">
                 Fecha de creación
               </th>
 
               <th className="px-4 py-3 text-center">
-                Monto operación 
+                Monto operación
               </th>
 
               <th className="px-4 py-3 text-center">
@@ -129,6 +129,7 @@ export function CommissionOperationsTable({
 
                     <td className="px-4 py-4 text-center">
                       <CommissionOperationStatusBadge
+                        partialPayment={operation.pagadaParcialmente}
                         paidCompletely={
                           operation.pagadaCompletamente
                         }
@@ -143,7 +144,7 @@ export function CommissionOperationsTable({
                             operation.operationId,
                           )
                         }
-                        className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50"
+                        className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-100"
                       >
                         Ver detalle de pagos
                       </button>

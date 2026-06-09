@@ -7,7 +7,7 @@ interface CommissionBeneficiaryStatusBadgeProps {
 export function CommissionBeneficiaryStatusBadge({
   status,
 }: CommissionBeneficiaryStatusBadgeProps) {
-  const isPaid = status === 'PAID';
+  const isPaid = status === 'PAGADA';
 
   return (
     <span

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
   CommissionFilters,
@@ -33,12 +33,29 @@ import {
 } from '../components/EmptyCommissionsState';
 
 import {
+  CommissionFiltersValues,
   useCommercialPartnerCommissionsPage,
 } from '../hooks/use-commercial-partner-commissions-page';
+
+import type {
+  CommissionPartnerSummaryResponse,
+} from '../types/commercial-partner-commissions.types';
+
+import {
+  usePayBeneficiaryCommissions,
+} from '../hooks/use-pay-beneficiary-commissions';
 
 import {
   useAuth,
 } from '@/modules/auth/store/auth.context';
+import { CommissionViewModeSelector } from '../components/CommissionViewModeSelector';
+import { useBeneficiarySummary } from '../hooks/use-beneficiary-summary';
+import { CommissionBeneficiariesTable } from '../components/CommissionBeneficiariesTable';
+import { CommissionBeneficiarySummaryCards } from '../components/CommissionBeneficiarySummaryCards';
+
+type ViewMode =
+  | 'OPERATIONS'
+  | 'BENEFICIARIES';
 
 export default function CommercialPartnerCommissionsPage() {
   const { hasRole } = useAuth();
@@ -48,6 +65,27 @@ export default function CommercialPartnerCommissionsPage() {
       'ADMIN',
       'GERENTE',
     ]);
+  const [
+    viewMode,
+    setViewMode,
+  ] = useState<
+    'OPERATIONS'
+    | 'BENEFICIARIES'
+  >(
+    'BENEFICIARIES',
+  );
+
+  const {
+    summary: beneficiarySummary,
+    isLoading: isLoadingBeneficiaries,
+    fetchSummary: fetchBeneficiarySummary,
+  } = useBeneficiarySummary();
+
+  const {
+    isLoading: isPayingBeneficiary,
+    handlePayBeneficiaryCommissions,
+  } =
+    usePayBeneficiaryCommissions();
 
   const {
     filters,
@@ -80,23 +118,52 @@ export default function CommercialPartnerCommissionsPage() {
   } =
     useCommercialPartnerCommissionsPage();
 
+  const [
+    selectedPartner,
+    setSelectedPartner,
+  ] =
+    useState<CommissionPartnerSummaryResponse | null>(
+      null,
+    );
 
-  const handleSearchWithDates =
-    async (
-      newFilters: {
-        startDate: string;
-        endDate: string;
-      },
-    ) => {
+  const [
+    isPayPartnerModalOpen,
+    setIsPayPartnerModalOpen,
+  ] = useState(false);
 
-      setFilters(
+  function handleOpenPayBeneficiaryModal(
+    beneficiary: CommissionPartnerSummaryResponse,
+  ) {
+
+    setSelectedPartner(
+      beneficiary,
+    );
+
+    setIsPayPartnerModalOpen(
+      true,
+    );
+  }
+
+
+  const handleSearchWithDates = async (
+    newFilters: CommissionFiltersValues,
+  ) => {
+
+    setFilters(
+      newFilters,
+    );
+
+    await Promise.all([
+      handleSearch(
         newFilters,
-      );
-
-      await handleSearch(
+      ),
+      fetchBeneficiarySummary(
         newFilters,
-      );
-    };
+      ),
+    ]);
+  };
+
+
 
   const formatDate = (
     date: string,
@@ -136,6 +203,8 @@ export default function CommercialPartnerCommissionsPage() {
       )
       .join(' ');
   };
+
+
 
   return (
     <div className="space-y-3">
@@ -207,50 +276,122 @@ export default function CommercialPartnerCommissionsPage() {
           </div>
         </div>
 
-        {isLoading ||
-          !summary ? (
-          <CommissionSummaryCardsSkeleton />
+        {viewMode === 'OPERATIONS' ? (
+
+          isLoading || !summary ? (
+
+            <CommissionSummaryCardsSkeleton />
+
+          ) : (
+
+            <CommissionSummaryCards
+              summary={summary}
+            />
+
+          )
+
         ) : (
-          <CommissionSummaryCards
-            summary={
-              summary
-            }
-          />
+
+          isLoadingBeneficiaries ||
+            !beneficiarySummary ? (
+
+            <CommissionSummaryCardsSkeleton />
+
+          ) : (
+
+            <CommissionBeneficiarySummaryCards
+              summary={beneficiarySummary}
+            />
+
+          )
+
         )}
       </section>
 
-      {/* OPERACIONES */}
-
       <section className="rounded-2xl bg-white p-4 shadow-sm">
-        <div className="mb-5">
+
+        <div className="mb-5 flex items-center justify-between">
+
           <h2 className="text-lg font-semibold text-slate-900">
-            Operaciones con
-            comisiones
+            Gestión de comisiones
           </h2>
+
+          <CommissionViewModeSelector
+            value={viewMode}
+            onChange={setViewMode}
+          />
+
         </div>
 
-        {isLoading ? (
-          <CommissionOperationsTableSkeleton />
-        ) : summary
-          ?.operaciones
-          .length ? (
-          <CommissionOperationsTable
-            operations={
-              summary.operaciones
-            }
-            onViewDetail={
-              handleOpenOperationDetail
-            }
-          />
+        <div className="mb-5">
+
+          <h3 className="text-base font-medium text-slate-700">
+
+            {viewMode === 'OPERATIONS'
+              ? 'Operaciones con comisiones'
+              : 'Socios comerciales con comisiones'}
+
+          </h3>
+
+        </div>
+
+        {viewMode === 'OPERATIONS' ? (
+
+          isLoading ? (
+
+            <CommissionOperationsTableSkeleton />
+
+          ) : summary?.operaciones.length ? (
+
+            <CommissionOperationsTable
+              operations={
+                summary.operaciones
+              }
+              onViewDetail={
+                handleOpenOperationDetail
+              }
+            />
+
+          ) : (
+
+            <EmptyCommissionsState
+              onResetFilters={() =>
+                setFilters(
+                  defaultDates,
+                )
+              }
+            />
+
+          )
+
         ) : (
-          <EmptyCommissionsState
-            onResetFilters={() =>
-              setFilters(
-                defaultDates,
-              )
-            }
-          />
+
+          isLoadingBeneficiaries ? (
+
+            <CommissionOperationsTableSkeleton />
+
+          ) : beneficiarySummary?.socios
+            .length ? (
+
+            <CommissionBeneficiariesTable
+              beneficiaries={beneficiarySummary.socios}
+              onPayBeneficiary={handleOpenPayBeneficiaryModal}
+            />
+
+          ) : (
+
+            <EmptyCommissionsState
+              onResetFilters={() =>
+                setFilters(
+                  defaultDates,
+                )
+              }
+            />
+
+          )
+
         )}
+
       </section>
 
       {/* DETALLE */}
@@ -302,6 +443,8 @@ export default function CommercialPartnerCommissionsPage() {
           handleSubmitPayment
         }
       />
+
+
     </div>
   );
 }

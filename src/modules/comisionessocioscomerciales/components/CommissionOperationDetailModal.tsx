@@ -1,8 +1,8 @@
 import { Modal } from '@/shared/components/ui/Modal';
 
 import {
-    CommissionBeneficiariesTable,
-} from './CommissionBeneficiariesTable';
+    OperationBeneficiariesTable,
+} from './OperationBeneficiariesTable';
 
 import type {
     CommissionOperationDetailResponse,
@@ -149,7 +149,7 @@ export function CommissionOperationDetailModal({
                             Socios comerciales beneficiarios de la operación
                         </h3>
 
-                        <CommissionBeneficiariesTable
+                        <OperationBeneficiariesTable
                             beneficiaries={
                                 detail.beneficiarios
                             }

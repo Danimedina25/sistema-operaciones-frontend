@@ -11,6 +11,9 @@ import {
   CommissionBeneficiaryResponse,
   PayCommissionRequest,
   VoidApiResponse,
+  CommissionPartnerSummaryListApiResponse,
+  CommissionPartnerSummaryListResponse,
+  PayCommissionBatchRequest,
 } from '../types/commercial-partner-commissions.types';
 
 const BASE_PATH =
@@ -37,6 +40,29 @@ export async function getSummary(
     );
 
   return response.data.data;
+}
+
+export async function getSummaryByBeneficiary(
+  params: DateRangeParams,
+): Promise<CommissionPartnerSummaryListResponse> {
+
+  const response =
+    await api.get<CommissionPartnerSummaryListApiResponse>(
+      `${BASE_PATH}/beneficiaries-summary`,
+      { params },
+    );
+
+  return response.data.data;
+}
+
+export async function payBeneficiaryCommissions(
+  payload: PayCommissionBatchRequest,
+): Promise<void> {
+
+  await api.post<VoidApiResponse>(
+    `${BASE_PATH}/pay-batch`,
+    payload,
+  );
 }
 
 export async function getPendingCommissions(

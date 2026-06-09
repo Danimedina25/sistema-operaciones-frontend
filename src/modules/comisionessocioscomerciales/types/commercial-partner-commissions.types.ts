@@ -1,21 +1,74 @@
 import { ApiResponse } from '@/shared/types/api.types';
 
 export type CommissionStatus =
-  | 'PENDING'
-  | 'PAID';
+  | 'GENERADA'
+  | 'PAGADA';
+
+export type CommissionBeneficiaryType =
+  | 'USER'
+  | 'COMMERCIAL_PARTNER';
 
 export interface PayCommissionRequest {
   paymentProofUrl: string;
 }
 
+export interface PayCommissionBatchRequest {
+  commissionIds: number[];
+
+  paymentProofUrl: string;
+}
+
+export interface CommissionPartnerSummaryResponse {
+
+  beneficiaryId: number;
+
+  beneficiaryType: CommissionBeneficiaryType;
+
+  nombre: string;
+
+  banco: string | null;
+
+  cuentaBancaria: string | null;
+
+  titularCuenta: string | null;
+
+  totalOperaciones: number;
+
+  totalComisiones: number;
+
+  totalPendientes: number;
+
+  totalPagadas: number;
+
+  totalComisionesPendientes: number;
+
+  commissionIdsToPay: number[];
+
+   paymentProofUrl: string | null;
+}
+
+export interface CommissionPartnerSummaryListResponse {
+
+  totalComisiones: number;
+
+  totalPendientes: number;
+
+  totalPagadas: number;
+
+  totalBeneficiarios: number;
+
+  socios: CommissionPartnerSummaryResponse[];
+}
+
 export interface CommercialPartnerCommissionResponse {
+
   id: number;
 
   operationId: number;
 
-  userId: number;
+  userId: number | null;
 
-  commercialPartnerId: number;
+  commercialPartnerId: number | null;
 
   nombreBeneficiario: string;
 
@@ -69,6 +122,8 @@ export interface CommissionOperationSummaryResponse {
 
   pagadaCompletamente: boolean;
 
+  pagadaParcialmente: boolean;
+
   fechaOperacion: string;
 }
 
@@ -115,6 +170,9 @@ export type CommissionOperationDetailApiResponse =
 
 export type CommissionBeneficiariesApiResponse =
   ApiResponse<CommissionBeneficiaryResponse[]>;
+
+export type CommissionPartnerSummaryListApiResponse =
+  ApiResponse<CommissionPartnerSummaryListResponse>;
 
 export type VoidApiResponse =
   ApiResponse<null>;
