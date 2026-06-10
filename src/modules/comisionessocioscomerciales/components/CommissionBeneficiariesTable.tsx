@@ -1,6 +1,7 @@
 import type {
     CommissionPartnerSummaryResponse,
 } from '../types/commercial-partner-commissions.types';
+import { CommissionBeneficiaryPaymentStatusBadge } from './CommissionBeneficiaryPaymentStatusBadge';
 
 interface Props {
     beneficiaries: CommissionPartnerSummaryResponse[];
@@ -42,36 +43,28 @@ export function CommissionBeneficiariesTable({
 
                         <tr className="text-left text-sm text-slate-600">
 
-                            <th className="px-4 py-3">
+                            <th className="px-4 py-3 text-left">
                                 Beneficiario
                             </th>
 
-                            <th className="px-4 py-3">
-                                Banco
-                            </th>
-
-                            <th className="px-4 py-3">
-                                Cuenta
-                            </th>
-
-                            <th className="px-4 py-3">
+                            <th className="px-4 py-3 text-left">
                                 Operaciones
                             </th>
 
-                            <th className="px-4 py-3">
-                                Pendiente
+                            <th className="px-4 py-3 text-left">
+                                Total a pagar
                             </th>
 
-                            <th className="px-4 py-3">
-                                Pagado
+                            <th className="px-4 py-3 text-left">
+                                Total pagado
                             </th>
 
-                            <th className="px-4 py-3">
-                                Total
+                            <th className="px-4 py-3 text-left">
+                                Pendiente por pagar
                             </th>
 
-                            <th className="px-4 py-3">
-                                Comisiones pendientes
+                            <th className="px-4 py-3 text-center">
+                                Estatus
                             </th>
 
                             <th className="px-4 py-3 text-center">
@@ -91,6 +84,13 @@ export function CommissionBeneficiariesTable({
                                     beneficiary.commissionIdsToPay
                                         ?.length > 0;
 
+                                const paymentStatus =
+                                    beneficiary.totalPendientes === 0
+                                        ? 'PAGADA'
+                                        : beneficiary.totalPagadas === 0
+                                            ? 'PENDIENTE'
+                                            : 'PARCIAL';
+
                                 return (
 
                                     <tr
@@ -98,7 +98,7 @@ export function CommissionBeneficiariesTable({
                                         className="border-t border-slate-200 text-sm"
                                     >
 
-                                        <td className="px-4 py-4">
+                                        <td className="px-4 py-4 text-left">
 
                                             <div className="font-medium">
                                                 {beneficiary.nombre}
@@ -115,35 +115,11 @@ export function CommissionBeneficiariesTable({
 
                                         </td>
 
-                                        <td className="px-4 py-4">
-                                            {beneficiary.banco ?? '-'}
-                                        </td>
-
-                                        <td className="px-4 py-4">
-                                            {beneficiary.cuentaBancaria ?? '-'}
-                                        </td>
-
-                                        <td className="px-4 py-4">
+                                        <td className="px-4 py-4 text-left">
                                             {beneficiary.totalOperaciones}
                                         </td>
 
-                                        <td className="px-4 py-4 font-medium text-amber-700">
-
-                                            {formatCurrency(
-                                                beneficiary.totalPendientes,
-                                            )}
-
-                                        </td>
-
-                                        <td className="px-4 py-4 text-emerald-700">
-
-                                            {formatCurrency(
-                                                beneficiary.totalPagadas,
-                                            )}
-
-                                        </td>
-
-                                        <td className="px-4 py-4 font-medium">
+                                        <td className="px-4 py-4 font-medium text-left">
 
                                             {formatCurrency(
                                                 beneficiary.totalComisiones,
@@ -151,11 +127,28 @@ export function CommissionBeneficiariesTable({
 
                                         </td>
 
-                                        <td className="px-4 py-4">
+                                        <td className="px-4 py-4 text-emerald-700 text-left">
 
-                                            {
-                                                beneficiary.totalComisionesPendientes
-                                            }
+                                            {formatCurrency(
+                                                beneficiary.totalPagadas,
+                                            )}
+
+                                        </td>
+
+
+                                        <td className="px-4 py-4 text-yellow-500 text-left">
+
+                                            {formatCurrency(
+                                                beneficiary.totalPendientes
+                                            )}
+
+                                        </td>
+
+                                        <td className="px-4 py-4 text-center">
+
+                                            <CommissionBeneficiaryPaymentStatusBadge
+                                                status={paymentStatus}
+                                            />
 
                                         </td>
 

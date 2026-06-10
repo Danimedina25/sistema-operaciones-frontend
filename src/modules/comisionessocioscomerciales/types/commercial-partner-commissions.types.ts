@@ -44,7 +44,7 @@ export interface CommissionPartnerSummaryResponse {
 
   commissionIdsToPay: number[];
 
-   paymentProofUrl: string | null;
+  paymentProofUrl: string | null;
 }
 
 export interface CommissionPartnerSummaryListResponse {

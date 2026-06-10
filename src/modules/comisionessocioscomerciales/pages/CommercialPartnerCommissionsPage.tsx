@@ -48,14 +48,10 @@ import {
 import {
   useAuth,
 } from '@/modules/auth/store/auth.context';
-import { CommissionViewModeSelector } from '../components/CommissionViewModeSelector';
 import { useBeneficiarySummary } from '../hooks/use-beneficiary-summary';
 import { CommissionBeneficiariesTable } from '../components/CommissionBeneficiariesTable';
-import { CommissionBeneficiarySummaryCards } from '../components/CommissionBeneficiarySummaryCards';
+import { PayBeneficiaryCommissionsModal } from '../components/PayBeneficiaryCommissionsModal';
 
-type ViewMode =
-  | 'OPERATIONS'
-  | 'BENEFICIARIES';
 
 export default function CommercialPartnerCommissionsPage() {
   const { hasRole } = useAuth();
@@ -248,7 +244,7 @@ export default function CommercialPartnerCommissionsPage() {
       <section className="rounded-2xl bg-white p-4 shadow-sm">
         <div className="mb-5">
           <h2 className="text-lg font-semibold text-slate-900">
-            Filtros de búsqueda
+            Semana de comisiones
           </h2>
         </div>
 
@@ -276,36 +272,19 @@ export default function CommercialPartnerCommissionsPage() {
           </div>
         </div>
 
-        {viewMode === 'OPERATIONS' ? (
 
-          isLoading || !summary ? (
+        {isLoading || !summary ? (
 
-            <CommissionSummaryCardsSkeleton />
-
-          ) : (
-
-            <CommissionSummaryCards
-              summary={summary}
-            />
-
-          )
+          <CommissionSummaryCardsSkeleton />
 
         ) : (
 
-          isLoadingBeneficiaries ||
-            !beneficiarySummary ? (
-
-            <CommissionSummaryCardsSkeleton />
-
-          ) : (
-
-            <CommissionBeneficiarySummaryCards
-              summary={beneficiarySummary}
-            />
-
-          )
+          <CommissionSummaryCards
+            summary={summary}
+          />
 
         )}
+
       </section>
 
       <section className="rounded-2xl bg-white p-4 shadow-sm">
@@ -313,25 +292,12 @@ export default function CommercialPartnerCommissionsPage() {
         <div className="mb-5 flex items-center justify-between">
 
           <h2 className="text-lg font-semibold text-slate-900">
-            Gestión de comisiones
+            Gestión de comisiones por socios comerciales
           </h2>
-
-          <CommissionViewModeSelector
-            value={viewMode}
-            onChange={setViewMode}
-          />
 
         </div>
 
         <div className="mb-5">
-
-          <h3 className="text-base font-medium text-slate-700">
-
-            {viewMode === 'OPERATIONS'
-              ? 'Operaciones con comisiones'
-              : 'Socios comerciales con comisiones'}
-
-          </h3>
 
         </div>
 
@@ -442,6 +408,40 @@ export default function CommercialPartnerCommissionsPage() {
         onSubmit={
           handleSubmitPayment
         }
+      />
+
+      <PayBeneficiaryCommissionsModal
+        open={isPayPartnerModalOpen}
+        beneficiary={selectedPartner}
+        startDate={filters.startDate}
+        endDate={filters.endDate}
+        isSubmitting={isPayingBeneficiary}
+        onClose={() =>
+          setIsPayPartnerModalOpen(
+            false,
+          )
+        }
+        onSubmit={async (
+          paymentProofFile,
+        ) => {
+
+          if (!selectedPartner) {
+            return;
+          }
+
+          await handlePayBeneficiaryCommissions(
+            selectedPartner.commissionIdsToPay,
+            paymentProofFile,
+          );
+
+          setIsPayPartnerModalOpen(
+            false,
+          );
+
+          await handleSearchWithDates(
+            filters,
+          );
+        }}
       />
 
 

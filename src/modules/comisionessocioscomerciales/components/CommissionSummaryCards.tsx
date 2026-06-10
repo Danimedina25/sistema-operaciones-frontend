@@ -30,7 +30,7 @@ export function CommissionSummaryCards({
       value: formatCurrency(summary.totalPendientes),
     },
     {
-      title: 'Operaciones',
+      title: 'Operaciones totales',
       value: summary.totalOperaciones,
     },
     {
