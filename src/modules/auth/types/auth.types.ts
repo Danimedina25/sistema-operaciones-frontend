@@ -1,8 +1,6 @@
 export type RoleName =
   | 'ADMIN'
-  | 'GERENTE'
   | 'SOCIO_COMERCIAL'
-  | 'VALIDADOR'
   | 'JEFA_CAJAS'
   | 'AUXILIAR_CUENTAS';
 

@@ -6,7 +6,7 @@ export function formatCurrency(value: number) {
   }).format(value);
 }
 
-export function formatDateTime(
+export function formatDate(
   value?: string | null,
 ) {
   if (!value) return '—';
@@ -19,4 +19,32 @@ export function formatDateTime(
   ).format(
     new Date(value),
   );
+}
+
+
+export function formatPeriodDate(
+    date: string,
+) {
+    const [
+        year,
+        month,
+        day,
+    ] = date
+        .split('-')
+        .map(Number);
+
+    return new Intl.DateTimeFormat(
+        'es-MX',
+        {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric',
+        },
+    ).format(
+        new Date(
+            year,
+            month - 1,
+            day,
+        ),
+    );
 }

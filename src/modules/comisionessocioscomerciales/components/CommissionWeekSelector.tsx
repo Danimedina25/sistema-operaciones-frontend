@@ -1,9 +1,16 @@
-import { useMemo, useState } from 'react';
+import {
+    useEffect,
+    useMemo,
+    useState,
+} from 'react';
 
 import {
     getWeeksOfYear,
 } from '@/shared/utils/weeks';
-import { CalendarDays } from 'lucide-react';
+
+import {
+    CalendarDays,
+} from 'lucide-react';
 
 interface Props {
     value: string;
@@ -25,7 +32,22 @@ export function CommissionWeekSelector({
     const [
         selectedYear,
         setSelectedYear,
-    ] = useState(currentYear);
+    ] = useState(
+        currentYear,
+    );
+
+    useEffect(() => {
+
+        if (!value) {
+            return;
+        }
+
+        setSelectedYear(
+            new Date(value)
+                .getFullYear(),
+        );
+
+    }, [value]);
 
     const weeks =
         useMemo(
@@ -41,25 +63,91 @@ export function CommissionWeekSelector({
 
             <select
                 value={selectedYear}
-                onChange={event =>
-                    setSelectedYear(
+                className="
+  w-24
+  rounded-xl
+  border
+  border-slate-300
+  bg-white
+  px-3
+  py-2
+  text-sm
+  font-medium
+  shadow-sm
+"
+                onChange={event => {
+
+                    const year =
                         Number(
                             event.target.value,
-                        ),
-                    )
-                }
-                className="
-          w-[160px]
-          rounded-xl
-          border
-          border-slate-300
-          bg-white
-          px-3
-          py-2
-          text-sm
-          font-medium
-          shadow-sm
-        "
+                        );
+
+                    setSelectedYear(
+                        year,
+                    );
+
+                    const yearWeeks =
+                        getWeeksOfYear(
+                            year,
+                        );
+
+                    if (
+                        !yearWeeks.length
+                    ) {
+                        return;
+                    }
+
+                    let selectedWeek;
+
+                    // Si es el año actual,
+                    // busca la semana actual
+                    if (
+                        year === currentYear
+                    ) {
+
+                        const today =
+                            new Date();
+
+                        selectedWeek =
+                            yearWeeks.find(
+                                week => {
+
+                                    const start =
+                                        new Date(
+                                            week.startDate,
+                                        );
+
+                                    const end =
+                                        new Date(
+                                            week.endDate,
+                                        );
+
+                                    return (
+                                        today >= start &&
+                                        today <= end
+                                    );
+                                },
+                            );
+
+                    }
+
+                    // Si no encontró semana actual
+                    // o es otro año
+                    if (!selectedWeek) {
+
+                        selectedWeek =
+                            yearWeeks[
+                            yearWeeks.length - 1
+                            ];
+
+                    }
+
+                    onChange(
+                        selectedWeek.startDate,
+                        selectedWeek.endDate,
+                    );
+
+                }}
             >
                 <option value={currentYear}>
                     {currentYear}
@@ -72,6 +160,7 @@ export function CommissionWeekSelector({
                 >
                     {currentYear - 1}
                 </option>
+
             </select>
 
             <div className="relative">
@@ -79,13 +168,13 @@ export function CommissionWeekSelector({
                 <CalendarDays
                     size={16}
                     className="
-      absolute
-      left-3
-      top-1/2
-      -translate-y-1/2
-      text-slate-400
-      pointer-events-none
-    "
+            pointer-events-none
+            absolute
+            left-3
+            top-1/2
+            -translate-y-1/2
+            text-slate-400
+          "
                 />
 
                 <select
@@ -107,23 +196,26 @@ export function CommissionWeekSelector({
                             selected.startDate,
                             selected.endDate,
                         );
+
                     }}
                     className="
-      w-[480px]
-      rounded-xl
-      border
-      border-slate-300
-      bg-white
-      pl-10
-      pr-3
-      py-2
-      text-sm
-      font-medium
-      shadow-sm
-    "
+            w-[480px]
+            rounded-xl
+            border
+            border-slate-300
+            bg-white
+            py-2
+            pl-10
+            pr-3
+            text-sm
+            font-medium
+            shadow-sm
+          "
                 >
+
                     {weeks.map(
                         week => (
+
                             <option
                                 key={`${selectedYear}-${week.weekNumber}`}
                                 value={
@@ -132,8 +224,10 @@ export function CommissionWeekSelector({
                             >
                                 {week.label}
                             </option>
+
                         ),
                     )}
+
                 </select>
 
             </div>

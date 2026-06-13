@@ -25,6 +25,7 @@ export const paths = {
     '/retornos-por-pagar/:operationId',
 
   comisionessocios: '/comisiones-socios',
+  miscomisiones: '/mis-comisiones',
 } as const;
 
 export const buildOperationDetailPath = (

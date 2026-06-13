@@ -1,7 +1,7 @@
 import { operationStatusLabels } from '@/modules/operations/constants/operations.constants';
 import {
   formatCurrency,
-  formatDateTime,
+  formatDate,
 } from '@/modules/operations/utils/operation-formatters';
 import { PaymentOperationResponse } from '../types/operations.types.ts';
 import { OperationStatusBadge } from './OperationStatusBadge.js';
@@ -36,9 +36,9 @@ function SummaryItem({
       value: 'text-emerald-900',
     },
     blue: {
-      container: 'border-sky-200 bg-sky-50',
-      label: 'text-sky-700',
-      value: 'text-sky-900',
+      container: 'border-blue-200 bg-blue-50',
+      label: 'text-blue-700',
+      value: 'text-blue-900',
     },
     amber: {
       container: 'border-amber-200 bg-amber-50',
@@ -50,7 +50,7 @@ function SummaryItem({
   const styles = variants[variant];
 
   return (
-    <div className={`rounded-2xl border p-4 ${styles.container}`}>
+    <div className={`rounded-3xl border p-5 shadow-sm ${styles.container} transition-all hover:-translate-y-0.5`}>
       <p className={`text-xs font-medium uppercase tracking-wide ${styles.label}`}>
         {label}
       </p>
@@ -85,19 +85,27 @@ export function OperationDetailCard({
   );
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div className="
+rounded-[2rem]
+border
+border-slate-200/80
+bg-white
+p-8
+shadow-lg
+shadow-slate-950/5
+">
       <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 md:flex-row md:items-start md:justify-between">
         <div>
           <p className="text-sm font-medium text-slate-500">
             Operación #{operation.id}
           </p>
 
-          <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+          <h2 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">
             Cliente: {operation.clienteNombre}
           </h2>
 
           <p className="mt-2 text-sm text-slate-500">
-            Registrada el {formatDateTime(operation.createdAt)}
+            Registrada el {formatDate(operation.createdAt)}
           </p>
         </div>
 
@@ -168,7 +176,7 @@ export function OperationDetailCard({
             label="Actualizada"
             value={
               shouldShowUpdatedAt
-                ? formatDateTime(operation.updatedAt)
+                ? formatDate(operation.updatedAt)
                 : '-'
             }
           />
@@ -180,7 +188,7 @@ export function OperationDetailCard({
           <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
             Red comercial asignada
           </h3>
-          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80 shadow-sm p-5">
             <div className="rounded-xl border border-slate-200 bg-white p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                 Configuración de red comercial
@@ -220,7 +228,7 @@ export function OperationDetailCard({
               {operation.socioComercialNivel2Nombre && (
                 <div className="rounded-xl border border-slate-200 bg-white p-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-600 text-xs font-bold text-white">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
                       N2
                     </div>
 
@@ -240,7 +248,7 @@ export function OperationDetailCard({
               {operation.socioComercialNivel3Nombre && (
                 <div className="rounded-xl border border-slate-200 bg-white p-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">
                       N3
                     </div>
 
@@ -317,16 +325,28 @@ export function OperationDetailCard({
             </div>
           </div>
 
-          <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5">
-            <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+          <div
+            className="
+    mt-6
+    rounded-[2rem]
+    border
+    border-blue-200
+    bg-gradient-to-br
+    from-blue-50
+    to-slate-50
+    p-5
+    shadow-sm
+  "
+          >
+            <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
               Retorno estimado al cliente
             </p>
 
-            <p className="mt-2 text-3xl font-bold text-amber-900">
+            <p className="mt-2 text-3xl font-bold text-blue-900">
               {formatCurrency(operation.montoTotalDevolverCliente)}
             </p>
 
-            <p className="mt-2 text-sm text-amber-800">
+            <p className="mt-2 text-sm text-slate-600">
               Monto calculado después de descontar comisiones de socios comerciales y
               comisión de oficina.
             </p>
@@ -334,7 +354,8 @@ export function OperationDetailCard({
         </>
       )}
 
-      <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50/80
+shadow-sm p-4">
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
           Observaciones
         </p>

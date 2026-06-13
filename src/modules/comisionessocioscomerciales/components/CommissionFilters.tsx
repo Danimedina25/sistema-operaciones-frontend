@@ -42,10 +42,6 @@ export function CommissionFilters({
     return (
         <div className="space-y-4">
             <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Semana de comisiones
-                </label>
-
                 <CommissionWeekSelector
                     value={filters.startDate}
                     onChange={(

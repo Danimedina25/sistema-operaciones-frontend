@@ -41,13 +41,13 @@ const navItems: NavItem[] = [
     to: paths.bankAccounts,
     label: 'Cuentas bancarias',
     icon: Landmark,
-    allowedRoles: ['ADMIN', 'GERENTE', 'AUXILIAR_CUENTAS'],
+    allowedRoles: ['ADMIN', 'AUXILIAR_CUENTAS'],
   },
   {
     to: paths.clientes,
     label: 'Clientes',
     icon: UserSquare,
-    allowedRoles: ['ADMIN', 'GERENTE', 'SOCIO_COMERCIAL'],
+    allowedRoles: ['ADMIN', 'SOCIO_COMERCIAL'],
   },
   {
     to: paths.mycomercialpartners,
@@ -59,25 +59,31 @@ const navItems: NavItem[] = [
     to: paths.operations,
     label: 'Operaciones',
     icon: ClipboardList,
-    allowedRoles: ['ADMIN', 'GERENTE', 'SOCIO_COMERCIAL'],
+    allowedRoles: ['ADMIN', 'SOCIO_COMERCIAL'],
   },
   {
     to: paths.returnsforrequest,
     label: 'Retornos por solicitar',
     icon: HandCoins,
-    allowedRoles: ['ADMIN', 'GERENTE', 'SOCIO_COMERCIAL'],
+    allowedRoles: ['ADMIN', 'SOCIO_COMERCIAL'],
   },
   {
     to: paths.returnsforpayment,
     label: 'Retornos por registrar',
     icon: WalletCards,
-    allowedRoles: ['ADMIN', 'GERENTE'],
+    allowedRoles: ['ADMIN'],
   },
   {
     to: paths.comisionessocios,
     label: 'Pago de comisiones a socios comerciales',
     icon: BadgeDollarSign,
-    allowedRoles: ['ADMIN', 'GERENTE', 'JEFA_CAJAS'],
+    allowedRoles: ['ADMIN', 'JEFA_CAJAS'],
+  },
+  {
+    to: paths.miscomisiones,
+    label: 'Mis comisiones',
+    icon: BadgeDollarSign,
+    allowedRoles: ['ADMIN', 'SOCIO_COMERCIAL'],
   },
 ];
 export function Sidebar() {
@@ -89,13 +95,25 @@ export function Sidebar() {
   });
 
   return (
-    <aside className="flex h-full w-72 flex-shrink-0 flex-col border-r border-slate-200 bg-white">
-      <div className="border-b border-slate-200 px-6 py-5">
-        <h1 className="text-xl font-bold text-slate-900">
+    <aside
+      className="
+    flex
+    h-full
+    w-72
+    flex-shrink-0
+    flex-col
+    border-r
+    border-white/10
+    bg-slate-950
+    text-white
+  "
+    >
+      <div className="border-b border-white/10 px-6 py-6">
+        <h1 className="text-xl font-bold tracking-tight text-white">
           Sistema de operaciones
         </h1>
 
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-slate-400">
           {user ? formatRoles(user.roles) : 'Panel administrativo'}
         </p>
       </div>
@@ -107,24 +125,49 @@ export function Sidebar() {
             to={to}
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition',
+                'flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200',
                 isActive
-                  ? 'bg-slate-900 text-white'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
+                  ? `
+        bg-gradient-to-r
+        from-blue-600
+        to-blue-500
+        text-white
+        shadow-lg
+        shadow-blue-500/20
+      `
+                  : `
+        text-slate-300
+        hover:bg-white/10
+        hover:text-white
+      `,
               )
             }
           >
-            <Icon className="h-4 w-4" />
+            <Icon className="h-4 w-4 shrink-0" />
             {label}
           </NavLink>
         ))}
       </nav>
 
-      <div className="border-t border-slate-200 p-4">
+      <div className="border-t border-white/10 p-4">
         <button
           onClick={logout}
-          className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-red-600 transition hover:bg-red-50"
-        >
+          className="
+flex
+w-full
+items-center
+gap-3
+rounded-xl
+px-4
+py-3
+text-sm
+font-medium
+text-red-400
+transition-all
+duration-200
+hover:bg-red-500/10
+hover:text-red-300
+"        >
           <LogOut className="h-4 w-4" />
           Cerrar sesión
         </button>

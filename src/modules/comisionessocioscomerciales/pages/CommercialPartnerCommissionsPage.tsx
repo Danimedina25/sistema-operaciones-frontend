@@ -51,6 +51,8 @@ import {
 import { useBeneficiarySummary } from '../hooks/use-beneficiary-summary';
 import { CommissionBeneficiariesTable } from '../components/CommissionBeneficiariesTable';
 import { PayBeneficiaryCommissionsModal } from '../components/PayBeneficiaryCommissionsModal';
+import { useBeneficiaryCommissionDetail } from '../hooks/use-beneficiary-commission-detail';
+import { BeneficiaryCommissionDetailModal } from '../components/BeneficiaryCommissionDetailModal';
 
 
 export default function CommercialPartnerCommissionsPage() {
@@ -59,17 +61,7 @@ export default function CommercialPartnerCommissionsPage() {
   const canGenerate =
     hasRole([
       'ADMIN',
-      'GERENTE',
     ]);
-  const [
-    viewMode,
-    setViewMode,
-  ] = useState<
-    'OPERATIONS'
-    | 'BENEFICIARIES'
-  >(
-    'BENEFICIARIES',
-  );
 
   const {
     summary: beneficiarySummary,
@@ -127,6 +119,20 @@ export default function CommercialPartnerCommissionsPage() {
     setIsPayPartnerModalOpen,
   ] = useState(false);
 
+  const {
+    detail: beneficiaryDetail,
+    isLoading: isLoadingBeneficiaryDetail,
+    fetchDetail,
+    clearDetail,
+  } =
+    useBeneficiaryCommissionDetail();
+
+  const [
+    isBeneficiaryDetailModalOpen,
+    setIsBeneficiaryDetailModalOpen,
+  ] =
+    useState(false);
+
   function handleOpenPayBeneficiaryModal(
     beneficiary: CommissionPartnerSummaryResponse,
   ) {
@@ -138,6 +144,29 @@ export default function CommercialPartnerCommissionsPage() {
     setIsPayPartnerModalOpen(
       true,
     );
+  }
+
+  async function handleOpenBeneficiaryDetail(
+    beneficiary: CommissionPartnerSummaryResponse,
+  ) {
+
+    setIsBeneficiaryDetailModalOpen(
+      true,
+    );
+
+    await fetchDetail({
+      beneficiaryId:
+        beneficiary.beneficiaryId,
+
+      beneficiaryType:
+        beneficiary.beneficiaryType,
+
+      startDate:
+        filters.startDate,
+
+      endDate:
+        filters.endDate,
+    });
   }
 
 
@@ -158,48 +187,6 @@ export default function CommercialPartnerCommissionsPage() {
       ),
     ]);
   };
-
-
-
-  const formatDate = (
-    date: string,
-  ) => {
-    const [
-      year,
-      month,
-      day,
-    ] = date
-      .split('-')
-      .map(Number);
-
-    const formatted =
-      new Intl.DateTimeFormat(
-        'es-MX',
-        {
-          weekday: 'short',
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric',
-        },
-      ).format(
-        new Date(
-          year,
-          month - 1,
-          day,
-        ),
-      );
-
-    return formatted
-      .split(' ')
-      .map(
-        word =>
-          word.charAt(0)
-            .toUpperCase() +
-          word.slice(1),
-      )
-      .join(' ');
-  };
-
 
 
   return (
@@ -243,7 +230,7 @@ export default function CommercialPartnerCommissionsPage() {
 
       <section className="rounded-2xl bg-white p-4 shadow-sm">
         <div className="mb-5">
-          <h2 className="text-lg font-semibold text-slate-900">
+          <h2 className="text-md font-semibold text-slate-900">
             Semana de comisiones
           </h2>
         </div>
@@ -301,63 +288,36 @@ export default function CommercialPartnerCommissionsPage() {
 
         </div>
 
-        {viewMode === 'OPERATIONS' ? (
+        {isLoadingBeneficiaries ? (
 
-          isLoading ? (
+          <CommissionOperationsTableSkeleton />
 
-            <CommissionOperationsTableSkeleton />
+        ) : beneficiarySummary?.socios
+          .length ? (
 
-          ) : summary?.operaciones.length ? (
-
-            <CommissionOperationsTable
-              operations={
-                summary.operaciones
-              }
-              onViewDetail={
-                handleOpenOperationDetail
-              }
-            />
-
-          ) : (
-
-            <EmptyCommissionsState
-              onResetFilters={() =>
-                setFilters(
-                  defaultDates,
-                )
-              }
-            />
-
-          )
+          <CommissionBeneficiariesTable
+            beneficiaries={
+              beneficiarySummary.socios
+            }
+            onPayBeneficiary={
+              handleOpenPayBeneficiaryModal
+            }
+            onViewDetail={
+              handleOpenBeneficiaryDetail
+            }
+          />
 
         ) : (
 
-          isLoadingBeneficiaries ? (
-
-            <CommissionOperationsTableSkeleton />
-
-          ) : beneficiarySummary?.socios
-            .length ? (
-
-            <CommissionBeneficiariesTable
-              beneficiaries={beneficiarySummary.socios}
-              onPayBeneficiary={handleOpenPayBeneficiaryModal}
-            />
-
-          ) : (
-
-            <EmptyCommissionsState
-              onResetFilters={() =>
-                setFilters(
-                  defaultDates,
-                )
-              }
-            />
-
-          )
+          <EmptyCommissionsState
+            onResetFilters={() =>
+              setFilters(
+                defaultDates,
+              )
+            }
+          />
 
         )}
-
       </section>
 
       {/* DETALLE */}
@@ -442,6 +402,29 @@ export default function CommercialPartnerCommissionsPage() {
             filters,
           );
         }}
+      />
+
+      <BeneficiaryCommissionDetailModal
+        open={
+          isBeneficiaryDetailModalOpen
+        }
+        detail={
+          beneficiaryDetail
+        }
+        isLoading={
+          isLoadingBeneficiaryDetail
+        }
+        onClose={() => {
+
+          setIsBeneficiaryDetailModalOpen(
+            false,
+          );
+
+          clearDetail();
+
+        }}
+        startDate={filters.startDate}
+        endDate={filters.endDate}
       />
 
 

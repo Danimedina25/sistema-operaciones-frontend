@@ -197,7 +197,7 @@ export function BankAccountsTable({
                                 void onDeactivate(account.id);
                                 closeMenu();
                               }}
-                              className="block w-full px-4 py-2.5 text-left text-sm text-red-700 transition hover:bg-red-50"
+                              className="block w-full px-4 py-2.5 text-left text-sm font-semibold  text-red-700 transition hover:bg-red-50"
                             >
                               Desactivar
                             </button>
@@ -210,7 +210,7 @@ export function BankAccountsTable({
                                 void onActivate(account.id);
                                 closeMenu();
                               }}
-                              className="block w-full px-4 py-2.5 text-left text-sm text-emerald-700 transition hover:bg-emerald-50"
+                              className="block w-full px-4 py-2.5 text-left text-sm font-semibold  text-emerald-700 transition hover:bg-emerald-50"
                             >
                               Activar
                             </button>

@@ -2,7 +2,7 @@ import { Eye, HandCoins } from 'lucide-react';
 import { OperationStatusBadge } from '@/modules/operations/components/OperationStatusBadge';
 import {
   formatCurrency,
-  formatDateTime,
+  formatDate,
 } from '@/modules/operations/utils/operation-formatters';
 import { PaymentOperationResponse } from '../../types/operations.types.ts.js';
 import { useEffect } from 'react';
@@ -113,7 +113,7 @@ export function ReturnsForPaymentTable({
                   </td>
 
                   <td className="px-4 py-4 text-slate-600">
-                    {formatDateTime(operation.createdAt)}
+                    {formatDate(operation.createdAt)}
                   </td>
 
                   <td className="px-4 py-4 font-semibold text-slate-600">

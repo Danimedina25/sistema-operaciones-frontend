@@ -23,6 +23,11 @@ interface CreateOperationFormProps {
   commercialPartners: CommercialPartnerOption[];
   onSubmit: (values: CreateOperationFormValues) => Promise<void>;
 }
+
+function isImageFile(file: File) {
+  return file.type.startsWith('image/');
+}
+
 function normalizeCurrencyInput(value: string) {
   const cleaned = value.replace(/[^\d.]/g, '');
 
@@ -451,6 +456,23 @@ export function CreateOperationForm({
           {fields.map((field, index) => {
             const pagoErrors = errors.pagos?.[index];
             const pagoMonto = parseCurrency(pagos[index]?.monto);
+
+            const comprobante =
+              pagos[index]?.comprobante;
+
+            const selectedFile =
+              comprobante instanceof FileList &&
+                comprobante.length > 0
+                ? comprobante[0]
+                : null;
+
+            const previewUrl =
+              selectedFile &&
+                isImageFile(selectedFile)
+                ? URL.createObjectURL(
+                  selectedFile,
+                )
+                : null;
             const tipoPagoActual = pagos[index]?.tipoPago;
 
             return (
@@ -568,47 +590,130 @@ export function CreateOperationForm({
                         Imagen del comprobante
                       </label>
 
-                      <label
-                        onDragOver={(event) => {
-                          event.preventDefault();
-                          setDraggingIndex(index);
-                        }}
-                        onDragLeave={(event) => {
-                          event.preventDefault();
-                          if (draggingIndex === index) {
+                      {selectedFile ? (
+
+                        <div className="space-y-3">
+
+                          {previewUrl ? (
+                            <img
+                              src={previewUrl}
+                              alt="Comprobante"
+                              className="
+          h-56
+          w-full
+          rounded-2xl
+          border
+          border-slate-200
+          object-cover
+        "
+                            />
+                          ) : (
+                            <div
+                              className="
+          flex
+          h-32
+          items-center
+          justify-center
+          rounded-2xl
+          border
+          border-slate-200
+          bg-slate-50
+          text-sm
+          text-slate-600
+        "
+                            >
+                              {selectedFile.name}
+                            </div>
+                          )}
+
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium text-slate-900">
+                                {selectedFile.name}
+                              </p>
+
+                              <p className="text-xs text-slate-500">
+                                Archivo seleccionado
+                              </p>
+                            </div>
+
+                            <label
+                              className="
+          cursor-pointer
+          rounded-xl
+          border
+          border-slate-200
+          bg-white
+          px-4
+          py-2
+          text-sm
+          font-medium
+          text-slate-700
+          transition
+          hover:bg-slate-50
+        "
+                            >
+                              Cambiar archivo
+
+                              <input
+                                type="file"
+                                accept=".pdf,.jpg,.jpeg,.png,.webp"
+                                className="hidden"
+                                onChange={(event) => {
+
+                                  setValue(
+                                    `pagos.${index}.comprobante`,
+                                    event.target.files ??
+                                    undefined,
+                                    {
+                                      shouldValidate: true,
+                                      shouldDirty: true,
+                                      shouldTouch: true,
+                                    },
+                                  );
+
+                                  void trigger('pagos');
+                                }}
+                              />
+                            </label>
+                          </div>
+
+                        </div>
+
+                      ) : (
+
+                        <label
+                          onDragOver={(event) => {
+                            event.preventDefault();
+                            setDraggingIndex(index);
+                          }}
+                          onDragLeave={(event) => {
+                            event.preventDefault();
+
+                            if (
+                              draggingIndex === index
+                            ) {
+                              setDraggingIndex(null);
+                            }
+                          }}
+                          onDrop={(event) => {
+                            event.preventDefault();
+
                             setDraggingIndex(null);
-                          }
-                        }}
-                        onDrop={(event) => {
-                          event.preventDefault();
-                          setDraggingIndex(null);
 
-                          const file = event.dataTransfer.files?.[0];
-                          if (!file) return;
+                            const file =
+                              event.dataTransfer.files?.[0];
 
-                          const fileList = buildFileList(file);
+                            if (!file) {
+                              return;
+                            }
 
-                          setValue(`pagos.${index}.comprobante`, fileList, {
-                            shouldValidate: true,
-                            shouldDirty: true,
-                            shouldTouch: true,
-                          });
+                            const fileList =
+                              buildFileList(file);
 
-                          void trigger('pagos');
-                        }}
-                        className={`flex min-h-[170px] w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-6 text-center transition ${draggingIndex === index
-                          ? 'border-slate-900 bg-slate-50'
-                          : 'border-slate-300 bg-white hover:border-slate-400'
-                          }`}
-                      >
-                        <input
-                          type="file"
-                          accept=".pdf,.jpg,.jpeg,.png,.webp"
-                          className="hidden"
-                          onChange={(event) => {
                             setValue(
                               `pagos.${index}.comprobante`,
-                              event.target.files ?? undefined,
+                              fileList,
                               {
                                 shouldValidate: true,
                                 shouldDirty: true,
@@ -618,29 +723,64 @@ export function CreateOperationForm({
 
                             void trigger('pagos');
                           }}
-                        />
+                          className={`
+      flex
+      min-h-[170px]
+      w-full
+      cursor-pointer
+      flex-col
+      items-center
+      justify-center
+      rounded-2xl
+      border-2
+      border-dashed
+      px-4
+      py-6
+      text-center
+      transition
+      ${draggingIndex === index
+                              ? 'border-blue-500 bg-blue-50'
+                              : 'border-slate-300 bg-slate-50 hover:border-slate-400'
+                            }
+    `}
+                        >
 
-                        <p className="text-sm font-medium text-slate-700">
-                          Arrastra y suelta el comprobante aquí
-                        </p>
-                        <p className="mt-1 text-xs text-slate-500">
-                          o haz clic para seleccionar un archivo
-                        </p>
-                        <p className="mt-2 text-xs text-slate-400">
-                          PDF, JPG, JPEG, PNG o WEBP
-                        </p>
-                      </label>
+                          <input
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png,.webp"
+                            className="hidden"
+                            onChange={(event) => {
 
-                      {pagos[index]?.comprobante instanceof FileList &&
-                        pagos[index]?.comprobante.length > 0 ? (
+                              setValue(
+                                `pagos.${index}.comprobante`,
+                                event.target.files ??
+                                undefined,
+                                {
+                                  shouldValidate: true,
+                                  shouldDirty: true,
+                                  shouldTouch: true,
+                                },
+                              );
 
-                        <p className="mt-2 text-xs text-slate-600">
-                          Archivo seleccionado:{' '}
-                          <span className="font-medium text-slate-900">
-                            {pagos[index]?.comprobante[0]?.name}
-                          </span>
-                        </p>
-                      ) : null}
+                              void trigger('pagos');
+                            }}
+                          />
+
+                          <p className="text-sm font-semibold text-slate-700">
+                            Arrastra y suelta el comprobante
+                          </p>
+
+                          <p className="mt-1 text-xs text-slate-500">
+                            o haz clic para seleccionarlo
+                          </p>
+
+                          <p className="mt-3 text-xs text-slate-400">
+                            PDF, JPG, PNG o WEBP
+                          </p>
+
+                        </label>
+
+                      )}
 
                       {pagoErrors?.comprobante ? (
                         <p className="mt-1 text-xs text-red-600">

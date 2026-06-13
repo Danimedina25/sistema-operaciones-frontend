@@ -5,7 +5,7 @@ export interface WeekOption {
     endDate: string;
 }
 
-function formatDate(
+export function formatDate(
     date: Date,
 ) {
     return `${date.getFullYear()}-${String(

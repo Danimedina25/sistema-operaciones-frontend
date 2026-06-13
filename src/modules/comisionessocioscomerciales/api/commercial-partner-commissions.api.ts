@@ -14,6 +14,11 @@ import {
   CommissionPartnerSummaryListApiResponse,
   CommissionPartnerSummaryListResponse,
   PayCommissionBatchRequest,
+  CommissionBeneficiaryType,
+  BeneficiaryCommissionDetailApiResponse,
+  BeneficiaryCommissionDetailResponse,
+  MyWeeklyCommissionsApiResponse,
+  MyWeeklyCommissionsResponse,
 } from '../types/commercial-partner-commissions.types';
 
 const BASE_PATH =
@@ -21,6 +26,17 @@ const BASE_PATH =
 
 interface DateRangeParams {
   startDate: string;
+  endDate: string;
+}
+
+interface BeneficiaryCommissionDetailParams {
+
+  beneficiaryId: number;
+
+  beneficiaryType: CommissionBeneficiaryType;
+
+  startDate: string;
+
   endDate: string;
 }
 
@@ -138,6 +154,40 @@ export async function getOperationBeneficiaries(
   const response =
     await api.get<CommissionBeneficiariesApiResponse>(
       `${BASE_PATH}/operations/${operationId}/beneficiaries`,
+    );
+
+  return response.data.data;
+}
+
+export async function getBeneficiaryCommissionDetail(
+  params: BeneficiaryCommissionDetailParams,
+): Promise<BeneficiaryCommissionDetailResponse> {
+
+  const response =
+    await api.get<BeneficiaryCommissionDetailApiResponse>(
+      `${BASE_PATH}/beneficiaries/${params.beneficiaryId}/detail`,
+      {
+        params: {
+          beneficiaryType: params.beneficiaryType,
+          startDate: params.startDate,
+          endDate: params.endDate,
+        },
+      },
+    );
+
+  return response.data.data;
+}
+
+export async function getMyWeeklyCommissions(
+  params: DateRangeParams,
+): Promise<MyWeeklyCommissionsResponse> {
+
+  const response =
+    await api.get<MyWeeklyCommissionsApiResponse>(
+      `${BASE_PATH}/my-weekly-commissions`,
+      {
+        params,
+      },
     );
 
   return response.data.data;

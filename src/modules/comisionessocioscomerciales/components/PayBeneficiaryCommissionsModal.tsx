@@ -5,6 +5,7 @@ import { Modal } from '@/shared/components/ui/Modal';
 import type {
     CommissionPartnerSummaryResponse,
 } from '../types/commercial-partner-commissions.types';
+import { formatPeriodDate } from '@/modules/operations/utils/operation-formatters';
 
 interface PayBeneficiaryCommissionsModalProps {
     open: boolean;
@@ -36,32 +37,6 @@ function formatCurrency(
     ).format(value);
 }
 
-function formatPeriodDate(
-    date: string,
-) {
-    const [
-        year,
-        month,
-        day,
-    ] = date
-        .split('-')
-        .map(Number);
-
-    return new Intl.DateTimeFormat(
-        'es-MX',
-        {
-            day: '2-digit',
-            month: 'long',
-            year: 'numeric',
-        },
-    ).format(
-        new Date(
-            year,
-            month - 1,
-            day,
-        ),
-    );
-}
 
 function isImageFile(
     file?: File | null,

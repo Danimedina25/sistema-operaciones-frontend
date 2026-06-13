@@ -195,6 +195,8 @@ export interface ReturnPaymentResponse {
   cuentaOrigenBanco?: string | null;
 
   cuentaDestinoCliente?: string | null;
+  cuentaDestinoTitular?: string | null;
+  cuentaDestinoBanco?: string | null;
   comprobanteUrl?: string | null;
   observaciones?: string | null;
 

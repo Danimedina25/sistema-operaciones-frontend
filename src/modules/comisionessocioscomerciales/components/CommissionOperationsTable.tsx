@@ -1,4 +1,4 @@
-import { formatDateTime } from '@/modules/operations/utils/operation-formatters';
+import { formatDate } from '@/modules/operations/utils/operation-formatters';
 import {
   CommissionOperationSummaryResponse,
 } from '../types/commercial-partner-commissions.types';
@@ -104,7 +104,7 @@ export function CommissionOperationsTable({
                     </td>
 
                     <td className="px-4 py-4 text-center">
-                      {formatDateTime(
+                      {formatDate(
                         operation.fechaOperacion,
                       )}
                     </td>

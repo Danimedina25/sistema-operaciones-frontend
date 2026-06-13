@@ -1,3 +1,4 @@
+import { useState, useMemo, useEffect } from 'react';
 import type {
     CommissionPartnerSummaryResponse,
 } from '../types/commercial-partner-commissions.types';
@@ -7,6 +8,10 @@ interface Props {
     beneficiaries: CommissionPartnerSummaryResponse[];
 
     onPayBeneficiary: (
+        beneficiary: CommissionPartnerSummaryResponse,
+    ) => void;
+
+    onViewDetail: (
         beneficiary: CommissionPartnerSummaryResponse,
     ) => void;
 }
@@ -26,11 +31,43 @@ function formatCurrency(
 export function CommissionBeneficiariesTable({
     beneficiaries,
     onPayBeneficiary,
+    onViewDetail,
 }: Props) {
 
     if (!beneficiaries.length) {
         return null;
     }
+
+    useEffect(
+        () => {
+            setPage(1);
+        },
+        [beneficiaries],
+    );
+
+    const ITEMS_PER_PAGE = 10;
+
+    const [page, setPage] = useState(1);
+
+    const totalPages = Math.ceil(
+        beneficiaries.length / ITEMS_PER_PAGE,
+    );
+
+    const paginatedBeneficiaries =
+        useMemo(
+            () => {
+
+                const start =
+                    (page - 1) * ITEMS_PER_PAGE;
+
+                return beneficiaries.slice(
+                    start,
+                    start + ITEMS_PER_PAGE,
+                );
+
+            },
+            [beneficiaries, page],
+        );
 
     return (
         <div className="rounded-2xl border border-slate-200 bg-white">
@@ -77,7 +114,7 @@ export function CommissionBeneficiariesTable({
 
                     <tbody>
 
-                        {beneficiaries.map(
+                        {paginatedBeneficiaries.map(
                             beneficiary => {
 
                                 const canPay =
@@ -154,36 +191,52 @@ export function CommissionBeneficiariesTable({
 
                                         <td className="px-4 py-4 text-center">
 
-                                            {canPay ? (
+                                            <div className="flex items-center justify-center gap-2">
 
                                                 <button
                                                     type="button"
                                                     onClick={() =>
-                                                        onPayBeneficiary(
+                                                        onViewDetail(
                                                             beneficiary,
                                                         )
                                                     }
-                                                    className="rounded-lg border border-emerald-200 px-3 py-1.5 text-xs font-medium transition hover:bg-emerald-50"
+                                                    className="rounded-lg border border-sky-200 px-3 py-1.5 text-xs font-medium text-sky-700 transition hover:bg-sky-50"
                                                 >
-                                                    Pagar
+                                                    Ver detalle
                                                 </button>
 
-                                            ) : (
+                                                {canPay ? (
 
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        window.open(
-                                                            beneficiary.paymentProofUrl!,
-                                                            '_blank',
-                                                        )
-                                                    }
-                                                    className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-100"
-                                                >
-                                                    Ver comprobante
-                                                </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            onPayBeneficiary(
+                                                                beneficiary,
+                                                            )
+                                                        }
+                                                        className="rounded-lg border border-emerald-200 px-3 py-1.5 text-xs font-medium transition hover:bg-emerald-50"
+                                                    >
+                                                        Pagar
+                                                    </button>
 
-                                            )}
+                                                ) : (
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            window.open(
+                                                                beneficiary.paymentProofUrl!,
+                                                                '_blank',
+                                                            )
+                                                        }
+                                                        className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-100"
+                                                    >
+                                                        Ver comprobante
+                                                    </button>
+
+                                                )}
+
+                                            </div>
 
                                         </td>
                                     </tr>
@@ -195,6 +248,64 @@ export function CommissionBeneficiariesTable({
                     </tbody>
 
                 </table>
+
+                <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3">
+
+                    <p className="text-sm text-slate-500">
+                        Mostrando {
+                            Math.min(
+                                (page - 1) * ITEMS_PER_PAGE + 1,
+                                beneficiaries.length,
+                            )
+                        }
+                        -
+                        {
+                            Math.min(
+                                page * ITEMS_PER_PAGE,
+                                beneficiaries.length,
+                            )
+                        }
+                        {' '}de{' '}
+                        {beneficiaries.length} beneficiarios
+                    </p>
+
+                    <div className="flex items-center gap-2">
+
+                        <button
+                            type="button"
+                            disabled={page === 1}
+                            onClick={() =>
+                                setPage(
+                                    prev => prev - 1,
+                                )
+                            }
+                            className="rounded-lg border border-slate-200 px-3 py-2 text-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            Anterior
+                        </button>
+
+                        <span className="text-sm text-slate-600">
+                            Página {page} de {totalPages}
+                        </span>
+
+                        <button
+                            type="button"
+                            disabled={
+                                page === totalPages
+                            }
+                            onClick={() =>
+                                setPage(
+                                    prev => prev + 1,
+                                )
+                            }
+                            className="rounded-lg border border-slate-200 px-3 py-2 text-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            Siguiente
+                        </button>
+
+                    </div>
+
+                </div>
 
             </div>
 

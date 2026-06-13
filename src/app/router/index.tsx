@@ -25,6 +25,7 @@ import ReturnsForRequestPage from '@/modules/operations/pages/ReturnsForRequestP
 import ReturnsForPaymentPage from '@/modules/operations/pages/ReturnsForPaymentPage';
 import CommercialPartnersPage from '@/modules/socioscomerciales/pages/CommercialPartnersPage';
 import CommercialPartnerCommissionsPage from '@/modules/comisionessocioscomerciales/pages/CommercialPartnerCommissionsPage';
+import MyCommercialPartnerCommissionsPage from '@/modules/comisionessocioscomerciales/pages/MyCommercialPartnerCommissionsPage';
 
 export const router = createBrowserRouter([
   {
@@ -97,7 +98,6 @@ export const router = createBrowserRouter([
               <RoleGuard
                 allowedRoles={[
                   'ADMIN',
-                  'GERENTE',
                   'AUXILIAR_CUENTAS',
                 ]}
               />
@@ -115,7 +115,6 @@ export const router = createBrowserRouter([
               <RoleGuard
                 allowedRoles={[
                   'ADMIN',
-                  'GERENTE',
                   'SOCIO_COMERCIAL',
                 ]}
               />
@@ -133,7 +132,6 @@ export const router = createBrowserRouter([
               <RoleGuard
                 allowedRoles={[
                   'ADMIN',
-                  'GERENTE',
                   'SOCIO_COMERCIAL',
                   'JEFA_CAJAS',
                   'AUXILIAR_CUENTAS',
@@ -153,7 +151,6 @@ export const router = createBrowserRouter([
               <RoleGuard
                 allowedRoles={[
                   'ADMIN',
-                  'GERENTE',
                   'SOCIO_COMERCIAL',
                 ]}
               />
@@ -176,7 +173,6 @@ export const router = createBrowserRouter([
               <RoleGuard
                 allowedRoles={[
                   'ADMIN',
-                  'GERENTE',
                   'JEFA_CAJAS',
                   'AUXILIAR_CUENTAS',
                 ]}
@@ -200,7 +196,6 @@ export const router = createBrowserRouter([
               <RoleGuard
                 allowedRoles={[
                   'ADMIN',
-                  'GERENTE',
                   'JEFA_CAJAS',
                   'AUXILIAR_CUENTAS',
                 ]}
@@ -210,6 +205,22 @@ export const router = createBrowserRouter([
               {
                 path: paths.comisionessocios,
                 element: <CommercialPartnerCommissionsPage />,
+              }
+            ],
+          },
+           {
+            element: (
+              <RoleGuard
+                allowedRoles={[
+                  'ADMIN',
+                  'SOCIO_COMERCIAL'
+                ]}
+              />
+            ),
+            children: [
+              {
+                path: paths.miscomisiones,
+                element: <MyCommercialPartnerCommissionsPage />,
               }
             ],
           },

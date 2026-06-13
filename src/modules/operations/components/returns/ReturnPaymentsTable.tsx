@@ -3,12 +3,13 @@
 import { paymentTypeLabels } from '@/modules/operations/constants/operations.constants';
 import {
   formatCurrency,
-  formatDateTime,
+  formatDate,
 } from '@/modules/operations/utils/operation-formatters';
 import {
   OperationStatus,
   ReturnPaymentResponse,
 } from '../../types/operations.types.ts';
+import { ReturnStatusBadge } from './ReturnStatusBadge.js';
 
 interface ReturnPaymentsTableProps {
   returns: ReturnPaymentResponse[];
@@ -69,9 +70,12 @@ export function ReturnPaymentsTable({
     requestStatusMessage = 'Se ha solicitado el retorno completo';
   }
 
-  const paymentStatusMessage = !hasPendingAmountToPay
-    ? 'Se han pagado todos los retornos'
-    : montoPendientePorRetornar === montoPendientePorSolicitar ? 'No se pueden registrar retornos todavía' : null;
+  const paymentStatusMessage =
+    !hasPendingAmountToPay
+      ? 'Retornos liquidados'
+      : !hasRequestedReturns
+        ? 'Esperando solicitud de retorno'
+        : 'Pendiente de pago';
 
   console.log({
     montoPendientePorSolicitar,
@@ -82,27 +86,46 @@ export function ReturnPaymentsTable({
   });
 
   return (
-    <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+    <div
+      className="
+    overflow-hidden
+    rounded-[2rem]
+    border
+    border-slate-200/80
+    bg-white
+    shadow-lg
+    shadow-slate-950/5
+  "
+    >
       <div className="px-6 py-5">
         <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
           <div className="text-left">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-              Retorno
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-blue-500">
+              RETORNOS
             </p>
 
-            <h3 className="mt-1 text-xl font-semibold text-slate-900">
+            <h3 className="mt-1 text-xl font-bold tracking-tight text-slate-950">
               Retornos de dinero al cliente
             </h3>
           </div>
 
           <div className="grid w-full grid-cols-1 items-start gap-10 md:w-auto md:grid-cols-[1fr_1fr]">
-            <div className="flex flex-col items-start md:items-center">
+            <div
+              className="
+    rounded-2xl
+    border
+    border-blue-200
+    bg-blue-50/70
+    px-5
+    py-4
+  "
+            >
               <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
                 Pendiente por solicitar
               </p>
 
               <p
-                className={`mt-0.5 text-base font-semibold ${hasPendingAmountToRequest ? 'text-violet-700' : 'text-slate-400'
+                className={`mt-0.5 text-base font-semibold ${hasPendingAmountToRequest ? 'text-blue-700' : 'text-slate-400'
                   }`}
               >
                 {formatCurrency(montoPendientePorSolicitar ?? 0)}
@@ -117,7 +140,22 @@ export function ReturnPaymentsTable({
                         montoPendientePorSolicitar ?? 0,
                       )
                     }
-                    className="inline-flex min-w-[95px] items-center justify-center rounded-lg border-violet-200 bg-violet-100 px-3 py-1.5 text-xs font-semibold text-violet-800 transition hover:bg-violet-200"
+                    className="
+                    inline-flex
+                    items-center
+                    justify-center
+                    rounded-xl
+                    bg-slate-900
+                    px-4
+                    py-2
+                    text-xs
+                    font-semibold
+                    text-white
+                    shadow-sm
+                    transition
+                    hover:bg-slate-800
+                    hover:-translate-y-0.5
+                    "
                   >
                     Solicitar retorno
                   </button>
@@ -129,7 +167,16 @@ export function ReturnPaymentsTable({
               </div>
             </div>
 
-            <div className="flex flex-col items-start md:items-center">
+            <div
+              className="
+    rounded-2xl
+    border
+    border-amber-200
+    bg-amber-50/70
+    px-5
+    py-4
+  "
+            >
               <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
                 Pendiente por retornar
               </p>
@@ -162,8 +209,8 @@ export function ReturnPaymentsTable({
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full">
-            <thead className="bg-slate-50">
-              <tr className="text-left text-sm text-slate-600">
+            <thead className="bg-slate-50/80">
+              <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                 <th className="px-4 py-3 font-medium">Monto</th>
                 <th className="px-4 py-3 font-medium">Estatus</th>
                 <th className="px-4 py-3 font-medium">Tipo</th>
@@ -185,31 +232,45 @@ export function ReturnPaymentsTable({
               {returns.map((returnPayment) => (
                 <tr
                   key={returnPayment.id}
-                  className="border-t border-slate-200 text-sm"
+                  className="
+                  border-t
+                  border-slate-100
+                  text-sm
+                  transition
+                  hover:bg-slate-50/70
+                  "
                 >
                   <td className="px-4 py-4 font-medium text-slate-900">
                     {formatCurrency(returnPayment.monto)}
                   </td>
 
                   <td className="px-4 py-4">
-                    <span
-                      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${returnPayment.estatus === 'REALIZADO'
-                        ? 'bg-green-50 text-green-700'
-                        : 'bg-amber-50 text-amber-700'
-                        }`}
-                    >
-                      {returnPayment.estatus === 'REALIZADO'
-                        ? 'Realizado'
-                        : 'Solicitado'}
-                    </span>
+                    <ReturnStatusBadge
+                      status={returnPayment.estatus}
+                    />
                   </td>
 
                   <td className="px-4 py-4 text-slate-600">
                     {paymentTypeLabels[returnPayment.tipoPago]}
                   </td>
 
-                  <td className="px-4 py-4 text-slate-600">
-                    {returnPayment.cuentaDestinoCliente ?? '-'}
+
+                  <td className="px-4 py-4">
+                    <div className="max-w-[240px]">
+                      <p className="text-sm font-semibold tracking-tight text-slate-900">
+                        {returnPayment.cuentaDestinoCliente ?? '-'}
+                      </p>
+
+                      <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
+                        <span>{returnPayment.cuentaDestinoBanco ?? 'Sin banco'}</span>
+
+                        <span className="h-1 w-1 rounded-full bg-slate-300" />
+
+                        <span className="truncate">
+                          {returnPayment.cuentaDestinoTitular ?? '-'}
+                        </span>
+                      </div>
+                    </div>
                   </td>
 
                   <td className="px-4 py-4 text-slate-600">
@@ -218,7 +279,7 @@ export function ReturnPaymentsTable({
 
                   <td className="px-4 py-4 text-slate-600">
                     {returnPayment.fechaSolicitud
-                      ? formatDateTime(returnPayment.fechaSolicitud)
+                      ? formatDate(returnPayment.fechaSolicitud)
                       : '-'}
                   </td>
 
@@ -228,7 +289,7 @@ export function ReturnPaymentsTable({
 
                   <td className="px-4 py-4 text-slate-600">
                     {returnPayment.fechaPago
-                      ? formatDateTime(returnPayment.fechaPago)
+                      ? formatDate(returnPayment.fechaPago)
                       : '-'}
                   </td>
 
@@ -242,7 +303,22 @@ export function ReturnPaymentsTable({
                         href={returnPayment.comprobanteUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-200"
+                        className="
+                        inline-flex
+                        items-center
+                        justify-center
+                        rounded-xl
+                        border
+                        border-slate-200
+                        bg-slate-50
+                        px-3
+                        py-2
+                        text-sm
+                        font-semibold
+                        text-slate-700
+                        transition
+                        hover:bg-slate-100
+                        "
                       >
                         Ver comprobante
                       </a>
@@ -259,7 +335,22 @@ export function ReturnPaymentsTable({
                         <button
                           type="button"
                           onClick={() => onPayReturn?.(returnPayment)}
-                          className="inline-flex min-w-[95px] items-center justify-center rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+                          className="
+                          inline-flex
+                          items-center
+                          justify-center
+                          rounded-xl
+                          bg-emerald-600
+                          px-4
+                          py-2
+                          text-xs
+                          font-semibold
+                          text-white
+                          shadow-sm
+                          transition
+                          hover:bg-emerald-700
+                          hover:-translate-y-0.5
+                          "
                         >
                           Registrar retorno
                         </button>

@@ -4,7 +4,7 @@ import { PaymentStatusBadge } from '@/modules/operations/components/PaymentStatu
 import { paymentTypeLabels } from '@/modules/operations/constants/operations.constants';
 import {
   formatCurrency,
-  formatDateTime,
+  formatDate,
 } from '@/modules/operations/utils/operation-formatters';
 import { OperationPaymentResponse } from '../types/operations.types.ts';
 
@@ -13,7 +13,7 @@ interface PaymentsTableProps {
   onValidatePayment?: (paymentId: number) => Promise<void> | void;
   onRejectPayment?: (paymentId: number, motivo: string) => Promise<void> | void;
   processingPaymentId?: number | null;
-  montoPendientePorRegistrar?:number | null;
+  montoPendientePorRegistrar?: number | null;
   onAddPayment?: () => void;
   onEditPayment?: (paymentId: number) => void;
 }
@@ -127,32 +127,51 @@ export function PaymentsTable({
 
   return (
     <>
-      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <div
+        className="
+    overflow-hidden
+    rounded-[2rem]
+    border
+    border-slate-200/80
+    bg-white
+    shadow-lg
+    shadow-slate-950/5
+  "
+      >ƒ
         <div className="px-6 py-5">
           <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-                        <div className="text-left">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+            <div className="text-left">
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-blue-600">
                 Ingreso
               </p>
 
-              <h3 className="mt-1 text-xl font-semibold text-slate-900">
+              <h3 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">
                 Comprobantes y validaciones de ingreso de dinero
               </h3>
             </div>
 
             <div className="flex flex-col items-start gap-2 md:items-end">
-              <div className="text-left md:text-right">
+              <div
+                className="
+    rounded-2xl
+    border
+    border-amber-200
+    bg-amber-50
+    px-4
+    py-3
+  "
+              >
                 <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
                   Pendiente de registro en ingreso
                 </p>
 
-                <p className="mt-0.5 text-base font-semibold text-amber-700">
+                <p className="mt-0.5 text-base font-semibold text-emerald-600">
                   {formatCurrency(montoPendientePorRegistrar ?? 0)}
                 </p>
 
                 {montoPendientePorRegistrar === 0 && (
-                  <p className="mt-1 text-sm font-medium text-green-600">
-                   No hay más pagos de ingreso por registrar
+                  <p className="mt-1 text-sm font-medium text-emerald-600">
+                    No hay más pagos de ingreso por registrar
                   </p>
                 )}
               </div>
@@ -161,20 +180,38 @@ export function PaymentsTable({
                 <button
                   type="button"
                   onClick={onAddPayment}
-                  className="inline-flex min-w-[180px] items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
+                  className="
+                inline-flex
+                min-w-[200px]
+                items-center
+                justify-center
+                rounded-2xl
+                bg-slate-950
+                px-5
+                py-3
+                text-sm
+                font-semibold
+                text-white
+                shadow-lg
+                shadow-blue-500/20
+                transition-all
+                duration-200
+                hover:-translate-y-0.5
+                hover:bg-slate-900
+                "
                 >
                   Registrar pago de ingreso
                 </button>
               ) : null}
             </div>
           </div>
-          <div className="mt-5 h-px w-full bg-slate-200" />
+          <div className="mt-6 h-px bg-slate-100" />
         </div>
 
         <div className="overflow-x-auto">
           <table className="min-w-full">
-            <thead className="bg-slate-50">
-              <tr className="text-left text-sm text-slate-600">
+            <thead className="bg-slate-50/80 backdrop-blur">
+              <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                 <th className="px-4 py-3 font-medium">Monto</th>
                 <th className="px-4 py-3 font-medium">Tipo</th>
                 <th className="px-4 py-3 font-medium">Cuenta destino</th>
@@ -199,10 +236,18 @@ export function PaymentsTable({
                 return (
                   <tr
                     key={payment.id}
-                    className="border-t border-slate-200 text-sm"
+                    className="
+                    border-t
+                    border-slate-100
+                    text-sm
+                    transition-colors
+                    hover:bg-slate-50/70
+                    "
                   >
-                    <td className="px-4 py-4 font-medium text-slate-900">
-                      {formatCurrency(payment.monto)}
+                    <td className="px-4 py-4">
+                      <span className="font-semibold text-slate-950">
+                        {formatCurrency(payment.monto)}
+                      </span>
                     </td>
 
                     <td className="px-4 py-4 text-slate-600">
@@ -210,23 +255,25 @@ export function PaymentsTable({
                     </td>
 
                     <td className="px-4 py-4">
-                      <div className="flex flex-col">
-                        <span className="font-medium text-slate-900">
+                      <div className="space-y-1">
+                        <p className="font-semibold text-slate-900">
                           {payment.cuentaDestinoBanco ?? '-'}
-                        </span>
+                        </p>
 
-                        <span className="text-xs text-slate-500">
+                        <p className="max-w-[180px] text-xs leading-5 text-slate-400">
                           {payment.cuentaDestinoTitular}
-                        </span>
+                        </p>
                       </div>
+                    </td>
+                    
+                    <td className="max-w-[220px] px-4 py-4 text-slate-600">
+                      <p className="truncate">
+                        {payment.observaciones ?? '-'}
+                      </p>
                     </td>
 
                     <td className="px-4 py-4 text-slate-600">
-                      {payment.observaciones ?? '-'}
-                    </td>  
-
-                    <td className="px-4 py-4 text-slate-600">
-                      {formatDateTime(payment.fechaPago)}
+                      {formatDate(payment.fechaPago)}
                     </td>
 
                     <td className="px-4 py-4 text-slate-600">
@@ -234,35 +281,67 @@ export function PaymentsTable({
                     </td>
 
                     <td className="px-4 py-4 text-slate-600">
-                      {formatDateTime(payment.fechaValidacion)}
+                      {formatDate(payment.fechaValidacion)}
                     </td>
 
                     <td className="px-4 py-4">
                       <PaymentStatusBadge status={payment.estatus} />
                     </td>
 
-                  <td className="px-4 py-4">
-                    <div className="flex w-[170px] flex-col gap-2">
-                      <a
-                        href={payment.comprobanteUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex w-full items-center justify-center rounded-lg bg-amber-100 px-3 py-2 text-sm font-medium text-amber-700 transition hover:bg-amber-200"
-                      >
-                        Ver comprobante
-                      </a>
-
-                      {isPendingValidation && onEditPayment ? (
-                        <button
-                          type="button"
-                          onClick={() => onEditPayment(payment.id)}
-                          className="inline-flex w-full items-center justify-center rounded-lg bg-amber-100 px-3 py-2 text-sm font-medium text-amber-700 transition hover:bg-amber-200"
+                    <td className="px-4 py-4">
+                      <div className="flex w-[170px] flex-col gap-2">
+                        <a
+                          href={payment.comprobanteUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="
+                          inline-flex
+                          w-full
+                          items-center
+                          justify-center
+                          rounded-xl
+                          border
+                          border-blue-200
+                          bg-blue-50
+                          px-3
+                          py-2
+                          text-sm
+                          font-medium
+                          text-blue-700
+                          transition
+                          hover:bg-blue-100
+                          "
                         >
-                          Editar pago
-                        </button>
-                      ) : null}
-                    </div>
-                  </td>
+                          Ver comprobante
+                        </a>
+
+                        {isPendingValidation && onEditPayment ? (
+                          <button
+                            type="button"
+                            onClick={() => onEditPayment(payment.id)}
+                            className="
+                            inline-flex
+                            w-full
+                            items-center
+                            justify-center
+                            rounded-xl
+                            border
+                            border-slate-200
+                            bg-slate-50
+                            px-3
+                            py-2
+                            text-sm
+                            font-medium
+                            text-slate-700
+                            transition
+                            hover:bg-slate-100
+                            "
+                          >
+                            Editar pago
+                          </button>
+                        ) : null}
+                      </div>
+                    </td>
 
                     {canValidatePayments ? (
                       <td className="px-4 py-4">
@@ -274,7 +353,9 @@ export function PaymentsTable({
                               onClick={() =>
                                 openConfirmModal(payment.id, 'VALIDATE')
                               }
-                              className="flex-1 inline-flex justify-center rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="flex-1 inline-flex justify-center rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed shadow-sm
+hover:-translate-y-0.5
+transition-all disabled:opacity-50"
                             >
                               {isProcessing ? 'Validando...' : 'Validar'}
                             </button>
@@ -285,7 +366,9 @@ export function PaymentsTable({
                               onClick={() =>
                                 openConfirmModal(payment.id, 'REJECT')
                               }
-                              className="flex-1 inline-flex justify-center rounded-lg bg-rose-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="flex-1 inline-flex justify-center rounded-lg bg-rose-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-rose-700 disabled:cursor-not-allowed shadow-sm
+hover:-translate-y-0.5
+transition-all disabled:opacity-50"
                             >
                               {isProcessing ? 'Procesando...' : 'Rechazar'}
                             </button>
@@ -306,8 +389,14 @@ export function PaymentsTable({
       </div>
 
       {pendingAction ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm px-4">
+          <div className="w-full max-w-md rounded-[2rem]
+border
+border-slate-200
+bg-white
+p-8
+shadow-2xl
+shadow-slate-950/10">
             <h4 className="text-lg font-semibold text-slate-900">
               {confirmTitle}
             </h4>
@@ -354,11 +443,23 @@ export function PaymentsTable({
                   }}
                   disabled={isConfirmingAction}
                   placeholder="Escribe el motivo del rechazo"
-                  className={`w-full rounded-xl border px-3 py-2 text-sm text-slate-700 outline-none transition ${
-                    rejectReasonError
-                      ? 'border-rose-500 focus:border-rose-500'
-                      : 'border-slate-300 focus:border-slate-400'
-                  } disabled:cursor-not-allowed disabled:bg-slate-100`}
+                  className={`
+  w-full
+  rounded-2xl
+  border
+  bg-slate-50
+  px-4
+  py-3
+  text-sm
+  text-slate-700
+  outline-none
+  transition
+  focus:bg-white
+  ${rejectReasonError
+                      ? 'border-rose-500'
+                      : 'border-slate-200 focus:border-slate-400'
+                    }
+`}
                 />
 
                 {rejectReasonError ? (
@@ -383,11 +484,10 @@ export function PaymentsTable({
                 type="button"
                 onClick={() => void handleConfirmAction()}
                 disabled={isConfirmingAction}
-                className={`inline-flex rounded-lg px-4 py-2 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                  pendingAction.action === 'VALIDATE'
-                    ? 'bg-emerald-600 hover:bg-emerald-700'
-                    : 'bg-rose-600 hover:bg-rose-700'
-                }`}
+                className={`inline-flex rounded-lg px-4 py-2 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-50 ${pendingAction.action === 'VALIDATE'
+                  ? 'bg-emerald-600 hover:bg-emerald-700'
+                  : 'bg-rose-600 hover:bg-rose-700'
+                  }`}
               >
                 {confirmButtonText}
               </button>

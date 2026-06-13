@@ -50,7 +50,7 @@ export default function OperationDetailPage() {
   );
 
   const canPayReturn = user?.roles?.some(
-    (role) => role === 'ADMIN' || role === 'GERENTE',
+    (role) => role === 'ADMIN',
   );
 
   const parsedOperationId = Number(operationId);

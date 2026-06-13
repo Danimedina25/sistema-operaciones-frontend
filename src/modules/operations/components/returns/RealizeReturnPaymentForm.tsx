@@ -118,6 +118,20 @@ export function RealizeReturnPaymentForm({
                         {returnPayment.cuentaDestinoCliente ?? '-'}
                     </span>
                 </div>
+
+                 <div>
+                    <span className="block text-slate-500">Banco</span>
+                    <span className="font-semibold text-slate-900">
+                        {returnPayment.cuentaDestinoBanco ?? '-'}
+                    </span>
+                </div>
+
+                <div>
+                    <span className="block text-slate-500">Titular</span>
+                    <span className="font-semibold text-slate-900">
+                        {returnPayment.cuentaDestinoTitular ?? '-'}
+                    </span>
+                </div>
             </div>
 
             {requiereCuentaOrigen ? (

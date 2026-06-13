@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { OperationStatusBadge } from '@/modules/operations/components/OperationStatusBadge';
 import {
   formatCurrency,
-  formatDateTime,
+  formatDate,
 } from '@/modules/operations/utils/operation-formatters';
 import { PaymentOperationResponse } from '../types/operations.types.ts';
 import { useMarkOperationAsInvoiced } from '../hooks/use-mark-operations-as-invoiced.js';
@@ -176,7 +176,7 @@ export function OperationsTable({
                     </td>
 
                     <td className="px-4 py-4 text-slate-600">
-                      {formatDateTime(operation.createdAt)}
+                      {formatDate(operation.createdAt)}
                     </td>
 
                     <td className="px-4 py-4 text-slate-600">

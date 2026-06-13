@@ -159,6 +159,86 @@ export interface CommissionOperationDetailResponse {
   totalCommissionAmount: number;
 }
 
+export interface BeneficiaryCommissionOperationResponse {
+
+  commissionId: number;
+
+  operationId: number;
+
+  clienteNombre: string;
+
+  operationDate: string;
+
+  nivel: number;
+
+  operationAmount: number;
+
+  commissionPercentage: number;
+
+  commissionAmount: number;
+
+  commissionStatus: CommissionStatus;
+}
+
+export interface BeneficiaryCommissionDetailResponse {
+
+  beneficiaryId: number;
+
+  beneficiaryName: string;
+
+  beneficiaryType: CommissionBeneficiaryType;
+
+  totalOperations: number;
+
+  totalCommission: number;
+
+  operations: BeneficiaryCommissionOperationResponse[];
+}
+
+export interface MyWeeklyCommissionOperationResponse {
+
+  operationId: number;
+
+  cliente: string;
+
+  fechaOperacion: string;
+
+  montoOperacion: number;
+
+  nivelesRedComercial: number;
+
+  porcentajeComision: number;
+
+  miComision: number;
+
+  myCommissionStatus: CommissionStatus;
+
+  comisionRed: number;
+
+  comisionNivel2: number;
+
+  comisionNivel3: number;
+
+  socioNivel2: string | null;
+
+  socioNivel3: string | null;
+
+  statusNivel2: CommissionStatus | null;
+
+  statusNivel3: CommissionStatus | null;
+}
+
+export interface MyWeeklyCommissionsResponse {
+
+  totalGanado: number;
+
+  totalGanadoRed: number;
+
+  totalOperaciones: number;
+
+  operaciones: MyWeeklyCommissionOperationResponse[];
+}
+
 export type CommissionSummaryApiResponse =
   ApiResponse<CommissionSummaryResponse>;
 
@@ -173,6 +253,12 @@ export type CommissionBeneficiariesApiResponse =
 
 export type CommissionPartnerSummaryListApiResponse =
   ApiResponse<CommissionPartnerSummaryListResponse>;
+
+export type BeneficiaryCommissionDetailApiResponse =
+  ApiResponse<BeneficiaryCommissionDetailResponse>;
+
+  export type MyWeeklyCommissionsApiResponse =
+  ApiResponse<MyWeeklyCommissionsResponse>;
 
 export type VoidApiResponse =
   ApiResponse<null>;

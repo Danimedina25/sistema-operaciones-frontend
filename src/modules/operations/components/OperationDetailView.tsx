@@ -165,7 +165,28 @@ export function OperationDetailView({
               block: 'start',
             });
           }}
-          className="fixed bottom-6 right-6 z-40 inline-flex h-12 w-12 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg transition hover:bg-slate-800"
+          className="
+fixed
+bottom-6
+right-6
+z-40
+inline-flex
+h-14
+w-14
+items-center
+justify-center
+rounded-full
+bg-slate-950
+text-white
+shadow-xl
+shadow-blue-500/20
+backdrop-blur
+transition-all
+duration-200
+hover:scale-105
+hover:bg-slate-900
+active:scale-95
+"
           aria-label="Ir a retornos"
           title="Ir a retornos"
         >
