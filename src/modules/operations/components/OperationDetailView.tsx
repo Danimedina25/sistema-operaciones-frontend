@@ -26,6 +26,9 @@ interface OperationDetailViewProps {
   scrollToPayments?: boolean;
   scrollToReturns?: boolean;
   onEditPayment?: (paymentId: number) => void;
+  onEditReturn?: (
+    returnPayment: ReturnPaymentResponse,
+  ) => void;
 }
 
 export function OperationDetailView({
@@ -44,6 +47,7 @@ export function OperationDetailView({
   scrollToPayments = false,
   scrollToReturns = false,
   onEditPayment,
+  onEditReturn,
   canRequestReturn = false,
 }: OperationDetailViewProps) {
   const paymentsSectionRef = useRef<HTMLDivElement | null>(null);
@@ -152,6 +156,7 @@ export function OperationDetailView({
           }}
           canManageReturnPayments={(user?.roles?.includes('ADMIN') || user?.roles?.includes('JEFA_CAJAS')) ?? false}
           onPayReturn={onPayReturn}
+          onEditReturn={onEditReturn}
           operationStatus={operation.estatus}
         />
       </div>

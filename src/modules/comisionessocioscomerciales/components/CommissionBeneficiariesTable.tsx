@@ -229,7 +229,23 @@ export function CommissionBeneficiariesTable({
                                                                 '_blank',
                                                             )
                                                         }
-                                                        className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-100"
+                                                        className="
+    inline-flex
+    h-9
+    items-center
+    justify-center
+    rounded-lg
+    border
+    border-slate-300
+    bg-white
+    px-4
+    text-xs
+    font-medium
+    text-slate-700
+    shadow-sm
+    transition
+    hover:bg-slate-50
+  "
                                                     >
                                                         Ver comprobante
                                                     </button>

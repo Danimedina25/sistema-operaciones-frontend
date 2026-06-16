@@ -1,17 +1,18 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
+import { ReturnPaymentResponse } from '../../types/operations.types.ts';
+import { ReturnPaymentType } from '@/shared/utils/form.utils.js';
 
-type ReturnPaymentType = 'EFECTIVO' | 'TRANSFERENCIA' | 'DEPOSITO';
 
 interface ReturnPaymentItem {
-  id: string;
+  id: string; // react key
+  paymentId?: number; // id BD
   monto: string;
   tipoPago: '' | ReturnPaymentType;
   banco?: string;
   titular?: string;
-  cuenta?: string;
   clabe?: string;
   observaciones?: string;
 }
@@ -19,11 +20,11 @@ interface ReturnPaymentItem {
 export interface RequestReturnFormValues {
   operationId: number;
   pagos: Array<{
+    id?: number; // <- nuevo
     monto: number;
     tipoPago: ReturnPaymentType;
     banco?: string;
     titular?: string;
-    cuenta?: string;
     clabe?: string;
     observaciones?: string;
   }>;
@@ -35,12 +36,13 @@ interface RequestReturnFormProps {
   montoTotalRetornar: number;
   montoSolicitado: number;
   faltaPorSolicitar: number;
+  initialPayments?: ReturnPaymentResponse[];
   isSubmitting: boolean;
   onSubmit: (values: RequestReturnFormValues) => Promise<void>;
 }
 type PaymentErrors = Record<
   string,
-  Partial<Record<keyof ReturnPaymentItem | 'cuentaOClabe', string>>
+  Partial<Record<keyof ReturnPaymentItem | 'Clabe', string>>
 >;
 function normalizeCurrencyInput(value: string) {
   const cleaned = value.replace(/[^\d.]/g, '');
@@ -58,6 +60,20 @@ function normalizeCurrencyInput(value: string) {
   if (parts.length === 1) return formattedInteger;
 
   return `${formattedInteger}.${decimalPart.slice(0, 2)}`;
+}
+
+function mapPaymentToForm(
+  payment: ReturnPaymentResponse,
+): ReturnPaymentItem {
+  return {
+    id: crypto.randomUUID(),
+    paymentId: payment.id,
+    monto: formatCurrencyDisplay(payment.monto),
+    tipoPago: payment.tipoPago as ReturnPaymentType,
+    banco: payment.cuentaDestinoBanco ?? '',
+    titular: payment.cuentaDestinoTitular ?? '',
+    observaciones: payment.observaciones ?? '',
+  };
 }
 
 function parseCurrency(value: string) {
@@ -79,7 +95,6 @@ function createEmptyPayment(): ReturnPaymentItem {
     tipoPago: '',
     banco: '',
     titular: '',
-    cuenta: '',
     clabe: '',
     observaciones: '',
   };
@@ -96,66 +111,71 @@ export function RequestReturnForm({
   montoSolicitado,
   faltaPorSolicitar,
   isSubmitting,
+  initialPayments,
   onSubmit,
 }: RequestReturnFormProps) {
-  const [pagos, setPagos] = useState<ReturnPaymentItem[]>([
-    createEmptyPayment(),
-  ]);
-  const [errors, setErrors] = useState<PaymentErrors>({});
-  function validatePayments() {
-  const newErrors: PaymentErrors = {};
-
-  pagos.forEach((pago) => {
-    const pagoErrors: PaymentErrors[string] = {};
-    const monto = parseCurrency(pago.monto);
-
-    if (monto <= 0) {
-      pagoErrors.monto = 'El monto debe ser mayor a cero';
+  const [pagos, setPagos] = useState<ReturnPaymentItem[]>(() => {
+    if (initialPayments?.length) {
+      return initialPayments.map(mapPaymentToForm);
     }
 
-    if (!pago.tipoPago) {
-      pagoErrors.tipoPago = 'El tipo de retorno es obligatorio';
-    }
-
-    const requiereDatosBancarios =
-      pago.tipoPago === 'TRANSFERENCIA' || pago.tipoPago === 'DEPOSITO';
-
-    if (requiereDatosBancarios) {
-      if (!pago.banco?.trim()) {
-        pagoErrors.banco = 'El banco destino es obligatorio';
-      }
-
-      if (!pago.titular?.trim()) {
-        pagoErrors.titular = 'El titular de la cuenta es obligatorio';
-      }
-
-      if (!pago.cuenta?.trim() && !pago.clabe?.trim()) {
-        pagoErrors.cuentaOClabe =
-          'Captura al menos número de cuenta o CLABE';
-      }
-    }
-    
-    if (pago.cuenta?.trim()) {
-        if (pago.cuenta.length < 10) {
-            pagoErrors.cuenta = 'La cuenta debe tener al menos 10 dígitos';
-        }
-    }
-
-    if (pago.clabe?.trim()) {
-        if (pago.clabe.length !== 18) {
-            pagoErrors.clabe = 'La CLABE debe tener exactamente 18 dígitos';
-        }
-    }
-
-    if (Object.keys(pagoErrors).length > 0) {
-      newErrors[pago.id] = pagoErrors;
-    }
+    return [createEmptyPayment()];
   });
 
-  setErrors(newErrors);
+  useEffect(() => {
+    if (initialPayments?.length) {
+      setPagos(initialPayments.map(mapPaymentToForm));
+    } else {
+      setPagos([createEmptyPayment()]);
+    }
 
-  return Object.keys(newErrors).length === 0;
-}
+    setErrors({});
+  }, [initialPayments]);
+
+  const [errors, setErrors] = useState<PaymentErrors>({});
+  function validatePayments() {
+    const newErrors: PaymentErrors = {};
+
+    pagos.forEach((pago) => {
+      const pagoErrors: PaymentErrors[string] = {};
+      const monto = parseCurrency(pago.monto);
+
+      if (monto <= 0) {
+        pagoErrors.monto = 'El monto debe ser mayor a cero';
+      }
+
+      if (!pago.tipoPago) {
+        pagoErrors.tipoPago = 'El tipo de retorno es obligatorio';
+      }
+
+      const requiereDatosBancarios =
+        pago.tipoPago === 'TRANSFERENCIA' || pago.tipoPago === 'DEPOSITO';
+
+      if (requiereDatosBancarios) {
+        if (!pago.banco?.trim()) {
+          pagoErrors.banco = 'El banco destino es obligatorio';
+        }
+
+        if (!pago.titular?.trim()) {
+          pagoErrors.titular = 'El titular de la cuenta es obligatorio';
+        }
+      }
+
+      if (pago.clabe?.trim()) {
+        if (pago.clabe.length !== 18) {
+          pagoErrors.clabe = 'La CLABE debe tener exactamente 18 dígitos';
+        }
+      }
+
+      if (Object.keys(pagoErrors).length > 0) {
+        newErrors[pago.id] = pagoErrors;
+      }
+    });
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  }
 
   const totalSolicitado = useMemo(() => {
     return pagos.reduce((total, pago) => {
@@ -163,59 +183,72 @@ export function RequestReturnForm({
     }, 0);
   }, [pagos]);
 
-  const saldoPendiente = Math.max(faltaPorSolicitar - totalSolicitado, 0);
-  const excedente = Math.max(totalSolicitado - faltaPorSolicitar, 0);
-  const excedeMonto = totalSolicitado > faltaPorSolicitar;
+  const montoInicial = useMemo(() => {
+    return initialPayments?.reduce(
+      (acc, p) => acc + p.monto,
+      0,
+    ) ?? 0;
+  }, [initialPayments]);
 
- function updatePago(
-  paymentId: string,
-  field: keyof ReturnPaymentItem,
-  value: string,
-) {
-  let formattedValue = value;
+  const montoDisponible = faltaPorSolicitar + montoInicial;
 
-  if (field === 'monto') {
-    formattedValue = normalizeCurrencyInput(value);
-  }
+  const saldoPendiente = Math.max(
+    montoDisponible - totalSolicitado,
+    0,
+  );
 
-  if (field === 'cuenta') {
-    formattedValue = onlyNumbers(value).slice(0, 16);
-  }
+  const excedente = Math.max(
+    totalSolicitado - montoDisponible,
+    0,
+  );
 
-  if (field === 'clabe') {
-    formattedValue = onlyNumbers(value).slice(0, 18);
-  }
+  const excedeMonto = totalSolicitado > montoDisponible;
 
-  setPagos((current) =>
-    current.map((pago) =>
-      pago.id === paymentId
-        ? {
+  function updatePago(
+    paymentId: string,
+    field: keyof ReturnPaymentItem,
+    value: string,
+  ) {
+    let formattedValue = value;
+
+    if (field === 'monto') {
+      formattedValue = normalizeCurrencyInput(value);
+    }
+
+    if (field === 'clabe') {
+      formattedValue = onlyNumbers(value).slice(0, 18);
+    }
+
+    setPagos((current) =>
+      current.map((pago) =>
+        pago.id === paymentId
+          ? {
             ...pago,
             [field]: formattedValue,
           }
-        : pago,
-    ),
-  );
+          : pago,
+      ),
+    );
 
-  setErrors((current) => {
-    const paymentErrors = current[paymentId];
+    setErrors((current) => {
+      const paymentErrors = current[paymentId];
 
-    if (!paymentErrors) return current;
+      if (!paymentErrors) return current;
 
-    const updatedPaymentErrors = { ...paymentErrors };
+      const updatedPaymentErrors = { ...paymentErrors };
 
-    delete updatedPaymentErrors[field];
+      delete updatedPaymentErrors[field];
 
-    if (field === 'cuenta' || field === 'clabe') {
-      delete updatedPaymentErrors.cuentaOClabe;
-    }
+      if (field === 'clabe') {
+        delete updatedPaymentErrors.Clabe;
+      }
 
-    return {
-      ...current,
-      [paymentId]: updatedPaymentErrors,
-    };
-  });
-}
+      return {
+        ...current,
+        [paymentId]: updatedPaymentErrors,
+      };
+    });
+  }
 
   function addPago() {
     if (saldoPendiente <= 0) return;
@@ -246,18 +279,18 @@ export function RequestReturnForm({
     if (!isValid) return;
 
     await onSubmit({
-        operationId,
-        pagos: pagos.map((pago) => ({
+      operationId,
+      pagos: pagos.map((pago) => ({
+        id: pago.paymentId,
         monto: parseCurrency(pago.monto),
         tipoPago: pago.tipoPago as ReturnPaymentType,
         banco: pago.banco?.trim(),
         titular: pago.titular?.trim(),
-        cuenta: pago.cuenta?.trim(),
         clabe: pago.clabe?.trim(),
         observaciones: pago.observaciones?.trim(),
-        })),
+      })),
     });
-    }
+  }
 
   return (
     <form className="space-y-6" onSubmit={handleSubmit}>
@@ -286,9 +319,8 @@ export function RequestReturnForm({
         <div>
           <span className="block text-slate-500">Falta por solicitar</span>
           <span
-            className={`font-semibold ${
-              saldoPendiente === 0 ? 'text-emerald-700' : 'text-slate-900'
-            }`}
+            className={`font-semibold ${saldoPendiente === 0 ? 'text-emerald-700' : 'text-slate-900'
+              }`}
           >
             ${formatCurrencyDisplay(saldoPendiente)}
           </span>
@@ -301,7 +333,7 @@ export function RequestReturnForm({
           {formatCurrencyDisplay(excedente)}.
         </div>
       ) : null}
-{/* 
+      {/* 
       {solicitudCompleta ? (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
           El monto total a retornar ya está completamente distribuido.
@@ -378,9 +410,9 @@ export function RequestReturnForm({
 
                   {errors[pago.id]?.tipoPago ? (
                     <p className="mt-1 text-xs text-red-600">
-                        {errors[pago.id]?.tipoPago}
+                      {errors[pago.id]?.tipoPago}
                     </p>
-                    ) : null}
+                  ) : null}
                 </div>
 
                 {requiereDatosBancarios ? (
@@ -419,28 +451,7 @@ export function RequestReturnForm({
 
                     <div>
                       <label className="mb-2 block text-sm font-medium text-slate-700">
-                        Número de cuenta
-                      </label>
-
-                      <Input
-                        type="text"
-                        placeholder="Número de cuenta"
-                        inputMode="numeric"
-                        maxLength={16}
-                        value={pago.cuenta}
-                         error={
-                            errors[pago.id]?.cuenta ||
-                            errors[pago.id]?.cuentaOClabe
-                        }
-                        onChange={(event) =>
-                          updatePago(pago.id, 'cuenta', event.target.value)
-                        }
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-slate-700">
-                        CLABE
+                        Cuenta CLABE interbancaria
                       </label>
 
                       <Input
@@ -450,8 +461,8 @@ export function RequestReturnForm({
                         inputMode="numeric"
                         maxLength={18}
                         error={
-                            errors[pago.id]?.clabe ||
-                            errors[pago.id]?.cuentaOClabe
+                          errors[pago.id]?.clabe ||
+                          errors[pago.id]?.Clabe
                         }
                         onChange={(event) =>
                           updatePago(pago.id, 'clabe', event.target.value)
@@ -483,15 +494,15 @@ export function RequestReturnForm({
       </div>
 
       {
-      (saldoPendiente <= 0) ? null :
-      <button
-        type="button"
-        onClick={addPago}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        <Plus className="h-4 w-4" />
-        Agregar otro pago
-      </button>
+        (saldoPendiente <= 0) ? null :
+          <button
+            type="button"
+            onClick={addPago}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Plus className="h-4 w-4" />
+            Agregar otro pago
+          </button>
       }
 
       <Button
@@ -500,7 +511,9 @@ export function RequestReturnForm({
         disabled={excedeMonto || totalSolicitado <= 0}
         className="w-full justify-center"
       >
-        Crear solicitud de retorno
+        {initialPayments?.length
+          ? 'Actualizar solicitud'
+          : 'Crear solicitud de retorno'}
       </Button>
     </form>
   );

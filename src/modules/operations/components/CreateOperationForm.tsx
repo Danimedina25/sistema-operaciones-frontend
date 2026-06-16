@@ -102,6 +102,15 @@ export function CreateOperationForm({
   const [clienteSearch, setClienteSearch] = useState('');
   const [showClienteOptions, setShowClienteOptions] = useState(false);
 
+  const [accountSearch, setAccountSearch] = useState<
+    Record<number, string>
+  >({});
+
+  const [showAccountOptions, setShowAccountOptions] = useState<
+    Record<number, boolean>
+  >({}); ``
+
+
   useEffect(() => {
     console.log('Commercial Partners:', commercialPartners);
   }, [commercialPartners]);
@@ -130,6 +139,26 @@ export function CreateOperationForm({
     control,
     name: 'pagos',
   }) ?? [];
+
+  useEffect(() => {
+    pagos.forEach((pago, index) => {
+      if (
+        pago?.cuentaDestinoId &&
+        !accountSearch[index]
+      ) {
+        const account = bankAccounts.find(
+          (a) => a.id === Number(pago.cuentaDestinoId),
+        );
+
+        if (account) {
+          setAccountSearch((prev) => ({
+            ...prev,
+            [index]: account.label,
+          }));
+        }
+      }
+    });
+  }, [pagos, bankAccounts]);
 
   const montoTotal = parseCurrency(montoTotalRaw);
 
@@ -558,22 +587,87 @@ export function CreateOperationForm({
                           Cuenta destino
                         </label>
 
-                        <select
-                          className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
-                          {...register(`pagos.${index}.cuentaDestinoId`, {
-                            onChange: () => {
-                              void trigger('pagos');
-                            },
-                          })}
-                        >
-                          <option value="">Selecciona una cuenta</option>
+                        <div className="relative">
+                          <Input
+                            type="text"
+                            placeholder="Buscar cuenta..."
+                            value={accountSearch[index] ?? ''}
+                            onFocus={() =>
+                              setShowAccountOptions((prev) => ({
+                                ...prev,
+                                [index]: true,
+                              }))
+                            }
+                            onBlur={() => {
+                              setTimeout(() => {
+                                setShowAccountOptions((prev) => ({
+                                  ...prev,
+                                  [index]: false,
+                                }));
+                              }, 150);
+                            }}
+                            onChange={(event) => {
+                              setAccountSearch((prev) => ({
+                                ...prev,
+                                [index]: event.target.value,
+                              }));
 
-                          {bankAccounts.map((account) => (
-                            <option key={account.id} value={account.id}>
-                              {account.label}
-                            </option>
-                          ))}
-                        </select>
+                              setValue(
+                                `pagos.${index}.cuentaDestinoId`,
+                                undefined,
+                                {
+                                  shouldDirty: true,
+                                  shouldValidate: false,
+                                },
+                              );
+                            }}
+                          />
+
+                          {showAccountOptions[index] && (
+                            <div className="absolute z-50 mt-2 max-h-60 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
+                              {bankAccounts
+                                .filter((account) =>
+                                  account.label
+                                    .toLowerCase()
+                                    .includes(
+                                      (accountSearch[index] ?? '').toLowerCase(),
+                                    ),
+                                )
+                                .map((account) => (
+                                  <button
+                                    key={account.id}
+                                    type="button"
+                                    className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                                    onClick={() => {
+                                      setAccountSearch((prev) => ({
+                                        ...prev,
+                                        [index]: account.label,
+                                      }));
+
+                                      setValue(
+                                        `pagos.${index}.cuentaDestinoId`,
+                                        account.id,
+                                        {
+                                          shouldValidate: true,
+                                          shouldDirty: true,
+                                          shouldTouch: true,
+                                        },
+                                      );
+
+                                      setShowAccountOptions((prev) => ({
+                                        ...prev,
+                                        [index]: false,
+                                      }));
+
+                                      void trigger('pagos');
+                                    }}
+                                  >
+                                    {account.label}
+                                  </button>
+                                ))}
+                            </div>
+                          )}
+                        </div>
 
                         {pagoErrors?.cuentaDestinoId ? (
                           <p className="mt-1 text-xs text-red-600">

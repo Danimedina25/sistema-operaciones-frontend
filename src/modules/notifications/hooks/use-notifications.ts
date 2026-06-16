@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import {
   getLatestNotifications,
@@ -20,79 +20,70 @@ export function useNotifications(options?: UseNotificationsOptions) {
   const limit = options?.limit ?? 10;
   const enabled = options?.enabled ?? true;
 
-  const { token, isAuthenticated } = useAuth();
+  const { token, isAuthenticated, user } = useAuth();
+
+  const limitRef = useRef(limit);
 
   const [notifications, setNotifications] = useState<NotificationResponse[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isMarkingAllAsRead, setIsMarkingAllAsRead] = useState(false);
-  const [processingNotificationId, setProcessingNotificationId] = useState<number | null>(null);
+  const [processingNotificationId, setProcessingNotificationId] =
+    useState<number | null>(null);
+  const [lastIncomingNotification, setLastIncomingNotification] =
+    useState<NotificationResponse | null>(null);
+
+  useEffect(() => {
+    limitRef.current = limit;
+  }, [limit]);
 
   const loadNotifications = useCallback(async () => {
     if (!enabled || !isAuthenticated) {
-      console.log('[HOOK]', new Date().toISOString(), 'loadNotifications cancelado', {
-        enabled,
-        isAuthenticated,
-      });
+      setNotifications([]);
+      setUnreadCount(0);
+      setIsLoading(false);
       return;
     }
 
     try {
-      console.log('[HOOK]', new Date().toISOString(), 'Cargando notificaciones por REST...');
       setIsLoading(true);
 
       const [latest, unread] = await Promise.all([
-        getLatestNotifications(limit),
+        getLatestNotifications(limitRef.current),
         getUnreadNotificationsCount(),
       ]);
-
-      console.log('[HOOK]', new Date().toISOString(), 'REST latest notifications:', latest);
-      console.log('[HOOK]', new Date().toISOString(), 'REST unread count:', unread);
 
       setNotifications(latest);
       setUnreadCount(unread.unreadCount);
     } catch (error) {
-      console.error('[HOOK]', new Date().toISOString(), 'Error cargando notificaciones por REST:', error);
       toast.error(getApiErrorMessage(error));
     } finally {
       setIsLoading(false);
     }
-  }, [enabled, isAuthenticated, limit]);
+  }, [enabled, isAuthenticated]);
 
   useEffect(() => {
-    console.log('[HOOK]', new Date().toISOString(), 'Primer useEffect -> loadNotifications');
     void loadNotifications();
   }, [loadNotifications]);
 
   useEffect(() => {
-    console.log('[HOOK]', new Date().toISOString(), 'Evaluando conexión socket...', {
-      enabled,
-      isAuthenticated,
-      hasToken: Boolean(token),
-      limit,
-    });
-
-    if (!enabled || !isAuthenticated || !token) {
-      console.log('[HOOK]', new Date().toISOString(), 'No se conectará socket, desconectando...');
-      notificationsSocketService.disconnect();
+    if (!enabled || !isAuthenticated || !token || !user?.userId) {
+      void notificationsSocketService.disconnect();
       return;
     }
 
     notificationsSocketService.connect({
       token,
+      userId: user?.userId,
       onNotification: (incomingNotification) => {
-        console.log('[HOOK]', new Date().toISOString(), '🔔 Llegó por WebSocket:', incomingNotification);
+        console.log('[WS RECEIVED NOTIFICATION]', incomingNotification);
+
+        setLastIncomingNotification(incomingNotification);
 
         setNotifications((current) => {
           const alreadyExists = current.some(
             (notification) => notification.id === incomingNotification.id,
           );
-
-          console.log('[HOOK]', new Date().toISOString(), 'Procesando notificación WS', {
-            incomingId: incomingNotification.id,
-            alreadyExists,
-            currentLength: current.length,
-          });
 
           if (alreadyExists) {
             return current.map((notification) =>
@@ -102,67 +93,53 @@ export function useNotifications(options?: UseNotificationsOptions) {
             );
           }
 
-          return [incomingNotification, ...current].slice(0, limit);
+          return [incomingNotification, ...current].slice(0, limitRef.current);
         });
       },
       onUnreadCount: (payload) => {
-        console.log('[HOOK]', new Date().toISOString(), '🔢 Unread count recibido por WebSocket:', payload);
+        console.log('[WS RECEIVED UNREAD COUNT]', payload);
         setUnreadCount(payload.unreadCount);
       },
       onConnect: () => {
-        console.log('[HOOK]', new Date().toISOString(), '✅ Socket conectado, recargando notificaciones...');
-        void loadNotifications();
+        console.log('[WS CONNECTED]');
       },
       onError: (error) => {
-        console.error('[HOOK]', new Date().toISOString(), '❌ Error en socket de notificaciones:', error);
+        console.error('[WS ERROR]', error);
       },
     });
 
     return () => {
-      console.log('[HOOK]', new Date().toISOString(), 'Cleanup del effect: desconectando socket');
-      notificationsSocketService.disconnect();
+      void notificationsSocketService.disconnect();
     };
-  }, [enabled, isAuthenticated, token, limit, loadNotifications]);
+  }, [enabled, isAuthenticated, token, user?.userId]);
 
   const unreadNotifications = useMemo(() => {
-    const result = notifications.filter((notification) => !notification.leida);
-    console.log('[HOOK]', new Date().toISOString(), 'Calculando unreadNotifications', {
-      total: notifications.length,
-      unread: result.length,
-    });
-    return result;
+    return notifications.filter((notification) => !notification.leida);
   }, [notifications]);
 
-  const submitMarkAsRead = useCallback(
-    async (userNotificationId: number) => {
-      try {
-        console.log('[HOOK]', new Date().toISOString(), 'Marcando como leída:', userNotificationId);
-        setProcessingNotificationId(userNotificationId);
+  const submitMarkAsRead = useCallback(async (userNotificationId: number) => {
+    try {
+      setProcessingNotificationId(userNotificationId);
 
-        const updated = await markNotificationAsRead(userNotificationId);
-        console.log('[HOOK]', new Date().toISOString(), 'Respuesta markAsRead:', updated);
+      const updated = await markNotificationAsRead(userNotificationId);
 
-        setNotifications((current) =>
-          current.map((notification) =>
-            notification.id === userNotificationId ? updated : notification,
-          ),
-        );
+      setNotifications((current) =>
+        current.map((notification) =>
+          notification.id === userNotificationId ? updated : notification,
+        ),
+      );
 
-        setUnreadCount((current) => Math.max(current - 1, 0));
-      } catch (error) {
-        console.error('[HOOK]', new Date().toISOString(), 'Error en markAsRead:', error);
-        toast.error(getApiErrorMessage(error));
-        throw error;
-      } finally {
-        setProcessingNotificationId(null);
-      }
-    },
-    [],
-  );
+      setUnreadCount((current) => Math.max(current - 1, 0));
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+      throw error;
+    } finally {
+      setProcessingNotificationId(null);
+    }
+  }, []);
 
   const submitMarkAllAsRead = useCallback(async () => {
     try {
-      console.log('[HOOK]', new Date().toISOString(), 'Marcando todas como leídas...');
       setIsMarkingAllAsRead(true);
 
       await markAllNotificationsAsRead();
@@ -177,7 +154,6 @@ export function useNotifications(options?: UseNotificationsOptions) {
 
       setUnreadCount(0);
     } catch (error) {
-      console.error('[HOOK]', new Date().toISOString(), 'Error en markAllAsRead:', error);
       toast.error(getApiErrorMessage(error));
       throw error;
     } finally {
@@ -192,6 +168,8 @@ export function useNotifications(options?: UseNotificationsOptions) {
     isLoading,
     isMarkingAllAsRead,
     processingNotificationId,
+    lastIncomingNotification,
+    setLastIncomingNotification,
     loadNotifications,
     submitMarkAsRead,
     submitMarkAllAsRead,

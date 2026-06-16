@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '@/modules/notifications/hooks/use-notifications';
 import { NotificationsDropdown } from '@/modules/notifications/components/NotificationsDropdown';
 import type { NotificationResponse } from '@/modules/notifications/types/notifications.types';
+import { IncomingNotificationAlert } from './IncomingNotificationAlert';
 
 function BellIcon() {
   return (
@@ -35,6 +36,8 @@ export function NotificationsBell() {
     processingNotificationId,
     submitMarkAsRead,
     submitMarkAllAsRead,
+    lastIncomingNotification,
+    setLastIncomingNotification,
   } = useNotifications({ limit: 10 });
 
   useEffect(() => {
@@ -54,34 +57,46 @@ export function NotificationsBell() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!lastIncomingNotification) return;
+
+    const timeout = window.setTimeout(() => {
+      setLastIncomingNotification(null);
+    }, 6000);
+
+    return () => window.clearTimeout(timeout);
+  }, [lastIncomingNotification, setLastIncomingNotification]);
+
   const handleNotificationClick = async (notification: NotificationResponse) => {
-  try {
-    if (!notification.leida) {
-      await submitMarkAsRead(notification.id);
-    }
+    try {
+      if (!notification.leida) {
+        await submitMarkAsRead(notification.id);
+      }
 
-    setIsOpen(false);
+      setIsOpen(false);
 
-    if (notification.actionUrl) {
-      navigate(notification.actionUrl);
+      if (notification.actionUrl) {
+        navigate(notification.actionUrl);
+      }
+    } catch {
+
     }
-  } catch {
-   
-  }
-};
+  };
 
   return (
     <div ref={containerRef} className="relative">
       <button
         type="button"
         onClick={() => setIsOpen((current) => !current)}
-        className="relative rounded-xl border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
-        aria-label="Abrir notificaciones"
+        className={`relative rounded-xl border p-2 transition ${isOpen
+          ? 'border-blue-200 bg-blue-50 text-blue-600'
+          : 'border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+          }`}
       >
         <BellIcon />
 
         {unreadCount > 0 ? (
-          <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-semibold text-white">
+          <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white ring-2 ring-white">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         ) : null}
@@ -98,6 +113,18 @@ export function NotificationsBell() {
           onMarkAllAsRead={submitMarkAllAsRead}
         />
       ) : null}
+
+      {lastIncomingNotification ? (
+        <IncomingNotificationAlert
+          notification={lastIncomingNotification}
+          onOpen={() => {
+            setIsOpen(true);
+            setLastIncomingNotification(null);
+          }}
+          onClose={() => setLastIncomingNotification(null)}
+        />
+      ) : null}
     </div>
+
   );
 }

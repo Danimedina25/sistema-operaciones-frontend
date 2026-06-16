@@ -95,6 +95,35 @@ export function AddOperationPaymentForm({
     null,
   );
 
+  const [accountSearch, setAccountSearch] = useState('');
+  const [showAccountOptions, setShowAccountOptions] = useState(false);
+  const cuentaDestinoId = useWatch({
+    control,
+    name: 'cuentaDestinoId',
+  });
+
+  useEffect(() => {
+    if (!cuentaDestinoId) return;
+
+    const account = bankAccounts.find(
+      (item) => String(item.id) === String(cuentaDestinoId),
+    );
+
+    if (account) {
+      setAccountSearch(account.label);
+    }
+  }, [cuentaDestinoId, bankAccounts]);
+
+  const filteredAccounts = useMemo(() => {
+    const search = accountSearch.trim().toLowerCase();
+
+    if (!search) return bankAccounts;
+
+    return bankAccounts.filter((account) =>
+      account.label.toLowerCase().includes(search),
+    );
+  }, [bankAccounts, accountSearch]);
+
   const montoRaw = useWatch({
     control,
     name: 'monto',
@@ -250,7 +279,16 @@ export function AddOperationPaymentForm({
               className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
               {...register('tipoPago', {
                 required: 'El tipo de comprobante es obligatorio',
-                onChange: async () => {
+                onChange: async (event) => {
+                  if (event.target.value === 'EFECTIVO') {
+                    setValue('cuentaDestinoId', '', {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    });
+
+                    setAccountSearch('');
+                  }
+
                   await trigger('comprobante');
                   await trigger('cuentaDestinoId');
                 },
@@ -275,25 +313,67 @@ export function AddOperationPaymentForm({
                 Cuenta destino
               </label>
 
-              <select
-                className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
-                {...register('cuentaDestinoId', {
-                  validate: (value) => {
-                    if (!requiereComprobante) return true;
+              <div className="relative">
+                <Input
+                  type="text"
+                  placeholder="Buscar cuenta..."
+                  value={accountSearch}
+                  onFocus={() => setShowAccountOptions(true)}
+                  onBlur={() => {
+                    setTimeout(() => {
+                      setShowAccountOptions(false);
+                    }, 150);
+                  }}
+                  onChange={(event) => {
+                    setAccountSearch(event.target.value);
 
-                    return (
-                      Number(value) > 0 || 'La cuenta destino es obligatoria'
-                    );
-                  },
-                })}
-              >
-                <option value="">Selecciona una cuenta</option>
-                {bankAccounts.map((account) => (
-                  <option key={account.id} value={account.id}>
-                    {account.label}
-                  </option>
-                ))}
-              </select>
+                    setValue('cuentaDestinoId', '', {
+                      shouldDirty: true,
+                      shouldTouch: false,
+                      shouldValidate: false,
+                    });
+
+                    setShowAccountOptions(true);
+                  }}
+                />
+
+                {showAccountOptions && (
+                  <div className="absolute z-50 mt-2 max-h-60 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
+                    {filteredAccounts.length > 0 ? (
+                      filteredAccounts.map((account) => (
+                        <button
+                          key={account.id}
+                          type="button"
+                          className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                          onClick={() => {
+                            setAccountSearch(account.label);
+
+                            setValue(
+                              'cuentaDestinoId',
+                              String(account.id),
+                              {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                                shouldTouch: true,
+                              },
+                            );
+
+                            setShowAccountOptions(false);
+
+                            void trigger('cuentaDestinoId');
+                          }}
+                        >
+                          {account.label}
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-4 py-3 text-sm text-slate-500">
+                        No se encontraron cuentas
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
 
               {errors.cuentaDestinoId ? (
                 <p className="mt-1 text-xs text-red-600">
@@ -310,47 +390,6 @@ export function AddOperationPaymentForm({
               Comprobante de pago
             </label>
 
-            {selectedFile ? (
-              <div className="mb-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
-                    {selectedPreviewUrl ? (
-                      <img
-                        src={selectedPreviewUrl}
-                        alt="Comprobante seleccionado"
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span className="px-2 text-center text-xs font-medium text-slate-500">
-                        Archivo seleccionado
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-slate-800">
-                      Comprobante seleccionado
-                    </p>
-
-                    <p className="mt-1 truncate text-xs text-slate-500">
-                      {selectedFile.name}
-                    </p>
-
-                    {selectedPreviewUrl ? (
-                      <a
-                        href={selectedPreviewUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="mt-3 inline-flex rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-200"
-                      >
-                        Ver imagen
-                      </a>
-                    ) : null}
-                  </div>
-                </div>
-              </div>
-            ) : null}
-
             <Controller
               control={control}
               name="comprobante"
@@ -365,58 +404,139 @@ export function AddOperationPaymentForm({
               }}
               render={({ field }) => (
                 <>
-                  <label
-                    onDragOver={(event) => {
-                      event.preventDefault();
-                      setIsDragging(true);
-                    }}
-                    onDragLeave={(event) => {
-                      event.preventDefault();
-                      setIsDragging(false);
-                    }}
-                    onDrop={(event) => {
-                      event.preventDefault();
-                      setIsDragging(false);
-
-                      const file = event.dataTransfer.files?.[0];
-                      if (!file) return;
-
-                      const fileList = buildFileList(file);
-                      field.onChange(fileList);
-                    }}
-                    className={`flex min-h-[170px] w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-6 text-center transition ${isDragging
-                      ? 'border-slate-900 bg-slate-50'
-                      : 'border-slate-300 bg-white hover:border-slate-400'
-                      }`}
-                  >
-                    <input
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png,.webp"
-                      className="hidden"
-                      onChange={(event) => {
-                        field.onChange(event.target.files ?? undefined);
-                      }}
-                    />
-
-                    <p className="text-sm font-medium text-slate-700">
-                      Arrastra y suelta el comprobante aquí
-                    </p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      o haz clic para seleccionar un archivo
-                    </p>
-                    <p className="mt-2 text-xs text-slate-400">
-                      PDF, JPG, JPEG, PNG o WEBP
-                    </p>
-                  </label>
-
                   {selectedFile ? (
-                    <p className="mt-2 text-xs text-slate-600">
-                      Archivo seleccionado:{' '}
-                      <span className="font-medium text-slate-900">
-                        {selectedFile.name}
-                      </span>
-                    </p>
-                  ) : null}
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="flex items-start gap-4">
+                        <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
+                          {selectedPreviewUrl ? (
+                            <img
+                              src={selectedPreviewUrl}
+                              alt="Comprobante"
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="px-2 text-center text-xs text-slate-500">
+                              PDF
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-slate-900">
+                            Comprobante seleccionado
+                          </p>
+
+                          <p className="mt-1 break-all text-xs text-slate-500">
+                            {selectedFile.name}
+                          </p>
+
+                          <div className="mt-3 flex gap-2">
+                            {selectedPreviewUrl && (
+                              <a
+                                href={selectedPreviewUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="
+                    inline-flex
+                    items-center
+                    rounded-lg
+                    border
+                    border-slate-200
+                    bg-white
+                    px-3
+                    py-2
+                    text-xs
+                    font-medium
+                    text-slate-700
+                    hover:bg-slate-50
+                  "
+                              >
+                                Ver imagen
+                              </a>
+                            )}
+
+                            <label
+                              htmlFor="change-proof"
+                              className="
+                              inline-flex
+                              cursor-pointer
+                              items-center
+                              rounded-lg
+                              bg-slate-900
+                              px-3
+                              py-2
+                              text-xs
+                              font-semibold
+                              text-white
+                              hover:bg-slate-800
+                            "
+                            >
+                              Cambiar comprobante
+                            </label>
+
+                            <input
+                              id="change-proof"
+                              type="file"
+                              accept=".pdf,.jpg,.jpeg,.png,.webp"
+                              className="hidden"
+                              onChange={(event) => {
+                                field.onChange(event.target.files ?? undefined);
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <label
+                      onDragOver={(event) => {
+                        event.preventDefault();
+                        setIsDragging(true);
+                      }}
+                      onDragLeave={(event) => {
+                        event.preventDefault();
+                        setIsDragging(false);
+                      }}
+                      onDrop={(event) => {
+                        event.preventDefault();
+                        setIsDragging(false);
+
+                        const file = event.dataTransfer.files?.[0];
+
+                        if (!file) return;
+
+                        const fileList = buildFileList(file);
+                        field.onChange(fileList);
+                      }}
+                      className={`flex min-h-[170px] w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-6 text-center transition ${isDragging
+                        ? 'border-slate-900 bg-slate-50'
+                        : 'border-slate-300 bg-white hover:border-slate-400'
+                        }`}
+                    >
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png,.webp"
+                        className="hidden"
+                        onChange={(event) => {
+                          field.onChange(
+                            event.target.files ?? undefined,
+                          );
+                        }}
+                      />
+
+                      <p className="text-sm font-medium text-slate-700">
+                        Arrastra y suelta el comprobante aquí
+                      </p>
+
+                      <p className="mt-1 text-xs text-slate-500">
+                        o haz clic para seleccionar un archivo
+                      </p>
+
+                      <p className="mt-2 text-xs text-slate-400">
+                        PDF, JPG, JPEG, PNG o WEBP
+                      </p>
+                    </label>
+                  )}
                 </>
               )}
             />

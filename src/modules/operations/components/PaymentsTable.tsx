@@ -265,7 +265,7 @@ export function PaymentsTable({
                         </p>
                       </div>
                     </td>
-                    
+
                     <td className="max-w-[220px] px-4 py-4 text-slate-600">
                       <p className="truncate">
                         {payment.observaciones ?? '-'}
@@ -295,22 +295,22 @@ export function PaymentsTable({
                           target="_blank"
                           rel="noreferrer"
                           className="
-                          inline-flex
-                          w-full
-                          items-center
-                          justify-center
-                          rounded-xl
-                          border
-                          border-blue-200
-                          bg-blue-50
-                          px-3
-                          py-2
-                          text-sm
-                          font-medium
-                          text-blue-700
-                          transition
-                          hover:bg-blue-100
-                          "
+    inline-flex
+    h-9
+    items-center
+    justify-center
+    rounded-lg
+    border
+    border-slate-300
+    bg-white
+    px-4
+    text-xs
+    font-medium
+    text-slate-700
+    shadow-sm
+    transition
+    hover:bg-slate-50
+  "
                         >
                           Ver comprobante
                         </a>

@@ -1,4 +1,4 @@
-import { Client, IMessage } from '@stomp/stompjs';
+import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 import type {
   NotificationResponse,
   UnreadCountResponse,
@@ -7,6 +7,7 @@ import { env } from '@/shared/lib/env';
 
 interface ConnectNotificationsSocketParams {
   token: string;
+  userId: number;
   onNotification: (notification: NotificationResponse) => void;
   onUnreadCount: (payload: UnreadCountResponse) => void;
   onConnect?: () => void;
@@ -17,125 +18,140 @@ interface ConnectNotificationsSocketParams {
 class NotificationsSocketService {
   private client: Client | null = null;
   private isConnecting = false;
+  private notificationSubscription: StompSubscription | null = null;
+  private unreadCountSubscription: StompSubscription | null = null;
 
   connect({
     token,
+    userId,
     onNotification,
     onUnreadCount,
     onConnect,
     onDisconnect,
     onError,
   }: ConnectNotificationsSocketParams) {
-    if (this.client?.active || this.isConnecting) {
-      console.log('[WS] Ya existe una conexión activa o en proceso', {
-        hasClient: Boolean(this.client),
-        isActive: this.client?.active,
-        isConnecting: this.isConnecting,
-        });
+    if (this.client?.connected || this.isConnecting) {
       return;
     }
 
     this.isConnecting = true;
 
     const brokerURL = `${this.getWsBaseUrl()}/ws`;
-    console.log('[WS]', new Date().toISOString(), 'Intentando conectar a:', brokerURL);
-    console.log('[WS] Heartbeat config:', {
-        incoming: 10000,
-        outgoing: 10000,
-    });
 
     this.client = new Client({
-        brokerURL,
-        reconnectDelay: 5000,
-        heartbeatIncoming: 10000,
-        heartbeatOutgoing: 10000,
-        connectHeaders: {
-            Authorization: `Bearer ${token}`,
-        },
-      debug: (message) => {
-        console.log('[STOMP]', message);
+      brokerURL,
+      reconnectDelay: 1000,
+      heartbeatIncoming: 10000,
+      heartbeatOutgoing: 10000,
+      connectHeaders: {
+        Authorization: `Bearer ${token}`,
       },
+      debug: () => { },
+
       onConnect: () => {
-        console.log('[WS]', new Date().toISOString(), '✅ STOMP conectado');
         this.isConnecting = false;
+        this.clearSubscriptions();
 
-        console.log('[WS] Suscribiendo a /user/queue/notifications');
-        this.client?.subscribe('/user/queue/notifications', (message: IMessage) => {
-        console.log('[WS]', new Date().toISOString(), '📩 Mensaje notifications:', message.body);
+        console.log('[WS CONNECTED]');
+        console.log('[WS] client connected?', this.client?.connected);
 
-        try {
-            const notification = JSON.parse(message.body) as NotificationResponse;
-            onNotification(notification);
-        } catch (error) {
-            console.error('[WS] Error parseando notification', error);
-            onError?.(error);
-        }
-        });
+        this.notificationSubscription =
+          this.client?.subscribe(`/topic/users/${userId}/notifications`, (message: IMessage) => {
+            console.log('[WS RAW NOTIFICATION]', message.body);
 
-        console.log('[WS] Suscribiendo a /user/queue/notifications/unread-count');
-        this.client?.subscribe('/user/queue/notifications/unread-count', (message: IMessage) => {
-        console.log('[WS]', new Date().toISOString(), '📩 Mensaje unread-count:', message.body);
+            try {
+              const notification = JSON.parse(message.body) as NotificationResponse;
+              onNotification(notification);
+            } catch (error) {
+              console.error('[WS] Error parseando notification', error);
+              onError?.(error);
+            }
+          }) ?? null;
 
-        try {
-            const unreadCount = JSON.parse(message.body) as UnreadCountResponse;
-            onUnreadCount(unreadCount);
-        } catch (error) {
-            console.error('[WS] Error parseando unread-count', error);
-            onError?.(error);
-        }
-        });
+        console.log(
+          '[WS] notification subscription created?',
+          Boolean(this.notificationSubscription),
+        );
+
+        this.unreadCountSubscription =
+          this.client?.subscribe(
+            `/topic/users/${userId}/notifications/unread-count`,
+            (message: IMessage) => {
+              console.log('[WS RAW UNREAD COUNT]', message.body);
+
+              try {
+                const unreadCount = JSON.parse(message.body) as UnreadCountResponse;
+                onUnreadCount(unreadCount);
+              } catch (error) {
+                console.error('[WS] Error parseando unread-count', error);
+                onError?.(error);
+              }
+            },
+          ) ?? null;
+
+        console.log(
+          '[WS] unread subscription created?',
+          Boolean(this.unreadCountSubscription),
+        );
+
         onConnect?.();
       },
+
       onDisconnect: () => {
-        console.log('[WS]', new Date().toISOString(), '🔌 STOMP desconectado');
         this.isConnecting = false;
+        this.clearSubscriptions();
         onDisconnect?.();
       },
+
       onStompError: (frame) => {
-        console.error('[WS]', new Date().toISOString(), '❌ STOMP error:', frame.headers['message']);
-        console.error('[WS] ❌ STOMP details:', frame.body);
         this.isConnecting = false;
         onError?.(frame);
       },
+
       onWebSocketError: (event) => {
-        console.error('[WS] ❌ WebSocket error:', event);
         this.isConnecting = false;
         onError?.(event);
       },
-      onWebSocketClose: (event) => {
-        console.log('[WS]', new Date().toISOString(), 'WebSocket cerrado:', {
-            code: event.code,
-            reason: event.reason,
-            wasClean: event.wasClean,
-        });
+
+      onWebSocketClose: () => {
         this.isConnecting = false;
+        this.clearSubscriptions();
       },
     });
-    console.log('[WS] Activando cliente STOMP...');
+
     this.client.activate();
   }
 
-  disconnect() {
+  async disconnect() {
     this.isConnecting = false;
+    this.clearSubscriptions();
 
-    if (this.client) {
-      console.log('[WS]', new Date().toISOString(), 'Cerrando conexión manualmente');
-      void this.client.deactivate();
-      this.client = null;
+    if (!this.client) {
+      return;
     }
+
+    const currentClient = this.client;
+    this.client = null;
+
+    await currentClient.deactivate();
+  }
+
+  private clearSubscriptions() {
+    this.notificationSubscription?.unsubscribe();
+    this.unreadCountSubscription?.unsubscribe();
+
+    this.notificationSubscription = null;
+    this.unreadCountSubscription = null;
   }
 
   private getWsBaseUrl() {
     const apiUrl = env.apiUrl;
-    console.log('[WS] env.apiUrl =', apiUrl);
 
     if (!apiUrl) {
       return 'ws://localhost:8080';
     }
 
-    // quita /api al final si existe
     const normalizedApiUrl = apiUrl.replace(/\/api\/?$/, '');
-    console.log('[WS] normalizedApiUrl =', normalizedApiUrl);
 
     if (normalizedApiUrl.startsWith('https://')) {
       return normalizedApiUrl.replace('https://', 'wss://');

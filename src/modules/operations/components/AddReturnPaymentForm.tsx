@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Input } from '@/shared/components/ui/Input';
 import { Button } from '@/shared/components/ui/Button';
@@ -55,6 +55,12 @@ function formatCurrencyDisplay(value: number) {
   });
 }
 
+function isImageFile(file?: File | null) {
+  if (!file) return false;
+
+  return file.type.startsWith('image/');
+}
+
 export function AddReturnPaymentForm({
   isSubmitting,
   bankAccounts,
@@ -103,6 +109,66 @@ export function AddReturnPaymentForm({
   const excedeSaldoPendiente = montoCapturado > saldoPendiente;
   const excedente = excedeSaldoPendiente ? montoCapturado - saldoPendiente : 0;
   const faltanteDespuesDelRetorno = Math.max(saldoPendiente - montoCapturado, 0);
+  const [selectedPreviewUrl, setSelectedPreviewUrl] =
+    useState<string | null>(null);
+
+  const [accountSearch, setAccountSearch] = useState('');
+  const [showAccountOptions, setShowAccountOptions] = useState(false);
+  const cuentaOrigenId = useWatch({
+    control,
+    name: 'cuentaOrigenId',
+  });
+  useEffect(() => {
+    if (!cuentaOrigenId) return;
+
+    const account = bankAccounts.find(
+      (item) => String(item.id) === String(cuentaOrigenId),
+    );
+
+    if (account) {
+      setAccountSearch(account.label);
+    }
+  }, [cuentaOrigenId, bankAccounts]);
+  const filteredAccounts = useMemo(() => {
+    const search = accountSearch.trim().toLowerCase();
+
+    if (!search) return bankAccounts;
+
+    return bankAccounts.filter((account) =>
+      account.label.toLowerCase().includes(search),
+    );
+  }, [bankAccounts, accountSearch]);
+
+  const selectedFile =
+    comprobante instanceof FileList &&
+      comprobante.length > 0
+      ? comprobante[0]
+      : null;
+
+  const selectedReceiptIsImage =
+    isImageFile(selectedFile);
+
+  useEffect(() => {
+    if (
+      !selectedFile ||
+      !selectedReceiptIsImage
+    ) {
+      setSelectedPreviewUrl(null);
+      return;
+    }
+
+    const objectUrl =
+      URL.createObjectURL(selectedFile);
+
+    setSelectedPreviewUrl(objectUrl);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [
+    selectedFile,
+    selectedReceiptIsImage,
+  ]);
 
   const montoErrorMessage = useMemo(() => {
     if (errors.monto?.message) return errors.monto.message;
@@ -208,6 +274,8 @@ export function AddReturnPaymentForm({
                     setValue('cuentaOrigenId', '');
                     setValue('cuentaDestinoCliente', '');
                     setValue('comprobante', undefined);
+
+                    setAccountSearch('');
                   }
                 },
               })}
@@ -232,22 +300,78 @@ export function AddReturnPaymentForm({
                   Cuenta origen
                 </label>
 
-                <select
-                  className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
-                  {...register('cuentaOrigenId', {
-                    validate: (value) => {
-                      if (isCash) return true;
-                      return Number(value) > 0 || 'La cuenta origen es obligatoria';
-                    },
-                  })}
-                >
-                  <option value="">Selecciona una cuenta</option>
-                  {bankAccounts.map((account) => (
-                    <option key={account.id} value={account.id}>
-                      {account.label}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <input
+                    type="hidden"
+                    {...register('cuentaOrigenId', {
+                      validate: (value) => {
+                        if (isCash) return true;
+
+                        return (
+                          Number(value) > 0 ||
+                          'La cuenta origen es obligatoria'
+                        );
+                      },
+                    })}
+                  />
+
+                  <Input
+                    type="text"
+                    placeholder="Buscar cuenta..."
+                    value={accountSearch}
+                    onFocus={() => setShowAccountOptions(true)}
+                    onBlur={() => {
+                      setTimeout(() => {
+                        setShowAccountOptions(false);
+                      }, 150);
+                    }}
+                    onChange={(event) => {
+                      setAccountSearch(event.target.value);
+
+                      setValue('cuentaOrigenId', '', {
+                        shouldDirty: true,
+                        shouldValidate: false,
+                      });
+
+                      setShowAccountOptions(true);
+                    }}
+                  />
+
+                  {showAccountOptions && (
+                    <div className="absolute z-50 mt-2 max-h-60 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
+                      {filteredAccounts.length > 0 ? (
+                        filteredAccounts.map((account) => (
+                          <button
+                            key={account.id}
+                            type="button"
+                            className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                            onClick={() => {
+                              setAccountSearch(account.label);
+
+                              setValue(
+                                'cuentaOrigenId',
+                                String(account.id),
+                                {
+                                  shouldValidate: true,
+                                  shouldDirty: true,
+                                  shouldTouch: true,
+                                },
+                              );
+
+                              setShowAccountOptions(false);
+                            }}
+                          >
+                            {account.label}
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-4 py-3 text-sm text-slate-500">
+                          No se encontraron cuentas
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 {errors.cuentaOrigenId ? (
                   <p className="mt-1 text-xs text-red-600">
@@ -258,49 +382,49 @@ export function AddReturnPaymentForm({
 
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Cuenta destino del cliente / CLABE
+                  Cuenta destino del cliente / CLABE
                 </label>
 
                 <Input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="Cuenta o CLABE del cliente"
-                    error={errors.cuentaDestinoCliente?.message}
-                    {...register('cuentaDestinoCliente', {
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Cuenta o CLABE del cliente"
+                  error={errors.cuentaDestinoCliente?.message}
+                  {...register('cuentaDestinoCliente', {
                     validate: (value) => {
-                        if (isCash) return true;
+                      if (isCash) return true;
 
-                        const cleaned = value.replace(/\s/g, '');
+                      const cleaned = value.replace(/\s/g, '');
 
-                        if (!cleaned) {
+                      if (!cleaned) {
                         return 'La cuenta destino del cliente es obligatoria';
-                        }
+                      }
 
-                        if (!/^\d+$/.test(cleaned)) {
+                      if (!/^\d+$/.test(cleaned)) {
                         return 'La cuenta o CLABE solo debe contener números';
-                        }
+                      }
 
-                        if (cleaned.length !== 10 && cleaned.length !== 18) {
+                      if (cleaned.length !== 10 && cleaned.length !== 18) {
                         return 'Captura una cuenta de 10 dígitos o una CLABE de 18 dígitos';
-                        }
+                      }
 
-                        return true;
+                      return true;
                     },
                     onChange: (event) => {
-                        const value = event.target.value.replace(/\D/g, '').slice(0, 18);
+                      const value = event.target.value.replace(/\D/g, '').slice(0, 18);
 
-                        setValue('cuentaDestinoCliente', value, {
+                      setValue('cuentaDestinoCliente', value, {
                         shouldValidate: true,
                         shouldDirty: true,
                         shouldTouch: true,
-                        });
+                      });
                     },
-                    })}
+                  })}
                 />
-                </div>
+              </div>
             </>
           ) : (
-           null
+            null
           )}
         </div>
 
@@ -324,59 +448,146 @@ export function AddReturnPaymentForm({
               }}
               render={({ field }) => (
                 <>
-                  <label
-                    onDragOver={(event) => {
-                      event.preventDefault();
-                      setIsDragging(true);
-                    }}
-                    onDragLeave={(event) => {
-                      event.preventDefault();
-                      setIsDragging(false);
-                    }}
-                    onDrop={(event) => {
-                      event.preventDefault();
-                      setIsDragging(false);
+                  {selectedFile ? (
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="flex items-start gap-4">
+                        <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
+                          {selectedPreviewUrl ? (
+                            <img
+                              src={selectedPreviewUrl}
+                              alt="Comprobante"
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="px-2 text-center text-xs text-slate-500">
+                              PDF
+                            </div>
+                          )}
+                        </div>
 
-                      const file = event.dataTransfer.files?.[0];
-                      if (!file) return;
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-slate-900">
+                            Comprobante seleccionado
+                          </p>
 
-                      const fileList = buildFileList(file);
-                      field.onChange(fileList);
-                    }}
-                    className={`flex min-h-[170px] w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-6 text-center transition ${
-                      isDragging
+                          <p className="mt-1 break-all text-xs text-slate-500">
+                            {selectedFile.name}
+                          </p>
+
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {selectedPreviewUrl && (
+                              <a
+                                href={selectedPreviewUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="
+                    inline-flex
+                    items-center
+                    rounded-lg
+                    border
+                    border-slate-200
+                    bg-white
+                    px-3
+                    py-2
+                    text-xs
+                    font-medium
+                    text-slate-700
+                    hover:bg-slate-50
+                  "
+                              >
+                                Ver imagen
+                              </a>
+                            )}
+
+                            <label
+                              className="
+                  inline-flex
+                  cursor-pointer
+                  items-center
+                  rounded-lg
+                  bg-slate-900
+                  px-3
+                  py-2
+                  text-xs
+                  font-semibold
+                  text-white
+                  hover:bg-slate-800
+                "
+                            >
+                              Cambiar comprobante
+
+                              <input
+                                type="file"
+                                accept=".pdf,.jpg,.jpeg,.png,.webp"
+                                className="hidden"
+                                onChange={(event) => {
+                                  field.onChange(
+                                    event.target.files ?? undefined,
+                                  );
+
+                                  event.target.value = '';
+                                }}
+                              />
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <label
+                      onDragOver={(event) => {
+                        event.preventDefault();
+                        setIsDragging(true);
+                      }}
+                      onDragLeave={(event) => {
+                        event.preventDefault();
+                        setIsDragging(false);
+                      }}
+                      onDrop={(event) => {
+                        event.preventDefault();
+                        setIsDragging(false);
+
+                        const file =
+                          event.dataTransfer.files?.[0];
+
+                        if (!file) return;
+
+                        const fileList =
+                          buildFileList(file);
+
+                        field.onChange(fileList);
+                      }}
+                      className={`flex min-h-[170px] w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-6 text-center transition ${isDragging
                         ? 'border-slate-900 bg-slate-50'
                         : 'border-slate-300 bg-white hover:border-slate-400'
-                    }`}
-                  >
-                    <input
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png,.webp"
-                      className="hidden"
-                      onChange={(event) => {
-                        field.onChange(event.target.files ?? undefined);
-                      }}
-                    />
+                        }`}
+                    >
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png,.webp"
+                        className="hidden"
+                        onChange={(event) => {
+                          field.onChange(
+                            event.target.files ?? undefined,
+                          );
 
-                    <p className="text-sm font-medium text-slate-700">
-                      Arrastra y suelta el comprobante aquí
-                    </p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      o haz clic para seleccionar un archivo
-                    </p>
-                    <p className="mt-2 text-xs text-slate-400">
-                      PDF, JPG, JPEG, PNG o WEBP
-                    </p>
-                  </label>
+                          event.target.value = '';
+                        }}
+                      />
 
-                  {comprobante instanceof FileList && comprobante.length > 0 ? (
-                    <p className="mt-2 text-xs text-slate-600">
-                      Archivo seleccionado:{' '}
-                      <span className="font-medium text-slate-900">
-                        {comprobante[0]?.name}
-                      </span>
-                    </p>
-                  ) : null}
+                      <p className="text-sm font-medium text-slate-700">
+                        Arrastra y suelta el comprobante aquí
+                      </p>
+
+                      <p className="mt-1 text-xs text-slate-500">
+                        o haz clic para seleccionar un archivo
+                      </p>
+
+                      <p className="mt-2 text-xs text-slate-400">
+                        PDF, JPG, JPEG, PNG o WEBP
+                      </p>
+                    </label>
+                  )}
                 </>
               )}
             />

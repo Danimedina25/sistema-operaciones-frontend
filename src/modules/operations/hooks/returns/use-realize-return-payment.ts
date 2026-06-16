@@ -54,7 +54,7 @@ export function useRealizeReturnPayment(
         observaciones: values.observaciones?.trim() || undefined,
       });
 
-      toast.success('Retorno realizado correctamente');
+      toast.success('Retorno retornado correctamente');
       await options?.onSuccess?.();
     } catch (error) {
       toast.error(getApiErrorMessage(error));

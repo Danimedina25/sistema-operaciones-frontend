@@ -19,6 +19,8 @@ import {
   UpdateOperationPaymentRequest,
   ReturnRequestPaymentApiResponse,
   ReturnRealizePaymentApiResponse,
+  UpdateReturnPaymentRequest,
+  ReturnUpdateRequestPaymentApiResponse,
 } from '../types/operations.types.ts';
 
 const OPERATIONS_BASE_PATH = '/api/operations';
@@ -216,6 +218,18 @@ export async function requestReturnPayment(
 ): Promise<ReturnPaymentResponse[]> {
   const response = await api.post<ReturnRequestPaymentApiResponse>(
     `${RETURNS_BASE_PATH}/${operationId}/request`,
+    payload,
+  );
+
+  return response.data.data;
+}
+
+export async function updateRequestReturnPayment(
+  returnPaymentId: number,
+  payload: UpdateReturnPaymentRequest,
+): Promise<ReturnPaymentResponse> {
+  const response = await api.put<ReturnUpdateRequestPaymentApiResponse>(
+    `${RETURNS_BASE_PATH}/${returnPaymentId}/update`,
     payload,
   );
 

@@ -25,7 +25,6 @@ interface UpdateOperationPaymentFormInput {
   comprobante?: FileList;
   observaciones?: string;
 }
-
 interface UpdateOperationPaymentFormProps {
   isSubmitting: boolean;
   bankAccounts: SelectOption[];
@@ -33,7 +32,6 @@ interface UpdateOperationPaymentFormProps {
   payment: OperationPaymentResponse;
   onSubmit: (
     values: UpdateOperationPaymentFormValues,
-    comprobanteUrl: string,
   ) => Promise<void>;
 }
 
@@ -90,7 +88,7 @@ export function UpdateOperationPaymentForm({
     setValue,
     control,
     formState: { errors },
- } = useForm<UpdateOperationPaymentFormInput>({
+  } = useForm<UpdateOperationPaymentFormInput>({
     defaultValues: {
       monto: formatCurrencyDisplay(payment.monto),
       tipoPago: payment.tipoPago,
@@ -100,8 +98,6 @@ export function UpdateOperationPaymentForm({
     },
     mode: 'onChange',
   });
-
-  const [isDragging, setIsDragging] = useState(false);
 
   const montoRaw = useWatch({
     control,
@@ -115,37 +111,67 @@ export function UpdateOperationPaymentForm({
 
   const [selectedPreviewUrl, setSelectedPreviewUrl] = useState<string | null>(null);
 
-    const selectedFile =
-    comprobante instanceof FileList && comprobante.length > 0
-        ? comprobante[0]
-        : null;
+  const [accountSearch, setAccountSearch] = useState('');
+  const [showAccountOptions, setShowAccountOptions] = useState(false);
 
-    const currentReceiptIsImage = isImageUrl(payment.comprobanteUrl);
-    const selectedReceiptIsImage = isImageFile(selectedFile);
+  const cuentaDestinoId = useWatch({
+    control,
+    name: 'cuentaDestinoId',
+  });
 
-    useEffect(() => {
+  const filteredAccounts = useMemo(() => {
+    const search = accountSearch.trim().toLowerCase();
+
+    if (!search) return bankAccounts;
+
+    return bankAccounts.filter((account) =>
+      account.label.toLowerCase().includes(search),
+    );
+  }, [bankAccounts, accountSearch]);
+
+  useEffect(() => {
+    if (!cuentaDestinoId) return;
+
+    const account = bankAccounts.find(
+      (item) => String(item.id) === String(cuentaDestinoId),
+    );
+
+    if (account) {
+      setAccountSearch(account.label);
+    }
+  }, [cuentaDestinoId, bankAccounts]);
+
+  const selectedFile =
+    comprobante?.length
+      ? comprobante[0]
+      : null;
+
+  const currentReceiptIsImage = isImageUrl(payment.comprobanteUrl);
+  const selectedReceiptIsImage = isImageFile(selectedFile);
+
+  useEffect(() => {
     if (!selectedFile || !selectedReceiptIsImage) {
-        setSelectedPreviewUrl(null);
-        return;
+      setSelectedPreviewUrl(null);
+      return;
     }
 
     const objectUrl = URL.createObjectURL(selectedFile);
     setSelectedPreviewUrl(objectUrl);
 
     return () => {
-        URL.revokeObjectURL(objectUrl);
+      URL.revokeObjectURL(objectUrl);
     };
-    }, [selectedFile, selectedReceiptIsImage]);
+  }, [selectedFile, selectedReceiptIsImage]);
 
   const tipoPago = useWatch({
     control,
     name: 'tipoPago',
-    });
+  });
 
-const requiereComprobante =
-  tipoPago === 'TRANSFERENCIA' || tipoPago === 'DEPOSITO';
+  const requiereComprobante =
+    tipoPago === 'TRANSFERENCIA' || tipoPago === 'DEPOSITO';
 
-const esEfectivo = tipoPago === 'EFECTIVO';
+  const esEfectivo = tipoPago === 'EFECTIVO';
 
   const montoCapturado = parseCurrency(montoRaw);
 
@@ -181,28 +207,22 @@ const esEfectivo = tipoPago === 'EFECTIVO';
     saldoDisponibleParaEstePago,
   ]);
 
-  function buildFileList(file: File): FileList {
-    const dataTransfer = new DataTransfer();
-    dataTransfer.items.add(file);
-    return dataTransfer.files;
-  }
-
-    const handleSubmitForm = async (values: UpdateOperationPaymentFormInput) => {
+  const handleSubmitForm = async (
+    values: UpdateOperationPaymentFormInput,
+  ) => {
     if (!values.tipoPago) return;
 
-    await onSubmit(
-        {
-        monto: parseCurrency(values.monto),
-        cuentaDestinoId: values.tipoPago === 'EFECTIVO'
-            ? payment.cuentaDestinoId
-            : Number(values.cuentaDestinoId),
-        tipoPago: values.tipoPago,
-        comprobante: values.comprobante,
-        observaciones: values.observaciones,
-        },
-        values.tipoPago === 'EFECTIVO' ? payment.comprobanteUrl : payment.comprobanteUrl,
-    );
-    };
+    await onSubmit({
+      monto: parseCurrency(values.monto),
+      cuentaDestinoId:
+        values.tipoPago === 'EFECTIVO'
+          ? 0
+          : Number(values.cuentaDestinoId),
+      tipoPago: values.tipoPago,
+      comprobante: values.comprobante,
+      observaciones: values.observaciones,
+    });
+  };
 
   return (
     <form className="space-y-6" onSubmit={handleSubmit(handleSubmitForm)}>
@@ -282,36 +302,6 @@ const esEfectivo = tipoPago === 'EFECTIVO';
               })}
             />
           </div>
-            {!esEfectivo ? (
-            <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                Cuenta destino
-                </label>
-
-                <select
-                className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
-                {...register('cuentaDestinoId', {
-                    validate: (value) => {
-                    if (!requiereComprobante) return true;
-                    return Number(value) > 0 || 'La cuenta destino es obligatoria';
-                    },
-                })}
-                >
-                <option value="">Selecciona una cuenta</option>
-                {bankAccounts.map((account) => (
-                    <option key={account.id} value={account.id}>
-                    {account.label}
-                    </option>
-                ))}
-                </select>
-
-                {errors.cuentaDestinoId ? (
-                <p className="mt-1 text-xs text-red-600">
-                    {errors.cuentaDestinoId.message}
-                </p>
-                ) : null}
-            </div>
-            ) : null}
 
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">
@@ -319,9 +309,18 @@ const esEfectivo = tipoPago === 'EFECTIVO';
             </label>
 
             <select
-              className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
               {...register('tipoPago', {
                 required: 'El tipo de comprobante es obligatorio',
+                onChange: (event) => {
+                  if (event.target.value === 'EFECTIVO') {
+                    setValue('cuentaDestinoId', '', {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    });
+
+                    setAccountSearch('');
+                  }
+                },
               })}
             >
               <option value="">Selecciona un tipo</option>
@@ -336,142 +335,208 @@ const esEfectivo = tipoPago === 'EFECTIVO';
               </p>
             ) : null}
           </div>
+
+          {!esEfectivo ? (
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                Cuenta destino
+              </label>
+
+              <div className="relative">
+                <Input
+                  type="text"
+                  placeholder="Buscar cuenta..."
+                  value={accountSearch}
+                  onFocus={() => setShowAccountOptions(true)}
+                  onBlur={() => {
+                    setTimeout(() => {
+                      setShowAccountOptions(false);
+                    }, 150);
+                  }}
+                  onChange={(event) => {
+                    setAccountSearch(event.target.value);
+
+                    setValue('cuentaDestinoId', '', {
+                      shouldDirty: true,
+                      shouldValidate: false,
+                    });
+
+                    setShowAccountOptions(true);
+                  }}
+                />
+
+                {showAccountOptions && (
+                  <div className="absolute z-50 mt-2 max-h-60 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
+                    {filteredAccounts.length > 0 ? (
+                      filteredAccounts.map((account) => (
+                        <button
+                          key={account.id}
+                          type="button"
+                          className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                          onClick={() => {
+                            setAccountSearch(account.label);
+
+                            setValue(
+                              'cuentaDestinoId',
+                              String(account.id),
+                              {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                                shouldTouch: true,
+                              },
+                            );
+
+                            setShowAccountOptions(false);
+                          }}
+                        >
+                          {account.label}
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-4 py-3 text-sm text-slate-500">
+                        No se encontraron cuentas
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {errors.cuentaDestinoId ? (
+                <p className="mt-1 text-xs text-red-600">
+                  {errors.cuentaDestinoId.message}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         <div className="space-y-4">
-            <div>
+          <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">
-                Comprobante de pago
+              Comprobante de pago
             </label>
-
-            <div className="mb-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                <div className="flex items-start gap-3">
-                <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
-                    {selectedPreviewUrl ? (
-                    <img
-                        src={selectedPreviewUrl}
-                        alt="Nuevo comprobante seleccionado"
-                        className="h-full w-full object-cover"
-                    />
-                    ) : currentReceiptIsImage ? (
-                    <img
-                        src={payment.comprobanteUrl}
-                        alt="Comprobante actual"
-                        className="h-full w-full object-cover"
-                    />
-                    ) : (
-                    <span className="px-2 text-center text-xs font-medium text-slate-500">
-                        Archivo actual
-                    </span>
-                    )}
-                </div>
-
-                <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-slate-800">
-                    {selectedPreviewUrl
-                        ? 'Nuevo comprobante seleccionado'
-                        : 'Comprobante actual'}
-                    </p>
-
-                    <p className="mt-1 text-xs text-slate-500">
-                    {selectedFile
-                        ? selectedFile.name
-                        : currentReceiptIsImage
-                        ? 'Imagen guardada actualmente'
-                        : 'El comprobante actual puede ser PDF u otro archivo'}
-                    </p>
-
-                    <a
-                    href={selectedPreviewUrl ?? payment.comprobanteUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-3 inline-flex rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-200"
-                    >
-                    Ver comprobante
-                    </a>
-                </div>
-                </div>
-            </div>
-
             <Controller
-                control={control}
-                name="comprobante"
-                rules={{
+              control={control}
+              name="comprobante"
+              rules={{
                 validate: (value) => {
-                    if (!requiereComprobante) return true;
+                  if (!requiereComprobante) return true;
 
-                    if (payment.comprobanteUrl) return true;
+                  if (payment.comprobanteUrl) return true;
 
-                    return value && value.length > 0
+                  return value && value.length > 0
                     ? true
                     : 'El comprobante es obligatorio';
                 },
-                }}
-                render={({ field }) => (
+              }}
+              render={({ field }) => (
                 <>
-                    <label
-                    onDragOver={(event) => {
-                        event.preventDefault();
-                        setIsDragging(true);
-                    }}
-                    onDragLeave={(event) => {
-                        event.preventDefault();
-                        setIsDragging(false);
-                    }}
-                    onDrop={(event) => {
-                        event.preventDefault();
-                        setIsDragging(false);
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
+                        {selectedPreviewUrl ? (
+                          <img
+                            src={selectedPreviewUrl}
+                            alt="Nuevo comprobante"
+                            className="h-full w-full object-cover"
+                          />
+                        ) : currentReceiptIsImage ? (
+                          <img
+                            src={`${payment.comprobanteUrl}?t=${payment.updatedAt ?? Date.now()}`}
+                            alt="Comprobante actual"
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="px-2 text-center text-xs text-slate-500">
+                            PDF
+                          </div>
+                        )}
+                      </div>
 
-                        const file = event.dataTransfer.files?.[0];
-                        if (!file) return;
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-slate-900">
+                          {selectedFile
+                            ? 'Nuevo comprobante seleccionado'
+                            : 'Comprobante actual'}
+                        </p>
 
-                        const fileList = buildFileList(file);
-                        field.onChange(fileList);
-                    }}
-                    className={`flex min-h-[170px] w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-6 text-center transition ${
-                        isDragging
-                        ? 'border-slate-900 bg-slate-50'
-                        : 'border-slate-300 bg-white hover:border-slate-400'
-                    }`}
-                    >
-                    <input
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png,.webp"
-                        className="hidden"
-                        onChange={(event) => {
-                        field.onChange(event.target.files ?? undefined);
-                        }}
-                    />
+                        <p className="mt-1 break-all text-xs text-slate-500">
+                          {selectedFile
+                            ? selectedFile.name
+                            : 'Comprobante guardado'}
+                        </p>
 
-                    <p className="text-sm font-medium text-slate-700">
-                        Arrastra un nuevo comprobante aquí
-                    </p>
-                    <p className="mt-1 text-xs text-slate-500">
-                        o haz clic para reemplazar el comprobante
-                    </p>
-                    <p className="mt-2 text-xs text-slate-400">
-                        Si no seleccionas archivo, se conservará el actual
-                    </p>
-                    </label>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <a
+                            href={
+                              selectedPreviewUrl ??
+                              `${payment.comprobanteUrl}?t=${payment.updatedAt ?? Date.now()}`
+                            }
+                            target="_blank"
+                            rel="noreferrer"
+                            className="
+    inline-flex
+    h-9
+    items-center
+    justify-center
+    rounded-lg
+    border
+    border-slate-300
+    bg-white
+    px-4
+    text-xs
+    font-medium
+    text-slate-700
+    shadow-sm
+    transition
+    hover:bg-slate-50
+  "
+                          >
+                            Ver comprobante
+                          </a>
 
-                    {selectedFile ? (
-                    <p className="mt-2 text-xs text-slate-600">
-                        Nuevo archivo seleccionado:{' '}
-                        <span className="font-medium text-slate-900">
-                        {selectedFile.name}
-                        </span>
-                    </p>
-                    ) : null}
+                          <label
+                            className="
+                            inline-flex
+                            cursor-pointer
+                            items-center
+                            rounded-lg
+                            bg-slate-900
+                            px-3
+                            py-2
+                            text-xs
+                            font-semibold
+                            text-white
+                            hover:bg-slate-800
+                          "
+                          >
+                            Cambiar comprobante
+
+                            <input
+                              type="file"
+                              accept=".pdf,.jpg,.jpeg,.png,.webp"
+                              className="hidden"
+                              onChange={(event) => {
+                                field.onChange(
+                                  event.target.files ?? undefined,
+                                );
+                              }}
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </>
-                )}
+              )}
             />
 
             {errors.comprobante ? (
-                <p className="mt-1 text-xs text-red-600">
+              <p className="mt-1 text-xs text-red-600">
                 {errors.comprobante.message as string}
-                </p>
+              </p>
             ) : null}
-            </div>
+          </div>
         </div>
 
         <div className="lg:col-span-2">

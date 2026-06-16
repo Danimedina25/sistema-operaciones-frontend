@@ -20,6 +20,9 @@ interface OperationDetailContainerProps {
   scrollToPayments?: boolean;
   scrollToReturns?: boolean;
   onEditPayment: (operation: PaymentOperationResponse, paymentId: number) => void;
+  onEditReturn?: (
+    returnPayment: ReturnPaymentResponse,
+  ) => void;
 }
 
 export function OperationDetailContainer({
@@ -32,7 +35,8 @@ export function OperationDetailContainer({
   onPayReturn,
   scrollToPayments = false,
   scrollToReturns = false,
-  onEditPayment
+  onEditPayment,
+  onEditReturn
 }: OperationDetailContainerProps) {
   const { hasRole } = useAuth();
 
@@ -118,6 +122,7 @@ export function OperationDetailContainer({
       }}
       scrollToPayments={scrollToPayments}
       scrollToReturns={scrollToReturns}
+      onEditReturn={onEditReturn}
     />
   );
 }

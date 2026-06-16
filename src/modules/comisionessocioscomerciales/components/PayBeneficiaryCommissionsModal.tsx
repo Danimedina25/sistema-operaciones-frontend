@@ -288,93 +288,114 @@ export function PayBeneficiaryCommissionsModal({
 
                         )}
 
-                        <label
-                            onDragOver={event => {
+                        {paymentProofFile ? (
+                            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                                <div className="flex items-start gap-4">
+                                    <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
+                                        {previewUrl ? (
+                                            <img
+                                                src={previewUrl}
+                                                alt="Comprobante"
+                                                className="h-full w-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="px-2 text-center text-xs text-slate-500">
+                                                PDF
+                                            </div>
+                                        )}
+                                    </div>
 
-                                event.preventDefault();
+                                    <div className="flex-1">
+                                        <p className="text-sm font-semibold text-slate-900">
+                                            Comprobante seleccionado
+                                        </p>
 
-                                setIsDragging(
-                                    true,
-                                );
-                            }}
-                            onDragLeave={event => {
+                                        <p className="mt-1 break-all text-xs text-slate-500">
+                                            {paymentProofFile.name}
+                                        </p>
 
-                                event.preventDefault();
+                                        <div className="mt-3 flex gap-2">
+                                            {previewUrl && (
+                                                <a
+                                                    href={previewUrl}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="inline-flex rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                                                >
+                                                    Ver imagen
+                                                </a>
+                                            )}
 
-                                setIsDragging(
-                                    false,
-                                );
-                            }}
-                            onDrop={event => {
+                                            <label className="inline-flex cursor-pointer rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800">
+                                                Cambiar comprobante
 
-                                event.preventDefault();
+                                                <input
+                                                    type="file"
+                                                    accept=".pdf,.jpg,.jpeg,.png,.webp"
+                                                    className="hidden"
+                                                    onChange={(event) => {
+                                                        const file = event.target.files?.[0];
 
-                                setIsDragging(
-                                    false,
-                                );
+                                                        if (!file) return;
 
-                                const file =
-                                    event.dataTransfer
-                                        .files?.[0];
-
-                                if (!file) {
-                                    return;
-                                }
-
-                                setPaymentProofFile(
-                                    file,
-                                );
-                            }}
-                            className={`flex min-h-[170px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-6 text-center transition ${isDragging
-                                ? 'border-slate-900 bg-slate-50'
-                                : 'border-slate-300 bg-white hover:border-slate-400'
-                                }`}
-                        >
-
-                            <input
-                                type="file"
-                                accept=".pdf,.jpg,.jpeg,.png,.webp"
-                                className="hidden"
-                                onChange={event => {
-
-                                    const file =
-                                        event.target
-                                            .files?.[0];
-
-                                    if (!file) {
-                                        return;
-                                    }
-
-                                    setPaymentProofFile(
-                                        file,
-                                    );
+                                                        setPaymentProofFile(file);
+                                                    }}
+                                                />
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <label
+                                onDragOver={(event) => {
+                                    event.preventDefault();
+                                    setIsDragging(true);
                                 }}
-                            />
+                                onDragLeave={(event) => {
+                                    event.preventDefault();
+                                    setIsDragging(false);
+                                }}
+                                onDrop={(event) => {
+                                    event.preventDefault();
+                                    setIsDragging(false);
 
-                            <p className="text-sm font-medium text-slate-700">
-                                Arrastra y suelta el comprobante aquí
-                            </p>
+                                    const file = event.dataTransfer.files?.[0];
 
-                            <p className="mt-1 text-xs text-slate-500">
-                                o haz clic para seleccionar un archivo
-                            </p>
+                                    if (!file) return;
 
-                            <p className="mt-2 text-xs text-slate-400">
-                                PDF, JPG, JPEG, PNG o WEBP
-                            </p>
+                                    setPaymentProofFile(file);
+                                }}
+                                className={`flex min-h-[170px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-6 text-center transition ${isDragging
+                                        ? 'border-slate-900 bg-slate-50'
+                                        : 'border-slate-300 bg-white hover:border-slate-400'
+                                    }`}
+                            >
+                                <input
+                                    type="file"
+                                    accept=".pdf,.jpg,.jpeg,.png,.webp"
+                                    className="hidden"
+                                    onChange={(event) => {
+                                        const file = event.target.files?.[0];
 
-                        </label>
+                                        if (!file) return;
 
-                        {paymentProofFile && (
+                                        setPaymentProofFile(file);
+                                    }}
+                                />
 
-                            <p className="mt-2 text-xs text-slate-600">
-                                Archivo seleccionado:
-                                {' '}
-                                <span className="font-medium text-slate-900">
-                                    {paymentProofFile.name}
-                                </span>
-                            </p>
+                                <p className="text-sm font-medium text-slate-700">
+                                    Arrastra y suelta el comprobante aquí
+                                </p>
 
+                                <p className="mt-1 text-xs text-slate-500">
+                                    o haz clic para seleccionar un archivo
+                                </p>
+
+                                <p className="mt-2 text-xs text-slate-400">
+                                    PDF, JPG, JPEG, PNG o WEBP
+                                </p>
+                            </label>
                         )}
 
                     </div>

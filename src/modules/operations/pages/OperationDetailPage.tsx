@@ -14,6 +14,8 @@ import { useRequestReturnPayment } from '../hooks/returns/use-request-return-pay
 import { RequestReturnModal } from '../components/returns/RequestReturnModal';
 import { RealizeReturnPaymentModal } from '../components/returns/RealizeReturnPaymentModal';
 import { useRealizeReturnPayment } from '../hooks/returns/use-realize-return-payment';
+import { EditReturnPaymentForm } from '../components/returns/EditReturnPaymentForm';
+import { useUpdateRequestReturnPayment } from '../hooks/returns/use-update-request-return-payment';
 
 export default function OperationDetailPage() {
   const navigate = useNavigate();
@@ -44,6 +46,11 @@ export default function OperationDetailPage() {
   const [selectedPayment, setSelectedPayment] =
     useState<OperationPaymentResponse | null>(null);
   const { user } = useAuth();
+  const [isEditReturnModalOpen, setIsEditReturnModalOpen] =
+    useState(false);
+
+  const [selectedReturnToEdit, setSelectedReturnToEdit] =
+    useState<ReturnPaymentResponse | null>(null);
 
   const canRequestReturn = user?.roles?.some(
     (role) => role === 'SOCIO_COMERCIAL' || role === 'ADMIN',
@@ -106,6 +113,17 @@ export default function OperationDetailPage() {
     onSuccess: async () => {
       setIsPayReturnModalOpen(false);
       setSelectedReturnPayment(null);
+      setRefreshKey((prev) => prev + 1);
+    },
+  });
+
+  const {
+    isSubmitting: isSubmittingUpdateReturn,
+    submitUpdateRequestReturnPayment,
+  } = useUpdateRequestReturnPayment({
+    onSuccess: async () => {
+      setIsEditReturnModalOpen(false);
+      setSelectedReturnToEdit(null);
       setRefreshKey((prev) => prev + 1);
     },
   });
@@ -176,6 +194,10 @@ export default function OperationDetailPage() {
             }
             : undefined
         }
+        onEditReturn={(returnPayment) => {
+          setSelectedReturnToEdit(returnPayment);
+          setIsEditReturnModalOpen(true);
+        }}
       />
 
       <Modal
@@ -225,11 +247,12 @@ export default function OperationDetailPage() {
             bankAccounts={bankAccounts}
             operation={selectedOperation}
             payment={selectedPayment}
-            onSubmit={(values, comprobanteUrl) =>
+            onSubmit={(values) =>
               submitUpdateOperationPayment(
                 selectedPayment.id,
+                selectedOperation.id,
                 values,
-                comprobanteUrl,
+                selectedPayment.comprobanteUrl,
               )
             }
           />
@@ -257,6 +280,27 @@ export default function OperationDetailPage() {
         }}
         onSubmit={submitRealizeReturnPayment}
       />
+
+      <Modal
+        open={isEditReturnModalOpen}
+        title="Editar solicitud de retorno"
+        onClose={() => {
+          setIsEditReturnModalOpen(false);
+          setSelectedReturnToEdit(null);
+        }}
+      >
+        {selectedReturnToEdit === null ? (
+          <div className="py-8 text-center text-sm text-slate-500">
+            Cargando formulario...
+          </div>
+        ) : (
+          <EditReturnPaymentForm
+            payment={selectedReturnToEdit}
+            isSubmitting={isSubmittingUpdateReturn}
+            onSubmit={submitUpdateRequestReturnPayment}
+          />
+        )}
+      </Modal>
     </>
   );
 }

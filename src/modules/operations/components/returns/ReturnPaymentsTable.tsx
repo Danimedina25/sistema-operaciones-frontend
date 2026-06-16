@@ -18,6 +18,9 @@ interface ReturnPaymentsTableProps {
   onAddRequestReturnPayment?: (montoPendientePorSolicitar: number) => void;
   canManageReturnPayments?: boolean;
   onPayReturn?: (returnPayment: ReturnPaymentResponse) => void;
+  onEditReturn?: (
+    returnPayment: ReturnPaymentResponse,
+  ) => void;
   operationStatus?: OperationStatus;
 }
 
@@ -28,6 +31,7 @@ export function ReturnPaymentsTable({
   onAddRequestReturnPayment,
   canManageReturnPayments = false,
   onPayReturn,
+  onEditReturn,
   operationStatus,
 }: ReturnPaymentsTableProps) {
   const hasPendingAmountToRequest = (montoPendientePorSolicitar ?? 0) > 0;
@@ -39,7 +43,7 @@ export function ReturnPaymentsTable({
   const hasRequestedReturns = returns.some(
     (returnPayment) =>
       returnPayment.estatus === 'SOLICITADO' ||
-      returnPayment.estatus === 'REALIZADO',
+      returnPayment.estatus === 'RETORNADO',
   );
 
   const hasPendingRequestedReturns = returns.some(
@@ -55,7 +59,8 @@ export function ReturnPaymentsTable({
 
   const canOperationRequestReturns =
     operationStatus === 'VALIDADA' ||
-    operationStatus === 'RETORNO_SOLICITADO';
+    operationStatus === 'RETORNO_SOLICITADO' ||
+    operationStatus === 'RETORNO_PARCIAL';
 
   const canRequestReturns =
     canOperationRequestReturns &&
@@ -76,14 +81,6 @@ export function ReturnPaymentsTable({
       : !hasRequestedReturns
         ? 'Esperando solicitud de retorno'
         : 'Pendiente de pago';
-
-  console.log({
-    montoPendientePorSolicitar,
-    hasPendingAmountToRequest,
-    canRequestReturns,
-    onAddRequestReturnPayment: !!onAddRequestReturnPayment,
-    operationStatus,
-  });
 
   return (
     <div
@@ -304,21 +301,22 @@ export function ReturnPaymentsTable({
                         target="_blank"
                         rel="noreferrer"
                         className="
-                        inline-flex
-                        items-center
-                        justify-center
-                        rounded-xl
-                        border
-                        border-slate-200
-                        bg-slate-50
-                        px-3
-                        py-2
-                        text-sm
-                        font-semibold
-                        text-slate-700
-                        transition
-                        hover:bg-slate-100
-                        "
+    inline-flex
+    h-9
+    items-center
+    justify-center
+    rounded-lg
+    border
+    border-slate-300
+    bg-white
+    px-4
+    text-xs
+    font-medium
+    text-slate-700
+    shadow-sm
+    transition
+    hover:bg-slate-50
+  "
                       >
                         Ver comprobante
                       </a>
@@ -332,28 +330,47 @@ export function ReturnPaymentsTable({
                   {canPayReturns && (
                     <td className="px-4 py-4">
                       {returnPayment.estatus === 'SOLICITADO' ? (
-                        <button
-                          type="button"
-                          onClick={() => onPayReturn?.(returnPayment)}
-                          className="
-                          inline-flex
-                          items-center
-                          justify-center
-                          rounded-xl
-                          bg-emerald-600
-                          px-4
-                          py-2
-                          text-xs
-                          font-semibold
-                          text-white
-                          shadow-sm
-                          transition
-                          hover:bg-emerald-700
-                          hover:-translate-y-0.5
-                          "
-                        >
-                          Registrar retorno
-                        </button>
+                        <div className="flex flex-col items-stretch gap-2">
+                          <button
+                            type="button"
+                            onClick={() => onPayReturn?.(returnPayment)}
+                            className="
+          h-8
+          rounded-lg
+          bg-emerald-600
+          px-3
+          text-xs
+          font-medium
+          text-white
+          shadow-sm
+          transition
+          hover:bg-emerald-700
+        "
+                          >
+                            Registrar retorno
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => onEditReturn?.(returnPayment)}
+                            className="
+    h-8
+    rounded-lg
+    border
+    border-slate-300
+    bg-white
+    px-3
+    text-xs
+    font-medium
+    text-slate-700
+    shadow-sm
+    transition
+    hover:bg-slate-50
+  "
+                          >
+                            Editar
+                          </button>
+                        </div>
                       ) : (
                         <span className="text-sm text-slate-400">-</span>
                       )}

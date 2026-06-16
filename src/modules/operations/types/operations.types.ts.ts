@@ -16,7 +16,7 @@ export type PaymentStatus =
 
 export type ReturnPaymentStatus =
   | 'SOLICITADO'
-  | 'REALIZADO';
+  | 'RETORNADO';
 
 export type PaymentType =
   | 'TRANSFERENCIA'
@@ -168,7 +168,6 @@ export interface CreateReturnPaymentItemRequest {
   tipoPago: PaymentType;
   banco?: string | null;
   titular?: string | null;
-  cuenta?: string | null;
   clabe?: string | null;
   observaciones?: string | null;
 }
@@ -177,6 +176,9 @@ export interface CreateReturnPaymentRequest {
   pagos: CreateReturnPaymentItemRequest[];
 }
 
+export type UpdateReturnPaymentRequest =
+  CreateReturnPaymentItemRequest;
+  
 export interface RealizeReturnPaymentRequest {
   cuentaOrigenId?: number | null;
   comprobanteUrl?: string | null;
@@ -216,5 +218,6 @@ export type OperationApiResponse = ApiResponse<PaymentOperationResponse>;
 export type OperationsPageApiResponse = ApiResponse<PageResponse<PaymentOperationResponse>>;
 export type PaymentApiResponse = ApiResponse<OperationPaymentResponse>;
 export type ReturnRequestPaymentApiResponse = ApiResponse<ReturnPaymentResponse[]>;
+export type ReturnUpdateRequestPaymentApiResponse = ApiResponse<ReturnPaymentResponse>;
 export type ReturnRealizePaymentApiResponse = ApiResponse<ReturnPaymentResponse>;
 export type ReturnPaymentsListApiResponse = ApiResponse<ReturnPaymentResponse[]>;
