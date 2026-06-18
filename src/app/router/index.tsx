@@ -26,6 +26,7 @@ import ReturnsForPaymentPage from '@/modules/operations/pages/ReturnsForPaymentP
 import CommercialPartnersPage from '@/modules/socioscomerciales/pages/CommercialPartnersPage';
 import CommercialPartnerCommissionsPage from '@/modules/comisionessocioscomerciales/pages/CommercialPartnerCommissionsPage';
 import MyCommercialPartnerCommissionsPage from '@/modules/comisionessocioscomerciales/pages/MyCommercialPartnerCommissionsPage';
+import DailyCashCutPage from '@/modules/corte/pages/DailyCashCutPage';
 
 export const router = createBrowserRouter([
   {
@@ -57,6 +58,10 @@ export const router = createBrowserRouter([
           {
             path: paths.dashboard,
             element: <DashboardPage />,
+          },
+           {
+            path: paths.corte,
+            element: <DailyCashCutPage />,
           },
 
           {

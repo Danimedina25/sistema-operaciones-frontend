@@ -155,6 +155,7 @@ export function OperationDetailView({
             onAddRequestReturnPayment?.(operation, montoPendientePorSolicitar);
           }}
           canManageReturnPayments={(user?.roles?.includes('ADMIN') || user?.roles?.includes('JEFA_CAJAS')) ?? false}
+          canEditRequestReturnPayments={(user?.roles?.includes('SOCIO_COMERCIAL')) || (user?.roles?.includes('ADMIN'))}
           onPayReturn={onPayReturn}
           onEditReturn={onEditReturn}
           operationStatus={operation.estatus}

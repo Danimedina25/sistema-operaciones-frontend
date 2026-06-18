@@ -289,95 +289,131 @@ export function PaymentsTable({
                     </td>
 
                     <td className="px-4 py-4">
-                      <div className="flex w-[170px] flex-col gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <a
                           href={payment.comprobanteUrl}
                           target="_blank"
                           rel="noreferrer"
                           className="
-    inline-flex
-    h-9
-    items-center
-    justify-center
-    rounded-lg
-    border
-    border-slate-300
-    bg-white
-    px-4
-    text-xs
-    font-medium
-    text-slate-700
-    shadow-sm
-    transition
-    hover:bg-slate-50
-  "
+      inline-flex
+      justify-center
+      rounded-lg
+      border
+      border-slate-300
+      bg-white
+      px-3
+      py-1.5
+      text-sm
+      font-medium
+      text-slate-700
+      shadow-sm
+      transition-all
+      hover:bg-slate-50
+      text-center
+      hover:-translate-y-0.5
+      "
                         >
                           Ver comprobante
                         </a>
-
-                        {isPendingValidation && onEditPayment ? (
-                          <button
-                            type="button"
-                            onClick={() => onEditPayment(payment.id)}
-                            className="
-                            inline-flex
-                            w-full
-                            items-center
-                            justify-center
-                            rounded-xl
-                            border
-                            border-slate-200
-                            bg-slate-50
-                            px-3
-                            py-2
-                            text-sm
-                            font-medium
-                            text-slate-700
-                            transition
-                            hover:bg-slate-100
-                            "
-                          >
-                            Editar pago
-                          </button>
-                        ) : null}
                       </div>
                     </td>
 
                     {canValidatePayments ? (
                       <td className="px-4 py-4">
-                        {isPendingValidation ? (
-                          <div className="flex flex-wrap gap-2">
-                            <button
-                              type="button"
-                              disabled={isProcessing}
-                              onClick={() =>
-                                openConfirmModal(payment.id, 'VALIDATE')
-                              }
-                              className="flex-1 inline-flex justify-center rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed shadow-sm
-hover:-translate-y-0.5
-transition-all disabled:opacity-50"
-                            >
-                              {isProcessing ? 'Validando...' : 'Validar'}
-                            </button>
+                        <div className="flex flex-wrap gap-2">
+                          {isPendingValidation ? (
+                            <>
+                              <button
+                                type="button"
+                                disabled={isProcessing}
+                                onClick={() =>
+                                  openConfirmModal(payment.id, 'VALIDATE')
+                                }
+                                className="
+  flex-1
+  inline-flex
+  h-9
+  items-center
+  justify-center
+  rounded-lg
+  bg-emerald-600
+  px-4
+  text-sm
+  font-medium
+  text-white
+  shadow-sm
+  transition-all
+  hover:-translate-y-0.5
+  hover:bg-emerald-700
+  disabled:cursor-not-allowed
+  disabled:opacity-50
+"
+                              >
+                                {isProcessing ? 'Validando...' : 'Validar'}
+                              </button>
 
+                              <button
+                                type="button"
+                                disabled={isProcessing}
+                                onClick={() =>
+                                  openConfirmModal(payment.id, 'REJECT')
+                                }
+                                className="
+  flex-1
+  inline-flex
+  h-9
+  items-center
+  justify-center
+  rounded-lg
+  bg-rose-600
+  px-4
+  text-sm
+  font-medium
+  text-white
+  shadow-sm
+  transition-all
+  hover:-translate-y-0.5
+  hover:bg-rose-700
+  disabled:cursor-not-allowed
+  disabled:opacity-50
+"
+                              >
+                                {isProcessing ? 'Procesando...' : 'Rechazar'}
+                              </button>
+                            </>
+                          ) : (
+                            <span className="text-xs text-slate-400">
+                              Sin acciones
+                            </span>
+                          )}
+
+                          {isPendingValidation && onEditPayment ? (
                             <button
                               type="button"
-                              disabled={isProcessing}
-                              onClick={() =>
-                                openConfirmModal(payment.id, 'REJECT')
-                              }
-                              className="flex-1 inline-flex justify-center rounded-lg bg-rose-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-rose-700 disabled:cursor-not-allowed shadow-sm
-hover:-translate-y-0.5
-transition-all disabled:opacity-50"
+                              onClick={() => onEditPayment(payment.id)}
+                              className="
+  flex-1
+  inline-flex
+  h-9
+  items-center
+  justify-center
+  rounded-lg
+  border
+  border-slate-300
+  bg-white
+  px-4
+  text-xs
+  font-medium
+  shadow-sm
+  transition-all
+  hover:bg-slate-50
+  hover:-translate-y-0.5
+"
                             >
-                              {isProcessing ? 'Procesando...' : 'Rechazar'}
+                              Editar pago
                             </button>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-slate-400">
-                            Sin acciones
-                          </span>
-                        )}
+                          ) : null}
+                        </div>
                       </td>
                     ) : null}
                   </tr>

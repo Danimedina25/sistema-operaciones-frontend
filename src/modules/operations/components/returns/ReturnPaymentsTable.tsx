@@ -17,6 +17,7 @@ interface ReturnPaymentsTableProps {
   montoPendientePorSolicitar?: number | null;
   onAddRequestReturnPayment?: (montoPendientePorSolicitar: number) => void;
   canManageReturnPayments?: boolean;
+  canEditRequestReturnPayments?: boolean;
   onPayReturn?: (returnPayment: ReturnPaymentResponse) => void;
   onEditReturn?: (
     returnPayment: ReturnPaymentResponse,
@@ -30,15 +31,13 @@ export function ReturnPaymentsTable({
   montoPendientePorSolicitar = null,
   onAddRequestReturnPayment,
   canManageReturnPayments = false,
+  canEditRequestReturnPayments = false,
   onPayReturn,
   onEditReturn,
   operationStatus,
 }: ReturnPaymentsTableProps) {
   const hasPendingAmountToRequest = (montoPendientePorSolicitar ?? 0) > 0;
   const hasPendingAmountToPay = (montoPendientePorRetornar ?? 0) > 0;
-
-  const operationIsValidated = operationStatus === 'VALIDADA';
-  const operationIsCompleted = operationStatus === 'COMPLETADA';
 
   const hasRequestedReturns = returns.some(
     (returnPayment) =>
@@ -49,7 +48,6 @@ export function ReturnPaymentsTable({
   const hasPendingRequestedReturns = returns.some(
     (returnPayment) => returnPayment.estatus === 'SOLICITADO',
   );
-
 
   const canPayReturns =
     hasPendingAmountToPay &&
@@ -218,166 +216,180 @@ export function ReturnPaymentsTable({
                 <th className="px-4 py-3 font-medium">Fecha retorno</th>
                 <th className="px-4 py-3 font-medium">Observaciones</th>
                 <th className="px-4 py-3 font-medium">Comprobante</th>
-
-                {canPayReturns && (
+                {(canPayReturns || canEditRequestReturnPayments) && (
                   <th className="px-4 py-3 font-medium">Acciones</th>
                 )}
               </tr>
             </thead>
 
             <tbody>
-              {returns.map((returnPayment) => (
-                <tr
-                  key={returnPayment.id}
-                  className="
-                  border-t
-                  border-slate-100
-                  text-sm
-                  transition
-                  hover:bg-slate-50/70
-                  "
-                >
-                  <td className="px-4 py-4 font-medium text-slate-900">
-                    {formatCurrency(returnPayment.monto)}
-                  </td>
-
-                  <td className="px-4 py-4">
-                    <ReturnStatusBadge
-                      status={returnPayment.estatus}
-                    />
-                  </td>
-
-                  <td className="px-4 py-4 text-slate-600">
-                    {paymentTypeLabels[returnPayment.tipoPago]}
-                  </td>
-
-
-                  <td className="px-4 py-4">
-                    <div className="max-w-[240px]">
-                      <p className="text-sm font-semibold tracking-tight text-slate-900">
-                        {returnPayment.cuentaDestinoCliente ?? '-'}
-                      </p>
-
-                      <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
-                        <span>{returnPayment.cuentaDestinoBanco ?? 'Sin banco'}</span>
-
-                        <span className="h-1 w-1 rounded-full bg-slate-300" />
-
-                        <span className="truncate">
-                          {returnPayment.cuentaDestinoTitular ?? '-'}
-                        </span>
-                      </div>
-                    </div>
-                  </td>
-
-                  <td className="px-4 py-4 text-slate-600">
-                    {returnPayment.solicitadoPorNombre ?? '-'}
-                  </td>
-
-                  <td className="px-4 py-4 text-slate-600">
-                    {returnPayment.fechaSolicitud
-                      ? formatDate(returnPayment.fechaSolicitud)
-                      : '-'}
-                  </td>
-
-                  <td className="px-4 py-4 text-slate-600">
-                    {returnPayment.pagadoPorNombre ?? '-'}
-                  </td>
-
-                  <td className="px-4 py-4 text-slate-600">
-                    {returnPayment.fechaPago
-                      ? formatDate(returnPayment.fechaPago)
-                      : '-'}
-                  </td>
-
-                  <td className="px-4 py-4 text-slate-600">
-                    {returnPayment.observaciones ?? '-'}
-                  </td>
-
-                  <td className="px-4 py-4">
-                    {returnPayment.comprobanteUrl ? (
-                      <a
-                        href={returnPayment.comprobanteUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="
-    inline-flex
-    h-9
-    items-center
-    justify-center
-    rounded-lg
-    border
-    border-slate-300
-    bg-white
-    px-4
-    text-xs
-    font-medium
-    text-slate-700
-    shadow-sm
-    transition
-    hover:bg-slate-50
-  "
-                      >
-                        Ver comprobante
-                      </a>
-                    ) : (
-                      <span className="text-sm text-slate-400">
-                        Sin comprobante
-                      </span>
-                    )}
-                  </td>
-
-                  {canPayReturns && (
-                    <td className="px-4 py-4">
-                      {returnPayment.estatus === 'SOLICITADO' ? (
-                        <div className="flex flex-col items-stretch gap-2">
-                          <button
-                            type="button"
-                            onClick={() => onPayReturn?.(returnPayment)}
-                            className="
-          h-8
-          rounded-lg
-          bg-emerald-600
-          px-3
-          text-xs
-          font-medium
-          text-white
-          shadow-sm
+              {returns.map((returnPayment) => {
+                const canEditReturn = canEditRequestReturnPayments && returnPayment.estatus === 'SOLICITADO'
+                return (
+                  <tr
+                    key={returnPayment.id}
+                    className="
+          border-t
+          border-slate-100
+          text-sm
           transition
-          hover:bg-emerald-700
+          hover:bg-slate-50/70
         "
-                          >
-                            Registrar retorno
-                          </button>
+                  >
+                    <td className="px-4 py-4 font-medium text-slate-900">
+                      {formatCurrency(returnPayment.monto)}
+                    </td>
 
-                          <button
-                            type="button"
-                            onClick={() => onEditReturn?.(returnPayment)}
-                            className="
-    h-8
-    rounded-lg
-    border
-    border-slate-300
-    bg-white
-    px-3
-    text-xs
-    font-medium
-    text-slate-700
-    shadow-sm
-    transition
-    hover:bg-slate-50
-  "
-                          >
-                            Editar
-                          </button>
+                    <td className="px-4 py-4">
+                      <ReturnStatusBadge
+                        status={returnPayment.estatus}
+                      />
+                    </td>
+
+                    <td className="px-4 py-4 text-slate-600">
+                      {paymentTypeLabels[returnPayment.tipoPago]}
+                    </td>
+
+                    <td className="px-4 py-4">
+                      <div className="max-w-[240px]">
+                        <p className="text-sm font-semibold tracking-tight text-slate-900">
+                          {returnPayment.cuentaDestinoCliente ?? '-'}
+                        </p>
+
+                        <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
+                          <span>
+                            {returnPayment.cuentaDestinoBanco ?? 'Sin banco'}
+                          </span>
+
+                          <span className="h-1 w-1 rounded-full bg-slate-300" />
+
+                          <span className="truncate">
+                            {returnPayment.cuentaDestinoTitular ?? '-'}
+                          </span>
                         </div>
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-4 text-slate-600">
+                      {returnPayment.solicitadoPorNombre ?? '-'}
+                    </td>
+
+                    <td className="px-4 py-4 text-slate-600">
+                      {returnPayment.fechaSolicitud
+                        ? formatDate(returnPayment.fechaSolicitud)
+                        : '-'}
+                    </td>
+
+                    <td className="px-4 py-4 text-slate-600">
+                      {returnPayment.pagadoPorNombre ?? '-'}
+                    </td>
+
+                    <td className="px-4 py-4 text-slate-600">
+                      {returnPayment.fechaPago
+                        ? formatDate(returnPayment.fechaPago)
+                        : '-'}
+                    </td>
+
+                    <td className="px-4 py-4 text-slate-600">
+                      {returnPayment.observaciones ?? '-'}
+                    </td>
+
+                    <td className="px-4 py-4">
+                      {returnPayment.comprobanteUrl ? (
+                        <a
+                          href={returnPayment.comprobanteUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="
+                inline-flex
+                h-9
+                items-center
+                justify-center
+                rounded-lg
+                border
+                border-slate-300
+                bg-white
+                px-4
+                text-xs
+                font-medium
+                text-slate-700
+                shadow-sm
+                transition
+                hover:bg-slate-50
+              "
+                        >
+                          Ver comprobante
+                        </a>
                       ) : (
-                        <span className="text-sm text-slate-400">-</span>
+                        <span className="text-sm text-slate-400">
+                          Sin comprobante
+                        </span>
                       )}
                     </td>
-                  )}
-                </tr>
-              ))}
+
+                    <td className="px-4 py-4">
+                      <div className="flex flex-col items-stretch gap-2">
+                        {canPayReturns || canEditReturn ? (
+                          <>
+                            {canPayReturns &&
+                              returnPayment.estatus === 'SOLICITADO' && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    onPayReturn?.(returnPayment)
+                                  }
+                                  className="
+                        h-8
+                        rounded-lg
+                        bg-emerald-600
+                        px-3
+                        text-xs
+                        font-medium
+                        text-white
+                        shadow-sm
+                        transition
+                        hover:bg-emerald-700
+                      "
+                                >
+                                  Retornar
+                                </button>
+                              )}
+
+                            {canEditReturn && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    onEditReturn?.(returnPayment)
+                                  }
+                                  className="
+                        h-8
+                        rounded-lg
+                        border
+                        border-slate-300
+                        bg-white
+                        px-3
+                        text-xs
+                        font-medium
+                        text-slate-700
+                        shadow-sm
+                        transition
+                        hover:bg-slate-50
+                      "
+                                >
+                                  Editar
+                                </button>
+                              )}
+                          </>
+                        ) : (
+                          <span className="text-xs text-slate-400">
+                            Sin acciones
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

@@ -20,8 +20,16 @@ import { useUpdateRequestReturnPayment } from '../hooks/returns/use-update-reque
 export default function OperationDetailPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const scrollToPayments = Boolean(location.state?.scrollToPayments);
-  const scrollToReturns = Boolean(location.state?.scrollToReturns);
+
+  const searchParams = new URLSearchParams(location.search);
+
+  const scrollToPayments =
+    Boolean(location.state?.scrollToPayments) ||
+    searchParams.get('scrollToPayments') === 'true';
+
+  const scrollToReturns =
+    Boolean(location.state?.scrollToReturns) ||
+    searchParams.get('scrollToReturns') === 'true';
   const isReturnRequestDetail =
     location.pathname.startsWith(paths.returnsforrequest);
   const isReturnPaymentDetail =

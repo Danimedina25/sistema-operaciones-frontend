@@ -6,6 +6,7 @@ export const paths = {
   resetPassword: '/restablecer-password',
 
   dashboard: '/',
+  corte: '/corte',
 
   users: '/usuarios',
   clientes: '/clientes',

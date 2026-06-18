@@ -31,6 +31,11 @@ const navItems: NavItem[] = [
     label: 'Dashboard',
     icon: LayoutDashboard,
   },
+   {
+    to: paths.corte,
+    label: 'Cortes y saldos',
+    icon: LayoutDashboard,
+  },
   {
     to: paths.users,
     label: 'Usuarios',

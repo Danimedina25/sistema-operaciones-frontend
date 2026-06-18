@@ -6,21 +6,22 @@ export function formatCurrency(value: number) {
   }).format(value);
 }
 
-export function formatDate(
-  value?: string | null,
-) {
+export function formatDate(value?: string | null) {
   if (!value) return '—';
 
-  return new Intl.DateTimeFormat(
-    'es-MX',
-    {
-      dateStyle: 'medium',
-    },
-  ).format(
-    new Date(value),
-  );
-}
+  const dateOnly = value.split('T')[0];
+  const [year, month, day] = dateOnly.split('-').map(Number);
 
+  if (!year || !month || !day) return '—';
+
+  const date = new Date(year, month - 1, day);
+
+  if (Number.isNaN(date.getTime())) return '—';
+
+  return new Intl.DateTimeFormat('es-MX', {
+    dateStyle: 'medium',
+  }).format(date);
+}
 
 export function formatPeriodDate(
     date: string,
