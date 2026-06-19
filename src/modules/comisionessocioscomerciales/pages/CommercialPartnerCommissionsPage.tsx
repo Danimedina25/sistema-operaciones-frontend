@@ -192,40 +192,17 @@ export default function CommercialPartnerCommissionsPage() {
   return (
     <div className="space-y-3">
       {/* HEADER */}
-
-      <div className="relative flex items-center rounded-2xl bg-white p-4 shadow-sm">
-        {canGenerate && (
-          <button
-            type="button"
-            disabled={
-              isGenerating
-            }
-            onClick={
-              handleGenerate
-            }
-            className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-60"
-          >
-            Generar comisiones
-          </button>
-        )}
-
-        <div className="absolute left-1/2 -translate-x-1/2 text-center">
+      <div className="relative rounded-2xl bg-white p-6 shadow-sm">
+        <div className="text-center">
           <h1 className="text-lg font-semibold text-slate-900">
-            Pago de
-            Comisiones a socios
-            comerciales
+            Pago de Comisiones a socios comerciales
           </h1>
 
-          <p className="text-xs text-slate-500">
-            Consulta,
-            administra y
-            registra pagos de
-            comisiones a socios
-            comerciales.
+          <p className="mt-1 text-sm text-slate-500">
+            Consulta, administra y registra pagos de comisiones a socios comerciales.
           </p>
         </div>
       </div>
-
       {/* FILTROS */}
 
       <section className="rounded-2xl bg-white p-4 shadow-sm">

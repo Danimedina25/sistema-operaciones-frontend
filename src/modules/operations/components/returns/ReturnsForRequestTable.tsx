@@ -168,7 +168,7 @@ export function ReturnsForRequestTable({
                           event.stopPropagation();
                           onRequestReturn(operation.id);
                         }}
-                        className="inline-flex items-center gap-2 rounded-lg border border-violet-200 bg-violet-100 text-violet-800 px-3 py-2 text-xs font-semibold transition hover:bg-violet-200"
+                        className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
                       >
                         Solicitar
                       </button>

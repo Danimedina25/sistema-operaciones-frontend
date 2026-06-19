@@ -3,6 +3,7 @@ import type {
     CommissionPartnerSummaryResponse,
 } from '../types/commercial-partner-commissions.types';
 import { CommissionBeneficiaryPaymentStatusBadge } from './CommissionBeneficiaryPaymentStatusBadge';
+import { formatDate } from '@/modules/operations/utils/operation-formatters';
 
 interface Props {
     beneficiaries: CommissionPartnerSummaryResponse[];
@@ -80,28 +81,36 @@ export function CommissionBeneficiariesTable({
 
                         <tr className="text-left text-sm text-slate-600">
 
-                            <th className="px-4 py-3 text-left">
+                            <th className="px-4 py-3 text-center">
                                 Beneficiario
                             </th>
 
-                            <th className="px-4 py-3 text-left">
+                            <th className="px-4 py-3 text-center">
                                 Operaciones
                             </th>
 
-                            <th className="px-4 py-3 text-left">
+                            <th className="px-4 py-3 text-center">
                                 Total a pagar
                             </th>
 
-                            <th className="px-4 py-3 text-left">
+                            <th className="px-4 py-3 text-center">
                                 Total pagado
                             </th>
 
-                            <th className="px-4 py-3 text-left">
+                            <th className="px-4 py-3 text-center">
                                 Pendiente por pagar
                             </th>
 
                             <th className="px-4 py-3 text-center">
                                 Estatus
+                            </th>
+
+                            <th className="px-4 py-3 text-center">
+                                Fecha pago
+                            </th>
+
+                            <th className="px-4 py-3 text-center">
+                                Opciones
                             </th>
 
                             <th className="px-4 py-3 text-center">
@@ -135,7 +144,7 @@ export function CommissionBeneficiariesTable({
                                         className="border-t border-slate-200 text-sm"
                                     >
 
-                                        <td className="px-4 py-4 text-left">
+                                        <td className="px-4 py-4 text-center">
 
                                             <div className="font-medium">
                                                 {beneficiary.nombre}
@@ -152,11 +161,11 @@ export function CommissionBeneficiariesTable({
 
                                         </td>
 
-                                        <td className="px-4 py-4 text-left">
+                                        <td className="px-4 py-4 text-center">
                                             {beneficiary.totalOperaciones}
                                         </td>
 
-                                        <td className="px-4 py-4 font-medium text-left">
+                                        <td className="px-4 py-4 font-medium text-center">
 
                                             {formatCurrency(
                                                 beneficiary.totalComisiones,
@@ -164,7 +173,7 @@ export function CommissionBeneficiariesTable({
 
                                         </td>
 
-                                        <td className="px-4 py-4 text-emerald-700 text-left">
+                                        <td className="px-4 py-4 text-emerald-700 text-center">
 
                                             {formatCurrency(
                                                 beneficiary.totalPagadas,
@@ -172,8 +181,7 @@ export function CommissionBeneficiariesTable({
 
                                         </td>
 
-
-                                        <td className="px-4 py-4 text-yellow-500 text-left">
+                                        <td className="px-4 py-4 text-yellow-500 text-center">
 
                                             {formatCurrency(
                                                 beneficiary.totalPendientes
@@ -189,10 +197,25 @@ export function CommissionBeneficiariesTable({
 
                                         </td>
 
+                                        <td className="px-4 py-4 text-emerald-700 text-center">
+                                            {paymentStatus === 'PAGADA' ? (
+                                                <>
+
+                                                    {
+                                                        formatDate(beneficiary.fechaPagada)
+                                                    }
+                                                </>
+
+                                            )
+                                                :
+                                                <span className="text-xs text-slate-400">
+                                                    --
+                                                </span>
+                                            }
+                                        </td>
+
                                         <td className="px-4 py-4 text-center">
-
                                             <div className="flex items-center justify-center gap-2">
-
                                                 <button
                                                     type="button"
                                                     onClick={() =>
@@ -204,7 +227,11 @@ export function CommissionBeneficiariesTable({
                                                 >
                                                     Ver detalle
                                                 </button>
+                                            </div>
+                                        </td>
 
+                                        <td className="px-4 py-4 text-center">
+                                            <div className="flex items-center justify-center gap-2">
                                                 {canPay ? (
 
                                                     <button
@@ -214,7 +241,7 @@ export function CommissionBeneficiariesTable({
                                                                 beneficiary,
                                                             )
                                                         }
-                                                        className="rounded-lg border border-emerald-200 px-3 py-1.5 text-xs font-medium transition hover:bg-emerald-50"
+                                                        className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
                                                     >
                                                         Pagar
                                                     </button>

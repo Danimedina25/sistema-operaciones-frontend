@@ -41,7 +41,7 @@ export function ReturnsForPaymentTable({
         <table className="min-w-full">
           <thead className="bg-slate-50">
             <tr className="text-left text-sm text-slate-600">
-               <th className="px-4 py-3 font-medium text-center">
+              <th className="px-4 py-3 font-medium text-center">
                 Folio
               </th>
               <th className="px-4 py-3 font-medium text-center">
@@ -158,7 +158,7 @@ export function ReturnsForPaymentTable({
                       onClick={(event) => {
                         onReturnPayments(operation.id);
                       }}
-                      className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-100 text-blue-800 px-3 py-2 text-xs font-semibold transition hover:bg-blue-200"
+                      className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
                     >
                       Retornar pago
                     </button>

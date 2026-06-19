@@ -40,6 +40,8 @@ export interface CommissionPartnerSummaryResponse {
 
   totalPagadas: number;
 
+  fechaPagada: string;
+
   totalComisionesPendientes: number;
 
   commissionIdsToPay: number[];

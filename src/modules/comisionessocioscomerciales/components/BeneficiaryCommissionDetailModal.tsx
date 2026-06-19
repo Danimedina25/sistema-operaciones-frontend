@@ -63,7 +63,7 @@ export function BeneficiaryCommissionDetailModal({
     onClose,
     detail,
     isLoading,
-    startDate, 
+    startDate,
     endDate
 }: Props) {
 
@@ -159,6 +159,12 @@ export function BeneficiaryCommissionDetailModal({
                     {/* TABLA */}
 
                     <div className="rounded-2xl border border-slate-200 bg-white">
+                        <div className="border-b border-slate-100 px-5 py-4">
+
+                            <h3 className="text-base font-semibold text-slate-900">
+                                Operaciones que generaron comisiones para este beneficiario durante el periodo seleccionado.
+                            </h3>
+                        </div>
 
                         <div className="overflow-x-auto">
 
@@ -177,7 +183,7 @@ export function BeneficiaryCommissionDetailModal({
                                         </th>
 
                                         <th className="px-4 py-3">
-                                            Fecha de creación 
+                                            Fecha de creación
                                         </th>
 
                                         <th className="px-4 py-3 text-center">
