@@ -10,6 +10,9 @@ import {
   ReturnPaymentResponse,
 } from '../../types/operations.types.ts';
 import { ReturnStatusBadge } from './ReturnStatusBadge.js';
+import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { ReturnPaymentDetailModal } from './ReturnPaymentDetailModal.js';
 
 interface ReturnPaymentsTableProps {
   returns: ReturnPaymentResponse[];
@@ -38,6 +41,78 @@ export function ReturnPaymentsTable({
 }: ReturnPaymentsTableProps) {
   const hasPendingAmountToRequest = (montoPendientePorSolicitar ?? 0) > 0;
   const hasPendingAmountToPay = (montoPendientePorRetornar ?? 0) > 0;
+  const [openOptionsReturnId, setOpenOptionsReturnId] = useState<number | null>(null);
+
+  const [optionsMenuPosition, setOptionsMenuPosition] = useState<{
+    top: number;
+    left: number;
+    openUp: boolean;
+  } | null>(null);
+
+  const optionsMenuRef = useRef<HTMLDivElement | null>(null);
+  const [selectedReturnDetail, setSelectedReturnDetail] =
+    useState<ReturnPaymentResponse | null>(null);
+
+  function closeOptionsMenu() {
+    setOpenOptionsReturnId(null);
+    setOptionsMenuPosition(null);
+  }
+
+  function handleToggleOptionsMenu(
+    returnPaymentId: number,
+    event: React.MouseEvent<HTMLButtonElement>,
+  ) {
+    if (openOptionsReturnId === returnPaymentId) {
+      closeOptionsMenu();
+      return;
+    }
+
+    const rect = event.currentTarget.getBoundingClientRect();
+
+    const menuWidth = 260;
+    const estimatedMenuHeight = 80;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUp = spaceBelow < estimatedMenuHeight;
+
+    setOptionsMenuPosition({
+      top: openUp ? rect.top - 8 : rect.bottom + 8,
+      left: Math.max(8, rect.right - menuWidth),
+      openUp,
+    });
+
+    setOpenOptionsReturnId(returnPaymentId);
+  }
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        optionsMenuRef.current &&
+        !optionsMenuRef.current.contains(event.target as Node)
+      ) {
+        closeOptionsMenu();
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+    function handleCloseMenu() {
+      closeOptionsMenu();
+    }
+
+    window.addEventListener('scroll', handleCloseMenu, true);
+    window.addEventListener('resize', handleCloseMenu);
+
+    return () => {
+      window.removeEventListener('scroll', handleCloseMenu, true);
+      window.removeEventListener('resize', handleCloseMenu);
+    };
+  }, []);
 
   const hasRequestedReturns = returns.some(
     (returnPayment) =>
@@ -210,7 +285,6 @@ export function ReturnPaymentsTable({
                 <th className="px-4 py-3 font-medium">Estatus</th>
                 <th className="px-4 py-3 font-medium">Tipo</th>
                 <th className="px-4 py-3 font-medium">Cuenta destino</th>
-                <th className="px-4 py-3 font-medium">Solicitado por</th>
                 <th className="px-4 py-3 font-medium">Fecha solicitud</th>
                 <th className="px-4 py-3 font-medium">Pagado por</th>
                 <th className="px-4 py-3 font-medium">Fecha retorno</th>
@@ -271,10 +345,6 @@ export function ReturnPaymentsTable({
                     </td>
 
                     <td className="px-4 py-4 text-slate-600">
-                      {returnPayment.solicitadoPorNombre ?? '-'}
-                    </td>
-
-                    <td className="px-4 py-4 text-slate-600">
                       {returnPayment.fechaSolicitud
                         ? formatDate(returnPayment.fechaSolicitud)
                         : '-'}
@@ -295,39 +365,110 @@ export function ReturnPaymentsTable({
                     </td>
 
                     <td className="px-4 py-4">
-                      {returnPayment.comprobanteUrl ? (
-                        <a
-                          href={returnPayment.comprobanteUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="
-                          inline-flex
-                          justify-center
-                          rounded-lg
-                          border
-                          border-slate-300
-                          bg-white
-                          px-3
-                          py-1.5
-                          text-sm
-                          font-medium
-                          text-slate-700
-                          shadow-sm
-                          transition-all
-                          hover:bg-slate-50
-                          text-center
-                          hover:-translate-y-0.5
-                          "
-                        >
-                          Ver comprobante de retorno
-                        </a>
-                      ) : (
-                        <span className="text-sm text-slate-400">
-                          Sin comprobante
-                        </span>
-                      )}
-                    </td>
+                      <button
+                        type="button"
+                        onClick={(event) =>
+                          handleToggleOptionsMenu(returnPayment.id, event)
+                        }
+                        className="
+      inline-flex
+      h-9
+      items-center
+      justify-center
+      rounded-lg
+      border
+      border-slate-300
+      bg-white
+      px-4
+      text-xs
+      font-medium
+      text-slate-700
+      shadow-sm
+      transition-all
+      hover:bg-slate-50
+      hover:-translate-y-0.5
+    "
+                      >
+                        Ver opciones
+                      </button>
 
+                      {openOptionsReturnId === returnPayment.id &&
+                        optionsMenuPosition &&
+                        createPortal(
+                          <div
+                            ref={optionsMenuRef}
+                            className="
+          fixed
+          z-[9999]
+          w-64
+          overflow-hidden
+          rounded-xl
+          border
+          border-slate-200
+          bg-white
+          shadow-xl
+          shadow-slate-950/10
+        "
+                            style={{
+                              top: optionsMenuPosition.top,
+                              left: optionsMenuPosition.left,
+                              transform: optionsMenuPosition.openUp
+                                ? 'translateY(-100%)'
+                                : 'none',
+                            }}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedReturnDetail(returnPayment);
+                                closeOptionsMenu();
+                              }}
+                              className="
+            block
+            w-full
+            px-4
+            py-3
+            text-left
+            text-sm
+            font-medium
+            text-slate-700
+            transition
+            hover:bg-slate-50
+          "
+                            >
+                              Ver detalles de retorno
+                            </button>
+
+                            {returnPayment.comprobanteUrl ? (
+                              <a
+                                href={returnPayment.comprobanteUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={closeOptionsMenu}
+                                className="
+              block
+              border-t
+              border-slate-100
+              px-4
+              py-3
+              text-sm
+              font-medium
+              text-slate-700
+              transition
+              hover:bg-slate-50
+            "
+                              >
+                                Ver comprobante de retorno
+                              </a>
+                            ) : (
+                              <div className="border-t border-slate-100 px-4 py-3 text-sm text-slate-400">
+                                Sin comprobante
+                              </div>
+                            )}
+                          </div>,
+                          document.body,
+                        )}
+                    </td>
                     <td className="px-4 py-4">
                       <div className="flex flex-col items-stretch gap-2">
                         {canPayReturns || canEditReturn ? (
@@ -357,12 +498,12 @@ export function ReturnPaymentsTable({
                               )}
 
                             {canEditReturn && (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    onEditReturn?.(returnPayment)
-                                  }
-                                  className="
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  onEditReturn?.(returnPayment)
+                                }
+                                className="
                         h-8
                         rounded-lg
                         border
@@ -376,10 +517,10 @@ export function ReturnPaymentsTable({
                         transition
                         hover:bg-slate-50
                       "
-                                >
-                                  Editar
-                                </button>
-                              )}
+                              >
+                                Editar
+                              </button>
+                            )}
                           </>
                         ) : (
                           <span className="text-xs text-slate-400">
@@ -395,6 +536,12 @@ export function ReturnPaymentsTable({
           </table>
         </div>
       )}
+
+      <ReturnPaymentDetailModal
+        open={!!selectedReturnDetail}
+        onClose={() => setSelectedReturnDetail(null)}
+        returnPayment={selectedReturnDetail}
+      />
     </div>
   );
 }

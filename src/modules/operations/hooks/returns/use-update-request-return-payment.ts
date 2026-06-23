@@ -38,24 +38,28 @@ export function useUpdateRequestReturnPayment(
       await updateRequestReturnPayment(
         values.id,
         {
-            monto: values.monto,
-            tipoPago: values.tipoPago,
-            banco: isCash
-              ? null
-              : cleanText(values.banco),
-            titular: isCash
-              ? null
-              : cleanText(values.titular),
-            cuenta: isCash
-              ? null
-              : cleanNumbers(values.cuenta),
-            clabe: isCash
-              ? null
-              : cleanNumbers(values.clabe),
-            observaciones: cleanText(
-              values.observaciones,
-            ),
-          }
+          monto: values.monto,
+          tipoPago: values.tipoPago,
+          banco: isCash
+            ? null
+            : cleanText(values.banco),
+          titular: isCash
+            ? null
+            : cleanText(values.titular),
+          cuenta: isCash
+            ? null
+            : cleanNumbers(values.cuenta),
+          clabe: isCash
+            ? null
+            : cleanNumbers(values.clabe),
+          observaciones: cleanText(
+            values.observaciones,
+          ),
+          autorizadoParaRecibirEfectivo1: values.autorizadoParaRecibirEfectivo1,
+          autorizadoParaRecibirEfectivo2: values.autorizadoParaRecibirEfectivo2,
+          autorizadoParaRecibirEfectivo3: values.autorizadoParaRecibirEfectivo3,
+
+        }
       );
 
       toast.success(

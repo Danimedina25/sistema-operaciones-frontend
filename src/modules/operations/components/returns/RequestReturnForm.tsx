@@ -17,6 +17,9 @@ interface ReturnPaymentItem {
   cuenta?: string;
   clabe?: string;
   observaciones?: string;
+  autorizadoParaRecibirEfectivo1?: string;
+  autorizadoParaRecibirEfectivo2?: string;
+  autorizadoParaRecibirEfectivo3?: string;
 }
 
 export interface RequestReturnFormValues {
@@ -30,6 +33,9 @@ export interface RequestReturnFormValues {
     cuenta?: string;
     clabe?: string;
     observaciones?: string;
+    autorizadoParaRecibirEfectivo1?: string;
+    autorizadoParaRecibirEfectivo2?: string;
+    autorizadoParaRecibirEfectivo3?: string;
   }>;
 }
 
@@ -77,7 +83,11 @@ function mapPaymentToForm(
     titular: payment.cuentaDestinoTitular ?? '',
     observaciones: payment.observaciones ?? '',
     cuenta: payment.cuentaDestinoCliente ?? '',
-    clabe: payment.cuentaClabeCliente ?? ''
+    clabe: payment.cuentaClabeCliente ?? '',
+    autorizadoParaRecibirEfectivo1: payment.autorizadoParaRecibirEfectivo1 ?? '',
+    autorizadoParaRecibirEfectivo2: payment.autorizadoParaRecibirEfectivo2 ?? '',
+    autorizadoParaRecibirEfectivo3: payment.autorizadoParaRecibirEfectivo3 ?? '',
+
   };
 }
 
@@ -103,6 +113,9 @@ function createEmptyPayment(): ReturnPaymentItem {
     cuenta: '',
     clabe: '',
     observaciones: '',
+    autorizadoParaRecibirEfectivo1: '',
+    autorizadoParaRecibirEfectivo2: '',
+    autorizadoParaRecibirEfectivo3: ''
   };
 }
 
@@ -171,7 +184,7 @@ export function RequestReturnForm({
       }
 
       const requiereDatosBancarios =
-        pago.tipoPago === 'TRANSFERENCIA';
+        pago.tipoPago === 'TRANSFERENCIA' || pago.tipoPago === 'DEPOSITO';
 
       if (requiereDatosBancarios) {
         if (!pago.banco?.trim()) {
@@ -195,6 +208,17 @@ export function RequestReturnForm({
           pagoErrors.clabe = 'La CLABE interbancaria es obligatoria';
         } else if (!/^\d{18}$/.test(clabe)) {
           pagoErrors.clabe = 'La CLABE debe tener exactamente 18 dígitos';
+        }
+      }
+
+      if (pago.tipoPago === 'EFECTIVO') {
+        const autorizado1 = pago.autorizadoParaRecibirEfectivo1?.trim() ?? '';
+        const autorizado2 = pago.autorizadoParaRecibirEfectivo2?.trim() ?? '';
+        const autorizado3 = pago.autorizadoParaRecibirEfectivo3?.trim() ?? '';
+
+        if (!autorizado1 && !autorizado2 && !autorizado3) {
+          pagoErrors.autorizadoParaRecibirEfectivo1 =
+            'Debes capturar al menos una persona autorizada para recibir efectivo';
         }
       }
       if (Object.keys(pagoErrors).length > 0) {
@@ -241,16 +265,60 @@ export function RequestReturnForm({
   ) {
     let formattedValue = value;
 
+    if (field === 'tipoPago') {
+      setPagos((current) =>
+        current.map((pago) => {
+          if (pago.id !== paymentId) return pago;
+          const requiereDatosBancarios =
+            value === 'TRANSFERENCIA' || value === 'DEPOSITO';
+
+          return {
+            ...pago,
+            tipoPago: value as ReturnPaymentType,
+
+            banco: requiereDatosBancarios ? pago.banco : '',
+            titular: requiereDatosBancarios ? pago.titular : '',
+            cuenta: requiereDatosBancarios ? pago.cuenta : '',
+            clabe: requiereDatosBancarios ? pago.clabe : '',
+
+            autorizadoParaRecibirEfectivo1:
+              value === 'EFECTIVO'
+                ? pago.autorizadoParaRecibirEfectivo1
+                : '',
+            autorizadoParaRecibirEfectivo2:
+              value === 'EFECTIVO'
+                ? pago.autorizadoParaRecibirEfectivo2
+                : '',
+            autorizadoParaRecibirEfectivo3:
+              value === 'EFECTIVO'
+                ? pago.autorizadoParaRecibirEfectivo3
+                : '',
+          };
+        }),
+      );
+
+      setErrors((current) => {
+        const paymentErrors = current[paymentId];
+        if (!paymentErrors) return current;
+
+        const updatedPaymentErrors = { ...paymentErrors };
+        delete updatedPaymentErrors.tipoPago;
+
+        return {
+          ...current,
+          [paymentId]: updatedPaymentErrors,
+        };
+      });
+
+      return;
+    }
+
     if (field === 'monto') {
       formattedValue = normalizeCurrencyInput(value);
     }
 
     if (field === 'cuenta') {
       formattedValue = onlyNumbers(value).slice(0, 12);
-    }
-
-    if (field === 'clabe') {
-      formattedValue = onlyNumbers(value).slice(0, 18);
     }
 
     if (field === 'clabe') {
@@ -323,6 +391,12 @@ export function RequestReturnForm({
         cuenta: pago.cuenta?.trim(),
         clabe: pago.clabe?.trim(),
         observaciones: pago.observaciones?.trim(),
+        autorizadoParaRecibirEfectivo1:
+          pago.autorizadoParaRecibirEfectivo1?.trim() || undefined,
+        autorizadoParaRecibirEfectivo2:
+          pago.autorizadoParaRecibirEfectivo2?.trim() || undefined,
+        autorizadoParaRecibirEfectivo3:
+          pago.autorizadoParaRecibirEfectivo3?.trim() || undefined,
       })),
     });
   }
@@ -378,7 +452,10 @@ export function RequestReturnForm({
       <div className="space-y-4">
         {pagos.map((pago, index) => {
           const requiereDatosBancarios =
-            pago.tipoPago === 'TRANSFERENCIA';
+            pago.tipoPago === 'TRANSFERENCIA' ||
+            pago.tipoPago === 'DEPOSITO';
+
+          const requiereAutorizadosEfectivo = pago.tipoPago === 'EFECTIVO';
 
           return (
             <div
@@ -440,6 +517,7 @@ export function RequestReturnForm({
                     <option value="">Selecciona un tipo</option>
                     <option value="EFECTIVO">Efectivo</option>
                     <option value="TRANSFERENCIA">Transferencia</option>
+                    <option value="DEPOSITO">Depósito</option>
                   </select>
 
                   {errors[pago.id]?.tipoPago ? (
@@ -574,6 +652,74 @@ export function RequestReturnForm({
                           updatePago(pago.id, 'clabe', event.target.value)
                         }
                       />
+                    </div>
+                  </>
+                ) : null}
+
+                {requiereAutorizadosEfectivo ? (
+                  <>
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-700">
+                        Autorizado para recibir efectivo 1
+                      </label>
+
+                      <Input
+                        type="text"
+                        placeholder="Nombre completo"
+                        value={pago.autorizadoParaRecibirEfectivo1}
+                        error={errors[pago.id]?.autorizadoParaRecibirEfectivo1}
+                        onChange={(event) =>
+                          updatePago(
+                            pago.id,
+                            'autorizadoParaRecibirEfectivo1',
+                            event.target.value,
+                          )
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-700">
+                        Autorizado para recibir efectivo 2
+                      </label>
+
+                      <Input
+                        type="text"
+                        placeholder="Nombre completo"
+                        value={pago.autorizadoParaRecibirEfectivo2}
+                        onChange={(event) =>
+                          updatePago(
+                            pago.id,
+                            'autorizadoParaRecibirEfectivo2',
+                            event.target.value,
+                          )
+                        }
+                      />
+                    </div>
+
+                    <div className="lg:col-span-2">
+                      <label className="mb-2 block text-sm font-medium text-slate-700">
+                        Autorizado para recibir efectivo 3
+                      </label>
+
+                      <Input
+                        type="text"
+                        placeholder="Nombre completo"
+                        value={pago.autorizadoParaRecibirEfectivo3}
+                        onChange={(event) =>
+                          updatePago(
+                            pago.id,
+                            'autorizadoParaRecibirEfectivo3',
+                            event.target.value,
+                          )
+                        }
+                      />
+                    </div>
+
+                    <div className="lg:col-span-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+                      <p className="text-sm font-medium text-blue-800">
+                        ** Las personas autorizadas para recibir el efectivo deberán presentar una identificación oficial vigente al momento del cobro.
+                      </p>
                     </div>
                   </>
                 ) : null}

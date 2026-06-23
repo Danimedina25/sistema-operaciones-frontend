@@ -177,6 +177,9 @@ export interface CreateReturnPaymentItemRequest {
   cuenta?: string | null;
   clabe?: string | null;
   observaciones?: string | null;
+  autorizadoParaRecibirEfectivo1?: string;
+  autorizadoParaRecibirEfectivo2?: string;
+  autorizadoParaRecibirEfectivo3?: string;
 }
 
 export interface CreateReturnPaymentRequest {
@@ -190,6 +193,7 @@ export interface RealizeReturnPaymentRequest {
   cuentaOrigenId?: number | null;
   comprobanteUrl?: string | null;
   observaciones?: string | null;
+  fechaHoraRecoleccionEfectivo?: string | null;
 }
 
 export interface ReturnPaymentResponse {
@@ -218,6 +222,11 @@ export interface ReturnPaymentResponse {
 
   fechaSolicitud: string;
   fechaPago?: string | null;
+
+  autorizadoParaRecibirEfectivo1?: string;
+  autorizadoParaRecibirEfectivo2?: string;
+  autorizadoParaRecibirEfectivo3?: string;
+  fechaHoraRecoleccionEfectivo?: string | null;
 
   createdAt: string;
 }

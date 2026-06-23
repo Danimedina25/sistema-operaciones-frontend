@@ -17,6 +17,9 @@ export interface EditReturnPaymentFormValues {
     cuenta?: string;
     clabe?: string;
     observaciones?: string;
+    autorizadoParaRecibirEfectivo1?: string;
+    autorizadoParaRecibirEfectivo2?: string;
+    autorizadoParaRecibirEfectivo3?: string;
 }
 
 interface EditReturnPaymentFormProps {
@@ -35,6 +38,9 @@ interface FormState {
     cuenta: string;
     clabe: string;
     observaciones: string;
+    autorizadoParaRecibirEfectivo1: string;
+    autorizadoParaRecibirEfectivo2: string;
+    autorizadoParaRecibirEfectivo3: string;
 }
 
 type FormErrors = Partial<Record<keyof FormState, string>>;
@@ -50,6 +56,9 @@ function mapPaymentToForm(
         cuenta: payment.cuentaDestinoCliente ?? '',
         clabe: payment.cuentaClabeCliente ?? '',
         observaciones: payment.observaciones ?? '',
+        autorizadoParaRecibirEfectivo1: payment.autorizadoParaRecibirEfectivo1 ?? '',
+        autorizadoParaRecibirEfectivo2: payment.autorizadoParaRecibirEfectivo2 ?? '',
+        autorizadoParaRecibirEfectivo3: payment.autorizadoParaRecibirEfectivo3 ?? '',
     };
 }
 
@@ -88,6 +97,26 @@ export function EditReturnPaymentForm({
         value: string,
     ) {
         let formattedValue = value;
+
+        if (field === 'tipoPago') {
+            setForm((current) => ({
+                ...current,
+                tipoPago: value as ReturnPaymentType,
+                banco: value === 'TRANSFERENCIA' || value === 'DEPOSITO' ? current.banco : '',
+                titular: value === 'TRANSFERENCIA' || value === 'DEPOSITO' ? current.titular : '',
+                cuenta: value === 'TRANSFERENCIA' || value === 'DEPOSITO' ? current.cuenta : '',
+                clabe: value === 'TRANSFERENCIA' || value === 'DEPOSITO' ? current.clabe : '',
+                autorizadoParaRecibirEfectivo1:
+                    value === 'EFECTIVO' ? current.autorizadoParaRecibirEfectivo1 : '',
+                autorizadoParaRecibirEfectivo2:
+                    value === 'EFECTIVO' ? current.autorizadoParaRecibirEfectivo2 : '',
+                autorizadoParaRecibirEfectivo3:
+                    value === 'EFECTIVO' ? current.autorizadoParaRecibirEfectivo3 : '',
+            }));
+
+            setErrors({});
+            return;
+        }
 
         if (field === 'monto') {
             formattedValue =
@@ -159,6 +188,17 @@ export function EditReturnPaymentForm({
             }
         }
 
+        if (form.tipoPago === 'EFECTIVO') {
+            const autorizado1 = form.autorizadoParaRecibirEfectivo1.trim();
+            const autorizado2 = form.autorizadoParaRecibirEfectivo2.trim();
+            const autorizado3 = form.autorizadoParaRecibirEfectivo3.trim();
+
+            if (!autorizado1 && !autorizado2 && !autorizado3) {
+                newErrors.autorizadoParaRecibirEfectivo1 =
+                    'Debes capturar al menos una persona autorizada para recibir efectivo';
+            }
+        }
+
         setErrors(newErrors);
 
         return (
@@ -182,6 +222,12 @@ export function EditReturnPaymentForm({
             cuenta: form.cuenta.trim(),
             clabe: form.clabe.trim(),
             observaciones: form.observaciones.trim(),
+            autorizadoParaRecibirEfectivo1:
+                form.autorizadoParaRecibirEfectivo1.trim() || undefined,
+            autorizadoParaRecibirEfectivo2:
+                form.autorizadoParaRecibirEfectivo2.trim() || undefined,
+            autorizadoParaRecibirEfectivo3:
+                form.autorizadoParaRecibirEfectivo3.trim() || undefined,
         });
     }
 
@@ -359,6 +405,72 @@ export function EditReturnPaymentForm({
                                     updateField('clabe', event.target.value)
                                 }
                             />
+                        </div>
+                    </>
+                )}
+
+                {form.tipoPago === 'EFECTIVO' && (
+                    <>
+                        <div>
+                            <label className="mb-2 block text-sm font-medium text-slate-700">
+                                Autorizado para recibir efectivo 1
+                            </label>
+
+                            <Input
+                                type="text"
+                                placeholder="Nombre completo"
+                                value={form.autorizadoParaRecibirEfectivo1}
+                                error={errors.autorizadoParaRecibirEfectivo1}
+                                onChange={(event) =>
+                                    updateField(
+                                        'autorizadoParaRecibirEfectivo1',
+                                        event.target.value,
+                                    )
+                                }
+                            />
+                        </div>
+
+                        <div>
+                            <label className="mb-2 block text-sm font-medium text-slate-700">
+                                Autorizado para recibir efectivo 2
+                            </label>
+
+                            <Input
+                                type="text"
+                                placeholder="Nombre completo"
+                                value={form.autorizadoParaRecibirEfectivo2}
+                                onChange={(event) =>
+                                    updateField(
+                                        'autorizadoParaRecibirEfectivo2',
+                                        event.target.value,
+                                    )
+                                }
+                            />
+                        </div>
+
+                        <div className="lg:col-span-2">
+                            <label className="mb-2 block text-sm font-medium text-slate-700">
+                                Autorizado para recibir efectivo 3
+                            </label>
+
+                            <Input
+                                type="text"
+                                placeholder="Nombre completo"
+                                value={form.autorizadoParaRecibirEfectivo3}
+                                onChange={(event) =>
+                                    updateField(
+                                        'autorizadoParaRecibirEfectivo3',
+                                        event.target.value,
+                                    )
+                                }
+                            />
+                        </div>
+
+
+                        <div className="lg:col-span-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+                            <p className="text-sm font-medium text-blue-800">
+                                ** Las personas autorizadas para recibir el efectivo deberán presentar una identificación oficial vigente al momento del cobro.
+                            </p>
                         </div>
                     </>
                 )}

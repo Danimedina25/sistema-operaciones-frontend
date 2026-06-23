@@ -13,6 +13,8 @@ export interface RealizeReturnPaymentFormValues {
     cuentaOrigenId?: string;
     comprobante: FileList;
     observaciones?: string;
+    fechaRecoleccionEfectivo?: string;
+    horaRecoleccionEfectivo?: string;
 }
 
 interface RealizeReturnPaymentFormProps {
@@ -51,6 +53,8 @@ export function RealizeReturnPaymentForm({
             cuentaOrigenId: '',
             comprobante: undefined,
             observaciones: '',
+            fechaRecoleccionEfectivo: '',
+            horaRecoleccionEfectivo: '',
         },
         mode: 'onChange',
     });
@@ -124,7 +128,9 @@ export function RealizeReturnPaymentForm({
     }
 
     const requiereCuentaOrigen =
-        returnPayment.tipoPago === 'TRANSFERENCIA'
+        returnPayment.tipoPago === 'TRANSFERENCIA' || returnPayment.tipoPago === 'DEPOSITO'
+    const requiereFechaHoraRecoleccion =
+        returnPayment.tipoPago === 'EFECTIVO';
 
     return (
         <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
@@ -268,6 +274,60 @@ export function RealizeReturnPaymentForm({
                             {errors.cuentaOrigenId.message}
                         </p>
                     ) : null}
+                </div>
+            ) : null}
+
+            {requiereFechaHoraRecoleccion ? (
+                <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                        <label className="mb-2 block text-sm font-medium text-slate-700">
+                            Fecha de recolección
+                        </label>
+
+                        <input
+                            type="date"
+                            className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
+                            {...register('fechaRecoleccionEfectivo', {
+                                validate: (value) => {
+                                    if (!requiereFechaHoraRecoleccion) return true;
+                                    return value?.trim()
+                                        ? true
+                                        : 'La fecha de recolección es obligatoria';
+                                },
+                            })}
+                        />
+
+                        {errors.fechaRecoleccionEfectivo ? (
+                            <p className="mt-1 text-xs text-red-600">
+                                {errors.fechaRecoleccionEfectivo.message}
+                            </p>
+                        ) : null}
+                    </div>
+
+                    <div>
+                        <label className="mb-2 block text-sm font-medium text-slate-700">
+                            Hora de recolección
+                        </label>
+
+                        <input
+                            type="time"
+                            className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
+                            {...register('horaRecoleccionEfectivo', {
+                                validate: (value) => {
+                                    if (!requiereFechaHoraRecoleccion) return true;
+                                    return value?.trim()
+                                        ? true
+                                        : 'La hora de recolección es obligatoria';
+                                },
+                            })}
+                        />
+
+                        {errors.horaRecoleccionEfectivo ? (
+                            <p className="mt-1 text-xs text-red-600">
+                                {errors.horaRecoleccionEfectivo.message}
+                            </p>
+                        ) : null}
+                    </div>
                 </div>
             ) : null}
 

@@ -43,6 +43,9 @@ export function useRequestReturnPayment(
             cuenta: isCash ? undefined : cleanNumbers(pago.cuenta),
             clabe: isCash ? undefined : cleanNumbers(pago.clabe),
             observaciones: cleanText(pago.observaciones),
+            autorizadoParaRecibirEfectivo1: pago.autorizadoParaRecibirEfectivo1,
+            autorizadoParaRecibirEfectivo2: pago.autorizadoParaRecibirEfectivo2,
+            autorizadoParaRecibirEfectivo3: pago.autorizadoParaRecibirEfectivo3
           };
         }),
       });

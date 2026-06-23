@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { PaymentStatusBadge } from '@/modules/operations/components/PaymentStatusBadge';
 import { paymentTypeLabels } from '@/modules/operations/constants/operations.constants';
@@ -7,6 +7,7 @@ import {
   formatDate,
 } from '@/modules/operations/utils/operation-formatters';
 import { OperationPaymentResponse } from '../types/operations.types.ts';
+import { createPortal } from 'react-dom';
 
 interface PaymentsTableProps {
   payments: OperationPaymentResponse[];
@@ -34,6 +35,7 @@ function isImageFile(file?: File | null) {
   return file.type.startsWith('image/');
 }
 
+
 export function PaymentsTable({
   payments,
   onValidatePayment,
@@ -53,6 +55,47 @@ export function PaymentsTable({
   const [validationReceiptError, setValidationReceiptError] = useState('');
   const [validationReceiptPreviewUrl, setValidationReceiptPreviewUrl] =
     useState<string | null>(null);
+  const [openOptionsPaymentId, setOpenOptionsPaymentId] = useState<number | null>(null);
+  const [optionsMenuPosition, setOptionsMenuPosition] = useState<{
+    top: number;
+    left: number;
+    openUp: boolean;
+  } | null>(null);
+
+  const optionsMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        optionsMenuRef.current &&
+        !optionsMenuRef.current.contains(event.target as Node)
+      ) {
+        setOpenOptionsPaymentId(null);
+        setOptionsMenuPosition(null);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+    function handleCloseMenu() {
+      setOpenOptionsPaymentId(null);
+      setOptionsMenuPosition(null);
+    }
+
+    window.addEventListener('scroll', handleCloseMenu, true);
+    window.addEventListener('resize', handleCloseMenu);
+
+    return () => {
+      window.removeEventListener('scroll', handleCloseMenu, true);
+      window.removeEventListener('resize', handleCloseMenu);
+    };
+  }, []);
 
   useEffect(() => {
     if (!validationReceipt || !isImageFile(validationReceipt)) {
@@ -170,6 +213,37 @@ export function PaymentsTable({
         ? 'Rechazando...'
         : 'Sí, rechazar comprobante';
 
+  function handleToggleOptionsMenu(
+    paymentId: number,
+    event: React.MouseEvent<HTMLButtonElement>,
+  ) {
+    if (openOptionsPaymentId === paymentId) {
+      setOpenOptionsPaymentId(null);
+      setOptionsMenuPosition(null);
+      return;
+    }
+
+    const rect = event.currentTarget.getBoundingClientRect();
+
+    const menuWidth = 260;
+    const estimatedMenuHeight = 120;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUp = spaceBelow < estimatedMenuHeight;
+
+    setOptionsMenuPosition({
+      top: openUp ? rect.top - 8 : rect.bottom + 8,
+      left: Math.max(8, rect.right - menuWidth),
+      openUp,
+    });
+
+    setOpenOptionsPaymentId(paymentId);
+  }
+
+  function closeOptionsMenu() {
+    setOpenOptionsPaymentId(null);
+    setOptionsMenuPosition(null);
+  }
+
   return (
     <>
       <div
@@ -182,7 +256,7 @@ export function PaymentsTable({
     shadow-lg
     shadow-slate-950/5
   "
-      >ƒ
+      >
         <div className="px-6 py-5">
           <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div className="text-left">
@@ -267,9 +341,7 @@ export function PaymentsTable({
                 <th className="px-4 py-3 font-medium">Fecha validación</th>
                 <th className="px-4 py-3 font-medium">Estatus</th>
                 <th className="px-4 py-3 font-medium">Opciones</th>
-                {canValidatePayments ? (
-                  <th className="px-4 py-3 font-medium">Acciones</th>
-                ) : null}
+                <th className="px-4 py-3 font-medium">Acciones</th>
               </tr>
             </thead>
 
@@ -278,6 +350,9 @@ export function PaymentsTable({
                 const isPendingValidation =
                   payment.estatus === 'PENDIENTE_VALIDACION';
                 const isProcessing = processingPaymentId === payment.id;
+                const canEdit = isPendingValidation && !!onEditPayment;
+                const canValidate = canValidatePayments && isPendingValidation;
+                const hasActions = canEdit || canValidate;
 
                 return (
                   <tr
@@ -322,7 +397,7 @@ export function PaymentsTable({
                       {formatDate(payment.fechaPago)}
                     </td>
 
-                     <td className="px-4 py-4 text-slate-600">
+                    <td className="px-4 py-4 text-slate-600">
                       {formatDate(payment.fechaComprobante)}
                     </td>
 
@@ -339,75 +414,113 @@ export function PaymentsTable({
                     </td>
 
                     <td className="px-4 py-4">
-                      <div className="flex flex-wrap gap-2">
-                        <a
-                          href={payment.comprobanteUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="
-                          inline-flex
-                          justify-center
-                          rounded-lg
-                          border
-                          border-slate-300
-                          bg-white
-                          px-3
-                          py-1.5
-                          text-sm
-                          font-medium
-                          text-slate-700
-                          shadow-sm
-                          transition-all
-                          hover:bg-slate-50
-                          text-center
-                          hover:-translate-y-0.5
-                          "
-                        >
-                          Ver comprobante de ingreso
-                        </a>
+                      <button
+                        type="button"
+                        onClick={(event) => handleToggleOptionsMenu(payment.id, event)}
+                        className="
+      inline-flex
+      h-9
+      items-center
+      justify-center
+      rounded-lg
+      border
+      border-slate-300
+      bg-white
+      px-4
+      text-xs
+      font-medium
+      text-slate-700
+      shadow-sm
+      transition-all
+      hover:bg-slate-50
+      hover:-translate-y-0.5
+    "
+                      >
+                        Ver opciones
+                      </button>
 
-                        {(canValidatePayments && payment.comprobanteValidacionUrl) && (
-                          <a
-                            href={payment.comprobanteValidacionUrl}
-                            target="_blank"
-                            rel="noreferrer"
+                      {openOptionsPaymentId === payment.id &&
+                        optionsMenuPosition &&
+                        createPortal(
+                          <div
+                            ref={optionsMenuRef}
                             className="
-                            inline-flex
-                            justify-center
-                            rounded-lg
-                            border
-                            border-slate-300
-                            bg-white
-                            px-3
-                            py-1.5
-                            text-sm
-                            font-medium
-                            text-slate-700
-                            shadow-sm
-                            transition-all
-                            hover:bg-slate-50
-                            text-center
-                            hover:-translate-y-0.5
-                            "
+          fixed
+          z-[9999]
+          w-64
+          overflow-hidden
+          rounded-xl
+          border
+          border-slate-200
+          bg-white
+          shadow-xl
+          shadow-slate-950/10
+        "
+                            style={{
+                              top: optionsMenuPosition.top,
+                              left: optionsMenuPosition.left,
+                              transform: optionsMenuPosition.openUp
+                                ? 'translateY(-100%)'
+                                : 'none',
+                            }}
                           >
-                            Ver comprobante de validación
-                          </a>
+                            <a
+                              href={payment.comprobanteUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              onClick={closeOptionsMenu}
+                              className="
+            block
+            px-4
+            py-3
+            text-sm
+            font-medium
+            text-slate-700
+            transition
+            hover:bg-slate-50
+          "
+                            >
+                              Ver comprobante de ingreso
+                            </a>
+
+                            {payment.comprobanteValidacionUrl ? (
+                              <a
+                                href={payment.comprobanteValidacionUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={closeOptionsMenu}
+                                className="
+              block
+              border-t
+              border-slate-100
+              px-4
+              py-3
+              text-sm
+              font-medium
+              text-slate-700
+              transition
+              hover:bg-slate-50
+            "
+                              >
+                                Ver comprobante de validación
+                              </a>
+                            ) : null}
+                          </div>,
+                          document.body,
                         )}
-                      </div>
                     </td>
 
-                    {canValidatePayments ? (
-                      <td className="px-4 py-4">
-                        <div className="flex flex-wrap gap-2">
-                          {isPendingValidation ? (
-                            <>
-                              <button
-                                type="button"
-                                disabled={isProcessing}
-                                onClick={() =>
-                                  openConfirmModal(payment.id, 'VALIDATE')
-                                }
-                                className="
+                    <td className="px-4 py-4">
+                      <div className="flex flex-wrap gap-2">
+                        {canValidate && (
+                          <>
+                            <button
+                              type="button"
+                              disabled={isProcessing}
+                              onClick={() =>
+                                openConfirmModal(payment.id, 'VALIDATE')
+                              }
+                              className="
   flex-1
   inline-flex
   h-9
@@ -426,17 +539,17 @@ export function PaymentsTable({
   disabled:cursor-not-allowed
   disabled:opacity-50
 "
-                              >
-                                {isProcessing ? 'Validando...' : 'Validar'}
-                              </button>
+                            >
+                              {isProcessing ? 'Validando...' : 'Validar'}
+                            </button>
 
-                              <button
-                                type="button"
-                                disabled={isProcessing}
-                                onClick={() =>
-                                  openConfirmModal(payment.id, 'REJECT')
-                                }
-                                className="
+                            <button
+                              type="button"
+                              disabled={isProcessing}
+                              onClick={() =>
+                                openConfirmModal(payment.id, 'REJECT')
+                              }
+                              className="
   flex-1
   inline-flex
   h-9
@@ -455,21 +568,17 @@ export function PaymentsTable({
   disabled:cursor-not-allowed
   disabled:opacity-50
 "
-                              >
-                                {isProcessing ? 'Procesando...' : 'Rechazar'}
-                              </button>
-                            </>
-                          ) : (
-                            <span className="text-xs text-slate-400">
-                              Sin acciones
-                            </span>
-                          )}
+                            >
+                              {isProcessing ? 'Procesando...' : 'Rechazar'}
+                            </button>
+                          </>
+                        )}
 
-                          {isPendingValidation && onEditPayment ? (
-                            <button
-                              type="button"
-                              onClick={() => onEditPayment(payment.id)}
-                              className="
+                        {canEdit && (
+                          <button
+                            type="button"
+                            onClick={() => onEditPayment(payment.id)}
+                            className="
   flex-1
   inline-flex
   h-9
@@ -487,13 +596,18 @@ export function PaymentsTable({
   hover:bg-slate-50
   hover:-translate-y-0.5
 "
-                            >
-                              Editar pago
-                            </button>
-                          ) : null}
-                        </div>
-                      </td>
-                    ) : null}
+                          >
+                            Editar pago
+                          </button>
+                        )}
+
+                        {!hasActions && (
+                          <span className="text-xs text-slate-400">
+                            Sin acciones
+                          </span>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
