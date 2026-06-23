@@ -215,7 +215,7 @@ export function ReturnPaymentsTable({
                 <th className="px-4 py-3 font-medium">Pagado por</th>
                 <th className="px-4 py-3 font-medium">Fecha retorno</th>
                 <th className="px-4 py-3 font-medium">Observaciones</th>
-                <th className="px-4 py-3 font-medium">Comprobante</th>
+                <th className="px-4 py-3 font-medium">Opciones</th>
                 {(canPayReturns || canEditRequestReturnPayments) && (
                   <th className="px-4 py-3 font-medium">Acciones</th>
                 )}
@@ -253,7 +253,7 @@ export function ReturnPaymentsTable({
                     <td className="px-4 py-4">
                       <div className="max-w-[240px]">
                         <p className="text-sm font-semibold tracking-tight text-slate-900">
-                          {returnPayment.cuentaDestinoCliente ?? '-'}
+                          {returnPayment.cuentaClabeCliente ?? '-'}
                         </p>
 
                         <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
@@ -301,24 +301,25 @@ export function ReturnPaymentsTable({
                           target="_blank"
                           rel="noreferrer"
                           className="
-                inline-flex
-                h-9
-                items-center
-                justify-center
-                rounded-lg
-                border
-                border-slate-300
-                bg-white
-                px-4
-                text-xs
-                font-medium
-                text-slate-700
-                shadow-sm
-                transition
-                hover:bg-slate-50
-              "
+                          inline-flex
+                          justify-center
+                          rounded-lg
+                          border
+                          border-slate-300
+                          bg-white
+                          px-3
+                          py-1.5
+                          text-sm
+                          font-medium
+                          text-slate-700
+                          shadow-sm
+                          transition-all
+                          hover:bg-slate-50
+                          text-center
+                          hover:-translate-y-0.5
+                          "
                         >
-                          Ver comprobante
+                          Ver comprobante de retorno
                         </a>
                       ) : (
                         <span className="text-sm text-slate-400">

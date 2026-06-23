@@ -46,6 +46,9 @@ export function useUpdateRequestReturnPayment(
             titular: isCash
               ? null
               : cleanText(values.titular),
+            cuenta: isCash
+              ? null
+              : cleanNumbers(values.cuenta),
             clabe: isCash
               ? null
               : cleanNumbers(values.clabe),

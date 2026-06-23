@@ -9,6 +9,7 @@ import { useAuth } from '@/modules/auth/store/auth.context';
 import { getApiErrorMessage } from '@/shared/utils/errors';
 import type { CreateOperationFormValues } from '@/modules/operations/schemas/create-operation.schema';
 import { PaymentType } from '../types/operations.types.ts';
+import { toLocalDateTime } from '@/shared/utils/date-formats.js';
 
 interface UseCreateOperationOptions {
   onSuccess?: (operationId: number) => void | Promise<void>;
@@ -19,6 +20,7 @@ interface ValidatedPayment {
   tipoPago: PaymentType;
   cuentaDestinoId?: number;
   comprobante: File;
+  fechaComprobante: string;
   observaciones?: string;
 }
 
@@ -79,6 +81,7 @@ export function useCreateOperation(options?: UseCreateOperationOptions) {
           tipoPago: pago.tipoPago as PaymentType,
           cuentaDestinoId: pago.cuentaDestinoId,
           comprobante, // aquí ya es File
+          fechaComprobante: pago.fechaComprobante,
           observaciones: pago.observaciones?.trim() || undefined,
         });
       }
@@ -112,6 +115,7 @@ export function useCreateOperation(options?: UseCreateOperationOptions) {
           monto: pago.monto,
           tipoPago: pago.tipoPago,
           cuentaDestinoId: pago.cuentaDestinoId,
+          fechaComprobante: toLocalDateTime(pago.fechaComprobante) || '',
           comprobanteUrl: uploadResult.downloadUrl,
           observaciones: pago.observaciones,
         });

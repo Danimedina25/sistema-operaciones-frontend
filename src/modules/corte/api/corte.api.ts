@@ -9,6 +9,14 @@ import {
   DailyCashCutResponse,
 } from '../types/corte.types';
 
+import {
+  BankGroupBalanceApiResponse,
+  BankGroupBalanceResponse,
+} from '../types/corte.types';
+
+const BANK_ACCOUNT_DAILY_CUTS_BASE_PATH =
+  '/api/bank-account-daily-cuts';
+
 const DAILY_CASH_CUTS_BASE_PATH = '/api/daily-cash-cuts';
 
 export async function calculateDailyCashCut(
@@ -61,6 +69,19 @@ export async function calculateCashCutRange(
     `${DAILY_CASH_CUTS_BASE_PATH}/range`,
     {
       params,
+    },
+  );
+
+  return response.data.data;
+}
+
+export async function calculateBankBalancesGrouped(
+  fecha?: string,
+): Promise<BankGroupBalanceResponse[]> {
+  const response = await api.get<BankGroupBalanceApiResponse>(
+    `${BANK_ACCOUNT_DAILY_CUTS_BASE_PATH}/grouped`,
+    {
+      params: fecha ? { fecha } : {},
     },
   );
 

@@ -24,7 +24,7 @@ export function useLogin() {
       login(authData);
 
       toast.success(`Bienvenido, ${authData.nombre}`);
-      navigate(paths.dashboard, { replace: true });
+      navigate(paths.operations, { replace: true });
     } catch (error) {
       toast.error(getApiErrorMessage(error));
       throw error;

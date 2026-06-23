@@ -48,7 +48,6 @@ export const router = createBrowserRouter([
     path: paths.verifyEmail,
     element: <VerifyEmailPage />,
   },
-
   {
     element: <ProtectedRoute />,
     children: [
@@ -56,14 +55,14 @@ export const router = createBrowserRouter([
         element: <AdminLayout />,
         children: [
           {
-            path: paths.dashboard,
-            element: <DashboardPage />,
+            element: <RoleGuard allowedRoles={['ADMIN', 'GERENTE', 'DIRECCION']} />,
+            children: [
+              {
+                path: paths.corte,
+                element: <DailyCashCutPage />,
+              },
+            ],
           },
-           {
-            path: paths.corte,
-            element: <DailyCashCutPage />,
-          },
-
           {
             element: <RoleGuard allowedRoles={['ADMIN']} />,
             children: [
@@ -73,40 +72,37 @@ export const router = createBrowserRouter([
               },
             ],
           },
-
           {
-            element: (
-              <RoleGuard allowedRoles={['ADMIN', 'SOCIO_COMERCIAL']} />
-            ),
+            element: <RoleGuard allowedRoles={['ADMIN', 'SOCIO_COMERCIAL']} />,
             children: [
               {
                 path: paths.clientes,
                 element: <ClientesPage />,
               },
-            ],
-          },
-
-           {
-            element: (
-              <RoleGuard allowedRoles={['ADMIN', 'SOCIO_COMERCIAL']} />
-            ),
-            children: [
               {
                 path: paths.mycomercialpartners,
                 element: <CommercialPartnersPage />,
               },
+              {
+                path: paths.operations,
+                element: <OperationsPage />,
+              },
+              {
+                path: paths.returnsforrequest,
+                element: <ReturnsForRequestPage />,
+              },
+              {
+                path: paths.returnRequestDetail,
+                element: <OperationDetailPage />,
+              },
+              {
+                path: paths.miscomisiones,
+                element: <MyCommercialPartnerCommissionsPage />,
+              },
             ],
           },
-
           {
-            element: (
-              <RoleGuard
-                allowedRoles={[
-                  'ADMIN',
-                  'AUXILIAR_CUENTAS',
-                ]}
-              />
-            ),
+            element: <RoleGuard allowedRoles={['ADMIN', 'AUXILIAR_CUENTAS']} />,
             children: [
               {
                 path: paths.bankAccounts,
@@ -114,24 +110,6 @@ export const router = createBrowserRouter([
               },
             ],
           },
-
-          {
-            element: (
-              <RoleGuard
-                allowedRoles={[
-                  'ADMIN',
-                  'SOCIO_COMERCIAL',
-                ]}
-              />
-            ),
-            children: [
-              {
-                path: paths.operations,
-                element: <OperationsPage />,
-              },
-            ],
-          },
-
           {
             element: (
               <RoleGuard
@@ -150,37 +128,10 @@ export const router = createBrowserRouter([
               },
             ],
           },
-
           {
             element: (
               <RoleGuard
-                allowedRoles={[
-                  'ADMIN',
-                  'SOCIO_COMERCIAL',
-                ]}
-              />
-            ),
-            children: [
-              {
-                path: paths.returnsforrequest,
-                element: <ReturnsForRequestPage />,
-              },
-
-              {
-                path: paths.returnRequestDetail,
-                element: <OperationDetailPage />,
-              },
-            ],
-          },
-
-          {
-            element: (
-              <RoleGuard
-                allowedRoles={[
-                  'ADMIN',
-                  'JEFA_CAJAS',
-                  'AUXILIAR_CUENTAS',
-                ]}
+                allowedRoles={['ADMIN', 'JEFA_CAJAS', 'AUXILIAR_CUENTAS']}
               />
             ),
             children: [
@@ -188,49 +139,18 @@ export const router = createBrowserRouter([
                 path: paths.returnsforpayment,
                 element: <ReturnsForPaymentPage />,
               },
-
               {
                 path: paths.devolutionDetail,
                 element: <OperationDetailPage />,
               },
-            ],
-          },
-
-           {
-            element: (
-              <RoleGuard
-                allowedRoles={[
-                  'ADMIN',
-                  'JEFA_CAJAS',
-                  'AUXILIAR_CUENTAS',
-                ]}
-              />
-            ),
-            children: [
               {
                 path: paths.comisionessocios,
                 element: <CommercialPartnerCommissionsPage />,
-              }
-            ],
-          },
-           {
-            element: (
-              <RoleGuard
-                allowedRoles={[
-                  'ADMIN',
-                  'SOCIO_COMERCIAL'
-                ]}
-              />
-            ),
-            children: [
-              {
-                path: paths.miscomisiones,
-                element: <MyCommercialPartnerCommissionsPage />,
-              }
+              },
             ],
           },
         ],
       },
     ],
-  },
+  }
 ]);

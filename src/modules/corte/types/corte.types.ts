@@ -59,6 +59,26 @@ export interface CashCutRangeResponse {
   incluyeDiaActualEnVivo: boolean;
 }
 
+export interface BankAccountBalanceResponse {
+  bankAccountId: number;
+  banco: string;
+  titular: string;
+  numeroCuenta: string;
+  clabe: string;
+  fecha: string;
+  saldoFinal: number;
+}
+
+export interface BankGroupBalanceResponse {
+  banco: string;
+  saldoTotalBanco: number;
+  totalCuentas: number;
+  cuentas: BankAccountBalanceResponse[];
+}
+
 export type DailyCashCutApiResponse = ApiResponse<DailyCashCutResponse>;
 
 export type CashCutRangeApiResponse = ApiResponse<CashCutRangeResponse>;
+
+export type BankGroupBalanceApiResponse =
+  ApiResponse<BankGroupBalanceResponse[]>;

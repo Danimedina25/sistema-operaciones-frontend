@@ -6,6 +6,7 @@ import { useAuth } from '@/modules/auth/store/auth.context';
 import { getApiErrorMessage } from '@/shared/utils/errors';
 import type { AddOperationPaymentFormValues } from '@/modules/operations/components/AddOperationPaymentForm';
 import { PaymentType } from '../types/operations.types.ts';
+import { toLocalDateTime } from '@/shared/utils/date-formats.js';
 
 interface UseAddOperationPaymentOptions {
   onSuccess?: () => void | Promise<void>;
@@ -47,6 +48,7 @@ export function useAddOperationPayment(options?: UseAddOperationPaymentOptions) 
         monto: parseCurrency(values.monto),
         tipoPago: values.tipoPago as PaymentType,
         cuentaDestinoId: Number(values.cuentaDestinoId),
+        fechaComprobante: toLocalDateTime(values.fechaComprobante) || '',
         comprobanteUrl: uploadResult.downloadUrl,
         observaciones: values.observaciones?.trim() || undefined,
       });

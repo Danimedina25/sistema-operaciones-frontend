@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { PaymentStatusBadge } from '@/modules/operations/components/PaymentStatusBadge';
 import { paymentTypeLabels } from '@/modules/operations/constants/operations.constants';
@@ -10,7 +10,10 @@ import { OperationPaymentResponse } from '../types/operations.types.ts';
 
 interface PaymentsTableProps {
   payments: OperationPaymentResponse[];
-  onValidatePayment?: (paymentId: number) => Promise<void> | void;
+  onValidatePayment?: (
+    paymentId: number,
+    comprobanteValidacion: File
+  ) => Promise<void> | void;
   onRejectPayment?: (paymentId: number, motivo: string) => Promise<void> | void;
   processingPaymentId?: number | null;
   montoPendientePorRegistrar?: number | null;
@@ -23,6 +26,12 @@ type PaymentActionType = 'VALIDATE' | 'REJECT';
 interface PendingAction {
   paymentId: number;
   action: PaymentActionType;
+}
+
+function isImageFile(file?: File | null) {
+  if (!file) return false;
+
+  return file.type.startsWith('image/');
 }
 
 export function PaymentsTable({
@@ -40,12 +49,33 @@ export function PaymentsTable({
   const [rejectReason, setRejectReason] = useState('');
   const [rejectReasonError, setRejectReasonError] = useState('');
   const canAddPayment = (montoPendientePorRegistrar ?? 0) > 0;
+  const [validationReceipt, setValidationReceipt] = useState<File | null>(null);
+  const [validationReceiptError, setValidationReceiptError] = useState('');
+  const [validationReceiptPreviewUrl, setValidationReceiptPreviewUrl] =
+    useState<string | null>(null);
+
+  useEffect(() => {
+    if (!validationReceipt || !isImageFile(validationReceipt)) {
+      setValidationReceiptPreviewUrl(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(validationReceipt);
+
+    setValidationReceiptPreviewUrl(objectUrl);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [validationReceipt]);
 
   const canValidatePayments = hasRole([
-    'JEFA_CAJAS',
+    'JEFA_CUENTAS',
     'AUXILIAR_CUENTAS',
     'ADMIN',
   ]);
+
+
 
   const selectedPayment = useMemo(() => {
     if (!pendingAction) return null;
@@ -56,6 +86,8 @@ export function PaymentsTable({
     setPendingAction(null);
     setRejectReason('');
     setRejectReasonError('');
+    setValidationReceipt(null);
+    setValidationReceiptError('');
   };
 
   const closeModal = () => {
@@ -67,6 +99,8 @@ export function PaymentsTable({
     setPendingAction({ paymentId, action });
     setRejectReason('');
     setRejectReasonError('');
+    setValidationReceipt(null);
+    setValidationReceiptError('');
   };
 
   const handleConfirmAction = async () => {
@@ -74,7 +108,18 @@ export function PaymentsTable({
 
     try {
       if (pendingAction.action === 'VALIDATE') {
-        await onValidatePayment?.(pendingAction.paymentId);
+        if (!validationReceipt) {
+          setValidationReceiptError(
+            'El comprobante de validación es obligatorio.'
+          );
+          return;
+        }
+
+        await onValidatePayment?.(
+          pendingAction.paymentId,
+          validationReceipt
+        );
+
         resetModalState();
         return;
       }
@@ -216,7 +261,8 @@ export function PaymentsTable({
                 <th className="px-4 py-3 font-medium">Tipo</th>
                 <th className="px-4 py-3 font-medium">Cuenta destino</th>
                 <th className="px-4 py-3 font-medium">Observaciones</th>
-                <th className="px-4 py-3 font-medium">Fecha pago</th>
+                <th className="px-4 py-3 font-medium">Fecha registro</th>
+                <th className="px-4 py-3 font-medium">Fecha comprobante</th>
                 <th className="px-4 py-3 font-medium">Validado por</th>
                 <th className="px-4 py-3 font-medium">Fecha validación</th>
                 <th className="px-4 py-3 font-medium">Estatus</th>
@@ -276,6 +322,10 @@ export function PaymentsTable({
                       {formatDate(payment.fechaPago)}
                     </td>
 
+                     <td className="px-4 py-4 text-slate-600">
+                      {formatDate(payment.fechaComprobante)}
+                    </td>
+
                     <td className="px-4 py-4 text-slate-600">
                       {payment.validadoPorNombre ?? '-'}
                     </td>
@@ -295,26 +345,54 @@ export function PaymentsTable({
                           target="_blank"
                           rel="noreferrer"
                           className="
-      inline-flex
-      justify-center
-      rounded-lg
-      border
-      border-slate-300
-      bg-white
-      px-3
-      py-1.5
-      text-sm
-      font-medium
-      text-slate-700
-      shadow-sm
-      transition-all
-      hover:bg-slate-50
-      text-center
-      hover:-translate-y-0.5
-      "
+                          inline-flex
+                          justify-center
+                          rounded-lg
+                          border
+                          border-slate-300
+                          bg-white
+                          px-3
+                          py-1.5
+                          text-sm
+                          font-medium
+                          text-slate-700
+                          shadow-sm
+                          transition-all
+                          hover:bg-slate-50
+                          text-center
+                          hover:-translate-y-0.5
+                          "
                         >
-                          Ver comprobante
+                          Ver comprobante de ingreso
                         </a>
+
+                        {(canValidatePayments && payment.comprobanteValidacionUrl) && (
+                          <a
+                            href={payment.comprobanteValidacionUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="
+                            inline-flex
+                            justify-center
+                            rounded-lg
+                            border
+                            border-slate-300
+                            bg-white
+                            px-3
+                            py-1.5
+                            text-sm
+                            font-medium
+                            text-slate-700
+                            shadow-sm
+                            transition-all
+                            hover:bg-slate-50
+                            text-center
+                            hover:-translate-y-0.5
+                            "
+                          >
+                            Ver comprobante de validación
+                          </a>
+                        )}
                       </div>
                     </td>
 
@@ -455,6 +533,140 @@ shadow-slate-950/10">
                   <span className="font-medium">Registrado por:</span>{' '}
                   {selectedPayment.registradoPorNombre}
                 </p>
+              </div>
+            ) : null}
+
+            {pendingAction.action === 'VALIDATE' ? (
+              <div className="mt-4">
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Comprobante de validación <span className="text-rose-600">*</span>
+                </label>
+
+                <label
+                  className={`
+        flex
+        min-h-[130px]
+        w-full
+        cursor-pointer
+        flex-col
+        items-center
+        justify-center
+        rounded-xl
+        border-2
+        border-dashed
+        px-4
+        py-6
+        text-center
+        transition
+        ${validationReceiptError
+                      ? 'border-rose-400 bg-rose-50'
+                      : 'border-slate-300 bg-white hover:border-slate-400'
+                    }
+      `}
+                >
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,.webp"
+                    className="hidden"
+                    disabled={isConfirmingAction}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] ?? null;
+
+                      setValidationReceipt(file);
+                      setValidationReceiptError('');
+
+                      event.target.value = '';
+                    }}
+                  />
+
+                  {validationReceipt ? (
+                    <div className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="flex items-start gap-4">
+                        <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
+                          {validationReceiptPreviewUrl ? (
+                            <img
+                              src={validationReceiptPreviewUrl}
+                              alt="Comprobante de validación"
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="px-2 text-center text-xs text-slate-500">
+                              PDF
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="min-w-0 flex-1 text-left">
+                          <p className="text-sm font-semibold text-slate-900">
+                            Comprobante seleccionado
+                          </p>
+
+                          <p className="mt-1 break-all text-xs text-slate-500">
+                            {validationReceipt.name}
+                          </p>
+
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {validationReceiptPreviewUrl ? (
+                              <a
+                                href={validationReceiptPreviewUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="
+                inline-flex
+                items-center
+                rounded-lg
+                border
+                border-slate-200
+                bg-white
+                px-3
+                py-2
+                text-xs
+                font-medium
+                text-slate-700
+                hover:bg-slate-50
+              "
+                              >
+                                Ver imagen
+                              </a>
+                            ) : null}
+
+                            <span
+                              className="
+              inline-flex
+              items-center
+              rounded-lg
+              bg-slate-900
+              px-3
+              py-2
+              text-xs
+              font-semibold
+              text-white
+            "
+                            >
+                              Cambiar comprobante
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm font-medium text-slate-700">
+                        Haz clic para seleccionar el comprobante
+                      </p>
+
+                      <p className="mt-2 text-xs text-slate-400">
+                        PDF, JPG, JPEG, PNG o WEBP
+                      </p>
+                    </>
+                  )}
+                </label>
+
+                {validationReceiptError ? (
+                  <p className="mt-2 text-sm text-rose-600">
+                    {validationReceiptError}
+                  </p>
+                ) : null}
               </div>
             ) : null}
 

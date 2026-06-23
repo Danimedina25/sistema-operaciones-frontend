@@ -41,7 +41,7 @@ function buildOperationsQuery(
     params.append('search', filters.search.trim());
   }
 
-  if(filters.search && !isNaN(Number(filters.search.trim()))){
+  if (filters.search && !isNaN(Number(filters.search.trim()))) {
     params.append('operationId', filters.search.trim());
   }
 

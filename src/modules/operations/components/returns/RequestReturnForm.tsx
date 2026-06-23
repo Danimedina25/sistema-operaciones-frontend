@@ -4,6 +4,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
 import { ReturnPaymentResponse } from '../../types/operations.types.ts';
 import { ReturnPaymentType } from '@/shared/utils/form.utils.js';
+import { MEXICAN_BANKS } from '@/modules/bank-accounts/components/BankAccountFormModal.js';
 
 
 interface ReturnPaymentItem {
@@ -13,6 +14,7 @@ interface ReturnPaymentItem {
   tipoPago: '' | ReturnPaymentType;
   banco?: string;
   titular?: string;
+  cuenta?: string;
   clabe?: string;
   observaciones?: string;
 }
@@ -25,6 +27,7 @@ export interface RequestReturnFormValues {
     tipoPago: ReturnPaymentType;
     banco?: string;
     titular?: string;
+    cuenta?: string;
     clabe?: string;
     observaciones?: string;
   }>;
@@ -42,7 +45,7 @@ interface RequestReturnFormProps {
 }
 type PaymentErrors = Record<
   string,
-  Partial<Record<keyof ReturnPaymentItem | 'Clabe', string>>
+  Partial<Record<keyof ReturnPaymentItem, string>>
 >;
 function normalizeCurrencyInput(value: string) {
   const cleaned = value.replace(/[^\d.]/g, '');
@@ -73,6 +76,8 @@ function mapPaymentToForm(
     banco: payment.cuentaDestinoBanco ?? '',
     titular: payment.cuentaDestinoTitular ?? '',
     observaciones: payment.observaciones ?? '',
+    cuenta: payment.cuentaDestinoCliente ?? '',
+    clabe: payment.cuentaClabeCliente ?? ''
   };
 }
 
@@ -95,6 +100,7 @@ function createEmptyPayment(): ReturnPaymentItem {
     tipoPago: '',
     banco: '',
     titular: '',
+    cuenta: '',
     clabe: '',
     observaciones: '',
   };
@@ -133,6 +139,22 @@ export function RequestReturnForm({
   }, [initialPayments]);
 
   const [errors, setErrors] = useState<PaymentErrors>({});
+  const [showBankOptions, setShowBankOptions] = useState<
+    Record<string, boolean>
+  >({});
+
+  function getFilteredBanks(searchValue?: string) {
+    const search = searchValue?.trim().toLowerCase() ?? '';
+
+    if (!search) {
+      return MEXICAN_BANKS;
+    }
+
+    return MEXICAN_BANKS.filter((bank) =>
+      bank.toLowerCase().includes(search),
+    );
+  }
+
   function validatePayments() {
     const newErrors: PaymentErrors = {};
 
@@ -149,7 +171,7 @@ export function RequestReturnForm({
       }
 
       const requiereDatosBancarios =
-        pago.tipoPago === 'TRANSFERENCIA' || pago.tipoPago === 'DEPOSITO';
+        pago.tipoPago === 'TRANSFERENCIA';
 
       if (requiereDatosBancarios) {
         if (!pago.banco?.trim()) {
@@ -159,14 +181,22 @@ export function RequestReturnForm({
         if (!pago.titular?.trim()) {
           pagoErrors.titular = 'El titular de la cuenta es obligatorio';
         }
-      }
 
-      if (pago.clabe?.trim()) {
-        if (pago.clabe.length !== 18) {
+        const cuenta = pago.cuenta?.trim() ?? '';
+        const clabe = pago.clabe?.trim() ?? '';
+
+        if (!cuenta) {
+          pagoErrors.cuenta = 'El número de cuenta es obligatorio';
+        } else if (!/^\d{10,12}$/.test(cuenta)) {
+          pagoErrors.cuenta = 'La cuenta debe tener entre 10 y 12 dígitos';
+        }
+
+        if (!clabe) {
+          pagoErrors.clabe = 'La CLABE interbancaria es obligatoria';
+        } else if (!/^\d{18}$/.test(clabe)) {
           pagoErrors.clabe = 'La CLABE debe tener exactamente 18 dígitos';
         }
       }
-
       if (Object.keys(pagoErrors).length > 0) {
         newErrors[pago.id] = pagoErrors;
       }
@@ -215,6 +245,14 @@ export function RequestReturnForm({
       formattedValue = normalizeCurrencyInput(value);
     }
 
+    if (field === 'cuenta') {
+      formattedValue = onlyNumbers(value).slice(0, 12);
+    }
+
+    if (field === 'clabe') {
+      formattedValue = onlyNumbers(value).slice(0, 18);
+    }
+
     if (field === 'clabe') {
       formattedValue = onlyNumbers(value).slice(0, 18);
     }
@@ -238,10 +276,6 @@ export function RequestReturnForm({
       const updatedPaymentErrors = { ...paymentErrors };
 
       delete updatedPaymentErrors[field];
-
-      if (field === 'clabe') {
-        delete updatedPaymentErrors.Clabe;
-      }
 
       return {
         ...current,
@@ -286,6 +320,7 @@ export function RequestReturnForm({
         tipoPago: pago.tipoPago as ReturnPaymentType,
         banco: pago.banco?.trim(),
         titular: pago.titular?.trim(),
+        cuenta: pago.cuenta?.trim(),
         clabe: pago.clabe?.trim(),
         observaciones: pago.observaciones?.trim(),
       })),
@@ -343,7 +378,7 @@ export function RequestReturnForm({
       <div className="space-y-4">
         {pagos.map((pago, index) => {
           const requiereDatosBancarios =
-            pago.tipoPago === 'TRANSFERENCIA' || pago.tipoPago === 'DEPOSITO';
+            pago.tipoPago === 'TRANSFERENCIA';
 
           return (
             <div
@@ -405,7 +440,6 @@ export function RequestReturnForm({
                     <option value="">Selecciona un tipo</option>
                     <option value="EFECTIVO">Efectivo</option>
                     <option value="TRANSFERENCIA">Transferencia</option>
-                    <option value="DEPOSITO">Depósito</option>
                   </select>
 
                   {errors[pago.id]?.tipoPago ? (
@@ -422,15 +456,72 @@ export function RequestReturnForm({
                         Banco destino
                       </label>
 
-                      <Input
-                        type="text"
-                        placeholder="Ej. BBVA, Banorte, Santander"
-                        value={pago.banco}
-                        error={errors[pago.id]?.banco}
-                        onChange={(event) =>
-                          updatePago(pago.id, 'banco', event.target.value)
-                        }
-                      />
+                      <div className="relative">
+                        <Input
+                          type="text"
+                          placeholder="Busca o selecciona un banco"
+                          value={pago.banco}
+                          error={errors[pago.id]?.banco}
+                          onFocus={() =>
+                            setShowBankOptions((prev) => ({
+                              ...prev,
+                              [pago.id]: true,
+                            }))
+                          }
+                          onBlur={() => {
+                            setTimeout(() => {
+                              setShowBankOptions((prev) => ({
+                                ...prev,
+                                [pago.id]: false,
+                              }));
+                            }, 150);
+                          }}
+                          onChange={(event) => {
+                            updatePago(
+                              pago.id,
+                              'banco',
+                              event.target.value,
+                            );
+
+                            setShowBankOptions((prev) => ({
+                              ...prev,
+                              [pago.id]: true,
+                            }));
+                          }}
+                        />
+
+                        {showBankOptions[pago.id] && (
+                          <div className="absolute z-20 mt-2 max-h-56 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
+                            {getFilteredBanks(pago.banco).length > 0 ? (
+                              getFilteredBanks(pago.banco).map((bank) => (
+                                <button
+                                  key={bank}
+                                  type="button"
+                                  onClick={() => {
+                                    updatePago(
+                                      pago.id,
+                                      'banco',
+                                      bank,
+                                    );
+
+                                    setShowBankOptions((prev) => ({
+                                      ...prev,
+                                      [pago.id]: false,
+                                    }));
+                                  }}
+                                  className="block w-full px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-50"
+                                >
+                                  {bank}
+                                </button>
+                              ))
+                            ) : (
+                              <div className="px-3 py-2 text-sm text-slate-500">
+                                No se encontraron bancos
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     <div>
@@ -440,11 +531,29 @@ export function RequestReturnForm({
 
                       <Input
                         type="text"
-                        placeholder="Nombre del titular"
+                        placeholder="Nombre del beneficiario"
                         value={pago.titular}
                         error={errors[pago.id]?.titular}
                         onChange={(event) =>
                           updatePago(pago.id, 'titular', event.target.value)
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-700">
+                        Número de cuenta
+                      </label>
+
+                      <Input
+                        type="text"
+                        placeholder="Número de cuenta"
+                        value={pago.cuenta}
+                        inputMode="numeric"
+                        maxLength={12}
+                        error={errors[pago.id]?.cuenta}
+                        onChange={(event) =>
+                          updatePago(pago.id, 'cuenta', event.target.value)
                         }
                       />
                     </div>
@@ -460,10 +569,7 @@ export function RequestReturnForm({
                         value={pago.clabe}
                         inputMode="numeric"
                         maxLength={18}
-                        error={
-                          errors[pago.id]?.clabe ||
-                          errors[pago.id]?.Clabe
-                        }
+                        error={errors[pago.id]?.clabe}
                         onChange={(event) =>
                           updatePago(pago.id, 'clabe', event.target.value)
                         }

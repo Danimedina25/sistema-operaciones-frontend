@@ -52,9 +52,13 @@ export function createAddPaymentSchema(maxMontoPermitido: number) {
         }),
     ),
 
-    tipoPago: z.enum(['TRANSFERENCIA', 'DEPOSITO', 'EFECTIVO'], {
+    tipoPago: z.enum(['TRANSFERENCIA', 'DEPOSITO', 'EFECTIVO', 'CHEQUE'], {
       error: 'El tipo de pago es obligatorio',
     }),
+
+    fechaComprobante: z
+      .string()
+      .min(1, 'La fecha del comprobante es obligatoria'),
 
     comprobanteUrl: z
       .string()
@@ -73,7 +77,8 @@ export function createAddPaymentSchema(maxMontoPermitido: number) {
 export type AddPaymentFormInput = {
   operacionId: string;
   monto: string;
-  tipoPago: '' | 'TRANSFERENCIA' | 'DEPOSITO' | 'EFECTIVO';
+  tipoPago: '' | 'TRANSFERENCIA' | 'DEPOSITO' | 'EFECTIVO' | 'CHEQUE';
+  fechaComprobante: string;
   comprobanteUrl: string;
   observaciones?: string;
 };
@@ -81,7 +86,8 @@ export type AddPaymentFormInput = {
 export type AddPaymentFormValues = {
   operacionId: number;
   monto: number;
-  tipoPago: 'TRANSFERENCIA' | 'DEPOSITO' | 'EFECTIVO';
+  tipoPago: '' | 'TRANSFERENCIA' | 'DEPOSITO' | 'EFECTIVO' | 'CHEQUE';
+  fechaComprobante: string;
   comprobanteUrl: string;
   observaciones?: string;
 };

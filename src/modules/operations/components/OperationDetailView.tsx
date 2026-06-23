@@ -14,7 +14,11 @@ interface OperationDetailViewProps {
   returns?: ReturnPaymentResponse[];
   onBack: () => void;
   backLabel?: string;
-  onValidatePayment?: (paymentId: number) => Promise<void> | void;
+  onValidatePayment?: (
+    operationId: number,
+    paymentId: number,
+    comprobanteValidacion: File
+  ) => Promise<void> | void;
   onRejectPayment?: (paymentId: number, motivo: string) => Promise<void> | void;
   processingPaymentId?: number | null;
   onAddPayment: (operationId: number) => void;
@@ -137,7 +141,13 @@ export function OperationDetailView({
       <div ref={paymentsSectionRef}>
         <PaymentsTable
           payments={operation.pagos}
-          onValidatePayment={onValidatePayment}
+          onValidatePayment={(paymentId, comprobanteValidacion) =>
+            onValidatePayment?.(
+              operation.id,
+              paymentId,
+              comprobanteValidacion
+            )
+          }
           onAddPayment={() => onAddPayment(operation.id)}
           onEditPayment={onEditPayment}
           onRejectPayment={onRejectPayment}

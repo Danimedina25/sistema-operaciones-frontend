@@ -118,17 +118,7 @@ export function AddReturnPaymentForm({
     control,
     name: 'cuentaOrigenId',
   });
-  useEffect(() => {
-    if (!cuentaOrigenId) return;
 
-    const account = bankAccounts.find(
-      (item) => String(item.id) === String(cuentaOrigenId),
-    );
-
-    if (account) {
-      setAccountSearch(account.label);
-    }
-  }, [cuentaOrigenId, bankAccounts]);
   const filteredAccounts = useMemo(() => {
     const search = accountSearch.trim().toLowerCase();
 
@@ -138,6 +128,8 @@ export function AddReturnPaymentForm({
       account.label.toLowerCase().includes(search),
     );
   }, [bankAccounts, accountSearch]);
+
+
 
   const selectedFile =
     comprobante instanceof FileList &&
@@ -297,7 +289,7 @@ export function AddReturnPaymentForm({
             <>
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Cuenta origen
+                  Cuenta origennn
                 </label>
 
                 <div className="relative">
@@ -328,16 +320,20 @@ export function AddReturnPaymentForm({
                     onChange={(event) => {
                       setAccountSearch(event.target.value);
 
-                      setValue('cuentaOrigenId', '', {
-                        shouldDirty: true,
-                        shouldValidate: false,
-                      });
+                      setValue(
+                        'cuentaOrigenId',
+                        '',
+                        {
+                          shouldDirty: true,
+                          shouldValidate: false,
+                        },
+                      );
 
                       setShowAccountOptions(true);
                     }}
                   />
 
-                  {showAccountOptions && (
+                  {showAccountOptions ? (
                     <div className="absolute z-50 mt-2 max-h-60 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
                       {filteredAccounts.length > 0 ? (
                         filteredAccounts.map((account) => (
@@ -370,7 +366,7 @@ export function AddReturnPaymentForm({
                         </div>
                       )}
                     </div>
-                  )}
+                  ) : null}
                 </div>
 
                 {errors.cuentaOrigenId ? (

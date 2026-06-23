@@ -71,7 +71,7 @@ export default function ReturnsForRequestPage() {
       <div className="relative flex items-center rounded-2xl bg-white p-4 shadow-sm">
         <div>
           <h1 className="text-lg font-semibold text-slate-900">
-            Solicitud de retornos
+            Retornos por solicitar
           </h1>
           <p className="text-xs text-slate-500">
             Operaciones disponibles para indicar cómo se debe retornar el dinero al cliente.

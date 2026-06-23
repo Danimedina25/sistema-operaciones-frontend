@@ -92,6 +92,7 @@ export function CreateOperationForm({
           monto: '',
           tipoPago: '',
           cuentaDestinoId: undefined,
+          fechaComprobante: '',
           comprobante: undefined,
           observaciones: '',
         },
@@ -251,6 +252,7 @@ export function CreateOperationForm({
                 append({
                   monto: '',
                   tipoPago: '',
+                  fechaComprobante: '',
                   cuentaDestinoId: undefined,
                   comprobante: undefined,
                   observaciones: '',
@@ -573,10 +575,43 @@ export function CreateOperationForm({
                         <option value="EFECTIVO">Efectivo</option>
                         <option value="TRANSFERENCIA">Transferencia</option>
                         <option value="DEPOSITO">Depósito</option>
+                        <option value="CHEQUE">Cheque</option>
                       </select>
                       {pagoErrors?.tipoPago ? (
                         <p className="mt-1 text-xs text-red-600">
                           {pagoErrors.tipoPago.message}
+                        </p>
+                      ) : null}
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-700">
+                        Fecha del comprobante
+                      </label>
+
+                      <input
+                        type="date"
+                        max={new Date().toISOString().split('T')[0]}
+                        className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
+                        {...register(`pagos.${index}.fechaComprobante`)}
+                        onChange={(event) => {
+                          setValue(
+                            `pagos.${index}.fechaComprobante`,
+                            event.target.value,
+                            {
+                              shouldValidate: true,
+                              shouldDirty: true,
+                              shouldTouch: true,
+                            },
+                          );
+
+                          void trigger('pagos');
+                        }}
+                      />
+
+                      {pagoErrors?.fechaComprobante ? (
+                        <p className="mt-1 text-xs text-red-600">
+                          {pagoErrors.fechaComprobante.message}
                         </p>
                       ) : null}
                     </div>

@@ -13,3 +13,9 @@ export const formatDisplayDate = (
             date + 'T00:00:00',
         ),
     );
+
+export function toLocalDateTime(date?: string) {
+  if (!date) return undefined;
+
+  return `${date}T00:00:00`;
+}

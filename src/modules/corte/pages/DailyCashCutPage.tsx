@@ -1,9 +1,11 @@
 // src/modules/corte/pages/DailyCashCutPage.tsx
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { DayPicker, DateRange } from 'react-day-picker';
-import 'react-day-picker/dist/style.css';
+import { DateRange } from 'react-date-range';
+import 'react-date-range/dist/styles.css';
+import 'react-date-range/dist/theme/default.css';
 import type {
+    BankGroupBalanceResponse,
     CashCutRangeResponse,
     DailyCashCutResponse,
 } from '@/modules/corte/types/corte.types';
@@ -32,36 +34,21 @@ function formatCurrency(value?: number | null) {
 }
 
 
-type ViewMode = 'daily' | 'range';
+type MainView = 'cashCuts' | 'bankBalances';
+type DateMode = 'daily' | 'range';
 
 export default function DailyCashCutPage() {
-    const [viewMode, setViewMode] = useState<ViewMode>('daily');
+    const [mainView, setMainView] = useState<MainView>('cashCuts');
+    const [dateMode, setDateMode] = useState<DateMode>('daily');
     const [fecha, setFecha] = useState(todayISO());
     const [startDate, setStartDate] = useState(todayISO());
     const [endDate, setEndDate] = useState(todayISO());
-    const [range, setRange] = useState<DateRange | undefined>({
-        from: new Date(),
-        to: new Date(),
+    const [range, setRange] = useState({
+        startDate: new Date(),
+        endDate: new Date(),
+        key: 'selection' as const,
     });
     const [showRangeCalendar, setShowRangeCalendar] = useState(false);
-    const calendarRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (
-                calendarRef.current &&
-                !calendarRef.current.contains(event.target as Node)
-            ) {
-                setShowRangeCalendar(false);
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
-
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, []);
 
     const {
         dailyCut,
@@ -72,24 +59,39 @@ export default function DailyCashCutPage() {
         fetchDailyCut,
         fetchRangeCut,
         submitRegisterDailyCutByDate,
+        bankBalancesGrouped,
+        isLoadingBankBalances,
+        fetchBankBalancesGrouped,
     } = useDailyCashCut();
 
-    const isDailyMode = viewMode === 'daily';
+    const isCashCutsView = mainView === 'cashCuts';
+    const isBankBalancesView = mainView === 'bankBalances';
+    const isDailyMode = dateMode === 'daily';
+    const isRangeMode = dateMode === 'range';
 
     const currentData = useMemo<
         DailyCashCutResponse | CashCutRangeResponse | null
     >(() => {
-        return isDailyMode ? dailyCut : rangeCut;
-    }, [dailyCut, rangeCut, isDailyMode]);
+        if (!isCashCutsView) {
+            return null;
+        }
 
-    const isLoading = isDailyMode ? isLoadingDailyCut : isLoadingRangeCut;
+        return isDailyMode ? dailyCut : rangeCut;
+    }, [dailyCut, rangeCut, isCashCutsView, isDailyMode]);
+
+    const isLoading = isCashCutsView
+        ? isDailyMode
+            ? isLoadingDailyCut
+            : isLoadingRangeCut
+        : isLoadingBankBalances;
     const showLoadingOverlay = isLoading && Boolean(currentData);
 
-    useEffect(() => {
-        fetchDailyCut(fecha);
-    }, []);
-
     const handleSearch = async () => {
+        if (isBankBalancesView) {
+            await fetchBankBalancesGrouped(fecha);
+            return;
+        }
+
         if (isDailyMode) {
             await fetchDailyCut(fecha);
             return;
@@ -98,38 +100,42 @@ export default function DailyCashCutPage() {
         await fetchRangeCut(startDate, endDate);
     };
 
-    const handleRegisterCut = async () => {
-        await submitRegisterDailyCutByDate(fecha);
-    };
-
-    const handleRangeSelect = (selectedRange?: DateRange) => {
-        setRange(selectedRange);
-
-        if (!selectedRange?.from || !selectedRange?.to) {
+    useEffect(() => {
+        if (mainView === 'bankBalances') {
+            fetchBankBalancesGrouped(fecha);
             return;
         }
 
-        const start = toISO(selectedRange.from);
-        const end = toISO(selectedRange.to);
+        if (dateMode === 'daily') {
+            fetchDailyCut(fecha);
+            return;
+        }
 
-        setStartDate(start);
-        setEndDate(end);
-
-        setShowRangeCalendar(false);
-
-        fetchRangeCut(start, end);
-    };
+        fetchRangeCut(startDate, endDate);
+    }, [fecha, mainView, dateMode, startDate, endDate]);
 
     useEffect(() => {
-        if (fecha) {
-            handleSearch()
-        }
-    }, [fecha])
+        console.log('bankBalancesGrouped', bankBalancesGrouped);
+    }, [bankBalancesGrouped]);
 
 
-    const title = isDailyMode
+    const cashCutTitle = isDailyMode
         ? `Corte del día ${formatDate(fecha)}`
         : `Corte del ${formatDate(startDate)} al ${formatDate(endDate)}`;
+
+    const bankBalanceTitle = isDailyMode
+        ? `Saldos bancarios del ${formatDate(fecha)}`
+        : `Saldos bancarios del ${formatDate(startDate)} al ${formatDate(endDate)}`;
+
+    const pageTitle =
+        mainView === 'cashCuts'
+            ? 'Cortes diarios'
+            : 'Saldos bancarios';
+
+    const pageDescription =
+        mainView === 'cashCuts'
+            ? 'Consulta saldos, entradas y salidas de dinero en las operaciones.'
+            : 'Consulta los saldos de las cuentas bancarias agrupadas por banco.';
 
     return (
 
@@ -147,61 +153,79 @@ export default function DailyCashCutPage() {
 
             <div className={`space-y-6 ${showLoadingOverlay ? 'pointer-events-none opacity-60' : ''}`}>
                 <div className="space-y-6">
+                    <section className="rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setMainView('cashCuts')}
+                                className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${mainView === 'cashCuts'
+                                    ? 'bg-slate-900 text-white shadow-sm'
+                                    : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                                    }`}
+                            >
+                                Corte
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setMainView('bankBalances')}
+                                className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${mainView === 'bankBalances'
+                                    ? 'bg-slate-900 text-white shadow-sm'
+                                    : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                                    }`}
+                            >
+                                Saldos bancarios
+                            </button>
+                        </div>
+                    </section>
                     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                             <div>
                                 <p className="text-sm font-medium text-slate-500">
-                                    Control de efectivo
+                                    Cortes y saldos
                                 </p>
+
                                 <h1 className="mt-1 text-2xl font-semibold text-slate-900">
-                                    Cortes diarios
+                                    {pageTitle}
                                 </h1>
+
                                 <p className="mt-1 text-sm text-slate-500">
-                                    Consulta saldos, entradas, retornos y comisiones de la operación.
+                                    {pageDescription}
                                 </p>
                             </div>
+                            {isCashCutsView ? (
+                                <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => setDateMode('daily')}
+                                        className={`rounded-lg px-4 py-2 text-sm font-medium transition ${dateMode === 'daily'
+                                            ? 'bg-white text-slate-900 shadow-sm'
+                                            : 'text-slate-500 hover:text-slate-800'
+                                            }`}
+                                    >
+                                        Día
+                                    </button>
 
-                            {/* 
-                            <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1">
-                                <button
-                                    type="button"
-                                    onClick={() => setViewMode('daily')}
-                                    className={`rounded-lg px-4 py-2 text-sm font-medium transition ${viewMode === 'daily'
-                                        ? 'bg-white text-slate-900 shadow-sm'
-                                        : 'text-slate-500 hover:text-slate-800'
-                                        }`}
-                                >
-                                    Corte diario
-                                </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setDateMode('range')}
+                                        className={`rounded-lg px-4 py-2 text-sm font-medium transition ${dateMode === 'range'
+                                            ? 'bg-white text-slate-900 shadow-sm'
+                                            : 'text-slate-500 hover:text-slate-800'
+                                            }`}
+                                    >
+                                        Rango de fechas
+                                    </button>
+                                </div>
+                            ) : null}
 
-                               <button
-                                    type="button"
-                                    onClick={() => {
-                                        setViewMode('range');
-
-                                        if (range?.from && range?.to) {
-                                            fetchRangeCut(
-                                                toISO(range.from),
-                                                toISO(range.to)
-                                            );
-                                        }
-                                    }}
-                                    className={`rounded-lg px-4 py-2 text-sm font-medium transition ${viewMode === 'range'
-                                        ? 'bg-white text-slate-900 shadow-sm'
-                                        : 'text-slate-500 hover:text-slate-800'
-                                        }`}
-                                >
-                                    Rango de fechas
-                                </button> 
-                            </div>
-                            */}
                         </div>
 
                         <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
-                            {isDailyMode ? (
+                            {isBankBalancesView || isDailyMode ? (
                                 <div>
                                     <label className="mb-1 block text-sm font-medium text-slate-700">
-                                        Fecha del corte
+                                        {isBankBalancesView ? 'Fecha de saldos' : 'Fecha del corte'}
                                     </label>
                                     <input
                                         type="date"
@@ -211,35 +235,60 @@ export default function DailyCashCutPage() {
                                     />
                                 </div>
                             ) : (
-                                <div
-                                    className="relative"
-                                    ref={calendarRef}
-                                >
+                                <div className="relative">
                                     <label className="mb-1 block text-sm font-medium text-slate-700">
                                         Rango de fechas
                                     </label>
 
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowRangeCalendar((prev) => !prev)}
-                                        className="flex h-11 min-w-[320px] items-center justify-between rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-700 shadow-sm transition hover:bg-slate-50"
-                                    >
-                                        {range?.from && range?.to
-                                            ? `${formatDate(toISO(range.from))} - ${formatDate(toISO(range.to))}`
-                                            : 'Seleccionar rango'}
-                                    </button>
+                                    <>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowRangeCalendar(true)}
+                                            className="flex h-11 min-w-[320px] items-center rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-700 shadow-sm"
+                                        >
+                                            {`${formatDate(startDate)} - ${formatDate(endDate)}`}
+                                        </button>
 
-                                    {showRangeCalendar && (
-                                        <div className="absolute left-0 top-14 z-50 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
-                                            <DayPicker
-                                                mode="range"
-                                                selected={range}
-                                                onSelect={handleRangeSelect}
-                                                numberOfMonths={2}
-                                                pagedNavigation
-                                            />
-                                        </div>
-                                    )}
+                                        {showRangeCalendar && (
+                                            <div className="absolute left-0 top-14 z-50 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
+                                                <DateRange
+                                                    ranges={[range]}
+                                                    showMonthArrow={true}
+                                                    moveRangeOnFirstSelection={false}
+                                                    editableDateInputs={false}
+                                                    showDateDisplay={false}
+                                                    showMonthAndYearPickers={true}
+                                                    rangeColors={['#0f172a']}
+                                                    months={1}
+                                                    direction="horizontal"
+                                                    onChange={(item: any) => {
+                                                        const selection = item.selection;
+
+                                                        setRange(selection);
+
+                                                        if (!selection.startDate || !selection.endDate) {
+                                                            return;
+                                                        }
+
+                                                        // Solo consulta cuando el usuario terminó de seleccionar
+                                                        if (item.selection.startDate === item.selection.endDate) {
+                                                            return;
+                                                        }
+
+                                                        const start = toISO(selection.startDate);
+                                                        const end = toISO(selection.endDate);
+
+                                                        setStartDate(start);
+                                                        setEndDate(end);
+
+                                                        fetchRangeCut(start, end);
+
+                                                        setShowRangeCalendar(false);
+                                                    }}
+                                                />
+                                            </div>
+                                        )}
+                                    </>
                                 </div>
                             )}
 
@@ -267,25 +316,32 @@ export default function DailyCashCutPage() {
                         </div>
                     </section>
 
-                    {isLoading && !currentData ? (
+                    {isBankBalancesView ? (
+                        <BankBalancesSection
+                            groups={bankBalancesGrouped}
+                            isLoading={isLoadingBankBalances}
+                            title={bankBalanceTitle}
+                        />
+                    ) : null}
+                    {isCashCutsView && isLoading && !currentData ? (
                         <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-sm">
                             Calculando corte...
                         </div>
                     ) : null}
 
-                    {!isLoading && !currentData ? (
+                    {isCashCutsView && !isLoading && !currentData ? (
                         <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-sm">
                             Selecciona una fecha para consultar el corte.
                         </div>
                     ) : null}
 
-                    {currentData ? (
+                    {isCashCutsView && currentData ? (
                         <>
                             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                                 <div className="flex flex-col gap-2 border-b border-slate-100 pb-4 md:flex-row md:items-center md:justify-between">
                                     <div>
                                         <h2 className="text-lg font-semibold text-slate-900">
-                                            {title}
+                                            {cashCutTitle}
                                         </h2>
                                         <p className="mt-1 text-sm text-slate-500">
                                             {isDailyMode
@@ -339,13 +395,8 @@ export default function DailyCashCutPage() {
                                         }
                                         variant="success"
                                     />
-
-                                    {/*               <SummaryCard
-                label="Movimiento neto"
-                value={currentData.totalEntradas - currentData.totalSalidas}
-                helper="Entradas menos salidas"
-              /> */}
                                 </div>
+
                             </section>
 
                             <div className="grid gap-6 xl:grid-cols-2">
@@ -367,7 +418,7 @@ export default function DailyCashCutPage() {
                                         {
                                             label: 'Efectivo',
                                             value: currentData.entradasEfectivo,
-                                        }
+                                        },
                                     ]}
                                 />
 
@@ -620,4 +671,160 @@ function SummaryRow({
             </td>
         </tr>
     );
+}
+
+interface BankBalancesSectionProps {
+    groups: BankGroupBalanceResponse[];
+    isLoading: boolean;
+    title: string;
+}
+
+function BankBalancesSection({
+    groups = [],
+    isLoading,
+    title
+}: BankBalancesSectionProps) {
+    const safeGroups = Array.isArray(groups) ? groups : [];
+
+    const totalGeneral = safeGroups.reduce(
+        (total, group) => total + (group.saldoTotalBanco ?? 0),
+        0,
+    );
+
+    return (
+        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-col gap-3 border-b border-slate-100 pb-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                    <h3 className="text-base font-semibold text-slate-900">
+                        {title}
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-500">
+                        Consulta el saldo total agrupado por banco y el detalle de cada cuenta bancaria.
+                    </p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-right">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Saldo total bancario
+                    </p>
+                    <p className="mt-1 text-xl font-bold text-slate-900">
+                        {formatCurrency(totalGeneral)}
+                    </p>
+                </div>
+            </div>
+
+            {!isLoading && safeGroups.length === 0 ? (
+                <div className="mt-5 rounded-xl border border-slate-100 bg-slate-50 p-5 text-sm text-slate-500">
+                    No hay saldos bancarios disponibles para esta fecha.
+                </div>
+            ) : null}
+
+            {!isLoading && safeGroups.length > 0 ? (
+                <div className="mt-5 space-y-3">
+                    {safeGroups.map((group) => (
+                        <BankGroupAccordion
+                            key={group.banco}
+                            group={group}
+                        />
+                    ))}
+                </div>
+            ) : null}
+        </section>
+    );
+}
+
+interface BankGroupAccordionProps {
+    group: BankGroupBalanceResponse;
+}
+
+function BankGroupAccordion({
+    group,
+}: BankGroupAccordionProps) {
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+            <button
+                type="button"
+                onClick={() => setIsOpen((current) => !current)}
+                className="flex w-full items-center justify-between gap-4 bg-slate-50 px-4 py-4 text-left transition hover:bg-slate-100"
+            >
+                <div>
+                    <p className="text-sm font-semibold text-slate-900">
+                        {group.banco}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                        {group.totalCuentas} cuenta{group.totalCuentas === 1 ? '' : 's'} bancaria{group.totalCuentas === 1 ? '' : 's'}
+                    </p>
+                </div>
+
+                <div className="flex items-center gap-4">
+                    <div className="text-right">
+                        <p className="text-xs font-medium text-slate-500">
+                            Saldo banco
+                        </p>
+                        <p className="text-base font-bold text-slate-900">
+                            {formatCurrency(group.saldoTotalBanco)}
+                        </p>
+                    </div>
+
+                    <span className="text-lg text-slate-500">
+                        {isOpen ? '−' : '+'}
+                    </span>
+                </div>
+            </button>
+
+            {isOpen ? (
+                <div className="divide-y divide-slate-100 bg-white">
+                    {group.cuentas.map((account) => (
+                        <div
+                            key={account.bankAccountId}
+                            className="flex flex-col gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between"
+                        >
+                            <div>
+                                <p className="text-sm font-semibold text-slate-800">
+                                    {account.titular}
+                                </p>
+
+                                <div className="mt-1 flex flex-col gap-1 text-xs text-slate-500 sm:flex-row sm:gap-4">
+                                    <span>
+                                        Cuenta: {maskAccount(account.numeroCuenta)}
+                                    </span>
+                                    <span>
+                                        CLABE: {maskAccount(account.clabe)}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="text-left md:text-right">
+                                <p className="text-xs font-medium text-slate-500">
+                                    Saldo
+                                </p>
+                                <p
+                                    className={`text-base font-bold ${account.saldoFinal < 0
+                                        ? 'text-red-700'
+                                        : 'text-slate-900'
+                                        }`}
+                                >
+                                    {formatCurrency(account.saldoFinal)}
+                                </p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : null}
+        </div>
+    );
+}
+
+function maskAccount(value?: string | null) {
+    if (!value) return '—';
+
+    const cleanValue = value.trim();
+
+    if (cleanValue.length <= 4) {
+        return cleanValue;
+    }
+
+    return `****${cleanValue.slice(-4)}`;
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Button } from '@/shared/components/ui/Button';
 import { paymentTypeLabels } from '@/modules/operations/constants/operations.constants';
@@ -44,6 +44,7 @@ export function RealizeReturnPaymentForm({
         register,
         handleSubmit,
         control,
+        setValue,
         formState: { errors },
     } = useForm<RealizeReturnPaymentFormValues>({
         defaultValues: {
@@ -58,6 +59,13 @@ export function RealizeReturnPaymentForm({
     const [selectedPreviewUrl, setSelectedPreviewUrl] = useState<string | null>(
         null,
     );
+    const [accountSearch, setAccountSearch] = useState('');
+    const [showAccountOptions, setShowAccountOptions] = useState(false);
+
+    const cuentaOrigenId = useWatch({
+        control,
+        name: 'cuentaOrigenId',
+    });
 
     const comprobante = useWatch({
         control,
@@ -70,6 +78,30 @@ export function RealizeReturnPaymentForm({
             : null;
 
     const selectedReceiptIsImage = isImageFile(selectedFile);
+
+    useEffect(() => {
+        if (!cuentaOrigenId) return;
+
+        const account = bankAccounts.find(
+            (item) => String(item.id) === String(cuentaOrigenId),
+        );
+
+        if (account) {
+            setAccountSearch(account.label);
+        }
+    }, [cuentaOrigenId, bankAccounts]);
+
+    const filteredAccounts = useMemo(() => {
+        const search = accountSearch.trim().toLowerCase();
+
+        if (!search) {
+            return bankAccounts;
+        }
+
+        return bankAccounts.filter((account) =>
+            account.label.toLowerCase().includes(search),
+        );
+    }, [bankAccounts, accountSearch]);
 
     useEffect(() => {
         if (!selectedFile || !selectedReceiptIsImage) {
@@ -105,9 +137,9 @@ export function RealizeReturnPaymentForm({
                 </div>
 
                 <div>
-                    <span className="block text-slate-500">Método solicitado</span>
+                    <span className="block text-slate-500">Banco</span>
                     <span className="font-semibold text-slate-900">
-                        {paymentTypeLabels[returnPayment.tipoPago]}
+                        {returnPayment.cuentaDestinoBanco ?? '-'}
                     </span>
                 </div>
 
@@ -119,9 +151,9 @@ export function RealizeReturnPaymentForm({
                 </div>
 
                 <div>
-                    <span className="block text-slate-500">Banco</span>
+                    <span className="block text-slate-500">Método solicitado</span>
                     <span className="font-semibold text-slate-900">
-                        {returnPayment.cuentaDestinoBanco ?? '-'}
+                        {paymentTypeLabels[returnPayment.tipoPago]}
                     </span>
                 </div>
 
@@ -129,6 +161,13 @@ export function RealizeReturnPaymentForm({
                     <span className="block text-slate-500">Titular</span>
                     <span className="font-semibold text-slate-900">
                         {returnPayment.cuentaDestinoTitular ?? '-'}
+                    </span>
+                </div>
+
+                <div>
+                    <span className="block text-slate-500">CLABE Interbancaria</span>
+                    <span className="font-semibold text-slate-900">
+                        {returnPayment.cuentaClabeCliente ?? '-'}
                     </span>
                 </div>
             </div>
@@ -139,24 +178,90 @@ export function RealizeReturnPaymentForm({
                         Cuenta origen
                     </label>
 
-                    <select
-                        className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
-                        {...register('cuentaOrigenId', {
-                            validate: (value) => {
-                                if (!requiereCuentaOrigen) return true;
+                    <div className="relative">
+                        <input
+                            type="hidden"
+                            {...register('cuentaOrigenId', {
+                                validate: (value) => {
+                                    if (!requiereCuentaOrigen) return true;
 
-                                return Number(value) > 0 || 'La cuenta origen es obligatoria';
-                            },
-                        })}
-                    >
-                        <option value="">Selecciona una cuenta</option>
+                                    return (
+                                        Number(value) > 0 ||
+                                        'La cuenta origen es obligatoria'
+                                    );
+                                },
+                            })}
+                        />
 
-                        {bankAccounts.map((account) => (
-                            <option key={account.id} value={account.id}>
-                                {account.label}
-                            </option>
-                        ))}
-                    </select>
+                        <input
+                            type="text"
+                            value={accountSearch}
+                            placeholder="Buscar cuenta..."
+                            onFocus={() => setShowAccountOptions(true)}
+                            onBlur={() => {
+                                setTimeout(() => {
+                                    setShowAccountOptions(false);
+                                }, 150);
+                            }}
+                            onChange={(event) => {
+                                setAccountSearch(event.target.value);
+
+                                setValue('cuentaOrigenId', '', {
+                                    shouldDirty: true,
+                                    shouldValidate: false,
+                                });
+
+                                setShowAccountOptions(true);
+                            }}
+                            className="
+            w-full
+            rounded-xl
+            border
+            border-slate-300
+            px-3
+            py-2
+            text-sm
+            outline-none
+            transition
+            focus:border-slate-900
+        "
+                        />
+
+                        {showAccountOptions && (
+                            <div className="absolute z-50 mt-2 max-h-60 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
+                                {filteredAccounts.length > 0 ? (
+                                    filteredAccounts.map((account) => (
+                                        <button
+                                            key={account.id}
+                                            type="button"
+                                            className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                                            onClick={() => {
+                                                setAccountSearch(account.label);
+
+                                                setValue(
+                                                    'cuentaOrigenId',
+                                                    String(account.id),
+                                                    {
+                                                        shouldValidate: true,
+                                                        shouldDirty: true,
+                                                        shouldTouch: true,
+                                                    },
+                                                );
+
+                                                setShowAccountOptions(false);
+                                            }}
+                                        >
+                                            {account.label}
+                                        </button>
+                                    ))
+                                ) : (
+                                    <div className="px-4 py-3 text-sm text-slate-500">
+                                        No se encontraron cuentas
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
 
                     {errors.cuentaOrigenId ? (
                         <p className="mt-1 text-xs text-red-600">

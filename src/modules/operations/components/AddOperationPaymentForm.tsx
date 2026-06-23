@@ -10,8 +10,9 @@ interface SelectOption {
 
 export interface AddOperationPaymentFormValues {
   monto: string;
-  tipoPago: '' | 'EFECTIVO' | 'TRANSFERENCIA' | 'DEPOSITO';
+  tipoPago: '' | 'EFECTIVO' | 'TRANSFERENCIA' | 'DEPOSITO' | 'CHEQUE';
   cuentaDestinoId: string;
+  fechaComprobante: string;
   comprobante?: FileList;
   observaciones?: string;
 }
@@ -84,6 +85,7 @@ export function AddOperationPaymentForm({
       monto: '',
       tipoPago: '',
       cuentaDestinoId: '',
+      fechaComprobante: '',
       comprobante: undefined,
       observaciones: '',
     },
@@ -298,11 +300,33 @@ export function AddOperationPaymentForm({
               <option value="EFECTIVO">Efectivo</option>
               <option value="TRANSFERENCIA">Transferencia</option>
               <option value="DEPOSITO">Depósito</option>
+              <option value="CHEQUE">Cheque</option>
             </select>
 
             {errors.tipoPago ? (
               <p className="mt-1 text-xs text-red-600">
                 {errors.tipoPago.message}
+              </p>
+            ) : null}
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Fecha del comprobante
+            </label>
+
+            <input
+              type="date"
+              max={new Date().toISOString().split('T')[0]}
+              className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
+              {...register('fechaComprobante', {
+                required: 'La fecha del comprobante es obligatoria',
+              })}
+            />
+
+            {errors.fechaComprobante ? (
+              <p className="mt-1 text-xs text-red-600">
+                {errors.fechaComprobante.message}
               </p>
             ) : null}
           </div>

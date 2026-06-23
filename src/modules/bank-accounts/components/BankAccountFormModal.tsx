@@ -16,9 +16,10 @@ interface BankAccountFormModalProps {
   onSubmit: (values: BankAccountFormValues) => void | Promise<void>;
 }
 
-const MEXICAN_BANKS = [
+export const MEXICAN_BANKS = [
   'BBVA México',
   'Banamex',
+  'STP',
   'Santander México',
   'Banorte',
   'HSBC México',

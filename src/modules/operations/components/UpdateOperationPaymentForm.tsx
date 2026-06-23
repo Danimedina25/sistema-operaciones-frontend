@@ -12,7 +12,8 @@ interface SelectOption {
 
 export interface UpdateOperationPaymentFormValues {
   monto: number;
-  tipoPago: 'EFECTIVO' | 'TRANSFERENCIA' | 'DEPOSITO';
+  tipoPago: 'EFECTIVO' | 'TRANSFERENCIA' | 'DEPOSITO' | 'CHEQUE';
+  fechaComprobante: string;
   cuentaDestinoId: number;
   comprobante?: FileList;
   observaciones?: string;
@@ -20,7 +21,8 @@ export interface UpdateOperationPaymentFormValues {
 
 interface UpdateOperationPaymentFormInput {
   monto: string;
-  tipoPago: '' | 'EFECTIVO' | 'TRANSFERENCIA' | 'DEPOSITO';
+  tipoPago: 'EFECTIVO' | 'TRANSFERENCIA' | 'DEPOSITO' | 'CHEQUE';
+  fechaComprobante: string;
   cuentaDestinoId: string;
   comprobante?: FileList;
   observaciones?: string;
@@ -55,7 +57,11 @@ function parseCurrency(value: unknown) {
   const parsed = Number(value.replace(/,/g, ''));
   return Number.isNaN(parsed) ? 0 : parsed;
 }
+function toDateInputValue(value?: string | null) {
+  if (!value) return '';
 
+  return value.split('T')[0];
+}
 function formatCurrencyDisplay(value: number) {
   return value.toLocaleString('en-US', {
     minimumFractionDigits: 2,
@@ -92,6 +98,7 @@ export function UpdateOperationPaymentForm({
     defaultValues: {
       monto: formatCurrencyDisplay(payment.monto),
       tipoPago: payment.tipoPago,
+      fechaComprobante: toDateInputValue(payment.fechaComprobante),
       cuentaDestinoId: String(payment.cuentaDestinoId),
       comprobante: undefined,
       observaciones: payment.observaciones ?? '',
@@ -219,6 +226,7 @@ export function UpdateOperationPaymentForm({
           ? 0
           : Number(values.cuentaDestinoId),
       tipoPago: values.tipoPago,
+      fechaComprobante: values.fechaComprobante,
       comprobante: values.comprobante,
       observaciones: values.observaciones,
     });
@@ -327,11 +335,33 @@ export function UpdateOperationPaymentForm({
               <option value="EFECTIVO">Efectivo</option>
               <option value="TRANSFERENCIA">Transferencia</option>
               <option value="DEPOSITO">Depósito</option>
+              <option value="CHEQUE">Cheque</option>
             </select>
 
             {errors.tipoPago ? (
               <p className="mt-1 text-xs text-red-600">
                 {errors.tipoPago.message}
+              </p>
+            ) : null}
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Fecha del comprobante
+            </label>
+
+            <input
+              type="date"
+              max={new Date().toISOString().split('T')[0]}
+              className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
+              {...register('fechaComprobante', {
+                required: 'La fecha del comprobante es obligatoria',
+              })}
+            />
+
+            {errors.fechaComprobante ? (
+              <p className="mt-1 text-xs text-red-600">
+                {errors.fechaComprobante.message}
               </p>
             ) : null}
           </div>

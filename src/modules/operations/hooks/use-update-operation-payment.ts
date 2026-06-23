@@ -5,6 +5,7 @@ import { updateOperationPayment } from '@/modules/operations/api/operations.api'
 import { uploadOperationProof } from '@/modules/operations/api/operations-storage.api';
 import { getApiErrorMessage } from '@/shared/utils/errors';
 import { UpdateOperationPaymentFormValues } from '../schemas/update-operation-payment.schema';
+import { toLocalDateTime } from '@/shared/utils/date-formats';
 
 interface UseUpdateOperationPaymentOptions {
   onSuccess?: (paymentId: number) => void | Promise<void>;
@@ -56,6 +57,7 @@ export function useUpdateOperationPayment(
           {
             monto: values.monto,
             tipoPago: values.tipoPago,
+            fechaComprobante: toLocalDateTime(values.fechaComprobante) || '',
             cuentaDestinoId:
               values.cuentaDestinoId,
             comprobanteUrl,

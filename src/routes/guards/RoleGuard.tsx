@@ -19,7 +19,7 @@ export function RoleGuard({ allowedRoles }: RoleGuardProps) {
   }
 
   if (!hasRole(allowedRoles)) {
-    return <Navigate to={paths.dashboard} replace />;
+    return <Navigate to={paths.operations} replace />;
   }
 
   return <Outlet />;

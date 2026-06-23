@@ -18,11 +18,15 @@ export const updateOperationPaymentSchema = z.object({
     }),
 
   tipoPago: z.enum(
-    ['TRANSFERENCIA', 'DEPOSITO', 'EFECTIVO'],
+    ['TRANSFERENCIA', 'DEPOSITO', 'EFECTIVO', 'CHEQUE'],
     {
       message: 'El tipo de pago es obligatorio',
     },
   ),
+
+  fechaComprobante: z
+    .string()
+    .min(1, 'La fecha del comprobante es obligatoria'),
 
   cuentaDestinoId: z.coerce
     .number()

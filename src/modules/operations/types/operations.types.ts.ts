@@ -21,7 +21,8 @@ export type ReturnPaymentStatus =
 export type PaymentType =
   | 'TRANSFERENCIA'
   | 'DEPOSITO'
-  | 'EFECTIVO';
+  | 'EFECTIVO'
+  | 'CHEQUE';
 
 export type OperationDateFilter =
   | 'TODAY'
@@ -79,6 +80,7 @@ export interface AddPaymentRequest {
   monto: number;
   tipoPago: PaymentType;
   cuentaDestinoId: number | undefined | null;
+  fechaComprobante: string;
   comprobanteUrl: string;
   observaciones?: string;
 }
@@ -86,11 +88,13 @@ export interface UpdateOperationPaymentRequest {
   monto: number;
   tipoPago: PaymentType;
   cuentaDestinoId: number;
+  fechaComprobante: string;
   comprobanteUrl: string;
   observaciones?: string;
 }
 export interface UpdatePaymentStatusRequest {
   observaciones?: string;
+  comprobanteValidacionUrl?: string
 }
 
 export interface OperationPaymentResponse {
@@ -98,6 +102,7 @@ export interface OperationPaymentResponse {
   monto: number;
   tipoPago: PaymentType;
   comprobanteUrl: string;
+  comprobanteValidacionUrl: string;
   cuentaDestinoId: number;
   cuentaDestinoBanco: string;
   cuentaDestinoTitular: string;
@@ -109,6 +114,7 @@ export interface OperationPaymentResponse {
   validadoPorNombre?: string | null;
   fechaPago: string;
   fechaValidacion?: string | null;
+  fechaComprobante?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -168,6 +174,7 @@ export interface CreateReturnPaymentItemRequest {
   tipoPago: PaymentType;
   banco?: string | null;
   titular?: string | null;
+  cuenta?: string | null;
   clabe?: string | null;
   observaciones?: string | null;
 }
@@ -197,6 +204,7 @@ export interface ReturnPaymentResponse {
   cuentaOrigenBanco?: string | null;
 
   cuentaDestinoCliente?: string | null;
+  cuentaClabeCliente?: string | null;
   cuentaDestinoTitular?: string | null;
   cuentaDestinoBanco?: string | null;
   comprobanteUrl?: string | null;

@@ -46,7 +46,7 @@ export default function ReturnsForPaymentPage() {
       <div className="relative flex items-center rounded-2xl bg-white p-4 shadow-sm">
         <div>
           <h1 className="text-lg font-semibold text-slate-900">
-            Retornos solicitados
+            Retornos por pagar
           </h1>
           <p className="text-xs text-slate-500">
             Operaciones con retornos solicitados pendientes de realizar

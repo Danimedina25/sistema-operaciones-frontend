@@ -26,15 +26,11 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  {
-    to: paths.dashboard,
-    label: 'Dashboard',
-    icon: LayoutDashboard,
-  },
    {
     to: paths.corte,
     label: 'Cortes y saldos',
     icon: LayoutDashboard,
+    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION'],
   },
   {
     to: paths.users,
@@ -70,11 +66,10 @@ const navItems: NavItem[] = [
     to: paths.returnsforrequest,
     label: 'Retornos por solicitar',
     icon: HandCoins,
-    allowedRoles: ['ADMIN', 'SOCIO_COMERCIAL'],
   },
   {
     to: paths.returnsforpayment,
-    label: 'Retornos por registrar',
+    label: 'Retornos por pagar',
     icon: WalletCards,
     allowedRoles: ['ADMIN'],
   },

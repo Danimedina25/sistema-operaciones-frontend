@@ -14,7 +14,7 @@ export function PublicOnlyRoute() {
   }
 
   if (isAuthenticated) {
-    return <Navigate to={paths.dashboard} replace />;
+    return <Navigate to={paths.operations} replace />;
   }
 
   return <Outlet />;

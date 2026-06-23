@@ -21,7 +21,7 @@ function parseCurrencyInput(value: unknown) {
   return value;
 }
 
-const paymentTypeSchema = z.enum(['TRANSFERENCIA', 'DEPOSITO', 'EFECTIVO'], {
+const paymentTypeSchema = z.enum(['TRANSFERENCIA', 'DEPOSITO', 'EFECTIVO', 'CHEQUE'], {
   error: 'El tipo de pago es obligatorio',
 });
 
@@ -35,6 +35,9 @@ const paymentSchema = z
     ),
 
     tipoPago: z.union([paymentTypeSchema, z.literal('')]).optional(),
+    fechaComprobante: z
+      .string()
+      .min(1, 'La fecha del comprobante es obligatoria'),
 
     cuentaDestinoId: z.preprocess(
       (value) => {

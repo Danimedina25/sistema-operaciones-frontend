@@ -40,6 +40,7 @@ export function useRequestReturnPayment(
             tipoPago: pago.tipoPago,
             banco: isCash ? undefined : cleanText(pago.banco),
             titular: isCash ? undefined : cleanText(pago.titular),
+            cuenta: isCash ? undefined : cleanNumbers(pago.cuenta),
             clabe: isCash ? undefined : cleanNumbers(pago.clabe),
             observaciones: cleanText(pago.observaciones),
           };

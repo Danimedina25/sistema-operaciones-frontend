@@ -3,118 +3,146 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import {
-  calculateDailyCashCut,
-  calculateCashCutRange,
-  registerDailyCashCut,
-  registerDailyCashCutByDate,
+    calculateDailyCashCut,
+    calculateCashCutRange,
+    registerDailyCashCut,
+    registerDailyCashCutByDate,
+    calculateBankBalancesGrouped,
 } from '@/modules/corte/api/corte.api';
 import { getApiErrorMessage } from '@/shared/utils/errors';
 import type {
-  CashCutRangeResponse,
-  DailyCashCutRequest,
-  DailyCashCutResponse,
+    BankGroupBalanceResponse,
+    CashCutRangeResponse,
+    DailyCashCutRequest,
+    DailyCashCutResponse,
 } from '@/modules/corte/types/corte.types';
 
 interface UseDailyCashCutOptions {
-  onSuccess?: () => void | Promise<void>;
+    onSuccess?: () => void | Promise<void>;
 }
 
 export function useDailyCashCut(options?: UseDailyCashCutOptions) {
-  const [isLoadingDailyCut, setIsLoadingDailyCut] = useState(false);
-  const [isLoadingRangeCut, setIsLoadingRangeCut] = useState(false);
-  const [isRegisteringCut, setIsRegisteringCut] = useState(false);
+    const [isLoadingDailyCut, setIsLoadingDailyCut] = useState(false);
+    const [isLoadingRangeCut, setIsLoadingRangeCut] = useState(false);
+    const [isRegisteringCut, setIsRegisteringCut] = useState(false);
 
-  const [dailyCut, setDailyCut] = useState<DailyCashCutResponse | null>(null);
-  const [rangeCut, setRangeCut] = useState<CashCutRangeResponse | null>(null);
+    const [dailyCut, setDailyCut] = useState<DailyCashCutResponse | null>(null);
+    const [rangeCut, setRangeCut] = useState<CashCutRangeResponse | null>(null);
 
-  const fetchDailyCut = async (fecha: string) => {
-    try {
-      setIsLoadingDailyCut(true);
+    const [isLoadingBankBalances, setIsLoadingBankBalances] = useState(false);
 
-      const response = await calculateDailyCashCut(fecha);
+    const [bankBalancesGrouped, setBankBalancesGrouped] =
+        useState<BankGroupBalanceResponse[]>([]);
 
-      setDailyCut(response);
+    const fetchDailyCut = async (fecha: string) => {
+        try {
+            setIsLoadingDailyCut(true);
 
-      return response;
-    } catch (error) {
-      toast.error(getApiErrorMessage(error));
-      throw error;
-    } finally {
-      setIsLoadingDailyCut(false);
-    }
-  };
+            const response = await calculateDailyCashCut(fecha);
 
-  const fetchRangeCut = async (startDate: string, endDate: string) => {
-    try {
-      setIsLoadingRangeCut(true);
+            setDailyCut(response);
 
-      const response = await calculateCashCutRange({
-        startDate,
-        endDate,
-      });
+            return response;
+        } catch (error) {
+            toast.error(getApiErrorMessage(error));
+            throw error;
+        } finally {
+            setIsLoadingDailyCut(false);
+        }
+    };
 
-      setRangeCut(response);
+    const fetchRangeCut = async (startDate: string, endDate: string) => {
+        try {
+            setIsLoadingRangeCut(true);
 
-      return response;
-    } catch (error) {
-      toast.error(getApiErrorMessage(error));
-      throw error;
-    } finally {
-      setIsLoadingRangeCut(false);
-    }
-  };
+            const response = await calculateCashCutRange({
+                startDate,
+                endDate,
+            });
 
-  const submitRegisterDailyCutByDate = async (fecha: string) => {
-    try {
-      setIsRegisteringCut(true);
+            setRangeCut(response);
 
-      const response = await registerDailyCashCutByDate(fecha);
+            return response;
+        } catch (error) {
+            toast.error(getApiErrorMessage(error));
+            throw error;
+        } finally {
+            setIsLoadingRangeCut(false);
+        }
+    };
 
-      setDailyCut(response);
+    const submitRegisterDailyCutByDate = async (fecha: string) => {
+        try {
+            setIsRegisteringCut(true);
 
-      toast.success('Corte diario registrado correctamente');
-      await options?.onSuccess?.();
+            const response = await registerDailyCashCutByDate(fecha);
 
-      return response;
-    } catch (error) {
-      toast.error(getApiErrorMessage(error));
-      throw error;
-    } finally {
-      setIsRegisteringCut(false);
-    }
-  };
+            setDailyCut(response);
 
-  const submitRegisterDailyCut = async (payload: DailyCashCutRequest) => {
-    try {
-      setIsRegisteringCut(true);
+            toast.success('Corte diario registrado correctamente');
+            await options?.onSuccess?.();
 
-      const response = await registerDailyCashCut(payload);
+            return response;
+        } catch (error) {
+            toast.error(getApiErrorMessage(error));
+            throw error;
+        } finally {
+            setIsRegisteringCut(false);
+        }
+    };
 
-      setDailyCut(response);
+    const submitRegisterDailyCut = async (payload: DailyCashCutRequest) => {
+        try {
+            setIsRegisteringCut(true);
 
-      toast.success('Corte diario registrado correctamente');
-      await options?.onSuccess?.();
+            const response = await registerDailyCashCut(payload);
 
-      return response;
-    } catch (error) {
-      toast.error(getApiErrorMessage(error));
-      throw error;
-    } finally {
-      setIsRegisteringCut(false);
-    }
-  };
+            setDailyCut(response);
 
-  return {
-    dailyCut,
-    rangeCut,
+            toast.success('Corte diario registrado correctamente');
+            await options?.onSuccess?.();
 
-    isLoadingDailyCut,
-    isLoadingRangeCut,
-    isRegisteringCut,
+            return response;
+        } catch (error) {
+            toast.error(getApiErrorMessage(error));
+            throw error;
+        } finally {
+            setIsRegisteringCut(false);
+        }
+    };
 
-    fetchDailyCut,
-    fetchRangeCut,
-    submitRegisterDailyCutByDate,
-    submitRegisterDailyCut,
-  };
+    const fetchBankBalancesGrouped = async (fecha?: string) => {
+        try {
+            setIsLoadingBankBalances(true);
+
+            const response = await calculateBankBalancesGrouped(fecha);
+
+            setBankBalancesGrouped(response);
+
+            return response;
+        } catch (error) {
+            toast.error(getApiErrorMessage(error));
+            throw error;
+        } finally {
+            setIsLoadingBankBalances(false);
+        }
+    };
+
+    return {
+        dailyCut,
+        rangeCut,
+
+        isLoadingDailyCut,
+        isLoadingRangeCut,
+        isRegisteringCut,
+
+        fetchDailyCut,
+        fetchRangeCut,
+        submitRegisterDailyCutByDate,
+        submitRegisterDailyCut,
+
+        bankBalancesGrouped,
+        isLoadingBankBalances,
+        fetchBankBalancesGrouped,
+    };
 }

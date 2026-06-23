@@ -1,7 +1,10 @@
 export type RoleName =
   | 'ADMIN'
+  | 'DIRECCION'
+  | 'GERENTE'
   | 'SOCIO_COMERCIAL'
   | 'JEFA_CAJAS'
+  | 'JEFA_CUENTAS'
   | 'AUXILIAR_CUENTAS';
 
 export interface LoginRequest {
