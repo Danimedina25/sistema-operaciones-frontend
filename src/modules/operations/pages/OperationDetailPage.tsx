@@ -30,15 +30,21 @@ export default function OperationDetailPage() {
   const scrollToReturns =
     Boolean(location.state?.scrollToReturns) ||
     searchParams.get('scrollToReturns') === 'true';
-  const isReturnRequestDetail =
+  const isReturnsForRequestDetail =
     location.pathname.startsWith(paths.returnsforrequest);
   const isReturnPaymentDetail =
     location.pathname.startsWith(paths.returnsforpayment);
-  const backLabel = isReturnRequestDetail
-    ? 'Retornos por solicitar'
-    : isReturnPaymentDetail
-      ? 'Retornos por pagar'
-      : 'Operaciones';
+  const isReturnsRequestedDetail =
+    location.pathname.startsWith(paths.returnsRequested);
+  let backLabel = 'Operaciones';
+
+  if (isReturnsForRequestDetail) {
+    backLabel = 'Retornos por solicitar';
+  } else if (isReturnsRequestedDetail) {
+    backLabel = 'Retornos solicitados';
+  } else if (isReturnPaymentDetail) {
+    backLabel = 'Retornos por pagar';
+  }
   const { operationId } = useParams<{ operationId: string }>();
   const [isAddPaymentModalOpen, setIsAddPaymentModalOpen] = useState(false);
   const [selectedOperation, setSelectedOperation] =
@@ -153,13 +159,18 @@ export default function OperationDetailPage() {
         scrollToReturns={scrollToReturns}
         backLabel={backLabel}
         onBack={() => {
-          if (isReturnRequestDetail) {
+          if (isReturnsForRequestDetail) {
             navigate(paths.returnsforrequest);
             return;
           }
 
           if (isReturnPaymentDetail) {
             navigate(paths.returnsforpayment);
+            return;
+          }
+
+          if (isReturnsRequestedDetail) {
+            navigate(paths.returnsRequested);
             return;
           }
 
@@ -204,6 +215,7 @@ export default function OperationDetailPage() {
         }
         onEditReturn={(returnPayment) => {
           setSelectedReturnToEdit(returnPayment);
+          console.log("prueba", returnPayment)
           setIsEditReturnModalOpen(true);
         }}
       />
@@ -304,6 +316,7 @@ export default function OperationDetailPage() {
         ) : (
           <EditReturnPaymentForm
             payment={selectedReturnToEdit}
+            clientId={selectedReturnToEdit?.clientId ?? 0}
             isSubmitting={isSubmittingUpdateReturn}
             onSubmit={submitUpdateRequestReturnPayment}
           />

@@ -5,11 +5,9 @@ import { Pagination } from '@/shared/components/ui/Pagination';
 import { OperationsFilters } from '@/modules/operations/components/OperationsFilters';
 import { useOperationsWithRequestedReturns } from '../hooks/returns/use-operation-returns';
 import {
-  OperationsFilters as OperationsFiltersType,
-  PaymentOperationResponse,
-} from '../types/operations.types.ts';
-import { ReturnsForPaymentTable } from '../components/returns/ReturnsForPaymentTable';
-import { buildReturnsForPaymentDetailPath } from '@/routes/paths';
+  OperationsFilters as OperationsFiltersType} from '../types/operations.types.ts';
+import { buildReturnsRequestedDetailPath } from '@/routes/paths';
+import { ReturnsRequestedTable } from '../components/returns/ReturnsRequestedTable';
 
 
 const initialFilters: OperationsFiltersType = {
@@ -23,7 +21,7 @@ const initialFilters: OperationsFiltersType = {
 
 const PAGE_SIZE = 10;
 
-export default function ReturnsForPaymentPage() {
+export default function ReturnsRequestedPage() {
   const navigate = useNavigate();
 
   const [filters, setFilters] =
@@ -46,10 +44,10 @@ export default function ReturnsForPaymentPage() {
       <div className="relative flex items-center rounded-2xl bg-white p-4 shadow-sm">
         <div>
           <h1 className="text-lg font-semibold text-slate-900">
-            Retornos por pagar
+            Retornos solicitados
           </h1>
           <p className="text-xs text-slate-500">
-            Operaciones con retornos solicitados pendientes de pagar
+            Operaciones con retornos solicitados y sus estatus
           </p>
         </div>
       </div>
@@ -77,15 +75,15 @@ export default function ReturnsForPaymentPage() {
             Operaciones con retornos solicitados
           </h2>
           <p className="text-xs text-slate-500">
-            Revisa las operaciones donde el socio comercial ya indicó cómo desea el retorno.
+            Revisa el estatus de los retornos solicitados de operaciones.
           </p>
         </div>
 
-        <ReturnsForPaymentTable
+        <ReturnsRequestedTable
           operations={operations}
           isLoading={isLoading}
-          onReturnPayments={(operationId, scrollToReturns = true) => {
-            navigate(buildReturnsForPaymentDetailPath(operationId), {
+          goToReturns={(operationId, scrollToReturns = true) => {
+            navigate(buildReturnsRequestedDetailPath(operationId), {
               state: {
                 scrollToReturns,
               },

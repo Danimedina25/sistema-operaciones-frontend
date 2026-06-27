@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   getOperationsAvailableToRequestReturn,
   getOperationsWithRequestedReturns,
+  getReturnDestinationAccountSuggestions,
   getReturnOperationById,
   getReturnsByOperationId,
 } from '../../api/operations.api';
@@ -47,5 +48,13 @@ export function useReturnsByOperationId(operationId?: number) {
     queryKey: ['operation-returns', operationId],
     queryFn: () => getReturnsByOperationId(operationId!),
     enabled: !!operationId,
+  });
+}
+
+export function useReturnDestinationAccountSuggestions(clientId?: number) {
+  return useQuery({
+    queryKey: ['return-destination-account-suggestions', clientId],
+    queryFn: () => getReturnDestinationAccountSuggestions(clientId!),
+    enabled: !!clientId,
   });
 }

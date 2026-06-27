@@ -43,6 +43,7 @@ export function RequestReturnModal({
                         operation.montoSolicitadoRetorno
                     }
                     clienteNombre={operation.clienteNombre}
+                    clientId={operation.clienteId}
                     operationId={operation.id}
                     initialPayments={returnPayments}
                     onSubmit={async (values) => {

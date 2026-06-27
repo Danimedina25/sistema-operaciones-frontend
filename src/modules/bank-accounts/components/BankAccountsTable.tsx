@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { BankAccountStatusBadge } from '@/modules/bank-accounts/components/BankAccountStatusBadge';
 import type { BankAccountResponse } from '@/modules/bank-accounts/types/bank-accounts.types';
+import { formatDate } from '@/modules/operations/utils/operation-formatters';
 
 interface BankAccountsTableProps {
   accounts: BankAccountResponse[];
@@ -148,7 +149,7 @@ export function BankAccountsTable({
                   </td>
 
                   <td className="px-4 py-4 text-slate-600">
-                    {new Date(account.updatedAt).toLocaleString('es-MX')}
+                    {formatDate(account.updatedAt)}
                   </td>
 
                   <td className="px-4 py-4 text-right">

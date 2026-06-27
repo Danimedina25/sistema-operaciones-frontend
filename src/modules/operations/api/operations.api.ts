@@ -21,6 +21,8 @@ import {
   ReturnRealizePaymentApiResponse,
   UpdateReturnPaymentRequest,
   ReturnUpdateRequestPaymentApiResponse,
+  ReturnDestinationAccountSuggestion,
+  ReturnDestinationAccountSuggestionsApiResponse,
 } from '../types/operations.types.ts';
 
 const OPERATIONS_BASE_PATH = '/api/operations';
@@ -264,6 +266,17 @@ export async function getReturnsByOperationId(
   const response = await api.get<ReturnPaymentsListApiResponse>(
     `${RETURNS_BASE_PATH}/${operationId}/payments`,
   );
+
+  return response.data.data;
+}
+
+export async function getReturnDestinationAccountSuggestions(
+  clientId: number,
+): Promise<ReturnDestinationAccountSuggestion[]> {
+  const response =
+    await api.get<ReturnDestinationAccountSuggestionsApiResponse>(
+      `${RETURNS_BASE_PATH}/clients/${clientId}/destination-accounts`,
+    );
 
   return response.data.data;
 }

@@ -10,13 +10,13 @@ import { useEffect } from 'react';
 interface ReturnsTableProps {
   operations: PaymentOperationResponse[];
   isLoading: boolean;
-  onReturnPayments: (operationId: number, scrollToReturns?: boolean) => void;
+  goToReturns: (operationId: number, scrollToReturns?: boolean) => void;
 }
 
-export function ReturnsForPaymentTable({
+export function ReturnsRequestedTable({
   operations,
   isLoading,
-  onReturnPayments
+  goToReturns
 }: ReturnsTableProps) {
 
   if (!isLoading && operations.length === 0) {
@@ -89,14 +89,14 @@ export function ReturnsForPaymentTable({
                   colSpan={8}
                   className="px-4 py-8 text-center text-sm text-slate-500"
                 >
-                  Cargando operaciones listas para pagar retornos...
+                  Cargando operaciones con retornos solicitados...
                 </td>
               </tr>
             ) : (
               operations.map((operation) => (
                 <tr
                   key={operation.id}
-                  //onClick={() => onReturnPayments(operation.id, true)}
+                  onClick={() => goToReturns(operation.id, true)}
                   className="cursor-pointer border-t border-slate-200 text-sm transition hover:bg-slate-50"
                 >
                   <td className="px-4 py-4 font-medium text-slate-900">
@@ -130,10 +130,6 @@ export function ReturnsForPaymentTable({
                     </div>
                   </td>
 
-                   <td className="px-4 py-4 font-semibold text-slate-600 text-center">
-                    {operation.numeroRetornosSolicitados}
-                  </td>
-
                   <td className="px-4 py-4 text-slate-600">
                     <div>{formatCurrency(operation.montoSolicitadoRetorno)}</div>
 
@@ -160,11 +156,11 @@ export function ReturnsForPaymentTable({
                     <button
                       type="button"
                       onClick={(event) => {
-                        onReturnPayments(operation.id);
+                        goToReturns(operation.id);
                       }}
                       className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
                     >
-                      Pagar retornos
+                      Ver solicitudes
                     </button>
                   </td>
                 </tr>

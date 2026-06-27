@@ -74,9 +74,12 @@ export function CommercialPartnerForm({
       return MEXICAN_BANKS;
     }
 
-    return MEXICAN_BANKS.filter((bank) =>
-      bank.toLowerCase().includes(search),
-    );
+    return MEXICAN_BANKS.filter((bank) => {
+      return (
+        bank.value.toLowerCase().includes(search) ||
+        bank.label.toLowerCase().includes(search)
+      );
+    });
   }, [bankFieldValue]);
 
   useEffect(() => {
@@ -204,12 +207,12 @@ export function CommercialPartnerForm({
                 {filteredBanks.length > 0 ? (
                   filteredBanks.map((bank) => (
                     <button
-                      key={bank}
+                      key={bank.value}
                       type="button"
                       onClick={() => {
                         setValue(
                           'banco',
-                          bank,
+                          bank.value,
                           {
                             shouldDirty: true,
                             shouldValidate: true,
@@ -220,7 +223,7 @@ export function CommercialPartnerForm({
                       }}
                       className="block w-full px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-50"
                     >
-                      {bank}
+                      {bank.label}
                     </button>
                   ))
                 ) : (

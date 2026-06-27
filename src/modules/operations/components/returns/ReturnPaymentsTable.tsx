@@ -132,8 +132,9 @@ export function ReturnPaymentsTable({
 
   const canOperationRequestReturns =
     operationStatus === 'VALIDADA' ||
-    operationStatus === 'RETORNO_SOLICITADO' ||
-    operationStatus === 'RETORNO_PARCIAL';
+    operationStatus === 'RETORNO_PARCIAL_SOLICITADO' ||
+    operationStatus === 'RETORNO_TOTAL_SOLICITADO' ||
+    operationStatus === 'RETORNO_PARCIAL_ENTREGADO';
 
   const canRequestReturns =
     canOperationRequestReturns &&

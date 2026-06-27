@@ -5,8 +5,10 @@ export type OperationStatus =
   | 'INGRESO_PARCIAL'
   | 'VALIDADA'
   | 'RECHAZADA'
-  | 'RETORNO_SOLICITADO'
-  | 'RETORNO_PARCIAL'
+  | 'RETORNO_PARCIAL_SOLICITADO'
+  | 'RETORNO_TOTAL_SOLICITADO'
+  | 'RETORNO_PARCIAL_ENTREGADO'
+  | 'RETORNADA'
   | 'COMPLETADA';
 
 export type PaymentStatus =
@@ -160,6 +162,8 @@ export interface PaymentOperationResponse {
   montoRetornado: number;
   saldoPendienteRetornar: number;
 
+  numeroRetornosSolicitados: number;
+
   observaciones?: string | null;
 
   pagos: OperationPaymentResponse[];
@@ -188,7 +192,7 @@ export interface CreateReturnPaymentRequest {
 
 export type UpdateReturnPaymentRequest =
   CreateReturnPaymentItemRequest;
-  
+
 export interface RealizeReturnPaymentRequest {
   cuentaOrigenId?: number | null;
   comprobanteUrl?: string | null;
@@ -199,6 +203,7 @@ export interface RealizeReturnPaymentRequest {
 export interface ReturnPaymentResponse {
   id: number;
   operationId: number;
+  clientId: number;
   monto: number;
   tipoPago: PaymentType;
   estatus: ReturnPaymentStatus;
@@ -231,6 +236,15 @@ export interface ReturnPaymentResponse {
   createdAt: string;
 }
 
+export interface ReturnDestinationAccountSuggestion {
+  banco: string | null;
+  titular: string | null;
+  cuenta: string | null;
+  clabe: string | null;
+  usos: number;
+}
+
+
 export type OperationApiResponse = ApiResponse<PaymentOperationResponse>;
 export type OperationsPageApiResponse = ApiResponse<PageResponse<PaymentOperationResponse>>;
 export type PaymentApiResponse = ApiResponse<OperationPaymentResponse>;
@@ -238,3 +252,5 @@ export type ReturnRequestPaymentApiResponse = ApiResponse<ReturnPaymentResponse[
 export type ReturnUpdateRequestPaymentApiResponse = ApiResponse<ReturnPaymentResponse>;
 export type ReturnRealizePaymentApiResponse = ApiResponse<ReturnPaymentResponse>;
 export type ReturnPaymentsListApiResponse = ApiResponse<ReturnPaymentResponse[]>;
+export type ReturnDestinationAccountSuggestionsApiResponse =
+  ApiResponse<ReturnDestinationAccountSuggestion[]>;

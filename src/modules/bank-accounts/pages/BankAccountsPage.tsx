@@ -1,17 +1,40 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { BankAccountsTable } from '@/modules/bank-accounts/components/BankAccountsTable';
 import { BankAccountFormModal } from '@/modules/bank-accounts/components/BankAccountFormModal';
+import { BankAccountsFilters } from '@/modules/bank-accounts/components/BankAccountsFilters';
+import { Pagination } from '@/shared/components/ui/Pagination';
+
 import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts';
 import { useActivateBankAccount } from '@/modules/bank-accounts/hooks/use-activate-bank-account';
 import { useDeactivateBankAccount } from '@/modules/bank-accounts/hooks/use-deactivate-bank-account';
-import type { BankAccountResponse } from '@/modules/bank-accounts/types/bank-accounts.types';
-import type { BankAccountFormValues } from '@/modules/bank-accounts/schemas/bank-account.schema';
 import { useCreateBankAccount } from '../hooks/useCreateBankAccount';
 import { useUpdateBankAccount } from '../hooks/useUpdateBankAccount';
 
+import type { BankAccountResponse } from '@/modules/bank-accounts/types/bank-accounts.types';
+import type { BankAccountFormValues } from '@/modules/bank-accounts/schemas/bank-account.schema';
+
+import {
+  filterBankAccounts,
+  type BankAccountsFilters as BankAccountsFiltersType,
+} from '@/modules/bank-accounts/utils/bank-accounts-filters';
+
+import { getTotalPages, paginateItems } from '@/shared/utils/pagination';
+
+const initialFilters: BankAccountsFiltersType = {
+  search: '',
+  status: 'ALL',
+};
+
 export default function BankAccountsPage() {
+  const [filters, setFilters] =
+    useState<BankAccountsFiltersType>(initialFilters);
+
+  const [currentPage, setCurrentPage] = useState(1);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingAccount, setEditingAccount] = useState<BankAccountResponse | null>(null);
+  const [editingAccount, setEditingAccount] =
+    useState<BankAccountResponse | null>(null);
+
+  const pageSize = 10;
 
   const roles = ['ADMIN'];
 
@@ -36,7 +59,8 @@ export default function BankAccountsPage() {
     [roles],
   );
 
-  const { accounts, isLoading, loadBankAccounts, loadBankAccount } = useBankAccounts();
+  const { accounts, isLoading, loadBankAccounts, loadBankAccount } =
+    useBankAccounts();
 
   const { isSubmitting: isCreating, submitCreateBankAccount } =
     useCreateBankAccount({
@@ -55,12 +79,10 @@ export default function BankAccountsPage() {
       },
     });
 
-  const {
-    processingAccountId: activatingAccountId,
-    submitActivateBankAccount,
-  } = useActivateBankAccount({
-    onSuccess: loadBankAccounts,
-  });
+  const { processingAccountId: activatingAccountId, submitActivateBankAccount } =
+    useActivateBankAccount({
+      onSuccess: loadBankAccounts,
+    });
 
   const {
     processingAccountId: deactivatingAccountId,
@@ -71,6 +93,22 @@ export default function BankAccountsPage() {
 
   const processingAccountId = activatingAccountId ?? deactivatingAccountId;
   const isSubmitting = isCreating || isUpdating;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
+
+  const filteredAccounts = useMemo(() => {
+    return filterBankAccounts(accounts, filters);
+  }, [accounts, filters]);
+
+  const totalPages = useMemo(() => {
+    return getTotalPages(filteredAccounts.length, pageSize);
+  }, [filteredAccounts.length, pageSize]);
+
+  const paginatedAccounts = useMemo(() => {
+    return paginateItems(filteredAccounts, currentPage, pageSize);
+  }, [filteredAccounts, currentPage, pageSize]);
 
   const handleOpenCreate = () => {
     setEditingAccount(null);
@@ -136,20 +174,32 @@ export default function BankAccountsPage() {
         </div>
       </div>
 
+      <BankAccountsFilters filters={filters} onChange={setFilters} />
+
       {isLoading ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm">
           Cargando cuentas bancarias...
         </div>
       ) : (
-        <BankAccountsTable
-          accounts={accounts}
-          processingAccountId={processingAccountId}
-          canEdit={canCreateOrEdit}
-          canToggleStatus={canToggleStatus}
-          onEdit={handleOpenEdit}
-          onActivate={submitActivateBankAccount}
-          onDeactivate={submitDeactivateBankAccount}
-        />
+        <>
+          <BankAccountsTable
+            accounts={paginatedAccounts}
+            processingAccountId={processingAccountId}
+            canEdit={canCreateOrEdit}
+            canToggleStatus={canToggleStatus}
+            onEdit={handleOpenEdit}
+            onActivate={submitActivateBankAccount}
+            onDeactivate={submitDeactivateBankAccount}
+          />
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalElements={filteredAccounts.length}
+            isLoading={isLoading}
+            onPageChange={setCurrentPage}
+          />
+        </>
       )}
 
       <BankAccountFormModal

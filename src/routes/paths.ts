@@ -17,10 +17,13 @@ export const paths = {
   operationDetail: '/operaciones/:operationId',
 
   returnsforrequest: '/retornos-por-solicitar',
+  returnsRequested: '/retornos-solicitados',
   returnsforpayment: '/retornos-por-pagar',
 
   returnRequestDetail:
     '/retornos-por-solicitar/:operationId',
+  returnsRequestedDetail:
+  '/retornos-solicitados/:operationId',
 
   devolutionDetail:
     '/retornos-por-pagar/:operationId',
@@ -37,6 +40,10 @@ export const buildReturnRequestDetailPath = (
   id: number | string,
 ) => `/retornos-por-solicitar/${id}`;
 
-export const buildReturnPaymentDetailPath = (
+export const buildReturnsForPaymentDetailPath = (
   id: number | string,
 ) => `/retornos-por-pagar/${id}`;
+
+export const buildReturnsRequestedDetailPath = (
+  id: number | string,
+) => `/retornos-solicitados/${id}`;

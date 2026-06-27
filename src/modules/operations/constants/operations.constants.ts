@@ -15,10 +15,16 @@ export const paymentStatusLabels: Record<PaymentStatus, string> = {
 
 export const operationStatusLabels: Record<OperationStatus, string> = {
   PENDIENTE_VALIDACION: 'Pendiente validación',
+  INGRESO_PARCIAL: 'Ingreso parcial',
   VALIDADA: 'Validada',
   RECHAZADA: 'Rechazada',
-  RETORNO_SOLICITADO: 'Retorno solicitado',
-  RETORNO_PARCIAL: 'Retorno parcial',
+
+  RETORNO_PARCIAL_SOLICITADO: 'Retorno parcial solicitado',
+  RETORNO_TOTAL_SOLICITADO: 'Retorno total solicitado',
+
+  RETORNO_PARCIAL_ENTREGADO: 'Retorno parcial entregado',
+
+  RETORNADA: 'Retornada',
+
   COMPLETADA: 'Completada',
-  INGRESO_PARCIAL: 'Ingreso parcial'
 };

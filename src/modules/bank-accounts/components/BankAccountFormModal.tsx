@@ -17,36 +17,29 @@ interface BankAccountFormModalProps {
 }
 
 export const MEXICAN_BANKS = [
-  'BBVA México',
-  'Banamex',
-  'STP',
-  'Santander México',
-  'Banorte',
-  'HSBC México',
-  'Scotiabank',
-  'Inbursa',
-  'Banco Azteca',
-  'Bancoppel',
-  'BanBajío',
-  'Afirme',
-  'Banco Multiva',
-  'Mifel',
-  'Banregio',
-  'Banco Base',
-  'Actinver',
-  'Banco Invex',
-  'Bankaool',
-  'Monex',
-  'Intercam Banco',
-  'Banco Ve por Más',
-  'Banco del Bienestar',
-  'Compartamos Banco',
-  'Citibanamex',
-  'NU México',
-  'Hey Banco',
-  'Bancrea',
-  'Sabadell México',
-];
+  { value: 'ALBO', label: 'ALBO' },
+  { value: 'AZTECA', label: 'AZTECA' },
+  { value: 'BANCO DEL BIENESTAR', label: 'BANCO DEL BIENESTAR' },
+  { value: 'BANBAJIO', label: 'BANBAJIO' },
+  { value: 'BANAMEX', label: 'BANAMEX' },
+  { value: 'BANCOPPEL', label: 'BANCOPPEL' },
+  { value: 'BANJERCITO', label: 'BANJERCITO' },
+  { value: 'BANKAOOL', label: 'BANKAOOL' },
+  { value: 'BANORTE', label: 'BANORTE' },
+  { value: 'BBVA MEXICO', label: 'BBVA MEXICO' },
+  { value: 'COMPARTAMOS BANCO', label: 'COMPARTAMOS BANCO' },
+  { value: 'FUNDACIÓN DONDÉ', label: 'FUNDACIÓN DONDÉ' },
+  { value: 'HSBC', label: 'HSBC' },
+  { value: 'INBURSA', label: 'INBURSA' },
+  { value: 'KAPITAL', label: 'KAPITAL' },
+  { value: 'KLAR', label: 'KLAR' },
+  { value: 'MERCADO PAGO', label: 'MERCADO PAGO' },
+  { value: 'NU MEXICO', label: 'NU MEXICO' },
+  { value: 'SANTANDER', label: 'SANTANDER' },
+  { value: 'SCOTIABANK', label: 'SCOTIABANK' },
+  { value: 'SPIN BY OXXO', label: 'SPIN BY OXXO' },
+  { value: 'STP', label: 'STP' },
+] as const;
 
 export function BankAccountFormModal({
   open,
@@ -84,9 +77,12 @@ export function BankAccountFormModal({
       return MEXICAN_BANKS;
     }
 
-    return MEXICAN_BANKS.filter((bank) =>
-      bank.toLowerCase().includes(search)
-    );
+    return MEXICAN_BANKS.filter((bank) => {
+      return (
+        bank.value.toLowerCase().includes(search) ||
+        bank.label.toLowerCase().includes(search)
+      );
+    });
   }, [bankFieldValue]);
 
   useEffect(() => {
@@ -180,10 +176,10 @@ export function BankAccountFormModal({
                   {filteredBanks.length > 0 ? (
                     filteredBanks.map((bank) => (
                       <button
-                        key={bank}
+                        key={bank.value}
                         type="button"
                         onClick={() => {
-                          setValue('banco', bank, {
+                          setValue('banco', bank.value, {
                             shouldDirty: true,
                             shouldValidate: true,
                           });
@@ -191,7 +187,7 @@ export function BankAccountFormModal({
                         }}
                         className="block w-full px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-50"
                       >
-                        {bank}
+                        {bank.label}
                       </button>
                     ))
                   ) : (

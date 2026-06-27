@@ -27,6 +27,7 @@ import CommercialPartnersPage from '@/modules/socioscomerciales/pages/Commercial
 import CommercialPartnerCommissionsPage from '@/modules/comisionessocioscomerciales/pages/CommercialPartnerCommissionsPage';
 import MyCommercialPartnerCommissionsPage from '@/modules/comisionessocioscomerciales/pages/MyCommercialPartnerCommissionsPage';
 import DailyCashCutPage from '@/modules/corte/pages/DailyCashCutPage';
+import ReturnsRequestedPage from '@/modules/operations/pages/ReturnsRequestedPage';
 
 export const router = createBrowserRouter([
   {
@@ -92,7 +93,15 @@ export const router = createBrowserRouter([
                 element: <ReturnsForRequestPage />,
               },
               {
+                path: paths.returnsRequested,
+                element: <ReturnsRequestedPage />,
+              },
+              {
                 path: paths.returnRequestDetail,
+                element: <OperationDetailPage />,
+              },
+              {
+                path: paths.returnsRequestedDetail,
                 element: <OperationDetailPage />,
               },
               {

@@ -10,9 +10,15 @@ const statusStyles: Record<OperationStatus, string> = {
   INGRESO_PARCIAL: 'bg-blue-100 text-blue-800',
   VALIDADA: 'bg-emerald-100 text-emerald-800',
   RECHAZADA: 'bg-red-100 text-red-800',
-  RETORNO_PARCIAL: 'bg-cyan-100 text-cyan-800',
+
+  RETORNO_PARCIAL_SOLICITADO: 'bg-orange-100 text-orange-800',
+  RETORNO_TOTAL_SOLICITADO: 'bg-orange-100 text-orange-800',
+
+  RETORNO_PARCIAL_ENTREGADO: 'bg-cyan-100 text-cyan-800',
+
+  RETORNADA: 'bg-teal-100 text-teal-800',
+
   COMPLETADA: 'bg-slate-200 text-slate-800',
-  RETORNO_SOLICITADO: 'bg-orange-100 text-orange-800',
 };
 
 const statusLabels: Record<OperationStatus, string> = {
@@ -20,16 +26,21 @@ const statusLabels: Record<OperationStatus, string> = {
   INGRESO_PARCIAL: 'Ingreso parcial',
   VALIDADA: 'Validada',
   RECHAZADA: 'Rechazada',
-  RETORNO_PARCIAL: 'Retorno parcial',
+
+  RETORNO_PARCIAL_SOLICITADO: 'Retorno parcial solicitado',
+  RETORNO_TOTAL_SOLICITADO: 'Retorno total solicitado',
+
+  RETORNO_PARCIAL_ENTREGADO: 'Retorno parcial entregado',
+
+  RETORNADA: 'Retornada',
+
   COMPLETADA: 'Completada',
-  RETORNO_SOLICITADO: 'Retorno solicitado',
 };
 
 export function OperationStatusBadge({
   status,
   isReturn,
 }: OperationStatusBadgeProps) {
-
   const isPendingReturnRequest =
     isReturn && status === 'VALIDADA';
 

@@ -71,6 +71,7 @@ export function ReturnsForRequestTable({
               <th className="px-4 py-3 font-medium text-center">
                 Monto a retornar
               </th>
+              
 
               <th className="px-4 py-3 font-medium text-center">
                 Monto solicitado
@@ -97,14 +98,14 @@ export function ReturnsForRequestTable({
                   colSpan={8}
                   className="px-4 py-8 text-center text-sm text-slate-500"
                 >
-                  Cargando operaciones listas para retorno...
+                  Cargando operaciones listas para solicitar retornos...
                 </td>
               </tr>
             ) : (
               operations.map((operation) => (
                 <tr
                   key={operation.id}
-                  onClick={() => onViewDetail(operation.id)}
+                  //onClick={() => onViewDetail(operation.id)}
                   className="cursor-pointer border-t border-slate-200 text-sm transition hover:bg-slate-50"
                 >
                   <td className="px-4 py-4 font-medium text-slate-900">

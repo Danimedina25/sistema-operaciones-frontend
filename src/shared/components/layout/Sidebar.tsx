@@ -9,7 +9,9 @@ import {
   HandCoins,
   WalletCards,
   BadgeDollarSign,
-  LogOut
+  LogOut,
+  BanknoteArrowDown,
+  ClipboardCheck
 } from 'lucide-react';
 
 import { paths } from '@/routes/paths';
@@ -26,7 +28,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-   {
+  {
     to: paths.corte,
     label: 'Cortes y saldos',
     icon: LayoutDashboard,
@@ -36,19 +38,19 @@ const navItems: NavItem[] = [
     to: paths.users,
     label: 'Usuarios',
     icon: Users,
-    allowedRoles: ['ADMIN'],
+    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION',],
   },
   {
     to: paths.bankAccounts,
     label: 'Cuentas bancarias',
     icon: Landmark,
-    allowedRoles: ['ADMIN', 'AUXILIAR_CUENTAS'],
+    allowedRoles: ['ADMIN',  'GERENTE', 'DIRECCION', 'JEFA_CUENTAS', 'AUXILIAR_CUENTAS'],
   },
   {
     to: paths.clientes,
     label: 'Clientes',
     icon: UserSquare,
-    allowedRoles: ['ADMIN', 'SOCIO_COMERCIAL'],
+    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION', 'SOCIO_COMERCIAL'],
   },
   {
     to: paths.mycomercialpartners,
@@ -60,24 +62,31 @@ const navItems: NavItem[] = [
     to: paths.operations,
     label: 'Operaciones',
     icon: ClipboardList,
-    allowedRoles: ['ADMIN', 'SOCIO_COMERCIAL'],
+    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION', 'SOCIO_COMERCIAL'],
   },
   {
     to: paths.returnsforrequest,
     label: 'Retornos por solicitar',
     icon: HandCoins,
+    allowedRoles: ['ADMIN', 'SOCIO_COMERCIAL'],
+  },
+  {
+    to: paths.returnsRequested,
+    label: 'Retornos solicitados',
+    icon: ClipboardCheck,
+    allowedRoles: ['ADMIN', 'SOCIO_COMERCIAL'],
   },
   {
     to: paths.returnsforpayment,
     label: 'Retornos por pagar',
-    icon: WalletCards,
-    allowedRoles: ['ADMIN'],
+    icon: BanknoteArrowDown,
+    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION', 'JEFA_CAJAS', 'JEFA_CUENTAS'],
   },
   {
     to: paths.comisionessocios,
     label: 'Pago de comisiones a socios comerciales',
     icon: BadgeDollarSign,
-    allowedRoles: ['ADMIN', 'JEFA_CAJAS'],
+    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION', 'JEFA_CAJAS', 'JEFA_CUENTAS'],
   },
   {
     to: paths.miscomisiones,

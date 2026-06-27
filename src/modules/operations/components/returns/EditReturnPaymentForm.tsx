@@ -3,9 +3,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
-import { ReturnPaymentResponse } from '../../types/operations.types.ts';
 import { formatCurrencyDisplay, normalizeCurrencyInput, onlyNumbers, parseCurrency, ReturnPaymentType } from '@/shared/utils/form.utils.js';
 import { MEXICAN_BANKS } from '@/modules/bank-accounts/components/BankAccountFormModal.js';
+import {
+    ReturnDestinationAccountSuggestion,
+    ReturnPaymentResponse,
+} from '../../types/operations.types.ts';
+
+import { useReturnDestinationAccountSuggestions } from '../../hooks/returns/use-operation-returns.js';
 
 
 export interface EditReturnPaymentFormValues {
@@ -24,10 +29,9 @@ export interface EditReturnPaymentFormValues {
 
 interface EditReturnPaymentFormProps {
     payment: ReturnPaymentResponse;
+    clientId: number;
     isSubmitting: boolean;
-    onSubmit: (
-        values: EditReturnPaymentFormValues,
-    ) => Promise<void>;
+    onSubmit: (values: EditReturnPaymentFormValues) => Promise<void>;
 }
 
 interface FormState {
@@ -64,6 +68,7 @@ function mapPaymentToForm(
 
 export function EditReturnPaymentForm({
     payment,
+    clientId,
     isSubmitting,
     onSubmit,
 }: EditReturnPaymentFormProps) {
@@ -74,6 +79,49 @@ export function EditReturnPaymentForm({
     const [errors, setErrors] =
         useState<FormErrors>({});
     const [showBankOptions, setShowBankOptions] = useState(false);
+    const [showAccountOptions, setShowAccountOptions] = useState(false);
+
+    const {
+        data: destinationAccountSuggestions = [],
+        isLoading: isLoadingDestinationAccounts,
+    } = useReturnDestinationAccountSuggestions(clientId);
+
+    function getFilteredDestinationAccounts(searchValue?: string) {
+        const search = searchValue?.trim().toLowerCase() ?? '';
+
+        if (!search) {
+            return destinationAccountSuggestions;
+        }
+
+        return destinationAccountSuggestions.filter((account) => {
+            return (
+                account.cuenta?.toLowerCase().includes(search) ||
+                account.clabe?.toLowerCase().includes(search) ||
+                account.titular?.toLowerCase().includes(search) ||
+                account.banco?.toLowerCase().includes(search)
+            );
+        });
+    }
+
+    function selectDestinationAccount(account: ReturnDestinationAccountSuggestion) {
+        setForm((current) => ({
+            ...current,
+            banco: account.banco ?? '',
+            titular: account.titular ?? '',
+            cuenta: account.cuenta ?? '',
+            clabe: account.clabe ?? '',
+        }));
+
+        setShowAccountOptions(false);
+
+        setErrors((current) => ({
+            ...current,
+            banco: undefined,
+            titular: undefined,
+            cuenta: undefined,
+            clabe: undefined,
+        }));
+    }
 
     const filteredBanks = useMemo(() => {
         const search = form.banco.trim().toLowerCase();
@@ -83,7 +131,8 @@ export function EditReturnPaymentForm({
         }
 
         return MEXICAN_BANKS.filter((bank) =>
-            bank.toLowerCase().includes(search),
+            bank.value.toLowerCase().includes(search)
+            || bank.label.toLowerCase().includes(search),
         );
     }, [form.banco]);
 
@@ -243,7 +292,7 @@ export function EditReturnPaymentForm({
             <div className="grid gap-4 lg:grid-cols-2">
                 <div>
                     <label className="mb-2 block text-sm font-medium text-slate-700">
-                        Monto a retornar
+                        Monto a retornar {clientId}
                     </label>
 
                     <Input
@@ -301,6 +350,86 @@ export function EditReturnPaymentForm({
                     <>
                         <div>
                             <label className="mb-2 block text-sm font-medium text-slate-700">
+                                Número de cuenta
+                            </label>
+
+                            <div className="relative">
+                                <Input
+                                    type="text"
+                                    placeholder="Número de cuenta"
+                                    inputMode="numeric"
+                                    maxLength={12}
+                                    value={form.cuenta ?? ''}
+                                    error={errors.cuenta}
+                                    onFocus={() => setShowAccountOptions(true)}
+                                    onBlur={() => {
+                                        setTimeout(() => {
+                                            setShowAccountOptions(false);
+                                        }, 150);
+                                    }}
+                                    onChange={(event) => {
+                                        updateField('cuenta', event.target.value);
+                                        setShowAccountOptions(true);
+                                    }}
+                                />
+
+                                {showAccountOptions && (
+                                    <div className="absolute z-20 mt-2 max-h-60 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
+                                        {isLoadingDestinationAccounts ? (
+                                            <div className="px-3 py-2 text-sm text-slate-500">
+                                                Cargando cuentas...
+                                            </div>
+                                        ) : getFilteredDestinationAccounts(form.cuenta).length > 0 ? (
+                                            getFilteredDestinationAccounts(form.cuenta).map((account) => (
+                                                <button
+                                                    key={`${account.banco}-${account.titular}-${account.cuenta}-${account.clabe}`}
+                                                    type="button"
+                                                    onClick={() => selectDestinationAccount(account)}
+                                                    className="block w-full px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-50"
+                                                >
+                                                    <span className="block font-medium text-slate-900">
+                                                        {account.cuenta || account.clabe}
+                                                    </span>
+
+                                                    <span className="block text-xs text-slate-500">
+                                                        {account.banco} · {account.titular}
+                                                    </span>
+
+                                                    {account.clabe ? (
+                                                        <span className="block text-xs text-slate-400">
+                                                            CLABE: {account.clabe}
+                                                        </span>
+                                                    ) : null}
+                                                </button>
+                                            ))
+                                        ) : (
+                                            <div className="px-3 py-2 text-sm text-slate-500">
+                                                No se encontraron resultados
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        <div>
+                            <label className="mb-2 block text-sm font-medium text-slate-700">
+                                Cuenta CLABE interbancaria
+                            </label>
+
+                            <Input
+                                type="text"
+                                placeholder="CLABE interbancaria"
+                                inputMode="numeric"
+                                maxLength={18}
+                                value={form.clabe}
+                                error={errors.clabe}
+                                onChange={(event) =>
+                                    updateField('clabe', event.target.value)
+                                }
+                            />
+                        </div>
+                        <div>
+                            <label className="mb-2 block text-sm font-medium text-slate-700">
                                 Banco destino
                             </label>
 
@@ -331,19 +460,19 @@ export function EditReturnPaymentForm({
                                         {filteredBanks.length > 0 ? (
                                             filteredBanks.map((bank) => (
                                                 <button
-                                                    key={bank}
+                                                    key={bank.value}
                                                     type="button"
                                                     className="block w-full px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-50"
                                                     onClick={() => {
                                                         updateField(
                                                             'banco',
-                                                            bank,
+                                                            bank.value,
                                                         );
 
                                                         setShowBankOptions(false);
                                                     }}
                                                 >
-                                                    {bank}
+                                                    {bank.label}
                                                 </button>
                                             ))
                                         ) : (
@@ -372,40 +501,6 @@ export function EditReturnPaymentForm({
                             />
                         </div>
 
-                        <div>
-                            <label className="mb-2 block text-sm font-medium text-slate-700">
-                                Número de cuenta
-                            </label>
-
-                            <Input
-                                type="text"
-                                placeholder="Número de cuenta"
-                                inputMode="numeric"
-                                maxLength={12}
-                                value={form.cuenta}
-                                error={errors.cuenta}
-                                onChange={(event) =>
-                                    updateField('cuenta', event.target.value)
-                                }
-                            />
-                        </div>
-                        <div>
-                            <label className="mb-2 block text-sm font-medium text-slate-700">
-                                Cuenta CLABE interbancaria
-                            </label>
-
-                            <Input
-                                type="text"
-                                placeholder="CLABE interbancaria"
-                                inputMode="numeric"
-                                maxLength={18}
-                                value={form.clabe}
-                                error={errors.clabe}
-                                onChange={(event) =>
-                                    updateField('clabe', event.target.value)
-                                }
-                            />
-                        </div>
                     </>
                 )}
 
