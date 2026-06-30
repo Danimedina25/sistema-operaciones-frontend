@@ -23,6 +23,8 @@ import {
   ReturnUpdateRequestPaymentApiResponse,
   ReturnDestinationAccountSuggestion,
   ReturnDestinationAccountSuggestionsApiResponse,
+  ScheduleCashReturnPickupRequest,
+  ScheduleCashReturnPickupApiResponse,
 } from '../types/operations.types.ts';
 
 const OPERATIONS_BASE_PATH = '/api/operations';
@@ -244,6 +246,18 @@ export async function realizeReturnPayment(
 ): Promise<ReturnPaymentResponse> {
   const response = await api.patch<ReturnRealizePaymentApiResponse>(
     `${RETURNS_BASE_PATH}/payments/${returnPaymentId}/realize`,
+    payload,
+  );
+
+  return response.data.data;
+}
+
+export async function scheduleCashReturnPickup(
+  returnPaymentId: number,
+  payload: ScheduleCashReturnPickupRequest,
+): Promise<ReturnPaymentResponse> {
+  const response = await api.patch<ScheduleCashReturnPickupApiResponse>(
+    `${RETURNS_BASE_PATH}/payments/${returnPaymentId}/cash-pickup-time`,
     payload,
   );
 

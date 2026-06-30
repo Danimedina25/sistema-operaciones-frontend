@@ -11,8 +11,6 @@ export interface RealizeReturnPaymentValues {
   cuentaOrigenId?: string;
   comprobante: FileList;
   observaciones?: string;
-  fechaRecoleccionEfectivo?: string;
-  horaRecoleccionEfectivo?: string;
 }
 
 interface UseRealizeReturnPaymentOptions {
@@ -48,18 +46,12 @@ export function useRealizeReturnPayment(
         operationId: values.operationId,
       });
 
-      const fechaHoraRecoleccionEfectivo =
-        values.fechaRecoleccionEfectivo && values.horaRecoleccionEfectivo
-          ? `${values.fechaRecoleccionEfectivo}T${values.horaRecoleccionEfectivo}:00`
-          : null;
-
       await realizeReturnPayment(returnPaymentId, {
         cuentaOrigenId: values.cuentaOrigenId
           ? Number(values.cuentaOrigenId)
           : null,
         comprobanteUrl: uploadResult.downloadUrl,
         observaciones: values.observaciones?.trim() || undefined,
-        fechaHoraRecoleccionEfectivo,
       });
 
       toast.success('Retorno retornado correctamente');

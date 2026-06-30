@@ -46,7 +46,7 @@ export function CreateUserForm({
 
   const isSocioComercial = selectedRole?.name === 'SOCIO_COMERCIAL';
   const [showBankOptions, setShowBankOptions] = useState(false);
-  const bankFieldValue = watch('banco') || '';
+  const bankFieldValue = String(watch('banco') ?? '');
   const bankContainerRef = useRef<HTMLDivElement | null>(null);
 
   const filteredBanks = useMemo(() => {

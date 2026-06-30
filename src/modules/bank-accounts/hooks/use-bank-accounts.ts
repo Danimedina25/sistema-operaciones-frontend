@@ -13,7 +13,6 @@ export function useBankAccounts() {
     try {
       setIsLoading(true);
       const result = await getBankAccounts();
-      console.log("here", result)
       setAccounts(result);
     } catch (error) {
       toast.error(getApiErrorMessage(error));

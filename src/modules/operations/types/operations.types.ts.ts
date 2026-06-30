@@ -170,6 +170,9 @@ export interface PaymentOperationResponse {
 
   createdAt: string;
   updatedAt: string;
+
+  contieneRetornosEnEfectivo: boolean;
+  contieneRetornosEnTransferencia: boolean;
 }
 
 
@@ -197,7 +200,11 @@ export interface RealizeReturnPaymentRequest {
   cuentaOrigenId?: number | null;
   comprobanteUrl?: string | null;
   observaciones?: string | null;
-  fechaHoraRecoleccionEfectivo?: string | null;
+}
+
+export interface ScheduleCashReturnPickupRequest {
+  fechaHoraRecoleccionEfectivo: string;
+  observaciones?: string | null;
 }
 
 export interface ReturnPaymentResponse {
@@ -251,6 +258,8 @@ export type PaymentApiResponse = ApiResponse<OperationPaymentResponse>;
 export type ReturnRequestPaymentApiResponse = ApiResponse<ReturnPaymentResponse[]>;
 export type ReturnUpdateRequestPaymentApiResponse = ApiResponse<ReturnPaymentResponse>;
 export type ReturnRealizePaymentApiResponse = ApiResponse<ReturnPaymentResponse>;
+export type ScheduleCashReturnPickupApiResponse =
+  ApiResponse<ReturnPaymentResponse>;
 export type ReturnPaymentsListApiResponse = ApiResponse<ReturnPaymentResponse[]>;
 export type ReturnDestinationAccountSuggestionsApiResponse =
   ApiResponse<ReturnDestinationAccountSuggestion[]>;

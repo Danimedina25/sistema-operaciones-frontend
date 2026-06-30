@@ -16,6 +16,7 @@ interface OperationDetailContainerProps {
     montoPendienteARetornar: number,
   ) => void;
   onAddRequestReturnPayment?: (operation: PaymentOperationResponse, montoPendientePorSolicitar: number) => void;
+  onDefineCashReturnTime?: (returnPayment: ReturnPaymentResponse) => void;
   onPayReturn?: (returnPayment: ReturnPaymentResponse) => void;
   scrollToPayments?: boolean;
   scrollToReturns?: boolean;
@@ -32,6 +33,7 @@ export function OperationDetailContainer({
   onAddPayment,
   onAddReturnPayment,
   onAddRequestReturnPayment,
+  onDefineCashReturnTime,
   onPayReturn,
   scrollToPayments = false,
   scrollToReturns = false,
@@ -42,7 +44,7 @@ export function OperationDetailContainer({
 
   const canViewFinancialDetails = !hasRole(['SOCIO_COMERCIAL']);
   const canRequestReturn = hasRole(['SOCIO_COMERCIAL']) || hasRole(['ADMIN']);
-  const canPayReturn = hasRole(['ADMIN']);
+  const canPayReturn = hasRole(['ADMIN']) || hasRole(['JEFA_CAJAS']) || hasRole(['JEFA_CUENTAS']);
 
   const { operation, isLoading, fetchOperation } =
     useOperationDetail(operationId);
@@ -107,6 +109,11 @@ export function OperationDetailContainer({
         canRequestReturn && onAddRequestReturnPayment
           ? (operation: PaymentOperationResponse, montoPendientePorSolicitar: number) =>
             onAddRequestReturnPayment(operation, montoPendientePorSolicitar)
+          : undefined
+      }
+      onDefineCashReturnTime={
+        canPayReturn && onDefineCashReturnTime
+          ? (returnPayment) => onDefineCashReturnTime(returnPayment)
           : undefined
       }
       onPayReturn={canPayReturn && onPayReturn ? (returnPayment) => onPayReturn(returnPayment) : undefined}

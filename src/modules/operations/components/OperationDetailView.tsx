@@ -33,6 +33,7 @@ interface OperationDetailViewProps {
   onEditReturn?: (
     returnPayment: ReturnPaymentResponse,
   ) => void;
+  onDefineCashReturnTime?: (returnPayment: ReturnPaymentResponse) => void;
 }
 
 export function OperationDetailView({
@@ -53,6 +54,7 @@ export function OperationDetailView({
   onEditPayment,
   onEditReturn,
   canRequestReturn = false,
+  onDefineCashReturnTime
 }: OperationDetailViewProps) {
   const paymentsSectionRef = useRef<HTMLDivElement | null>(null);
   const returnsSectionRef = useRef<HTMLDivElement | null>(null);
@@ -164,9 +166,18 @@ export function OperationDetailView({
           onAddRequestReturnPayment={() => {
             onAddRequestReturnPayment?.(operation, montoPendientePorSolicitar);
           }}
-          canManageReturnPayments={(user?.roles?.includes('ADMIN') || user?.roles?.includes('JEFA_CAJAS')) ?? false}
-          canEditRequestReturnPayments={(user?.roles?.includes('SOCIO_COMERCIAL')) || (user?.roles?.includes('ADMIN'))}
+          canManageReturnPayments={
+            (user?.roles?.includes('ADMIN') ||
+              user?.roles?.includes('JEFA_CAJAS') ||
+              user?.roles?.includes('JEFA_CUENTAS')) ??
+            false
+          }
+          canEditRequestReturnPayments={
+            user?.roles?.includes('SOCIO_COMERCIAL') ||
+            user?.roles?.includes('ADMIN')
+          }
           onPayReturn={onPayReturn}
+          onDefineCashReturnTime={onDefineCashReturnTime}
           onEditReturn={onEditReturn}
           operationStatus={operation.estatus}
         />

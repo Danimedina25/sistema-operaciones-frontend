@@ -11,7 +11,7 @@ interface SelectOption {
 
 export interface RealizeReturnPaymentFormValues {
     cuentaOrigenId?: string;
-    comprobante: FileList;
+    comprobante?: FileList;
     observaciones?: string;
     fechaRecoleccionEfectivo?: string;
     horaRecoleccionEfectivo?: string;
@@ -36,12 +36,31 @@ function isImageFile(file?: File | null) {
     return file.type.startsWith('image/');
 }
 
+function splitDateTime(value?: string | null) {
+    if (!value) {
+        return {
+            date: '',
+            time: '',
+        };
+    }
+
+    const [date, timeWithSeconds] = value.split('T');
+
+    return {
+        date: date ?? '',
+        time: timeWithSeconds?.slice(0, 5) ?? '',
+    };
+}
+
 export function RealizeReturnPaymentForm({
     returnPayment,
     bankAccounts,
     isSubmitting,
     onSubmit,
 }: RealizeReturnPaymentFormProps) {
+    const pickupDateTime = splitDateTime(
+        returnPayment.fechaHoraRecoleccionEfectivo,
+    );
     const {
         register,
         handleSubmit,
@@ -52,9 +71,9 @@ export function RealizeReturnPaymentForm({
         defaultValues: {
             cuentaOrigenId: '',
             comprobante: undefined,
-            observaciones: '',
-            fechaRecoleccionEfectivo: '',
-            horaRecoleccionEfectivo: '',
+            observaciones: returnPayment.observaciones ?? '',
+            fechaRecoleccionEfectivo: pickupDateTime.date,
+            horaRecoleccionEfectivo: pickupDateTime.time,
         },
         mode: 'onChange',
     });
@@ -82,6 +101,7 @@ export function RealizeReturnPaymentForm({
             : null;
 
     const selectedReceiptIsImage = isImageFile(selectedFile);
+
 
     useEffect(() => {
         if (!cuentaOrigenId) return;
@@ -127,11 +147,19 @@ export function RealizeReturnPaymentForm({
         return dataTransfer.files;
     }
 
-    const requiereCuentaOrigen =
-        returnPayment.tipoPago === 'TRANSFERENCIA' || returnPayment.tipoPago === 'DEPOSITO'
-    const requiereFechaHoraRecoleccion =
-        returnPayment.tipoPago === 'EFECTIVO';
+    const esRetornoEnEfectivo = returnPayment.tipoPago === 'EFECTIVO';
 
+    const isEditingCashPickup =
+        esRetornoEnEfectivo &&
+        !!returnPayment.fechaHoraRecoleccionEfectivo;
+
+    const requiereCuentaOrigen =
+        returnPayment.tipoPago === 'TRANSFERENCIA' ||
+        returnPayment.tipoPago === 'DEPOSITO';
+
+    const requiereComprobante = !esRetornoEnEfectivo;
+
+    const requiereFechaHoraRecoleccion = esRetornoEnEfectivo;
     return (
         <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
             <div className="grid gap-3 rounded-xl bg-slate-50 p-4 text-sm md:grid-cols-3">
@@ -331,171 +359,38 @@ export function RealizeReturnPaymentForm({
                 </div>
             ) : null}
 
-            <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Comprobante de pago
-                </label>
+            {requiereComprobante ? (
+                <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">
+                        Comprobante de pago
+                    </label>
 
-                <Controller
-                    control={control}
-                    name="comprobante"
-                    rules={{
-                        validate: (value) =>
-                            value && value.length > 0
-                                ? true
-                                : 'El comprobante es obligatorio',
-                    }}
-                    render={({ field }) => (
-                        <>
-                            {selectedFile ? (
-                                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                                    <div className="flex items-start gap-4">
-                                        <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
-                                            {selectedPreviewUrl ? (
-                                                <img
-                                                    src={selectedPreviewUrl}
-                                                    alt="Comprobante"
-                                                    className="h-full w-full object-cover"
-                                                />
-                                            ) : (
-                                                <div className="px-2 text-center text-xs text-slate-500">
-                                                    PDF
-                                                </div>
-                                            )}
-                                        </div>
+                    <Controller
+                        control={control}
+                        name="comprobante"
+                        rules={{
+                            validate: (value) => {
+                                if (!requiereComprobante) return true;
 
-                                        <div className="min-w-0 flex-1">
-                                            <p className="text-sm font-semibold text-slate-900">
-                                                Comprobante seleccionado
-                                            </p>
+                                return value && value.length > 0
+                                    ? true
+                                    : 'El comprobante es obligatorio';
+                            },
+                        }}
+                        render={({ field }) => (
+                            <>
+                                {/* aquí dejas igual todo tu render actual */}
+                            </>
+                        )}
+                    />
 
-                                            <p className="mt-1 break-all text-xs text-slate-500">
-                                                {selectedFile.name}
-                                            </p>
-
-                                            <div className="mt-3 flex gap-2">
-                                                {selectedPreviewUrl && (
-                                                    <a
-                                                        href={selectedPreviewUrl}
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                        className="
-                      inline-flex
-                      items-center
-                      rounded-lg
-                      border
-                      border-slate-200
-                      bg-white
-                      px-3
-                      py-2
-                      text-xs
-                      font-medium
-                      text-slate-700
-                      hover:bg-slate-50
-                    "
-                                                    >
-                                                        Ver imagen
-                                                    </a>
-                                                )}
-
-                                                <label
-                                                    className="
-                    inline-flex
-                    cursor-pointer
-                    items-center
-                    rounded-lg
-                    bg-slate-900
-                    px-3
-                    py-2
-                    text-xs
-                    font-semibold
-                    text-white
-                    hover:bg-slate-800
-                  "
-                                                >
-                                                    Cambiar comprobante
-
-                                                    <input
-                                                        type="file"
-                                                        accept=".pdf,.jpg,.jpeg,.png,.webp"
-                                                        className="hidden"
-                                                        onChange={(event) => {
-                                                            const files = event.target.files;
-
-                                                            if (!files?.length) return;
-
-                                                            field.onChange(files);
-
-                                                            setIsDragging(false);
-                                                        }}
-                                                    />
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <label
-                                    onDragOver={(event) => {
-                                        event.preventDefault();
-                                        setIsDragging(true);
-                                    }}
-                                    onDragLeave={(event) => {
-                                        event.preventDefault();
-                                        setIsDragging(false);
-                                    }}
-                                    onDrop={(event) => {
-                                        event.preventDefault();
-                                        setIsDragging(false);
-
-                                        const file = event.dataTransfer.files?.[0];
-                                        if (!file) return;
-
-                                        field.onChange(buildFileList(file));
-                                    }}
-                                    className={`flex min-h-[170px] w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-6 text-center transition ${isDragging
-                                        ? 'border-slate-900 bg-slate-50'
-                                        : 'border-slate-300 bg-white hover:border-slate-400'
-                                        }`}
-                                >
-                                    <input
-                                        type="file"
-                                        accept=".pdf,.jpg,.jpeg,.png,.webp"
-                                        className="hidden"
-                                        onChange={(event) => {
-                                            const files = event.target.files;
-
-                                            if (!files?.length) return;
-
-                                            field.onChange(files);
-
-                                            setIsDragging(false);
-                                        }}
-                                    />
-
-                                    <p className="text-sm font-medium text-slate-700">
-                                        Arrastra y suelta el comprobante aquí
-                                    </p>
-
-                                    <p className="mt-1 text-xs text-slate-500">
-                                        o haz clic para seleccionar un archivo
-                                    </p>
-
-                                    <p className="mt-2 text-xs text-slate-400">
-                                        PDF, JPG, JPEG, PNG o WEBP
-                                    </p>
-                                </label>
-                            )}
-                        </>
-                    )}
-                />
-
-                {errors.comprobante ? (
-                    <p className="mt-1 text-xs text-red-600">
-                        {errors.comprobante.message}
-                    </p>
-                ) : null}
-            </div>
+                    {errors.comprobante ? (
+                        <p className="mt-1 text-xs text-red-600">
+                            {errors.comprobante.message}
+                        </p>
+                    ) : null}
+                </div>
+            ) : null}
 
             <div>
                 <label className="mb-2 block text-sm font-medium text-slate-700">
@@ -515,7 +410,11 @@ export function RealizeReturnPaymentForm({
                 isLoading={isSubmitting}
                 className="w-full justify-center"
             >
-                Registrar
+                {esRetornoEnEfectivo
+                    ? isEditingCashPickup
+                        ? 'Actualizar fecha y hora de recolección'
+                        : 'Guardar fecha y hora de recolección'
+                    : 'Registrar retorno'}
             </Button>
         </form>
     );

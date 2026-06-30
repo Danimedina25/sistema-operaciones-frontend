@@ -1,5 +1,13 @@
 import { z } from 'zod';
 
+const emptyStringToUndefined = (value: unknown) => {
+  if (typeof value === 'string' && value.trim() === '') {
+    return undefined;
+  }
+
+  return value;
+};
+
 export const createUserSchema = z
   .object({
     nombre: z
@@ -21,68 +29,75 @@ export const createUserSchema = z
 
         return Number(value);
       },
-      z
-        .number({ error: 'El rol es obligatorio' })
-        .min(1, { error: 'El rol es obligatorio' }),
+      z.number({ error: 'El rol es obligatorio' }).min(1, {
+        error: 'El rol es obligatorio',
+      }),
     ),
 
     roleName: z.string().optional(),
 
     appliesToNetwork: z.boolean().optional().default(true),
 
-    cuentaBancaria: z
-      .string()
-      .trim()
-      .regex(
-        /^\d{18}$/,
-        'La CLABE interbancaria debe contener exactamente 18 dígitos',
-      )
-      .optional(),
+    cuentaBancaria: z.preprocess(
+      emptyStringToUndefined,
+      z
+        .string()
+        .trim()
+        .regex(
+          /^\d{18}$/,
+          'La CLABE interbancaria debe contener exactamente 18 dígitos',
+        )
+        .optional(),
+    ),
 
-    banco: z
-      .string()
-      .max(
-        100,
-        'El banco no puede exceder 100 caracteres',
-      )
-      .optional(),
+    banco: z.preprocess(
+      emptyStringToUndefined,
+      z
+        .string()
+        .trim()
+        .max(100, 'El banco no puede exceder 100 caracteres')
+        .optional(),
+    ),
 
-    titularCuenta: z
-      .string()
-      .max(
-        150,
-        'El titular de la cuenta no puede exceder 150 caracteres',
-      )
-      .optional(),
+    titularCuenta: z.preprocess(
+      emptyStringToUndefined,
+      z
+        .string()
+        .trim()
+        .max(150, 'El titular de la cuenta no puede exceder 150 caracteres')
+        .optional(),
+    ),
   })
   .superRefine((values, ctx) => {
-    if (values.roleName === 'SOCIO_COMERCIAL') {
-      if (!values.cuentaBancaria?.trim()) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['cuentaBancaria'],
-          message:
-            'La cuenta bancaria es obligatoria para un socio comercial',
-        });
-      }
+    const requiresBankData =
+      values.roleName === 'SOCIO_COMERCIAL' || values.roleName === 'ADMIN';
 
-      if (!values.banco?.trim()) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['banco'],
-          message:
-            'El banco es obligatorio para un socio comercial',
-        });
-      }
+    if (!requiresBankData) {
+      return;
+    }
 
-      if (!values.titularCuenta?.trim()) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['titularCuenta'],
-          message:
-            'El titular de la cuenta es obligatorio para un socio comercial',
-        });
-      }
+    if (!values.cuentaBancaria) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['cuentaBancaria'],
+        message: 'La CLABE interbancaria es obligatoria',
+      });
+    }
+
+    if (!values.banco) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['banco'],
+        message: 'El banco es obligatorio',
+      });
+    }
+
+    if (!values.titularCuenta) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['titularCuenta'],
+        message: 'El titular de la cuenta es obligatorio',
+      });
     }
   });
 

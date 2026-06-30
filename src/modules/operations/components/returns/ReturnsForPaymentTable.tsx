@@ -6,6 +6,7 @@ import {
 } from '@/modules/operations/utils/operation-formatters';
 import { PaymentOperationResponse } from '../../types/operations.types.ts.js';
 import { useEffect } from 'react';
+import { useAuth } from '@/modules/auth/store/auth.context.js';
 
 interface ReturnsTableProps {
   operations: PaymentOperationResponse[];
@@ -18,6 +19,13 @@ export function ReturnsForPaymentTable({
   isLoading,
   onReturnPayments
 }: ReturnsTableProps) {
+
+  const { user } = useAuth();
+
+  const roles = user?.roles ?? [];
+
+  const isJefaCajas = roles.includes('JEFA_CAJAS');
+  const isJefaCuentas = roles.includes('JEFA_CUENTAS');
 
   if (!isLoading && operations.length === 0) {
     return (
@@ -93,82 +101,94 @@ export function ReturnsForPaymentTable({
                 </td>
               </tr>
             ) : (
-              operations.map((operation) => (
-                <tr
-                  key={operation.id}
-                  //onClick={() => onReturnPayments(operation.id, true)}
-                  className="cursor-pointer border-t border-slate-200 text-sm transition hover:bg-slate-50"
-                >
-                  <td className="px-4 py-4 font-medium text-slate-900">
-                    <div className="mt-1 text-xs font-normal text-slate-400">
-                      {operation.id}
-                    </div>
-                  </td>
-                  <td className="px-4 py-4 font-medium text-slate-900">
-                    <div>{operation.clienteNombre}</div>
-                  </td>
+              operations.map((operation) => {
+                console.log("operation", operation)
+                const canPayReturns =
+                  (isJefaCajas && operation.contieneRetornosEnEfectivo) ||
+                  (isJefaCuentas && operation.contieneRetornosEnTransferencia);
+                return (
+                  <tr
+                    key={operation.id}
+                    //onClick={() => onReturnPayments(operation.id, true)}
+                    className="cursor-pointer border-t border-slate-200 text-sm transition hover:bg-slate-50"
+                  >
+                    <td className="px-4 py-4 font-medium text-slate-900">
+                      <div className="mt-1 text-xs font-normal text-slate-400">
+                        {operation.id}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 font-medium text-slate-900">
+                      <div>{operation.clienteNombre}</div>
+                    </td>
 
-                  <td className="px-4 py-4 text-slate-600">
-                    {operation.socioComercialNombre}
-                  </td>
+                    <td className="px-4 py-4 text-slate-600">
+                      {operation.socioComercialNombre}
+                    </td>
 
-                  <td className="px-4 py-4 text-slate-600">
-                    {formatDate(operation.createdAt)}
-                  </td>
+                    <td className="px-4 py-4 text-slate-600">
+                      {formatDate(operation.createdAt)}
+                    </td>
 
-                  <td className="px-4 py-4 font-semibold text-slate-600">
-                    {formatCurrency(operation.montoTotal)}
-                  </td>
+                    <td className="px-4 py-4 font-semibold text-slate-600">
+                      {formatCurrency(operation.montoTotal)}
+                    </td>
 
-                  <td className="px-4 py-4 text-slate-600">
-                    <div className="font-semibold text-emerald-700">
-                      {formatCurrency(operation.montoTotalDevolverCliente)}
-                    </div>
+                    <td className="px-4 py-4 text-slate-600">
+                      <div className="font-semibold text-emerald-700">
+                        {formatCurrency(operation.montoTotalDevolverCliente)}
+                      </div>
 
-                    <div className="mt-1 text-xs text-slate-400">
-                      neto al cliente
-                    </div>
-                  </td>
+                      <div className="mt-1 text-xs text-slate-400">
+                        neto al cliente
+                      </div>
+                    </td>
 
-                   <td className="px-4 py-4 font-semibold text-slate-600 text-center">
-                    {operation.numeroRetornosSolicitados}
-                  </td>
+                    <td className="px-4 py-4 font-semibold text-slate-600 text-center">
+                      {operation.numeroRetornosSolicitados}
+                    </td>
 
-                  <td className="px-4 py-4 text-slate-600">
-                    <div>{formatCurrency(operation.montoSolicitadoRetorno)}</div>
+                    <td className="px-4 py-4 text-slate-600">
+                      <div>{formatCurrency(operation.montoSolicitadoRetorno)}</div>
 
-                    <div className="mt-1 text-xs text-slate-400">
-                      solicitado
-                    </div>
-                  </td>
+                      <div className="mt-1 text-xs text-slate-400">
+                        solicitado
+                      </div>
+                    </td>
 
-                  <td className="px-4 py-4 text-slate-600">
-                    <div>{formatCurrency(operation.montoRetornado)}</div>
+                    <td className="px-4 py-4 text-slate-600">
+                      <div>{formatCurrency(operation.montoRetornado)}</div>
 
-                    <div className="mt-1 text-xs text-slate-400">
-                      retornado
-                    </div>
-                  </td>
+                      <div className="mt-1 text-xs text-slate-400">
+                        retornado
+                      </div>
+                    </td>
 
-                  <td className="px-4 py-4">
-                    <div className="flex justify-center">
-                      <OperationStatusBadge status={operation.estatus} isReturn />
-                    </div>
-                  </td>
+                    <td className="px-4 py-4">
+                      <div className="flex justify-center">
+                        <OperationStatusBadge status={operation.estatus} isReturn />
+                      </div>
+                    </td>
 
-                  <td className="px-4 py-4 text-center">
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        onReturnPayments(operation.id);
-                      }}
-                      className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-                    >
-                      Pagar retornos
-                    </button>
-                  </td>
-                </tr>
-              ))
+                    <td className="px-4 py-4 text-center">
+                      {canPayReturns ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onReturnPayments(operation.id);
+                          }}
+                          className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                        >
+                          {isJefaCajas ? 'Programar recolecciones' : 'Pagar retornos'}
+                        </button>
+                      ) : (
+                        <span className="text-xs text-slate-400">
+                          Sin acciones
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

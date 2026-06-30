@@ -16,6 +16,7 @@ import { RealizeReturnPaymentModal } from '../components/returns/RealizeReturnPa
 import { useRealizeReturnPayment } from '../hooks/returns/use-realize-return-payment';
 import { EditReturnPaymentForm } from '../components/returns/EditReturnPaymentForm';
 import { useUpdateRequestReturnPayment } from '../hooks/returns/use-update-request-return-payment';
+import { useScheduleCashReturnPickup } from '../hooks/returns/use-schedule-cash-return-pickup';
 
 export default function OperationDetailPage() {
   const navigate = useNavigate();
@@ -71,9 +72,12 @@ export default function OperationDetailPage() {
   );
 
   const canPayReturn = user?.roles?.some(
-    (role) => role === 'ADMIN',
+    (role) =>
+      role === 'ADMIN' ||
+      role === 'JEFA_CAJAS' ||
+      role === 'JEFA_CUENTAS' ||
+      role === 'AUXILIAR_CUENTAS'
   );
-
   const parsedOperationId = Number(operationId);
 
   const {
@@ -124,6 +128,17 @@ export default function OperationDetailPage() {
     isSubmitting: isSubmittingRealizeReturn,
     submitRealizeReturnPayment,
   } = useRealizeReturnPayment({
+    onSuccess: async () => {
+      setIsPayReturnModalOpen(false);
+      setSelectedReturnPayment(null);
+      setRefreshKey((prev) => prev + 1);
+    },
+  });
+
+  const {
+    isSubmitting: isSubmittingScheduleCashPickup,
+    submitScheduleCashReturnPickup,
+  } = useScheduleCashReturnPickup({
     onSuccess: async () => {
       setIsPayReturnModalOpen(false);
       setSelectedReturnPayment(null);
@@ -202,6 +217,14 @@ export default function OperationDetailPage() {
             ? (operation) => {
               setSelectedReturnOperation(operation);
               setIsAddReturnModalOpen(true);
+            }
+            : undefined
+        }
+        onDefineCashReturnTime={
+          canPayReturn
+            ? (returnPayment) => {
+              setSelectedReturnPayment(returnPayment);
+              setIsPayReturnModalOpen(true);
             }
             : undefined
         }
@@ -289,16 +312,38 @@ export default function OperationDetailPage() {
         }}
         onSubmit={submitRequestReturnPayment}
       />
-
       <RealizeReturnPaymentModal
         open={isPayReturnModalOpen}
         returnPayment={selectedReturnPayment}
-        isSubmitting={isSubmittingRealizeReturn}
+        isSubmitting={
+          selectedReturnPayment?.tipoPago === 'EFECTIVO'
+            ? isSubmittingScheduleCashPickup
+            : isSubmittingRealizeReturn
+        }
         onClose={() => {
           setIsPayReturnModalOpen(false);
           setSelectedReturnPayment(null);
         }}
-        onSubmit={submitRealizeReturnPayment}
+        onSubmit={async (returnPaymentId, values) => {
+          if (selectedReturnPayment?.tipoPago === 'EFECTIVO') {
+            await submitScheduleCashReturnPickup(returnPaymentId, {
+              fechaRecoleccionEfectivo: values.fechaRecoleccionEfectivo ?? '',
+              horaRecoleccionEfectivo: values.horaRecoleccionEfectivo ?? '',
+              observaciones: values.observaciones,
+            });
+
+            return;
+          }
+
+          if (!values.comprobante) {
+            throw new Error('El comprobante es obligatorio');
+          }
+
+          await submitRealizeReturnPayment(returnPaymentId, {
+            ...values,
+            comprobante: values.comprobante,
+          });
+        }}
       />
 
       <Modal

@@ -4,6 +4,7 @@ import { paymentTypeLabels } from '@/modules/operations/constants/operations.con
 import {
   formatCurrency,
   formatDate,
+  formatDateTime,
 } from '@/modules/operations/utils/operation-formatters';
 import {
   OperationStatus,
@@ -13,6 +14,7 @@ import { ReturnStatusBadge } from './ReturnStatusBadge.js';
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ReturnPaymentDetailModal } from './ReturnPaymentDetailModal.js';
+import { useAuth } from '@/modules/auth/store/auth.context.js';
 
 interface ReturnPaymentsTableProps {
   returns: ReturnPaymentResponse[];
@@ -21,6 +23,7 @@ interface ReturnPaymentsTableProps {
   onAddRequestReturnPayment?: (montoPendientePorSolicitar: number) => void;
   canManageReturnPayments?: boolean;
   canEditRequestReturnPayments?: boolean;
+  onDefineCashReturnTime?: (returnPayment: ReturnPaymentResponse) => void;
   onPayReturn?: (returnPayment: ReturnPaymentResponse) => void;
   onEditReturn?: (
     returnPayment: ReturnPaymentResponse,
@@ -35,10 +38,19 @@ export function ReturnPaymentsTable({
   onAddRequestReturnPayment,
   canManageReturnPayments = false,
   canEditRequestReturnPayments = false,
+  onDefineCashReturnTime,
   onPayReturn,
   onEditReturn,
   operationStatus,
 }: ReturnPaymentsTableProps) {
+  const { user } = useAuth();
+
+  const roles = user?.roles ?? [];
+
+  const isAdmin = roles.includes('ADMIN');
+  const isJefaCajas = roles.includes('JEFA_CAJAS');
+  const isJefaCuentas = roles.includes('JEFA_CUENTAS');
+  const isSocioComercial = roles.includes('SOCIO_COMERCIAL')
   const hasPendingAmountToRequest = (montoPendientePorSolicitar ?? 0) > 0;
   const hasPendingAmountToPay = (montoPendientePorRetornar ?? 0) > 0;
   const [openOptionsReturnId, setOpenOptionsReturnId] = useState<number | null>(null);
@@ -119,16 +131,29 @@ export function ReturnPaymentsTable({
       returnPayment.estatus === 'SOLICITADO' ||
       returnPayment.estatus === 'RETORNADO',
   );
+  function canDefineCashReturnTime(returnPayment: ReturnPaymentResponse) {
+    if (!hasPendingAmountToPay) return false;
+    if (!canManageReturnPayments) return false;
+    if (!onDefineCashReturnTime) return false;
+    if (returnPayment.estatus !== 'SOLICITADO') return false;
 
-  const hasPendingRequestedReturns = returns.some(
-    (returnPayment) => returnPayment.estatus === 'SOLICITADO',
-  );
+    return (
+      (isJefaCajas || isAdmin) &&
+      returnPayment.tipoPago === 'EFECTIVO'
+    );
+  }
 
-  const canPayReturns =
-    hasPendingAmountToPay &&
-    canManageReturnPayments &&
-    hasPendingRequestedReturns &&
-    !!onPayReturn;
+  function canPayThisReturn(returnPayment: ReturnPaymentResponse) {
+    if (!hasPendingAmountToPay) return false;
+    if (!canManageReturnPayments) return false;
+    if (!onPayReturn) return false;
+    if (returnPayment.estatus !== 'SOLICITADO') return false;
+
+    return (
+      (isJefaCuentas || isAdmin) &&
+      returnPayment.tipoPago === 'TRANSFERENCIA'
+    );
+  }
 
   const canOperationRequestReturns =
     operationStatus === 'VALIDADA' ||
@@ -139,7 +164,7 @@ export function ReturnPaymentsTable({
   const canRequestReturns =
     canOperationRequestReturns &&
     hasPendingAmountToRequest &&
-    !!onAddRequestReturnPayment;
+    !!onAddRequestReturnPayment && isSocioComercial;
 
   let requestStatusMessage: string | null = null;
 
@@ -291,7 +316,7 @@ export function ReturnPaymentsTable({
                 <th className="px-4 py-3 font-medium">Fecha retorno</th>
                 <th className="px-4 py-3 font-medium">Observaciones</th>
                 <th className="px-4 py-3 font-medium">Opciones</th>
-                {(canPayReturns || canEditRequestReturnPayments) && (
+                {(canManageReturnPayments || canEditRequestReturnPayments) && (
                   <th className="px-4 py-3 font-medium">Acciones</th>
                 )}
               </tr>
@@ -299,7 +324,22 @@ export function ReturnPaymentsTable({
 
             <tbody>
               {returns.map((returnPayment) => {
-                const canEditReturn = canEditRequestReturnPayments && returnPayment.estatus === 'SOLICITADO'
+                //const canEditReturn = canEditRequestReturnPayments && returnPayment.estatus === 'SOLICITADO'
+                const canPayReturn = canPayThisReturn(returnPayment);
+                const hasPickupScheduled = !!returnPayment.fechaHoraRecoleccionEfectivo;
+                const canEditReturn =
+                  canEditRequestReturnPayments &&
+                  returnPayment.estatus === 'SOLICITADO' &&
+                  !hasPickupScheduled;
+                const canDefineTime = canDefineCashReturnTime(returnPayment);
+                const canEditPickupTime = canDefineTime && hasPickupScheduled;
+                const canCreatePickupTime = canDefineTime && !hasPickupScheduled;
+
+                const hasActions =
+                  canPayReturn ||
+                  canCreatePickupTime ||
+                  canEditPickupTime ||
+                  canEditReturn;
                 return (
                   <tr
                     key={returnPayment.id}
@@ -316,11 +356,13 @@ export function ReturnPaymentsTable({
                     </td>
 
                     <td className="px-4 py-4">
-                      <ReturnStatusBadge
-                        status={returnPayment.estatus}
-                      />
+                      <div className="flex justify-center md:justify-start">
+                        <ReturnStatusBadge
+                          status={returnPayment.estatus}
+                          hasPickupScheduled={!!returnPayment.fechaHoraRecoleccionEfectivo}
+                        />
+                      </div>
                     </td>
-
                     <td className="px-4 py-4 text-slate-600">
                       {paymentTypeLabels[returnPayment.tipoPago]}
                     </td>
@@ -356,8 +398,8 @@ export function ReturnPaymentsTable({
                     </td>
 
                     <td className="px-4 py-4 text-slate-600">
-                      {returnPayment.fechaPago
-                        ? formatDate(returnPayment.fechaPago)
+                      {returnPayment.fechaHoraRecoleccionEfectivo
+                        ? formatDateTime(returnPayment.fechaHoraRecoleccionEfectivo)
                         : '-'}
                     </td>
 
@@ -472,52 +514,75 @@ export function ReturnPaymentsTable({
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex flex-col items-stretch gap-2">
-                        {canPayReturns || canEditReturn ? (
+                        {hasActions ? (
                           <>
-                            {canPayReturns &&
-                              returnPayment.estatus === 'SOLICITADO' && (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    onPayReturn?.(returnPayment)
-                                  }
-                                  className="
-                        h-8
-                        rounded-lg
-                        bg-emerald-600
-                        px-3
-                        text-xs
-                        font-medium
-                        text-white
-                        shadow-sm
-                        transition
-                        hover:bg-emerald-700
-                      "
-                                >
-                                  Retornar
-                                </button>
-                              )}
+                            {(canCreatePickupTime || canEditPickupTime) && (
+                              <button
+                                type="button"
+                                onClick={() => onDefineCashReturnTime?.(returnPayment)}
+                                className="
+      inline-flex
+      h-8
+      w-44
+      items-center
+      justify-center
+      rounded-lg
+      bg-amber-600
+      px-3
+      text-center
+      text-xs
+      font-medium
+      text-white
+      shadow-sm
+      transition
+      hover:bg-amber-700
+    "
+                              >
+                                {canEditPickupTime
+                                  ? 'Editar recolección'
+                                  : 'Programar recolección'}
+                              </button>
+                            )}
+
+                            {canPayReturn && (
+                              <button
+                                type="button"
+                                onClick={() => onPayReturn?.(returnPayment)}
+                                className="
+      h-8
+      rounded-lg
+      bg-emerald-600
+      px-3
+      text-xs
+      font-medium
+      text-white
+      shadow-sm
+      transition
+      hover:bg-emerald-700
+    "
+                              >
+                                Retornar
+                              </button>
+                            )}
 
                             {canEditReturn && (
                               <button
                                 type="button"
-                                onClick={() =>
-                                  onEditReturn?.(returnPayment)
-                                }
+                                onClick={() => onEditReturn?.(returnPayment)}
                                 className="
-                        h-8
-                        rounded-lg
-                        border
-                        border-slate-300
-                        bg-white
-                        px-3
-                        text-xs
-                        font-medium
-                        text-slate-700
-                        shadow-sm
-                        transition
-                        hover:bg-slate-50
-                      "
+              h-8
+              rounded-lg
+              border
+              border-slate-300
+              bg-white
+              px-3
+              text-xs
+              font-medium
+              text-slate-700
+              shadow-sm
+              transition
+              hover:bg-slate-50
+            "
                               >
                                 Editar
                               </button>

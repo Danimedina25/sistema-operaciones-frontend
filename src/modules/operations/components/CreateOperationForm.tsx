@@ -755,9 +755,12 @@ export function CreateOperationForm({
                             </div>
                           )}
 
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm font-medium text-slate-900">
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="min-w-0 flex-1">
+                              <p
+                                className="truncate text-sm font-medium text-slate-900"
+                                title={selectedFile.name}
+                              >
                                 {selectedFile.name}
                               </p>
 
@@ -768,19 +771,21 @@ export function CreateOperationForm({
 
                             <label
                               className="
-          cursor-pointer
-          rounded-xl
-          border
-          border-slate-200
-          bg-white
-          px-4
-          py-2
-          text-sm
-          font-medium
-          text-slate-700
-          transition
-          hover:bg-slate-50
-        "
+      shrink-0
+      cursor-pointer
+      rounded-xl
+      border
+      border-slate-200
+      bg-white
+      px-4
+      py-2
+      text-sm
+      font-medium
+      whitespace-nowrap
+      text-slate-700
+      transition
+      hover:bg-slate-50
+    "
                             >
                               Cambiar archivo
 

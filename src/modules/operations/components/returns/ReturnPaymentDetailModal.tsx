@@ -5,6 +5,7 @@ import { paymentTypeLabels } from '@/modules/operations/constants/operations.con
 import {
     formatCurrency,
     formatDate,
+    formatDateTime,
 } from '@/modules/operations/utils/operation-formatters';
 import { ReturnPaymentResponse } from '../../types/operations.types.ts';
 import { ReturnStatusBadge } from './ReturnStatusBadge.js';
@@ -47,7 +48,10 @@ export function ReturnPaymentDetailModal({
                                 </p>
                             </div>
 
-                            <ReturnStatusBadge status={returnPayment.estatus} />
+                            <ReturnStatusBadge
+                                status={returnPayment.estatus}
+                                hasPickupScheduled={!!returnPayment.fechaHoraRecoleccionEfectivo}
+                            />
                         </div>
                     </div>
 
@@ -71,14 +75,25 @@ export function ReturnPaymentDetailModal({
                             value={returnPayment.pagadoPorNombre ?? '-'}
                         />
 
-                        <DetailItem
-                            label="Fecha retorno"
-                            value={
-                                returnPayment.fechaPago
-                                    ? formatDate(returnPayment.fechaPago)
-                                    : '-'
-                            }
-                        />
+                        {isCashReturn ? (
+                            <DetailItem
+                                label="Fecha y hora de recolección"
+                                value={
+                                    returnPayment.fechaHoraRecoleccionEfectivo
+                                        ? formatDateTime(returnPayment.fechaHoraRecoleccionEfectivo)
+                                        : 'Pendiente por programar'
+                                }
+                            />
+                        ) : (
+                            <DetailItem
+                                label="Fecha retorno"
+                                value={
+                                    returnPayment.fechaPago
+                                        ? formatDate(returnPayment.fechaPago)
+                                        : '-'
+                                }
+                            />
+                        )}
 
                         {!isCashReturn ? (
                             <>

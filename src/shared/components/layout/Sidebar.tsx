@@ -44,7 +44,7 @@ const navItems: NavItem[] = [
     to: paths.bankAccounts,
     label: 'Cuentas bancarias',
     icon: Landmark,
-    allowedRoles: ['ADMIN',  'GERENTE', 'DIRECCION', 'JEFA_CUENTAS', 'AUXILIAR_CUENTAS'],
+    allowedRoles: ['ADMIN',  'GERENTE', 'DIRECCION', 'AUXILIAR_CUENTAS'],
   },
   {
     to: paths.clientes,
@@ -86,7 +86,7 @@ const navItems: NavItem[] = [
     to: paths.comisionessocios,
     label: 'Pago de comisiones a socios comerciales',
     icon: BadgeDollarSign,
-    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION', 'JEFA_CAJAS', 'JEFA_CUENTAS'],
+    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION', 'JEFA_CUENTAS'],
   },
   {
     to: paths.miscomisiones,

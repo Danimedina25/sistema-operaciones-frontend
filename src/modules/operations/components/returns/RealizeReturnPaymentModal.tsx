@@ -4,17 +4,18 @@ import { ReturnPaymentResponse } from '../../types/operations.types.ts';
 import { RealizeReturnPaymentForm, RealizeReturnPaymentFormValues } from './RealizeReturnPaymentForm.js';
 import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts.js';
 import { useMemo } from 'react';
-import { RealizeReturnPaymentValues } from '../../hooks/returns/use-realize-return-payment.js';
 
 interface RealizeReturnPaymentModalProps {
-  open: boolean;
-  returnPayment: ReturnPaymentResponse | null;
-  isSubmitting: boolean;
-  onClose: () => void;
-  onSubmit: (
-    returnPaymentId: number,
-    values: RealizeReturnPaymentValues,
-  ) => Promise<void>;
+    open: boolean;
+    returnPayment: ReturnPaymentResponse | null;
+    isSubmitting: boolean;
+    onClose: () => void;
+    onSubmit: (
+        returnPaymentId: number,
+        values: RealizeReturnPaymentFormValues & {
+            operationId: number;
+        },
+    ) => Promise<void>;
 }
 
 export function RealizeReturnPaymentModal({
@@ -35,8 +36,18 @@ export function RealizeReturnPaymentModal({
             }));
     }, [accounts]);
 
+    const isEditingCashPickup =
+        returnPayment?.tipoPago === 'EFECTIVO' &&
+        !!returnPayment.fechaHoraRecoleccionEfectivo;
+
     return (
-        <Modal open={open} title="Registrar retorno" onClose={onClose}>
+        <Modal open={open} title={
+            isEditingCashPickup
+                ? 'Editar fecha y hora de recolección'
+                : returnPayment?.tipoPago === 'EFECTIVO'
+                    ? 'Programar fecha y hora de recolección'
+                    : 'Registrar retorno'
+        } onClose={onClose}>
             {returnPayment === null ? (
                 <div className="py-8 text-center text-sm text-slate-500">
                     Cargando formulario...

@@ -111,11 +111,15 @@ export const router = createBrowserRouter([
             ],
           },
           {
-            element: <RoleGuard allowedRoles={['ADMIN', 'AUXILIAR_CUENTAS']} />,
+            element: <RoleGuard allowedRoles={['ADMIN', 'GERENTE', 'DIRECCION', 'JEFA_CUENTAS', 'AUXILIAR_CUENTAS']} />,
             children: [
               {
                 path: paths.bankAccounts,
                 element: <BankAccountsPage />,
+              },
+               {
+                path: paths.comisionessocios,
+                element: <CommercialPartnerCommissionsPage />,
               },
             ],
           },
@@ -140,7 +144,7 @@ export const router = createBrowserRouter([
           {
             element: (
               <RoleGuard
-                allowedRoles={['ADMIN', 'JEFA_CAJAS', 'AUXILIAR_CUENTAS']}
+                allowedRoles={['ADMIN', 'JEFA_CAJAS', 'JEFA_CUENTAS', 'AUXILIAR_CUENTAS']}
               />
             ),
             children: [
@@ -151,10 +155,6 @@ export const router = createBrowserRouter([
               {
                 path: paths.devolutionDetail,
                 element: <OperationDetailPage />,
-              },
-              {
-                path: paths.comisionessocios,
-                element: <CommercialPartnerCommissionsPage />,
               },
             ],
           },

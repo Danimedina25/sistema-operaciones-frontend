@@ -69,8 +69,7 @@ export function UserForm({
   const [showBankOptions, setShowBankOptions] =
     useState(false);
 
-  const bankFieldValue =
-    watch('banco') || '';
+  const bankFieldValue = String(watch('banco') ?? '');
 
   const bankContainerRef =
     useRef<HTMLDivElement | null>(null);
@@ -171,7 +170,15 @@ export function UserForm({
   ]);
 
   return (
-    <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
+    <form className="space-y-5" onSubmit={handleSubmit(
+      async (values) => {
+        console.log('SUBMIT OK USER FORM:', values);
+        await onSubmit(values);
+      },
+      (errors) => {
+        console.log('SUBMIT ERRORS USER FORM:', errors);
+      },
+    )}>
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-5">
           <h3 className="text-lg font-semibold text-slate-800">

@@ -120,14 +120,14 @@ export default function UsersPage() {
             onResendActivation={handleResendActivation}
           />
 
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalElements={filteredUsers.length}
-          isLoading={isLoading}
-          onPageChange={setCurrentPage}
-        />
-          
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalElements={filteredUsers.length}
+            isLoading={isLoading}
+            onPageChange={setCurrentPage}
+          />
+
         </>
       )}
 
@@ -163,7 +163,11 @@ export default function UsersPage() {
               titularCuenta:
                 editingUser.commercialSettings?.titularCuenta ?? ''
             }}
-            onSubmit={(values) => submitUpdateUser(editingUser, values)}
+            //onSubmit={(values) => submitUpdateUser(editingUser, values)}
+            onSubmit={async (values) => {
+              console.log('VALUES DESDE USER PAGE:', values);
+              await submitUpdateUser(editingUser, values);
+            }}
             submitLabel="Guardar cambios"
           />
         ) : null}

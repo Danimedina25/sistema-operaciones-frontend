@@ -23,6 +23,19 @@ export function formatDate(value?: string | null) {
   }).format(date);
 }
 
+export function formatDateTime(value?: string | null) {
+  if (!value) return '—';
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return '—';
+
+  return new Intl.DateTimeFormat('es-MX', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(date);
+}
+
 export function formatPeriodDate(
     date: string,
 ) {
