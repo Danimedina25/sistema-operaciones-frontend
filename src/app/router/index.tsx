@@ -69,7 +69,7 @@ export const router = createBrowserRouter([
             ],
           },
           {
-            element: <RoleGuard allowedRoles={['ADMIN']} />,
+            element: <RoleGuard allowedRoles={['ADMIN', 'GERENTE', 'DIRECCION']} />,
             children: [
               {
                 path: paths.users,
@@ -78,7 +78,11 @@ export const router = createBrowserRouter([
             ],
           },
           {
-            element: <RoleGuard allowedRoles={['ADMIN', 'SOCIO_COMERCIAL']} />,
+            element: (
+              <RoleGuard
+                allowedRoles={['ADMIN', 'GERENTE', 'DIRECCION', 'SOCIO_COMERCIAL']}
+              />
+            ),
             children: [
               {
                 path: paths.clientes,
@@ -104,6 +108,11 @@ export const router = createBrowserRouter([
                 path: paths.returnsRequestedDetail,
                 element: <OperationDetailPage />,
               },
+            ],
+          },
+          {
+            element: <RoleGuard allowedRoles={['ADMIN', 'SOCIO_COMERCIAL']} />,
+            children: [
               {
                 path: paths.miscomisiones,
                 element: <MyCommercialPartnerCommissionsPage />,
@@ -143,6 +152,7 @@ export const router = createBrowserRouter([
                   'ADMIN',
                   'SOCIO_COMERCIAL',
                   'JEFA_CAJAS',
+                  'JEFA_CUENTAS',
                   'AUXILIAR_CUENTAS',
                   'GERENTE',
                   'DIRECCION',
@@ -159,7 +169,14 @@ export const router = createBrowserRouter([
           {
             element: (
               <RoleGuard
-                allowedRoles={['ADMIN', 'JEFA_CAJAS', 'JEFA_CUENTAS', 'AUXILIAR_CUENTAS']}
+                allowedRoles={[
+                  'ADMIN',
+                  'GERENTE',
+                  'DIRECCION',
+                  'JEFA_CAJAS',
+                  'JEFA_CUENTAS',
+                  'AUXILIAR_CUENTAS',
+                ]}
               />
             ),
             children: [

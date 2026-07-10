@@ -44,7 +44,7 @@ const navItems: NavItem[] = [
     to: paths.bankAccounts,
     label: 'Cuentas bancarias',
     icon: Landmark,
-    allowedRoles: ['ADMIN',  'GERENTE', 'DIRECCION', 'AUXILIAR_CUENTAS'],
+    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION', 'AUXILIAR_CUENTAS', 'JEFA_CUENTAS'],
   },
   {
     to: paths.clientes,
@@ -56,7 +56,7 @@ const navItems: NavItem[] = [
     to: paths.mycomercialpartners,
     label: 'Mi red de socios comerciales',
     icon: Network,
-    allowedRoles: ['ADMIN', 'SOCIO_COMERCIAL'],
+    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION', 'SOCIO_COMERCIAL'],
   },
   {
     to: paths.operations,
@@ -68,25 +68,25 @@ const navItems: NavItem[] = [
     to: paths.returnsforrequest,
     label: 'Retornos por solicitar',
     icon: HandCoins,
-    allowedRoles: ['ADMIN', 'SOCIO_COMERCIAL'],
+    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION', 'SOCIO_COMERCIAL'],
   },
   {
     to: paths.returnsRequested,
     label: 'Retornos solicitados',
     icon: ClipboardCheck,
-    allowedRoles: ['ADMIN', 'SOCIO_COMERCIAL'],
+    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION', 'SOCIO_COMERCIAL'],
   },
   {
     to: paths.returnsforpayment,
     label: 'Retornos por pagar',
     icon: BanknoteArrowDown,
-    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION', 'JEFA_CAJAS', 'JEFA_CUENTAS'],
+    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION', 'JEFA_CAJAS', 'JEFA_CUENTAS', 'AUXILIAR_CUENTAS'],
   },
   {
     to: paths.comisionessocios,
     label: 'Pago de comisiones a socios comerciales',
     icon: BadgeDollarSign,
-    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION', 'JEFA_CUENTAS'],
+    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION', 'JEFA_CUENTAS', 'AUXILIAR_CUENTAS'],
   },
   {
     to: paths.miscomisiones,
