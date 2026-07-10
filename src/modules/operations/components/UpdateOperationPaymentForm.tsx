@@ -97,7 +97,7 @@ export function UpdateOperationPaymentForm({
   } = useForm<UpdateOperationPaymentFormInput>({
     defaultValues: {
       monto: formatCurrencyDisplay(payment.monto),
-      tipoPago: payment.tipoPago,
+      tipoPago: payment.tipoPago as UpdateOperationPaymentFormInput['tipoPago'],
       fechaComprobante: toDateInputValue(payment.fechaComprobante),
       cuentaDestinoId: String(payment.cuentaDestinoId),
       comprobante: undefined,
