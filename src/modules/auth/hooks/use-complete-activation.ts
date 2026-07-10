@@ -10,7 +10,6 @@ export function useCompleteActivation() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const submitActivation = async (token: string, password: string) => {
-    alert(token)
     try {
       setIsSubmitting(true);
 

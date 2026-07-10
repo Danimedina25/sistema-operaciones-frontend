@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,12 +10,19 @@ import {
   type ActivateAccountFormValues,
 } from '@/modules/auth/schemas/activate-account.schema';
 import { useCompleteActivation } from '@/modules/auth/hooks/use-complete-activation';
+import { useAuth } from '@/modules/auth/store/auth.context';
 
 export default function ActivateAccountPage() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') ?? '';
 
+  const { logout } = useAuth();
   const { submitActivation, isSubmitting } = useCompleteActivation();
+
+  useEffect(() => {
+    logout();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const {
     register,
