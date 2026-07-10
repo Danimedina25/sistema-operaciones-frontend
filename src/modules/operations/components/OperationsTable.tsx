@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { OperationStatusBadge } from '@/modules/operations/components/OperationStatusBadge';
+import { StatusBadge } from '@/shared/components/ui/StatusBadge';
 import {
   formatCurrency,
   formatDate,
@@ -20,6 +21,9 @@ interface OperationsTableProps {
   onAddPayment: (id: number) => void;
   onOperationUpdated?: () => void | Promise<void>;
   onEditOperation?: (operationId: number) => void;
+  onActivateOperation?: (operationId: number) => void;
+  onDeactivateOperation?: (operationId: number) => void;
+  togglingOperationId?: number | null;
 }
 
 export function OperationsTable({
@@ -32,7 +36,10 @@ export function OperationsTable({
   onViewDetail,
   onAddPayment,
   onOperationUpdated,
-  onEditOperation
+  onEditOperation,
+  onActivateOperation,
+  onDeactivateOperation,
+  togglingOperationId,
 }: OperationsTableProps) {
   const [openMenuOperationId, setOpenMenuOperationId] = useState<number | null>(null);
   const [menuPosition, setMenuPosition] = useState<{
@@ -51,6 +58,7 @@ export function OperationsTable({
 
   const isSocioComercial = hasRole(['SOCIO_COMERCIAL']);
   const canManageOperationFlow = !isSocioComercial;
+  const canToggleOperationStatus = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
 
   const canEditOperation = (status: string) => {
     return status === 'PENDIENTE_VALIDACION' || status === 'INGRESO_PARCIAL';
@@ -142,6 +150,7 @@ export function OperationsTable({
               {/*  <th className="px-4 py-3 font-medium text-center">Red comercial</th> */}
               <th className="px-4 py-3 font-medium text-center">Monto retornado</th>
               <th className="px-4 py-3 font-medium text-center">Estatus</th>
+              <th className="px-4 py-3 font-medium text-center">Activo</th>
               <th className="px-4 py-3 font-medium text-center">Acciones</th>
             </tr>
           </thead>
@@ -149,7 +158,7 @@ export function OperationsTable({
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-sm text-slate-500">
+                <td colSpan={9} className="px-4 py-8 text-center text-sm text-slate-500">
                   Cargando operaciones...
                 </td>
               </tr>
@@ -212,6 +221,12 @@ export function OperationsTable({
                     <td className="px-4 py-4">
                       <div className="flex justify-center">
                         <OperationStatusBadge status={operation.estatus} />
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-4">
+                      <div className="flex justify-center">
+                        <StatusBadge active={operation.activo} />
                       </div>
                     </td>
 
@@ -286,6 +301,34 @@ export function OperationsTable({
                                 Editar
                               </button>
                             ) : null}
+
+                            {canToggleOperationStatus && (
+                              operation.activo ? (
+                                <button
+                                  type="button"
+                                  disabled={togglingOperationId === operation.id}
+                                  onClick={() => {
+                                    onDeactivateOperation?.(operation.id);
+                                    closeMenu();
+                                  }}
+                                  className="block w-full px-4 py-2.5 text-left text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  Desactivar
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  disabled={togglingOperationId === operation.id}
+                                  onClick={() => {
+                                    onActivateOperation?.(operation.id);
+                                    closeMenu();
+                                  }}
+                                  className="block w-full px-4 py-2.5 text-left text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  Activar
+                                </button>
+                              )
+                            )}
                           </div>,
                           document.body,
                         )}

@@ -139,7 +139,7 @@ export function ReturnPaymentsTable({
 
     return (
       (isJefaCajas || isAdmin) &&
-      returnPayment.tipoPago === 'EFECTIVO'
+      returnPayment.tipoPago === 'EFECTIVO' || returnPayment.tipoPago === 'RETIRO_SIN_TARJETA'
     );
   }
 

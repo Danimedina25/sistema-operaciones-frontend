@@ -28,7 +28,7 @@ export function useCommercialPartners() {
     try {
       setIsLoading(true);
 
-      const response = await getCommercialPartners();
+      const response = await getCommercialPartners({ size: 200 });
 
       setCommercialPartners(response.content);
     } catch (error) {

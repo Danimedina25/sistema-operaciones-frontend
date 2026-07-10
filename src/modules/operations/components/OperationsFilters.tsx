@@ -73,6 +73,7 @@ export function OperationsFilters({
       dateFilter: '',
       startDate: '',
       endDate: '',
+      activo: 'ACTIVE',
     });
   }
 
@@ -99,7 +100,7 @@ export function OperationsFilters({
         {showEstatusFilter && (
           <div className="md:col-span-2">
             <label className="mb-1 block text-xs font-medium text-slate-600">
-              Estatus
+              Estatus de la operación
             </label>
             <select
               className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
@@ -148,40 +149,60 @@ export function OperationsFilters({
         </div>
 
         <div className="md:col-span-2">
-          <button
-            type="button"
-            onClick={handleClearFilters}
-            className="h-9 w-full rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          <label className="mb-1 block text-xs font-medium text-slate-600">
+            Estado
+          </label>
+          <select
+            className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
+            value={filters.activo}
+            onChange={(e) =>
+              onChange({
+                ...filters,
+                activo: e.target.value as OperationsFiltersType['activo'],
+              })
+            }
           >
-            Limpiar filtros
-          </button>
+            <option value="ACTIVE">Activas</option>
+            <option value="INACTIVE">Inactivas</option>
+            <option value="ALL">Todas</option>
+          </select>
         </div>
       </div>
 
-      <div>
-        <label className="mb-1 block text-xs font-medium text-slate-600">
-          Filtros rápidos de fecha
-        </label>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-600">
+            Filtros rápidos de fecha
+          </label>
 
-        <div className="flex flex-wrap gap-2">
-          {quickFilters.map((item) => {
-            const isActive = filters.dateFilter === item.value;
+          <div className="flex flex-wrap gap-2">
+            {quickFilters.map((item) => {
+              const isActive = filters.dateFilter === item.value;
 
-            return (
-              <button
-                key={item.value}
-                type="button"
-                onClick={() => handleQuickFilterChange(item.value)}
-                className={`rounded-lg border px-2.5 py-1.5 text-xs font-medium transition ${isActive
-                    ? 'border-slate-900 bg-slate-900 text-white'
-                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                  }`}
-              >
-                {item.label}
-              </button>
-            );
-          })}
+              return (
+                <button
+                  key={item.value}
+                  type="button"
+                  onClick={() => handleQuickFilterChange(item.value)}
+                  className={`rounded-lg border px-2.5 py-1.5 text-xs font-medium transition ${isActive
+                      ? 'border-slate-900 bg-slate-900 text-white'
+                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                    }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
+
+        <button
+          type="button"
+          onClick={handleClearFilters}
+          className="h-9 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+        >
+          Limpiar filtros
+        </button>
       </div>
     </div>
   );

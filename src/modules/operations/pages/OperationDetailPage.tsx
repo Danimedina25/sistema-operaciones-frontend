@@ -316,7 +316,8 @@ export default function OperationDetailPage() {
         open={isPayReturnModalOpen}
         returnPayment={selectedReturnPayment}
         isSubmitting={
-          selectedReturnPayment?.tipoPago === 'EFECTIVO'
+          selectedReturnPayment?.tipoPago === 'EFECTIVO' ||
+            selectedReturnPayment?.tipoPago === 'RETIRO_SIN_TARJETA'
             ? isSubmittingScheduleCashPickup
             : isSubmittingRealizeReturn
         }
@@ -325,10 +326,14 @@ export default function OperationDetailPage() {
           setSelectedReturnPayment(null);
         }}
         onSubmit={async (returnPaymentId, values) => {
-          if (selectedReturnPayment?.tipoPago === 'EFECTIVO') {
+          if (
+            selectedReturnPayment?.tipoPago === 'EFECTIVO' ||
+            selectedReturnPayment?.tipoPago === 'RETIRO_SIN_TARJETA'
+          ) {
             await submitScheduleCashReturnPickup(returnPaymentId, {
               fechaRecoleccionEfectivo: values.fechaRecoleccionEfectivo ?? '',
               horaRecoleccionEfectivo: values.horaRecoleccionEfectivo ?? '',
+              cuentaOrigenId: values.cuentaOrigenId,
               observaciones: values.observaciones,
             });
 

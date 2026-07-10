@@ -85,10 +85,6 @@ export const router = createBrowserRouter([
                 element: <CommercialPartnersPage />,
               },
               {
-                path: paths.operations,
-                element: <OperationsPage />,
-              },
-              {
                 path: paths.returnsforrequest,
                 element: <ReturnsForRequestPage />,
               },
@@ -107,6 +103,19 @@ export const router = createBrowserRouter([
               {
                 path: paths.miscomisiones,
                 element: <MyCommercialPartnerCommissionsPage />,
+              },
+            ],
+          },
+          {
+            element: (
+              <RoleGuard
+                allowedRoles={['ADMIN', 'SOCIO_COMERCIAL', 'GERENTE', 'DIRECCION']}
+              />
+            ),
+            children: [
+              {
+                path: paths.operations,
+                element: <OperationsPage />,
               },
             ],
           },
@@ -131,6 +140,8 @@ export const router = createBrowserRouter([
                   'SOCIO_COMERCIAL',
                   'JEFA_CAJAS',
                   'AUXILIAR_CUENTAS',
+                  'GERENTE',
+                  'DIRECCION',
                 ]}
               />
             ),

@@ -21,7 +21,7 @@ export function useCreateCliente(options?: UseCreateClienteOptions) {
       const cliente = await createCliente({
         userId: user?.userId ?? 0,
         nombre: values.nombre.trim(),
-        nivelesRedComercial: values.nivelesRedComercial,
+        nivelesRedComercial: 1,
         porcentajeComisionAplicado: values.porcentajeComisionAplicado,
       });
 

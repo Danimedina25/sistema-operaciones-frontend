@@ -27,7 +27,7 @@ export function ReturnPaymentDetailModal({
         returnPayment?.autorizadoParaRecibirEfectivo3,
     ].filter((value): value is string => !!value?.trim());
 
-    const isCashReturn = returnPayment?.tipoPago === 'EFECTIVO';
+    const isCashReturn = returnPayment?.tipoPago === 'EFECTIVO' || returnPayment?.tipoPago === 'RETIRO_SIN_TARJETA';
 
     return (
         <Modal open={open} onClose={onClose} title="Detalle del retorno">

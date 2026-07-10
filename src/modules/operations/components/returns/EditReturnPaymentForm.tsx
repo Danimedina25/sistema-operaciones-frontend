@@ -334,8 +334,8 @@ export function EditReturnPaymentForm({
                         <option value="TRANSFERENCIA">
                             Transferencia
                         </option>
-                        <option value="DEPOSITO">
-                            Depósito
+                        <option value="RETIRO_SIN_TARJETA">
+                            Retiro sin tarjeta
                         </option>
                     </select>
 

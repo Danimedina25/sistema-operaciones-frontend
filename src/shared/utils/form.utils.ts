@@ -38,4 +38,8 @@ export function onlyNumbers(value: string) {
   return value.replace(/\D/g, '');
 }
 
-export type ReturnPaymentType = 'EFECTIVO' | 'TRANSFERENCIA' | 'DEPOSITO';
+export type ReturnPaymentType =
+  | 'EFECTIVO'
+  | 'TRANSFERENCIA'
+  | 'DEPOSITO'
+  | 'RETIRO_SIN_TARJETA';

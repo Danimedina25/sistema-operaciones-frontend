@@ -29,6 +29,7 @@ const initialFilters: OperationsFiltersType = {
   dateFilter: 'THIS_MONTH',
   startDate: '',
   endDate: '',
+  activo: 'ACTIVE',
 };
 
 export default function OperationsPage() {
@@ -60,8 +61,12 @@ export default function OperationsPage() {
     });
 
   const {
-    commercialPartners,
+    commercialPartners: commercialPartnersCatalog,
   } = useCommercialPartners();
+
+  const commercialPartners = useMemo(() => {
+    return commercialPartnersCatalog.filter((partner) => partner.activo);
+  }, [commercialPartnersCatalog]);
 
   const { user } = useAuth();
 
@@ -81,6 +86,9 @@ export default function OperationsPage() {
     totalPages,
     totalElements,
     setCurrentPage,
+    processingOperationId,
+    handleActivate,
+    handleDeactivate,
   } = useOperations(filters);
 
   const clientes = useMemo(() => {
@@ -209,6 +217,9 @@ export default function OperationsPage() {
           onAddPayment={handleOpenAddPayment}
           onEditOperation={handleOpenEditOperation}
           onOperationUpdated={() => fetchOperations(currentPage)}
+          onActivateOperation={handleActivate}
+          onDeactivateOperation={handleDeactivate}
+          togglingOperationId={processingOperationId}
         />
 
         <div className="mt-5">

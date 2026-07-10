@@ -147,7 +147,7 @@ export function RealizeReturnPaymentForm({
         return dataTransfer.files;
     }
 
-    const esRetornoEnEfectivo = returnPayment.tipoPago === 'EFECTIVO';
+    const esRetornoEnEfectivo = returnPayment.tipoPago === 'EFECTIVO' || returnPayment.tipoPago === 'RETIRO_SIN_TARJETA';
 
     const isEditingCashPickup =
         esRetornoEnEfectivo &&
@@ -155,7 +155,8 @@ export function RealizeReturnPaymentForm({
 
     const requiereCuentaOrigen =
         returnPayment.tipoPago === 'TRANSFERENCIA' ||
-        returnPayment.tipoPago === 'DEPOSITO';
+        returnPayment.tipoPago === 'DEPOSITO' ||
+        returnPayment.tipoPago === 'RETIRO_SIN_TARJETA';
 
     const requiereComprobante = !esRetornoEnEfectivo;
 
@@ -171,39 +172,43 @@ export function RealizeReturnPaymentForm({
                 </div>
 
                 <div>
-                    <span className="block text-slate-500">Banco</span>
-                    <span className="font-semibold text-slate-900">
-                        {returnPayment.cuentaDestinoBanco ?? '-'}
-                    </span>
-                </div>
-
-                <div>
-                    <span className="block text-slate-500">Cuenta destino</span>
-                    <span className="font-semibold text-slate-900">
-                        {returnPayment.cuentaDestinoCliente ?? '-'}
-                    </span>
-                </div>
-
-                <div>
                     <span className="block text-slate-500">Método solicitado</span>
                     <span className="font-semibold text-slate-900">
                         {paymentTypeLabels[returnPayment.tipoPago]}
                     </span>
                 </div>
 
-                <div>
-                    <span className="block text-slate-500">Titular</span>
-                    <span className="font-semibold text-slate-900">
-                        {returnPayment.cuentaDestinoTitular ?? '-'}
-                    </span>
-                </div>
+                {!esRetornoEnEfectivo ? (
+                    <>
+                        <div>
+                            <span className="block text-slate-500">Banco</span>
+                            <span className="font-semibold text-slate-900">
+                                {returnPayment.cuentaDestinoBanco ?? '-'}
+                            </span>
+                        </div>
 
-                <div>
-                    <span className="block text-slate-500">CLABE Interbancaria</span>
-                    <span className="font-semibold text-slate-900">
-                        {returnPayment.cuentaClabeCliente ?? '-'}
-                    </span>
-                </div>
+                        <div>
+                            <span className="block text-slate-500">Cuenta destino</span>
+                            <span className="font-semibold text-slate-900">
+                                {returnPayment.cuentaDestinoCliente ?? '-'}
+                            </span>
+                        </div>
+
+                        <div>
+                            <span className="block text-slate-500">Titular</span>
+                            <span className="font-semibold text-slate-900">
+                                {returnPayment.cuentaDestinoTitular ?? '-'}
+                            </span>
+                        </div>
+
+                        <div>
+                            <span className="block text-slate-500">CLABE Interbancaria</span>
+                            <span className="font-semibold text-slate-900">
+                                {returnPayment.cuentaClabeCliente ?? '-'}
+                            </span>
+                        </div>
+                    </>
+                ) : null}
             </div>
 
             {requiereCuentaOrigen ? (

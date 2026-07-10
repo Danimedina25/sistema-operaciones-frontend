@@ -46,7 +46,7 @@ export function OperationDetailContainer({
   const canRequestReturn = hasRole(['SOCIO_COMERCIAL']) || hasRole(['ADMIN']);
   const canPayReturn = hasRole(['ADMIN']) || hasRole(['JEFA_CAJAS']) || hasRole(['JEFA_CUENTAS']);
 
-  const { operation, isLoading, fetchOperation } =
+  const { operation, isLoading, error, fetchOperation } =
     useOperationDetail(operationId);
 
   const {
@@ -92,7 +92,7 @@ export function OperationDetailContainer({
         </button>
 
         <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
-          No se pudo cargar el detalle de la operación.
+          {error ?? 'No se pudo cargar el detalle de la operación.'}
         </div>
       </div>
     );

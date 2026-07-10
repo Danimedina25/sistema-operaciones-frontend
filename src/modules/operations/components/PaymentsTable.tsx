@@ -284,7 +284,7 @@ export function PaymentsTable({
                   Pendiente de registro en ingreso
                 </p>
 
-                <p className="mt-0.5 text-base font-semibold text-emerald-600">
+                <p className="mt-0.5 text-base font-semibold text-red-600">
                   {formatCurrency(montoPendientePorRegistrar ?? 0)}
                 </p>
 

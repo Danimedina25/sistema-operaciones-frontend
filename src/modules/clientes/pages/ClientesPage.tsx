@@ -151,7 +151,6 @@ export default function ClientesPage() {
             initialValues={{
               nombre: editingCliente.nombre,
               activo: editingCliente.activo,
-              nivelesRedComercial: editingCliente.nivelesRedComercial,
               porcentajeComisionAplicado:
                 editingCliente.porcentajeComisionAplicado,
             }}

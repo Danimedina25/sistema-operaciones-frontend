@@ -75,7 +75,7 @@ const paymentSchema = z
           code: z.ZodIssueCode.custom,
           path: ['cuentaDestinoId'],
           message:
-            'La cuenta destino es obligatoria para transferencias y depósitos',
+            'La cuenta destino es obligatoria para transferencias, depósitos y cheques',
         });
       }
 
@@ -147,6 +147,20 @@ export const createOperationSchema = z
       z.number().optional(),
     ),
 
+    nivelesRedComercial: z.preprocess(
+      (value) => {
+        if (value === '' || value === null || value === undefined) {
+          return undefined;
+        }
+
+        return Number(value);
+      },
+      z
+        .number({ error: 'Los niveles de socios comerciales son obligatorios' })
+        .min(1, 'El mínimo de niveles es 1')
+        .max(3, 'El máximo de niveles es 3'),
+    ),
+
     observaciones: z
       .string()
       .max(500, 'Las observaciones no pueden exceder 500 caracteres')
@@ -185,6 +199,40 @@ export const createOperationSchema = z
         path: ['socioComercialNivel3Id'],
         message:
           'Debe seleccionar un socio comercial nivel 2 antes del nivel 3',
+      });
+    }
+
+    if (
+      value.nivelesRedComercial >= 2 &&
+      !value.socioComercialNivel2Id
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['socioComercialNivel2Id'],
+        message: 'Debe seleccionar un socio comercial nivel 2',
+      });
+    }
+
+    if (
+      value.nivelesRedComercial >= 3 &&
+      !value.socioComercialNivel3Id
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['socioComercialNivel3Id'],
+        message: 'Debe seleccionar un socio comercial nivel 3',
+      });
+    }
+
+    if (
+      value.socioComercialNivel2Id !== undefined &&
+      value.socioComercialNivel2Id === value.socioComercialNivel3Id
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['socioComercialNivel3Id'],
+        message:
+          'No puede seleccionar el mismo socio comercial en ambos niveles',
       });
     }
   });

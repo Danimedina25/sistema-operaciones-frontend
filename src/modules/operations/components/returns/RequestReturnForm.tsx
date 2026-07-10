@@ -281,7 +281,7 @@ export function RequestReturnForm({
         }
       }
 
-      if (pago.tipoPago === 'EFECTIVO') {
+      if (pago.tipoPago === 'EFECTIVO' || pago.tipoPago === 'RETIRO_SIN_TARJETA') {
         const autorizado1 = pago.autorizadoParaRecibirEfectivo1?.trim() ?? '';
         const autorizado2 = pago.autorizadoParaRecibirEfectivo2?.trim() ?? '';
         const autorizado3 = pago.autorizadoParaRecibirEfectivo3?.trim() ?? '';
@@ -342,6 +342,9 @@ export function RequestReturnForm({
           const requiereDatosBancarios =
             value === 'TRANSFERENCIA' || value === 'DEPOSITO';
 
+          const requiereAutorizadosEfectivo =
+            value === 'EFECTIVO' || value === 'RETIRO_SIN_TARJETA';
+
           return {
             ...pago,
             tipoPago: value as ReturnPaymentType,
@@ -352,15 +355,15 @@ export function RequestReturnForm({
             clabe: requiereDatosBancarios ? pago.clabe : '',
 
             autorizadoParaRecibirEfectivo1:
-              value === 'EFECTIVO'
+              requiereAutorizadosEfectivo
                 ? pago.autorizadoParaRecibirEfectivo1
                 : '',
             autorizadoParaRecibirEfectivo2:
-              value === 'EFECTIVO'
+              requiereAutorizadosEfectivo
                 ? pago.autorizadoParaRecibirEfectivo2
                 : '',
             autorizadoParaRecibirEfectivo3:
-              value === 'EFECTIVO'
+              requiereAutorizadosEfectivo
                 ? pago.autorizadoParaRecibirEfectivo3
                 : '',
           };
@@ -512,7 +515,7 @@ export function RequestReturnForm({
           {formatCurrencyDisplay(excedente)}.
         </div>
       ) : null}
-      {/* 
+      {/*
       {solicitudCompleta ? (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
           El monto total a retornar ya está completamente distribuido.
@@ -525,7 +528,9 @@ export function RequestReturnForm({
             pago.tipoPago === 'TRANSFERENCIA' ||
             pago.tipoPago === 'DEPOSITO';
 
-          const requiereAutorizadosEfectivo = pago.tipoPago === 'EFECTIVO';
+          const requiereAutorizadosEfectivo =
+            pago.tipoPago === 'EFECTIVO' ||
+            pago.tipoPago === 'RETIRO_SIN_TARJETA';
 
           return (
             <div
@@ -587,7 +592,7 @@ export function RequestReturnForm({
                     <option value="">Selecciona un tipo</option>
                     <option value="EFECTIVO">Efectivo</option>
                     <option value="TRANSFERENCIA">Transferencia</option>
-                    <option value="DEPOSITO">Depósito</option>
+                    <option value="RETIRO_SIN_TARJETA">Retiro sin tarjeta</option>
                   </select>
 
                   {errors[pago.id]?.tipoPago ? (

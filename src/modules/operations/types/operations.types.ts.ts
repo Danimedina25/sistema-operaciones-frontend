@@ -24,7 +24,8 @@ export type PaymentType =
   | 'TRANSFERENCIA'
   | 'DEPOSITO'
   | 'EFECTIVO'
-  | 'CHEQUE';
+  | 'CHEQUE'
+  | 'RETIRO_SIN_TARJETA';
 
 export type OperationDateFilter =
   | 'TODAY'
@@ -44,6 +45,8 @@ export interface PageResponse<T> {
   empty: boolean;
 }
 
+export type OperationActivoFilter = 'ALL' | 'ACTIVE' | 'INACTIVE';
+
 export interface OperationsFilters {
   operationId: number;
   search: string;
@@ -51,6 +54,7 @@ export interface OperationsFilters {
   dateFilter: OperationDateFilter | '';
   startDate: string;
   endDate: string;
+  activo: OperationActivoFilter;
 }
 
 export interface CreateOperationRequest {
@@ -61,6 +65,7 @@ export interface CreateOperationRequest {
 
   socioComercialNivel2Id?: number | null;
   socioComercialNivel3Id?: number | null;
+  nivelesRedComercial: number;
 
   observaciones?: string;
 }
@@ -73,6 +78,7 @@ export interface UpdateOperationRequest {
 
   socioComercialNivel2Id?: number | null;
   socioComercialNivel3Id?: number | null;
+  nivelesRedComercial: number;
 
   observaciones?: string;
 }
@@ -123,6 +129,7 @@ export interface OperationPaymentResponse {
 
 export interface PaymentOperationResponse {
   id: number;
+  activo: boolean;
   clienteId: number;
   clienteNombre: string;
 
@@ -172,6 +179,7 @@ export interface PaymentOperationResponse {
   updatedAt: string;
 
   contieneRetornosEnEfectivo: boolean;
+  contieneRetornosRetiroSinTarjeta: boolean;
   contieneRetornosEnTransferencia: boolean;
 }
 
@@ -204,6 +212,7 @@ export interface RealizeReturnPaymentRequest {
 
 export interface ScheduleCashReturnPickupRequest {
   fechaHoraRecoleccionEfectivo: string;
+  cuentaOrigenId?: number | null;
   observaciones?: string | null;
 }
 

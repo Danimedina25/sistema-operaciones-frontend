@@ -6,20 +6,6 @@ export const createClienteSchema = z.object({
     .min(1, 'El nombre del cliente es obligatorio')
     .max(100, 'El nombre no puede exceder 100 caracteres'),
 
-  nivelesRedComercial: z.preprocess(
-    (value) => {
-      if (value === '' || value === null || value === undefined) {
-        return undefined;
-      }
-
-      return Number(value);
-    },
-    z
-      .number({ error: 'Los niveles de socios comerciales son obligatorios' })
-      .min(1, 'El mínimo de niveles es 1')
-      .max(3, 'El máximo de niveles es 3'),
-  ),
-
   porcentajeComisionAplicado: z.preprocess(
     (value) => {
       if (value === '' || value === null || value === undefined) {

@@ -65,6 +65,8 @@ function buildOperationsQuery(
     params.append('endDate', filters.endDate);
   }
 
+  params.append('activo', filters.activo);
+
   return params.toString();
 }
 
@@ -175,6 +177,24 @@ export async function getOperationById(
 ): Promise<PaymentOperationResponse> {
   const response = await api.get<OperationApiResponse>(
     `${OPERATIONS_BASE_PATH}/${id}`,
+  );
+  return response.data.data;
+}
+
+export async function activateOperation(
+  id: number,
+): Promise<PaymentOperationResponse> {
+  const response = await api.patch<OperationApiResponse>(
+    `${OPERATIONS_BASE_PATH}/${id}/activate`,
+  );
+  return response.data.data;
+}
+
+export async function deactivateOperation(
+  id: number,
+): Promise<PaymentOperationResponse> {
+  const response = await api.patch<OperationApiResponse>(
+    `${OPERATIONS_BASE_PATH}/${id}/deactivate`,
   );
   return response.data.data;
 }

@@ -8,6 +8,7 @@ import { getApiErrorMessage } from '@/shared/utils/errors';
 
 export interface ScheduleCashReturnPickupValues {
   operationId?: number;
+  cuentaOrigenId?: string;
   fechaRecoleccionEfectivo: string;
   horaRecoleccionEfectivo: string;
   observaciones?: string;
@@ -38,6 +39,9 @@ export function useScheduleCashReturnPickup(
 
       await scheduleCashReturnPickup(returnPaymentId, {
         fechaHoraRecoleccionEfectivo,
+        cuentaOrigenId: values.cuentaOrigenId
+          ? Number(values.cuentaOrigenId)
+          : undefined,
         observaciones: values.observaciones?.trim() || undefined,
       });
 

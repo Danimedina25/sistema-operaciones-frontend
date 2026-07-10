@@ -4,7 +4,8 @@ export const paymentTypeLabels: Record<PaymentType, string> = {
   TRANSFERENCIA: 'Transferencia',
   DEPOSITO: 'Depósito',
   EFECTIVO: 'Efectivo',
-  CHEQUE: 'Cheque'
+  CHEQUE: 'Cheque',
+  RETIRO_SIN_TARJETA: 'Retiro sin tarjeta',
 };
 
 export const paymentStatusLabels: Record<PaymentStatus, string> = {

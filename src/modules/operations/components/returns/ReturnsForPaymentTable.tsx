@@ -105,6 +105,7 @@ export function ReturnsForPaymentTable({
                 console.log("operation", operation)
                 const canPayReturns =
                   (isJefaCajas && operation.contieneRetornosEnEfectivo) ||
+                  (isJefaCajas && operation.contieneRetornosRetiroSinTarjeta) ||
                   (isJefaCuentas && operation.contieneRetornosEnTransferencia);
                 return (
                   <tr

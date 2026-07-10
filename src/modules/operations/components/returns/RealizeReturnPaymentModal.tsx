@@ -36,15 +36,19 @@ export function RealizeReturnPaymentModal({
             }));
     }, [accounts]);
 
+    const esRetornoEnEfectivo =
+        returnPayment?.tipoPago === 'EFECTIVO' ||
+        returnPayment?.tipoPago === 'RETIRO_SIN_TARJETA';
+
     const isEditingCashPickup =
-        returnPayment?.tipoPago === 'EFECTIVO' &&
-        !!returnPayment.fechaHoraRecoleccionEfectivo;
+        esRetornoEnEfectivo &&
+        !!returnPayment?.fechaHoraRecoleccionEfectivo;
 
     return (
         <Modal open={open} title={
             isEditingCashPickup
                 ? 'Editar fecha y hora de recolección'
-                : returnPayment?.tipoPago === 'EFECTIVO'
+                : esRetornoEnEfectivo
                     ? 'Programar fecha y hora de recolección'
                     : 'Registrar retorno'
         } onClose={onClose}>

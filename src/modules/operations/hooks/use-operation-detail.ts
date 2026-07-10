@@ -7,14 +7,18 @@ import { PaymentOperationResponse } from '../types/operations.types.ts';
 export function useOperationDetail(operationId: number) {
   const [operation, setOperation] = useState<PaymentOperationResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchOperation = useCallback(async () => {
     try {
       setIsLoading(true);
+      setError(null);
       const result = await getOperationById(operationId);
       setOperation(result);
-    } catch (error) {
-      toast.error(getApiErrorMessage(error));
+    } catch (fetchError) {
+      const message = getApiErrorMessage(fetchError);
+      setError(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -27,6 +31,7 @@ export function useOperationDetail(operationId: number) {
   return {
     operation,
     isLoading,
+    error,
     fetchOperation,
   };
 }

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import {
+  activateOperation,
+  deactivateOperation,
   getMyOperations,
   getOperations,
 } from '@/modules/operations/api/operations.api';
@@ -20,6 +22,9 @@ export function useOperations(filters: OperationsFilters) {
   const [pageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
+  const [processingOperationId, setProcessingOperationId] = useState<
+    number | null
+  >(null);
 
   const isSocioComercial = hasRole(['SOCIO_COMERCIAL']);
 
@@ -50,6 +55,44 @@ export function useOperations(filters: OperationsFilters) {
     void fetchOperations(currentPage);
   }, [fetchOperations, currentPage]);
 
+  const handleActivate = async (operationId: number) => {
+    try {
+      setProcessingOperationId(operationId);
+      const updatedOperation = await activateOperation(operationId);
+
+      setOperations((prev) =>
+        prev.map((operation) =>
+          operation.id === operationId ? updatedOperation : operation,
+        ),
+      );
+
+      toast.success('Operación activada correctamente');
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    } finally {
+      setProcessingOperationId(null);
+    }
+  };
+
+  const handleDeactivate = async (operationId: number) => {
+    try {
+      setProcessingOperationId(operationId);
+      const updatedOperation = await deactivateOperation(operationId);
+
+      setOperations((prev) =>
+        prev.map((operation) =>
+          operation.id === operationId ? updatedOperation : operation,
+        ),
+      );
+
+      toast.success('Operación desactivada correctamente');
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    } finally {
+      setProcessingOperationId(null);
+    }
+  };
+
   return {
     operations,
     isLoading,
@@ -59,5 +102,8 @@ export function useOperations(filters: OperationsFilters) {
     totalElements,
     pageSize,
     setCurrentPage,
+    processingOperationId,
+    handleActivate,
+    handleDeactivate,
   };
 }

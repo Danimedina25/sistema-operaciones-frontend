@@ -10,7 +10,7 @@ interface SelectOption {
 
 export interface AddReturnPaymentFormValues {
   monto: string;
-  tipoPago: '' | 'EFECTIVO' | 'TRANSFERENCIA' | 'DEPOSITO';
+  tipoPago: '' | 'EFECTIVO' | 'TRANSFERENCIA' | 'RETIRO_SIN_TARJETA';
   cuentaOrigenId: string;
   cuentaDestinoCliente: string;
   comprobante?: FileList;
@@ -275,7 +275,7 @@ export function AddReturnPaymentForm({
               <option value="">Selecciona un tipo</option>
               <option value="EFECTIVO">Efectivo</option>
               <option value="TRANSFERENCIA">Transferencia</option>
-              <option value="DEPOSITO">Depósito</option>
+              <option value="RETIRO_SIN_TARJETA">Retiro sin tarjeta</option>
             </select>
 
             {errors.tipoPago ? (

@@ -22,7 +22,7 @@ export function useUpdateCliente(options?: UseUpdateClienteOptions) {
       const updatedCliente = await updateCliente(cliente.id, {
         nombre: values.nombre.trim(),
         activo: values.activo,
-        nivelesRedComercial: values.nivelesRedComercial,
+        nivelesRedComercial: cliente.nivelesRedComercial,
         porcentajeComisionAplicado: values.porcentajeComisionAplicado,
       });
 

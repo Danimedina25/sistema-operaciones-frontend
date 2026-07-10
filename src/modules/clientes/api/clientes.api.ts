@@ -26,6 +26,14 @@ export async function getClientesActivos(): Promise<ClienteResponse[]> {
   return response.data.data;
 }
 
+export async function searchClientes(nombre: string): Promise<ClienteResponse[]> {
+  const response = await api.get<ClientesListApiResponse>(
+    `${CLIENTES_BASE_PATH}/search`,
+    { params: { nombre } },
+  );
+  return response.data.data;
+}
+
 export async function getClienteById(id: number): Promise<ClienteResponse> {
   const response = await api.get<ClienteApiResponse>(
     `${CLIENTES_BASE_PATH}/${id}`,

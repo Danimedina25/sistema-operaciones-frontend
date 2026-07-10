@@ -19,6 +19,7 @@ const initialFilters: OperationsFiltersType = {
   dateFilter: 'THIS_MONTH',
   startDate: '',
   endDate: '',
+  activo: 'ACTIVE',
 };
 
 const PAGE_SIZE = 10;

@@ -97,6 +97,7 @@ export function useCreateOperation(options?: UseCreateOperationOptions) {
         socioComercialId: user.userId,
         socioComercialNivel2Id: values.socioComercialNivel2Id,
         socioComercialNivel3Id: values.socioComercialNivel3Id,
+        nivelesRedComercial: values.nivelesRedComercial,
         observaciones: values.observaciones?.trim() || undefined,
       });
 

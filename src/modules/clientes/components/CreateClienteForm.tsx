@@ -25,7 +25,6 @@ export function CreateClienteForm({
     resolver: zodResolver(createClienteSchema),
     defaultValues: {
       nombre: '',
-      nivelesRedComercial: 1,
       porcentajeComisionAplicado: 0,
     },
     mode: 'onBlur',
@@ -42,27 +41,6 @@ export function CreateClienteForm({
           error={errors.nombre?.message}
           {...register('nombre')}
         />
-      </div>
-
-      <div>
-        <label className="mb-2 block text-sm font-medium text-slate-700">
-          Niveles de socios comerciales
-        </label>
-        <select
-          className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
-          {...register('nivelesRedComercial')}
-        >
-          <option value="">Selecciona niveles de socios comerciales</option>
-          <option value="1">1 nivel</option>
-          <option value="2">2 niveles</option>
-          <option value="3">3 niveles</option>
-        </select>
-
-        {errors.nivelesRedComercial ? (
-          <p className="mt-1 text-xs text-red-600">
-            {errors.nivelesRedComercial.message}
-          </p>
-        ) : null}
       </div>
 
       <div>
