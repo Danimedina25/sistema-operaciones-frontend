@@ -34,6 +34,7 @@ interface OperationDetailViewProps {
     returnPayment: ReturnPaymentResponse,
   ) => void;
   onDefineCashReturnTime?: (returnPayment: ReturnPaymentResponse) => void;
+  onConfirmCashReturnPickup?: (returnPayment: ReturnPaymentResponse) => void;
 }
 
 export function OperationDetailView({
@@ -54,7 +55,8 @@ export function OperationDetailView({
   onEditPayment,
   onEditReturn,
   canRequestReturn = false,
-  onDefineCashReturnTime
+  onDefineCashReturnTime,
+  onConfirmCashReturnPickup
 }: OperationDetailViewProps) {
   const paymentsSectionRef = useRef<HTMLDivElement | null>(null);
   const returnsSectionRef = useRef<HTMLDivElement | null>(null);
@@ -179,6 +181,7 @@ export function OperationDetailView({
           onPayReturn={onPayReturn}
           onDefineCashReturnTime={onDefineCashReturnTime}
           onEditReturn={onEditReturn}
+          onConfirmCashReturnPickup={onConfirmCashReturnPickup}
           operationStatus={operation.estatus}
         />
       </div>

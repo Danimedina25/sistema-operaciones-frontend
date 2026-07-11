@@ -18,6 +18,7 @@ export type PaymentStatus =
 
 export type ReturnPaymentStatus =
   | 'SOLICITADO'
+  | 'EN_RECOLECCION'
   | 'RETORNADO';
 
 export type PaymentType =
@@ -268,6 +269,8 @@ export type ReturnRequestPaymentApiResponse = ApiResponse<ReturnPaymentResponse[
 export type ReturnUpdateRequestPaymentApiResponse = ApiResponse<ReturnPaymentResponse>;
 export type ReturnRealizePaymentApiResponse = ApiResponse<ReturnPaymentResponse>;
 export type ScheduleCashReturnPickupApiResponse =
+  ApiResponse<ReturnPaymentResponse>;
+export type ConfirmCashReturnPickupApiResponse =
   ApiResponse<ReturnPaymentResponse>;
 export type ReturnPaymentsListApiResponse = ApiResponse<ReturnPaymentResponse[]>;
 export type ReturnDestinationAccountSuggestionsApiResponse =

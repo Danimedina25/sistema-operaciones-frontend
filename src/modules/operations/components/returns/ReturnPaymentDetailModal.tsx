@@ -48,10 +48,7 @@ export function ReturnPaymentDetailModal({
                                 </p>
                             </div>
 
-                            <ReturnStatusBadge
-                                status={returnPayment.estatus}
-                                hasPickupScheduled={!!returnPayment.fechaHoraRecoleccionEfectivo}
-                            />
+                            <ReturnStatusBadge status={returnPayment.estatus} />
                         </div>
                     </div>
 

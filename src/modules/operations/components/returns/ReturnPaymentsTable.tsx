@@ -28,6 +28,7 @@ interface ReturnPaymentsTableProps {
   onEditReturn?: (
     returnPayment: ReturnPaymentResponse,
   ) => void;
+  onConfirmCashReturnPickup?: (returnPayment: ReturnPaymentResponse) => void;
   operationStatus?: OperationStatus;
 }
 
@@ -41,6 +42,7 @@ export function ReturnPaymentsTable({
   onDefineCashReturnTime,
   onPayReturn,
   onEditReturn,
+  onConfirmCashReturnPickup,
   operationStatus,
 }: ReturnPaymentsTableProps) {
   const { user } = useAuth();
@@ -129,17 +131,32 @@ export function ReturnPaymentsTable({
   const hasRequestedReturns = returns.some(
     (returnPayment) =>
       returnPayment.estatus === 'SOLICITADO' ||
+      returnPayment.estatus === 'EN_RECOLECCION' ||
       returnPayment.estatus === 'RETORNADO',
   );
   function canDefineCashReturnTime(returnPayment: ReturnPaymentResponse) {
     if (!hasPendingAmountToPay) return false;
     if (!canManageReturnPayments) return false;
     if (!onDefineCashReturnTime) return false;
-    if (returnPayment.estatus !== 'SOLICITADO') return false;
+    if (
+      returnPayment.estatus !== 'SOLICITADO' &&
+      returnPayment.estatus !== 'EN_RECOLECCION'
+    ) return false;
 
     return (
       (isJefaCajas || isAdmin) &&
-      returnPayment.tipoPago === 'EFECTIVO' || returnPayment.tipoPago === 'RETIRO_SIN_TARJETA'
+      (returnPayment.tipoPago === 'EFECTIVO' || returnPayment.tipoPago === 'RETIRO_SIN_TARJETA')
+    );
+  }
+
+  function canConfirmCashReturnPickup(returnPayment: ReturnPaymentResponse) {
+    if (!isSocioComercial) return false;
+    if (!onConfirmCashReturnPickup) return false;
+    if (returnPayment.estatus !== 'EN_RECOLECCION') return false;
+
+    return (
+      returnPayment.tipoPago === 'EFECTIVO' ||
+      returnPayment.tipoPago === 'RETIRO_SIN_TARJETA'
     );
   }
 
@@ -313,6 +330,7 @@ export function ReturnPaymentsTable({
                 <th className="px-4 py-3 font-medium">Cuenta destino</th>
                 <th className="px-4 py-3 font-medium">Fecha solicitud</th>
                 <th className="px-4 py-3 font-medium">Pagado por</th>
+                <th className="px-4 py-3 font-medium">Fecha de recolección</th>
                 <th className="px-4 py-3 font-medium">Fecha retorno</th>
                 <th className="px-4 py-3 font-medium">Observaciones</th>
                 <th className="px-4 py-3 font-medium">Opciones</th>
@@ -334,12 +352,14 @@ export function ReturnPaymentsTable({
                 const canDefineTime = canDefineCashReturnTime(returnPayment);
                 const canEditPickupTime = canDefineTime && hasPickupScheduled;
                 const canCreatePickupTime = canDefineTime && !hasPickupScheduled;
+                const canConfirmPickup = canConfirmCashReturnPickup(returnPayment);
 
                 const hasActions =
                   canPayReturn ||
                   canCreatePickupTime ||
                   canEditPickupTime ||
-                  canEditReturn;
+                  canEditReturn ||
+                  canConfirmPickup;
                 return (
                   <tr
                     key={returnPayment.id}
@@ -357,10 +377,7 @@ export function ReturnPaymentsTable({
 
                     <td className="px-4 py-4">
                       <div className="flex justify-center md:justify-start">
-                        <ReturnStatusBadge
-                          status={returnPayment.estatus}
-                          hasPickupScheduled={!!returnPayment.fechaHoraRecoleccionEfectivo}
-                        />
+                        <ReturnStatusBadge status={returnPayment.estatus} />
                       </div>
                     </td>
                     <td className="px-4 py-4 text-slate-600">
@@ -397,9 +414,21 @@ export function ReturnPaymentsTable({
                       {returnPayment.pagadoPorNombre ?? '-'}
                     </td>
 
+                    <td className="px-4 py-4">
+                      {(returnPayment.tipoPago === 'EFECTIVO' ||
+                        returnPayment.tipoPago === 'RETIRO_SIN_TARJETA') &&
+                      returnPayment.fechaHoraRecoleccionEfectivo ? (
+                        <span className="animate-return-pickup-highlight inline-flex items-center rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                          {formatDateTime(returnPayment.fechaHoraRecoleccionEfectivo)}
+                        </span>
+                      ) : (
+                        <span className="text-slate-600">-</span>
+                      )}
+                    </td>
+
                     <td className="px-4 py-4 text-slate-600">
-                      {returnPayment.fechaHoraRecoleccionEfectivo
-                        ? formatDateTime(returnPayment.fechaHoraRecoleccionEfectivo)
+                      {returnPayment.estatus === 'RETORNADO' && returnPayment.fechaPago
+                        ? formatDateTime(returnPayment.fechaPago)
                         : '-'}
                     </td>
 
@@ -585,6 +614,27 @@ export function ReturnPaymentsTable({
             "
                               >
                                 Editar
+                              </button>
+                            )}
+
+                            {canConfirmPickup && (
+                              <button
+                                type="button"
+                                onClick={() => onConfirmCashReturnPickup?.(returnPayment)}
+                                className="
+      h-8
+      rounded-lg
+      bg-blue-600
+      px-3
+      text-xs
+      font-medium
+      text-white
+      shadow-sm
+      transition
+      hover:bg-blue-700
+    "
+                              >
+                                Confirmar recepción
                               </button>
                             )}
                           </>

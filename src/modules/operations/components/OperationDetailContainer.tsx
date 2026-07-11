@@ -24,6 +24,7 @@ interface OperationDetailContainerProps {
   onEditReturn?: (
     returnPayment: ReturnPaymentResponse,
   ) => void;
+  onConfirmCashReturnPickup?: (returnPayment: ReturnPaymentResponse) => void;
 }
 
 export function OperationDetailContainer({
@@ -38,13 +39,15 @@ export function OperationDetailContainer({
   scrollToPayments = false,
   scrollToReturns = false,
   onEditPayment,
-  onEditReturn
+  onEditReturn,
+  onConfirmCashReturnPickup
 }: OperationDetailContainerProps) {
   const { hasRole } = useAuth();
 
   const canViewFinancialDetails = !hasRole(['SOCIO_COMERCIAL']);
   const canRequestReturn = hasRole(['SOCIO_COMERCIAL']) || hasRole(['ADMIN']);
   const canPayReturn = hasRole(['ADMIN']) || hasRole(['JEFA_CAJAS']) || hasRole(['JEFA_CUENTAS']);
+  const isSocioComercial = hasRole(['SOCIO_COMERCIAL']);
 
   const { operation, isLoading, error, fetchOperation } =
     useOperationDetail(operationId);
@@ -117,6 +120,11 @@ export function OperationDetailContainer({
           : undefined
       }
       onPayReturn={canPayReturn && onPayReturn ? (returnPayment) => onPayReturn(returnPayment) : undefined}
+      onConfirmCashReturnPickup={
+        isSocioComercial && onConfirmCashReturnPickup
+          ? (returnPayment) => onConfirmCashReturnPickup(returnPayment)
+          : undefined
+      }
       backLabel={backLabel}
       onValidatePayment={submitValidatePayment}
       onRejectPayment={submitRejectPayment}

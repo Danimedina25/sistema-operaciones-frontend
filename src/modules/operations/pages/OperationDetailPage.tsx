@@ -17,6 +17,8 @@ import { useRealizeReturnPayment } from '../hooks/returns/use-realize-return-pay
 import { EditReturnPaymentForm } from '../components/returns/EditReturnPaymentForm';
 import { useUpdateRequestReturnPayment } from '../hooks/returns/use-update-request-return-payment';
 import { useScheduleCashReturnPickup } from '../hooks/returns/use-schedule-cash-return-pickup';
+import { useConfirmCashReturnPickup } from '../hooks/returns/use-confirm-cash-return-pickup';
+import { formatCurrency } from '../utils/operation-formatters';
 
 export default function OperationDetailPage() {
   const navigate = useNavigate();
@@ -52,6 +54,8 @@ export default function OperationDetailPage() {
     useState<PaymentOperationResponse | null>(null);
   const [isAddReturnModalOpen, setIsAddReturnModalOpen] = useState(false);
   const [isPayReturnModalOpen, setIsPayReturnModalOpen] = useState(false);
+  const [isConfirmCashPickupModalOpen, setIsConfirmCashPickupModalOpen] =
+    useState(false);
   const [selectedReturnPayment, setSelectedReturnPayment] =
     useState<ReturnPaymentResponse | null>(null);
   const [selectedReturnOperation, setSelectedReturnOperation] =
@@ -147,6 +151,17 @@ export default function OperationDetailPage() {
   });
 
   const {
+    isSubmitting: isSubmittingConfirmCashPickup,
+    submitConfirmCashReturnPickup,
+  } = useConfirmCashReturnPickup({
+    onSuccess: async () => {
+      setIsConfirmCashPickupModalOpen(false);
+      setSelectedReturnPayment(null);
+      setRefreshKey((prev) => prev + 1);
+    },
+  });
+
+  const {
     isSubmitting: isSubmittingUpdateReturn,
     submitUpdateRequestReturnPayment,
   } = useUpdateRequestReturnPayment({
@@ -236,6 +251,10 @@ export default function OperationDetailPage() {
             }
             : undefined
         }
+        onConfirmCashReturnPickup={(returnPayment) => {
+          setSelectedReturnPayment(returnPayment);
+          setIsConfirmCashPickupModalOpen(true);
+        }}
         onEditReturn={(returnPayment) => {
           setSelectedReturnToEdit(returnPayment);
           console.log("prueba", returnPayment)
@@ -350,6 +369,47 @@ export default function OperationDetailPage() {
           });
         }}
       />
+
+      <Modal
+        open={isConfirmCashPickupModalOpen}
+        title="Confirmar recepción de efectivo"
+        onClose={() => {
+          setIsConfirmCashPickupModalOpen(false);
+          setSelectedReturnPayment(null);
+        }}
+      >
+        <p className="text-sm text-slate-600">
+          ¿Confirmas que recibiste el retorno en efectivo por{' '}
+          <span className="font-semibold text-slate-900">
+            {selectedReturnPayment ? formatCurrency(selectedReturnPayment.monto) : ''}
+          </span>{' '}
+          de esta operación?
+        </p>
+
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              setIsConfirmCashPickupModalOpen(false);
+              setSelectedReturnPayment(null);
+            }}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            disabled={isSubmittingConfirmCashPickup}
+            onClick={() =>
+              selectedReturnPayment &&
+              submitConfirmCashReturnPickup(selectedReturnPayment.id)
+            }
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+          >
+            {isSubmittingConfirmCashPickup ? 'Confirmando...' : 'Sí, la recibí'}
+          </button>
+        </div>
+      </Modal>
 
       <Modal
         open={isEditReturnModalOpen}

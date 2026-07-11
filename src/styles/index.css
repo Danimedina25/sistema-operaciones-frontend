@@ -17,3 +17,19 @@ body {
 button {
   @apply cursor-pointer;
 }
+
+@keyframes return-pickup-highlight {
+  0% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.35);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(37, 99, 235, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+  }
+}
+
+.animate-return-pickup-highlight {
+  animation: return-pickup-highlight 1.4s ease-out 2;
+}

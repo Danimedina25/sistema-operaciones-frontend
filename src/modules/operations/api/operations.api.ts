@@ -25,6 +25,7 @@ import {
   ReturnDestinationAccountSuggestionsApiResponse,
   ScheduleCashReturnPickupRequest,
   ScheduleCashReturnPickupApiResponse,
+  ConfirmCashReturnPickupApiResponse,
 } from '../types/operations.types.ts';
 
 const OPERATIONS_BASE_PATH = '/api/operations';
@@ -279,6 +280,16 @@ export async function scheduleCashReturnPickup(
   const response = await api.patch<ScheduleCashReturnPickupApiResponse>(
     `${RETURNS_BASE_PATH}/payments/${returnPaymentId}/cash-pickup-time`,
     payload,
+  );
+
+  return response.data.data;
+}
+
+export async function confirmCashReturnPickup(
+  returnPaymentId: number,
+): Promise<ReturnPaymentResponse> {
+  const response = await api.patch<ConfirmCashReturnPickupApiResponse>(
+    `${RETURNS_BASE_PATH}/payments/${returnPaymentId}/confirm-cash-pickup`,
   );
 
   return response.data.data;

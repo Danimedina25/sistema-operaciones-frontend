@@ -1,17 +1,10 @@
 import { cn } from "@/shared/lib/cn";
 
 interface ReturnStatusBadgeProps {
-  status: 'SOLICITADO' | 'RETORNADO';
-  hasPickupScheduled?: boolean;
+  status: 'SOLICITADO' | 'EN_RECOLECCION' | 'RETORNADO';
 }
 
-export function ReturnStatusBadge({
-  status,
-  hasPickupScheduled = false,
-}: ReturnStatusBadgeProps) {
-  const isWaitingPickup =
-    status === 'SOLICITADO' && hasPickupScheduled;
-
+export function ReturnStatusBadge({ status }: ReturnStatusBadgeProps) {
   return (
     <span
       className={cn(
@@ -31,17 +24,16 @@ export function ReturnStatusBadge({
         status === 'RETORNADO' &&
           'border-emerald-200 bg-emerald-50 text-emerald-700',
 
-        isWaitingPickup &&
+        status === 'EN_RECOLECCION' &&
           'border-blue-200 bg-blue-50 text-blue-700',
 
         status === 'SOLICITADO' &&
-          !isWaitingPickup &&
           'border-amber-200 bg-amber-50 text-amber-700',
       )}
     >
       {status === 'RETORNADO'
         ? 'Retornado'
-        : isWaitingPickup
+        : status === 'EN_RECOLECCION'
           ? 'En recolección'
           : 'Solicitado'}
     </span>
