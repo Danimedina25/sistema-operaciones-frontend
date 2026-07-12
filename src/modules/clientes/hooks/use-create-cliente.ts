@@ -22,7 +22,8 @@ export function useCreateCliente(options?: UseCreateClienteOptions) {
         userId: user?.userId ?? 0,
         nombre: values.nombre.trim(),
         nivelesRedComercial: 1,
-        porcentajeComisionAplicado: values.porcentajeComisionAplicado,
+        porcentajeComisionSocio: values.porcentajeComisionSocio,
+        porcentajeComisionOficina: values.porcentajeComisionOficina,
       });
 
       toast.success(`Cliente ${cliente.nombre} creado correctamente`);

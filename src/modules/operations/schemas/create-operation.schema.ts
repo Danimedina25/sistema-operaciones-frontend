@@ -161,6 +161,32 @@ export const createOperationSchema = z
         .max(3, 'El máximo de niveles es 3'),
     ),
 
+    porcentajeComisionOficina: z.preprocess(
+      (value) => {
+        if (value === '' || value === null || value === undefined) {
+          return undefined;
+        }
+
+        return Number(value);
+      },
+      z
+        .number({ error: 'El porcentaje de comisión de oficina es obligatorio' })
+        .min(0, 'El porcentaje de comisión de oficina no puede ser negativo'),
+    ),
+
+    porcentajeComisionSocio: z.preprocess(
+      (value) => {
+        if (value === '' || value === null || value === undefined) {
+          return undefined;
+        }
+
+        return Number(value);
+      },
+      z
+        .number({ error: 'El porcentaje de comisión por socio comercial es obligatorio' })
+        .min(0, 'El porcentaje de comisión por socio comercial no puede ser negativo'),
+    ),
+
     observaciones: z
       .string()
       .max(500, 'Las observaciones no pueden exceder 500 caracteres')
@@ -233,6 +259,18 @@ export const createOperationSchema = z
         path: ['socioComercialNivel3Id'],
         message:
           'No puede seleccionar el mismo socio comercial en ambos niveles',
+      });
+    }
+
+    const totalComision =
+      value.porcentajeComisionOficina +
+      value.porcentajeComisionSocio * value.nivelesRedComercial;
+
+    if (totalComision > 100) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['porcentajeComisionSocio'],
+        message: 'La comisión total (oficina + socios) no puede superar el 100%',
       });
     }
   });

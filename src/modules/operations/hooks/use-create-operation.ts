@@ -98,6 +98,8 @@ export function useCreateOperation(options?: UseCreateOperationOptions) {
         socioComercialNivel2Id: values.socioComercialNivel2Id,
         socioComercialNivel3Id: values.socioComercialNivel3Id,
         nivelesRedComercial: values.nivelesRedComercial,
+        porcentajeComisionOficina: values.porcentajeComisionOficina,
+        porcentajeComisionSocio: values.porcentajeComisionSocio,
         observaciones: values.observaciones?.trim() || undefined,
       });
 

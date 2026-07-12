@@ -208,7 +208,7 @@ export function OperationsTable({
                         {operation.nivelesRedComercial} nivel{operation.nivelesRedComercial > 1 ? 'es' : ''}
                       </div>
                       <div className="mt-1 text-xs text-slate-400">
-                        {operation.porcentajeComisionAplicado}%
+                        {operation.porcentajeComisionSocio}%
                       </div>
                     </td>
  */}

@@ -5,7 +5,8 @@ export interface ClienteResponse {
   nombre: string;
   activo: boolean;
   nivelesRedComercial: number;
-  porcentajeComisionAplicado: number;
+  porcentajeComisionSocio: number;
+  porcentajeComisionOficina: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -14,14 +15,16 @@ export interface CreateClienteRequest {
   userId: number
   nombre: string;
   nivelesRedComercial: number;
-  porcentajeComisionAplicado: number;
+  porcentajeComisionSocio: number;
+  porcentajeComisionOficina: number;
 }
 
 export interface UpdateClienteRequest {
   nombre: string;
   activo: boolean;
   nivelesRedComercial: number;
-  porcentajeComisionAplicado: number;
+  porcentajeComisionSocio: number;
+  porcentajeComisionOficina: number;
 }
 
 export type ClientesListApiResponse = ApiResponse<ClienteResponse[]>;

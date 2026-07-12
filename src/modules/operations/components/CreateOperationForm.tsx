@@ -15,6 +15,8 @@ interface SelectOption {
   id: number;
   label: string;
   nivelesRedComercial?: number;
+  porcentajeComisionOficina?: number;
+  porcentajeComisionSocio?: number;
 }
 
 interface CreateOperationFormProps {
@@ -89,6 +91,8 @@ export function CreateOperationForm({
       nivelesRedComercial: 1,
       socioComercialNivel2Id: undefined,
       socioComercialNivel3Id: undefined,
+      porcentajeComisionOficina: 1.5,
+      porcentajeComisionSocio: 0,
       pagos: [
         {
           monto: '',
@@ -173,6 +177,22 @@ export function CreateOperationForm({
       shouldTouch: true,
     });
 
+    if (cliente.porcentajeComisionOficina !== undefined) {
+      setValue('porcentajeComisionOficina', cliente.porcentajeComisionOficina, {
+        shouldValidate: true,
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+    }
+
+    if (cliente.porcentajeComisionSocio !== undefined) {
+      setValue('porcentajeComisionSocio', cliente.porcentajeComisionSocio, {
+        shouldValidate: true,
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+    }
+
     setShowClienteOptions(false);
     void trigger('clienteId');
   }
@@ -230,6 +250,27 @@ export function CreateOperationForm({
   });
 
   const nivelesRedComercial = Number(nivelesRedComercialRaw) || 1;
+
+  const porcentajeComisionOficinaRaw = useWatch({
+    control,
+    name: 'porcentajeComisionOficina',
+  });
+
+  const porcentajeComisionSocioRaw = useWatch({
+    control,
+    name: 'porcentajeComisionSocio',
+  });
+
+  const comisionPreview = useMemo(() => {
+    const oficina = Number(porcentajeComisionOficinaRaw) || 0;
+    const socio = Number(porcentajeComisionSocioRaw) || 0;
+    const total = oficina + socio * nivelesRedComercial;
+
+    return {
+      total,
+      monto: (montoTotal * total) / 100,
+    };
+  }, [porcentajeComisionOficinaRaw, porcentajeComisionSocioRaw, nivelesRedComercial, montoTotal]);
 
   const socioComercialNivel2Id = useWatch({
     control,
@@ -453,6 +494,54 @@ export function CreateOperationForm({
                 {errors.nivelesRedComercial.message}
               </p>
             ) : null}
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Porcentaje de comisión para oficina
+            </label>
+
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              max="100"
+              {...register('porcentajeComisionOficina')}
+            />
+
+            {errors.porcentajeComisionOficina ? (
+              <p className="mt-1 text-xs text-red-600">
+                {errors.porcentajeComisionOficina.message}
+              </p>
+            ) : null}
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Porcentaje de comisión por socio comercial
+            </label>
+
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              max="100"
+              {...register('porcentajeComisionSocio')}
+            />
+
+            {errors.porcentajeComisionSocio ? (
+              <p className="mt-1 text-xs text-red-600">
+                {errors.porcentajeComisionSocio.message}
+              </p>
+            ) : null}
+          </div>
+
+          <div className="md:col-span-2 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            Comisión total estimada:{' '}
+            <span className="font-semibold text-slate-900">
+              {comisionPreview.total.toFixed(2)}%
+            </span>{' '}
+            (${formatCurrencyDisplay(comisionPreview.monto)})
           </div>
         </div>
 

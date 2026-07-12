@@ -6,7 +6,7 @@ export const createClienteSchema = z.object({
     .min(1, 'El nombre del cliente es obligatorio')
     .max(100, 'El nombre no puede exceder 100 caracteres'),
 
-  porcentajeComisionAplicado: z.preprocess(
+  porcentajeComisionSocio: z.preprocess(
     (value) => {
       if (value === '' || value === null || value === undefined) {
         return undefined;
@@ -15,8 +15,22 @@ export const createClienteSchema = z.object({
       return Number(value);
     },
     z
-      .number({ error: 'El porcentaje de comisión es obligatorio' })
-      .min(0.01, 'El porcentaje debe ser mayor a 0')
+      .number({ error: 'El porcentaje de comisión por socio comercial es obligatorio' })
+      .min(0, 'El porcentaje de comisión por socio comercial no puede ser negativo')
+      .max(100, 'El porcentaje no puede ser mayor a 100'),
+  ),
+
+  porcentajeComisionOficina: z.preprocess(
+    (value) => {
+      if (value === '' || value === null || value === undefined) {
+        return undefined;
+      }
+
+      return Number(value);
+    },
+    z
+      .number({ error: 'El porcentaje de comisión de oficina es obligatorio' })
+      .min(0, 'El porcentaje de comisión de oficina no puede ser negativo')
       .max(100, 'El porcentaje no puede ser mayor a 100'),
   ),
 });

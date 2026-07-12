@@ -98,6 +98,8 @@ export default function OperationsPage() {
         id: cliente.id,
         label: cliente.nombre,
         nivelesRedComercial: cliente.nivelesRedComercial,
+        porcentajeComisionOficina: cliente.porcentajeComisionOficina,
+        porcentajeComisionSocio: cliente.porcentajeComisionSocio,
       }));
   }, [clientesCatalog]);
 

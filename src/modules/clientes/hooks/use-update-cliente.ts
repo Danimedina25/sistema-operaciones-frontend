@@ -23,7 +23,8 @@ export function useUpdateCliente(options?: UseUpdateClienteOptions) {
         nombre: values.nombre.trim(),
         activo: values.activo,
         nivelesRedComercial: cliente.nivelesRedComercial,
-        porcentajeComisionAplicado: values.porcentajeComisionAplicado,
+        porcentajeComisionSocio: values.porcentajeComisionSocio,
+        porcentajeComisionOficina: values.porcentajeComisionOficina,
       });
 
       toast.success(`Cliente ${updatedCliente.nombre} actualizado correctamente`);

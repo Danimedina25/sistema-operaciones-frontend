@@ -25,7 +25,8 @@ export function CreateClienteForm({
     resolver: zodResolver(createClienteSchema),
     defaultValues: {
       nombre: '',
-      porcentajeComisionAplicado: 0,
+      porcentajeComisionSocio: 0,
+      porcentajeComisionOficina: 1.5,
     },
     mode: 'onBlur',
   });
@@ -45,7 +46,7 @@ export function CreateClienteForm({
 
       <div>
         <label className="mb-2 block text-sm font-medium text-slate-700">
-          Porcentaje de comisión por nivel
+          Porcentaje de comisión por socio comercial
         </label>
         <Input
           type="number"
@@ -53,12 +54,27 @@ export function CreateClienteForm({
           min="0"
           max="100"
           placeholder="Ej. 1.00"
-          error={errors.porcentajeComisionAplicado?.message}
-          {...register('porcentajeComisionAplicado')}
+          error={errors.porcentajeComisionSocio?.message}
+          {...register('porcentajeComisionSocio')}
         />
         <p className="mt-1 text-xs text-slate-500">
-          Este porcentaje se multiplicará por los niveles de socios comerciales.
+          Este porcentaje se aplica a cada socio comercial que participe en una operación de este cliente.
         </p>
+      </div>
+
+      <div>
+        <label className="mb-2 block text-sm font-medium text-slate-700">
+          Porcentaje de comisión para oficina
+        </label>
+        <Input
+          type="number"
+          step="0.01"
+          min="0"
+          max="100"
+          placeholder="Ej. 1.50"
+          error={errors.porcentajeComisionOficina?.message}
+          {...register('porcentajeComisionOficina')}
+        />
       </div>
 
       <div className="flex justify-end">

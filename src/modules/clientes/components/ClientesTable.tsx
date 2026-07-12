@@ -105,7 +105,8 @@ export function ClientesTable({
           <thead className="bg-slate-50">
             <tr className="text-left text-sm text-slate-600">
               <th className="px-4 py-3 font-medium">Nombre</th>
-              <th className="px-4 py-3 font-medium">Comisión</th>
+              <th className="px-4 py-3 font-medium">Comisión socio</th>
+              <th className="px-4 py-3 font-medium">Comisión oficina</th>
               <th className="px-4 py-3 font-medium">Estado</th>
               <th className="px-4 py-3 font-medium text-right">Acciones</th>
             </tr>
@@ -126,7 +127,11 @@ export function ClientesTable({
                   </td>
 
                   <td className="px-4 py-4 text-slate-600">
-                    {cliente.porcentajeComisionAplicado}%
+                    {cliente.porcentajeComisionSocio}%
+                  </td>
+
+                  <td className="px-4 py-4 text-slate-600">
+                    {cliente.porcentajeComisionOficina}%
                   </td>
 
                   <td className="px-4 py-4">

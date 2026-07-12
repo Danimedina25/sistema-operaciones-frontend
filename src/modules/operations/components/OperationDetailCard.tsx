@@ -162,7 +162,7 @@ shadow-slate-950/5
 
               <SummaryItem
                 label="Comisión por cada socio comercial"
-                value={`${operation.porcentajeComisionAplicado}%`}
+                value={`${operation.porcentajeComisionSocio}%`}
               />
 
               <SummaryItem
@@ -279,7 +279,7 @@ shadow-slate-950/5
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               <SummaryItem
                 label="Porcentaje comisiones socios comerciales"
-                value={`${operation.porcentajeComisionRedTotal}% (${operation.porcentajeComisionAplicado}% a cada uno)`}
+                value={`${operation.porcentajeComisionRedTotal}% (${operation.porcentajeComisionSocio}% a cada uno)`}
               />
 
               <SummaryItem
