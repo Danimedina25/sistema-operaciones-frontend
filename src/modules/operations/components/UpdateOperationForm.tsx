@@ -1,6 +1,7 @@
 import { useForm, useWatch } from 'react-hook-form';
 import { useEffect, useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
+import toast from 'react-hot-toast';
 import { Input } from '@/shared/components/ui/Input';
 import { Button } from '@/shared/components/ui/Button';
 import { searchClientes } from '@/modules/clientes/api/clientes.api';
@@ -182,6 +183,9 @@ export function UpdateOperationForm({
             results.map((cliente) => ({
               id: cliente.id,
               label: cliente.nombre,
+              nivelesRedComercial: cliente.nivelesRedComercial,
+              porcentajeComisionOficina: cliente.porcentajeComisionOficina,
+              porcentajeComisionSocio: cliente.porcentajeComisionSocio,
             })),
           );
         })
@@ -274,8 +278,12 @@ export function UpdateOperationForm({
   const puedeEditarRedComercial =
     esAdmin && esSocioComercialNivel1DeLaOperacion;
 
+  function onInvalid() {
+    toast.error('Revisa el formulario, hay campos obligatorios sin completar.');
+  }
+
   return (
-    <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
+    <form className="space-y-5" onSubmit={handleSubmit(onSubmit, onInvalid)}>
       <div className="rounded-2xl border border-slate-200 p-5">
         <h3 className="mb-4 text-base font-semibold text-slate-900">
           Datos generales de la operación

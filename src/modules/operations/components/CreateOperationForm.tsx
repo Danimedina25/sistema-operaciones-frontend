@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import toast from 'react-hot-toast';
 import { Input } from '@/shared/components/ui/Input';
 import { Button } from '@/shared/components/ui/Button';
 import { searchClientes } from '@/modules/clientes/api/clientes.api';
@@ -159,6 +160,9 @@ export function CreateOperationForm({
             results.map((cliente) => ({
               id: cliente.id,
               label: cliente.nombre,
+              nivelesRedComercial: cliente.nivelesRedComercial,
+              porcentajeComisionOficina: cliente.porcentajeComisionOficina,
+              porcentajeComisionSocio: cliente.porcentajeComisionSocio,
             })),
           );
         })
@@ -351,8 +355,12 @@ export function CreateOperationForm({
     return dataTransfer.files;
   }
 
+  function onInvalid() {
+    toast.error('Revisa el formulario, hay campos obligatorios sin completar.');
+  }
+
   return (
-    <form className="space-y-4 pb-0" onSubmit={handleSubmit(onSubmit)}>
+    <form className="space-y-4 pb-0" onSubmit={handleSubmit(onSubmit, onInvalid)}>
       <div className="sticky top-0 z-50 -mx-5 -mt-5 rounded-b-2xl border-b border-slate-200 bg-white px-5 py-4 shadow-lg before:absolute before:inset-x-0 before:-top-10 before:h-10 before:bg-white">
         <div className="relative grid items-center gap-6 text-sm md:grid-cols-4">
           <div className="text-center">
