@@ -4,12 +4,14 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { Modal } from '@/shared/components/ui/Modal';
 import { Pagination } from '@/shared/components/ui/Pagination';
+import { DeleteConfirmationModal } from '@/shared/components/ui/DeleteConfirmationModal';
 
 import { CommercialPartnersFilters } from '@/modules/socioscomerciales/components/CommercialPartnersFilters';
 import { CommercialPartnersTable } from '@/modules/socioscomerciales/components/CommercialPartnersTable';
 import { CreateCommercialPartnerForm } from '@/modules/socioscomerciales/components/CreateCommercialPartnerForm';
 
 import { useCreateCommercialPartner } from '@/modules/socioscomerciales/hooks/use-create-commercial-partner';
+import { useDeleteCommercialPartner } from '@/modules/socioscomerciales/hooks/use-delete-commercial-partner';
 
 import type { CommercialPartnerResponse } from '@/modules/socioscomerciales/types/socioscomerciales.types';
 
@@ -38,6 +40,9 @@ export default function CommercialPartnersPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const [editingPartner, setEditingPartner] =
+    useState<CommercialPartnerResponse | null>(null);
+
+  const [deletingPartner, setDeletingPartner] =
     useState<CommercialPartnerResponse | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -69,6 +74,12 @@ export default function CommercialPartnersPage() {
   } = useUpdateCommercialPartner({
     onSuccess: async () => {
       setEditingPartner(null);
+      await fetchCommercialPartners();
+    },
+  });
+
+  const { isDeleting, submitDeleteCommercialPartner } = useDeleteCommercialPartner({
+    onSuccess: async () => {
       await fetchCommercialPartners();
     },
   });
@@ -128,6 +139,7 @@ export default function CommercialPartnersPage() {
             onEdit={setEditingPartner}
             onActivate={handleActivate}
             onDeactivate={handleDeactivate}
+            onDelete={setDeletingPartner}
           />
 
           <Pagination
@@ -176,6 +188,18 @@ export default function CommercialPartnersPage() {
           />
         ) : null}
       </Modal>
+
+      <DeleteConfirmationModal
+        open={Boolean(deletingPartner)}
+        title={`Estás a punto de eliminar definitivamente al socio comercial "${deletingPartner?.nombre ?? ''}".`}
+        isSubmitting={isDeleting}
+        onClose={() => setDeletingPartner(null)}
+        onConfirm={async () => {
+          if (!deletingPartner) return;
+          const ok = await submitDeleteCommercialPartner(deletingPartner.id);
+          if (ok) setDeletingPartner(null);
+        }}
+      />
     </div>
   );
 }

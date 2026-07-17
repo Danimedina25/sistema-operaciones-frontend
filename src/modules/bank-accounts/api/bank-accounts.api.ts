@@ -44,3 +44,7 @@ export async function deactivateBankAccount(id: number) {
   );
   return response.data;
 }
+
+export async function deleteBankAccount(id: number): Promise<void> {
+  await api.delete(`${BANK_ACCOUNTS_BASE_PATH}/${id}`);
+}

@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { CanAccess } from '@/shared/components/CanAccess';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Pagination } from '@/shared/components/ui/Pagination';
+import { DeleteConfirmationModal } from '@/shared/components/ui/DeleteConfirmationModal';
 import { useClientes } from '@/modules/clientes/hooks/use-clientes';
 import { useCreateCliente } from '@/modules/clientes/hooks/use-create-cliente';
 import { useUpdateCliente } from '@/modules/clientes/hooks/use-update-cliente';
+import { useDeleteCliente } from '@/modules/clientes/hooks/use-delete-cliente';
 import type { ClienteResponse } from '@/modules/clientes/types/clientes.types';
 import {
   filterClientes,
@@ -26,6 +28,9 @@ export default function ClientesPage() {
   const [filters, setFilters] = useState<ClientesFiltersType>(initialFilters);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingCliente, setEditingCliente] = useState<ClienteResponse | null>(
+    null,
+  );
+  const [deletingCliente, setDeletingCliente] = useState<ClienteResponse | null>(
     null,
   );
   const [currentPage, setCurrentPage] = useState(1);
@@ -57,6 +62,15 @@ export default function ClientesPage() {
   const { isSubmitting: isUpdating, submitUpdateCliente } = useUpdateCliente({
     onSuccess: async () => {
       setEditingCliente(null);
+      if(user?.roles.includes('SOCIO_COMERCIAL'))
+        void fetchMyClientes();
+      else
+        await fetchClientes();
+    },
+  });
+
+  const { isDeleting, submitDeleteCliente } = useDeleteCliente({
+    onSuccess: async () => {
       if(user?.roles.includes('SOCIO_COMERCIAL'))
         void fetchMyClientes();
       else
@@ -117,6 +131,7 @@ export default function ClientesPage() {
             onEdit={setEditingCliente}
             onActivate={handleActivate}
             onDeactivate={handleDeactivate}
+            onDelete={setDeletingCliente}
           />
 
           <Pagination
@@ -161,6 +176,18 @@ export default function ClientesPage() {
           />
         ) : null}
       </Modal>
+
+      <DeleteConfirmationModal
+        open={Boolean(deletingCliente)}
+        title={`Estás a punto de eliminar definitivamente al cliente "${deletingCliente?.nombre ?? ''}".`}
+        isSubmitting={isDeleting}
+        onClose={() => setDeletingCliente(null)}
+        onConfirm={async () => {
+          if (!deletingCliente) return;
+          const ok = await submitDeleteCliente(deletingCliente.id);
+          if (ok) setDeletingCliente(null);
+        }}
+      />
     </div>
   );
 }

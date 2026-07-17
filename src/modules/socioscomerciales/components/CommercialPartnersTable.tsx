@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { StatusBadge } from '@/shared/components/ui/StatusBadge';
+import { CanAccess } from '@/shared/components/CanAccess';
 
 import type {
   CommercialPartnerResponse,
@@ -15,6 +16,7 @@ interface CommercialPartnersTableProps {
   onEdit: (partner: CommercialPartnerResponse) => void;
   onActivate: (partnerId: number) => void;
   onDeactivate: (partnerId: number) => void;
+  onDelete: (partner: CommercialPartnerResponse) => void;
 }
 
 export function CommercialPartnersTable({
@@ -23,6 +25,7 @@ export function CommercialPartnersTable({
   onEdit,
   onActivate,
   onDeactivate,
+  onDelete,
 }: CommercialPartnersTableProps) {
   const [openMenuPartnerId, setOpenMenuPartnerId] =
     useState<number | null>(null);
@@ -213,6 +216,19 @@ export function CommercialPartnersTable({
                               Activar
                             </button>
                           )}
+
+                          <CanAccess roles={['ADMIN', 'DIRECCION']}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                onDelete(partner);
+                                closeMenu();
+                              }}
+                              className="block w-full border-t border-red-100 bg-red-50/50 px-4 py-2.5 text-left text-sm font-bold text-red-900 transition hover:bg-red-100"
+                            >
+                              Eliminar definitivamente
+                            </button>
+                          </CanAccess>
                         </div>,
                         document.body,
                       )}

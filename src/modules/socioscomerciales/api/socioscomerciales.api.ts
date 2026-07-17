@@ -82,3 +82,7 @@ export async function deactivateCommercialPartner(
 
   return response.data.data;
 }
+
+export async function deleteCommercialPartner(id: number): Promise<void> {
+  await api.delete(`${COMMERCIAL_PARTNERS_BASE_PATH}/${id}`);
+}

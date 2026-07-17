@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { CanAccess } from '@/shared/components/CanAccess';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Pagination } from '@/shared/components/ui/Pagination';
+import { DeleteConfirmationModal } from '@/shared/components/ui/DeleteConfirmationModal';
 import { UserForm } from '@/modules/users/components/UserForm';
 import { UpdateUserEmailForm } from '@/modules/users/components/UpdateUserEmailForm';
 import { UsersFilters } from '@/modules/users/components/UsersFilters';
@@ -9,6 +10,7 @@ import { UsersTable } from '@/modules/users/components/UsersTable';
 import { useCreateUser } from '@/modules/users/hooks/use-create-user';
 import { useUpdateUser } from '@/modules/users/hooks/use-update-user';
 import { useUpdateUserEmail } from '@/modules/users/hooks/use-update-user-email';
+import { useDeleteUser } from '@/modules/users/hooks/use-delete-user';
 import { useUsers } from '@/modules/users/hooks/use-users';
 import type { UserResponse } from '@/modules/users/types/users.types';
 import {
@@ -29,6 +31,7 @@ export default function UsersPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
   const [emailUser, setEmailUser] = useState<UserResponse | null>(null);
+  const [deletingUser, setDeletingUser] = useState<UserResponse | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
   const pageSize = 10;
@@ -64,6 +67,12 @@ export default function UsersPage() {
         await fetchUsers();
       },
     });
+
+  const { isDeleting, submitDeleteUser } = useDeleteUser({
+    onSuccess: async () => {
+      await fetchUsers();
+    },
+  });
 
   useEffect(() => {
     setCurrentPage(1);
@@ -118,6 +127,7 @@ export default function UsersPage() {
             onActivate={handleActivate}
             onDeactivate={handleDeactivate}
             onResendActivation={handleResendActivation}
+            onDelete={setDeletingUser}
           />
 
           <Pagination
@@ -186,6 +196,18 @@ export default function UsersPage() {
           />
         ) : null}
       </Modal>
+
+      <DeleteConfirmationModal
+        open={Boolean(deletingUser)}
+        title={`Estás a punto de eliminar definitivamente al usuario "${deletingUser?.nombre ?? ''}" (${deletingUser?.correo ?? ''}).`}
+        isSubmitting={isDeleting}
+        onClose={() => setDeletingUser(null)}
+        onConfirm={async () => {
+          if (!deletingUser) return;
+          const ok = await submitDeleteUser(deletingUser.id);
+          if (ok) setDeletingUser(null);
+        }}
+      />
     </div>
   );
 }

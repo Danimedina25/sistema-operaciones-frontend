@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { StatusBadge } from '@/shared/components/ui/StatusBadge';
+import { CanAccess } from '@/shared/components/CanAccess';
 import type { ClienteResponse } from '@/modules/clientes/types/clientes.types';
 import { ClienteStatusBadge } from './ClienteStatusBadge';
 
@@ -10,6 +11,7 @@ interface ClientesTableProps {
   onEdit: (cliente: ClienteResponse) => void;
   onActivate: (clienteId: number) => void;
   onDeactivate: (clienteId: number) => void;
+  onDelete: (cliente: ClienteResponse) => void;
 }
 
 export function ClientesTable({
@@ -18,6 +20,7 @@ export function ClientesTable({
   onEdit,
   onActivate,
   onDeactivate,
+  onDelete,
 }: ClientesTableProps) {
   const [openMenuClienteId, setOpenMenuClienteId] = useState<number | null>(
     null,
@@ -196,6 +199,19 @@ export function ClientesTable({
                               Activar
                             </button>
                           )}
+
+                          <CanAccess roles={['ADMIN', 'DIRECCION']}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                onDelete(cliente);
+                                closeMenu();
+                              }}
+                              className="block w-full border-t border-red-100 bg-red-50/50 px-4 py-2.5 text-left text-sm font-bold text-red-900 transition hover:bg-red-100"
+                            >
+                              Eliminar definitivamente
+                            </button>
+                          </CanAccess>
                         </div>,
                         document.body,
                       )}

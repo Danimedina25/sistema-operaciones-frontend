@@ -3,10 +3,13 @@ import { BankAccountsTable } from '@/modules/bank-accounts/components/BankAccoun
 import { BankAccountFormModal } from '@/modules/bank-accounts/components/BankAccountFormModal';
 import { BankAccountsFilters } from '@/modules/bank-accounts/components/BankAccountsFilters';
 import { Pagination } from '@/shared/components/ui/Pagination';
+import { DeleteConfirmationModal } from '@/shared/components/ui/DeleteConfirmationModal';
+import { useAuth } from '@/modules/auth/store/auth.context';
 
 import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts';
 import { useActivateBankAccount } from '@/modules/bank-accounts/hooks/use-activate-bank-account';
 import { useDeactivateBankAccount } from '@/modules/bank-accounts/hooks/use-deactivate-bank-account';
+import { useDeleteBankAccount } from '@/modules/bank-accounts/hooks/use-delete-bank-account';
 import { useCreateBankAccount } from '../hooks/useCreateBankAccount';
 import { useUpdateBankAccount } from '../hooks/useUpdateBankAccount';
 
@@ -33,10 +36,14 @@ export default function BankAccountsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingAccount, setEditingAccount] =
     useState<BankAccountResponse | null>(null);
+  const [deletingAccount, setDeletingAccount] =
+    useState<BankAccountResponse | null>(null);
 
   const pageSize = 10;
 
   const roles = ['ADMIN'];
+  const { hasRole } = useAuth();
+  const canDelete = hasRole(['ADMIN', 'DIRECCION']);
 
   const canView = useMemo(
     () =>
@@ -88,6 +95,10 @@ export default function BankAccountsPage() {
     processingAccountId: deactivatingAccountId,
     submitDeactivateBankAccount,
   } = useDeactivateBankAccount({
+    onSuccess: loadBankAccounts,
+  });
+
+  const { isDeleting, submitDeleteBankAccount } = useDeleteBankAccount({
     onSuccess: loadBankAccounts,
   });
 
@@ -187,9 +198,11 @@ export default function BankAccountsPage() {
             processingAccountId={processingAccountId}
             canEdit={canCreateOrEdit}
             canToggleStatus={canToggleStatus}
+            canDelete={canDelete}
             onEdit={handleOpenEdit}
             onActivate={submitActivateBankAccount}
             onDeactivate={submitDeactivateBankAccount}
+            onDelete={setDeletingAccount}
           />
 
           <Pagination
@@ -209,6 +222,18 @@ export default function BankAccountsPage() {
         isSubmitting={isSubmitting}
         onClose={handleCloseForm}
         onSubmit={handleSubmit}
+      />
+
+      <DeleteConfirmationModal
+        open={Boolean(deletingAccount)}
+        title={`Estás a punto de eliminar definitivamente la cuenta "${deletingAccount?.banco ?? ''} - ${deletingAccount?.titular ?? ''}".`}
+        isSubmitting={isDeleting}
+        onClose={() => setDeletingAccount(null)}
+        onConfirm={async () => {
+          if (!deletingAccount) return;
+          const ok = await submitDeleteBankAccount(deletingAccount.id);
+          if (ok) setDeletingAccount(null);
+        }}
       />
     </div>
   );

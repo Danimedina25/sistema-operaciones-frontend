@@ -9,9 +9,11 @@ interface BankAccountsTableProps {
   processingAccountId: number | null;
   canEdit: boolean;
   canToggleStatus: boolean;
+  canDelete: boolean;
   onEdit: (account: BankAccountResponse) => void;
   onActivate: (accountId: number) => void | Promise<void>;
   onDeactivate: (accountId: number) => void | Promise<void>;
+  onDelete: (account: BankAccountResponse) => void;
 }
 
 export function BankAccountsTable({
@@ -19,9 +21,11 @@ export function BankAccountsTable({
   processingAccountId,
   canEdit,
   canToggleStatus,
+  canDelete,
   onEdit,
   onActivate,
   onDeactivate,
+  onDelete,
 }: BankAccountsTableProps) {
   const [openMenuAccountId, setOpenMenuAccountId] = useState<number | null>(null);
   const [menuPosition, setMenuPosition] = useState<{
@@ -153,7 +157,7 @@ export function BankAccountsTable({
                   </td>
 
                   <td className="px-4 py-4 text-right">
-                    {(canEdit || canToggleStatus) && (
+                    {(canEdit || canToggleStatus || canDelete) && (
                       <button
                         type="button"
                         disabled={isProcessing}
@@ -214,6 +218,19 @@ export function BankAccountsTable({
                               className="block w-full px-4 py-2.5 text-left text-sm font-semibold  text-emerald-700 transition hover:bg-emerald-50"
                             >
                               Activar
+                            </button>
+                          )}
+
+                          {canDelete && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                onDelete(account);
+                                closeMenu();
+                              }}
+                              className="block w-full border-t border-red-100 bg-red-50/50 px-4 py-2.5 text-left text-sm font-bold text-red-900 transition hover:bg-red-100"
+                            >
+                              Eliminar definitivamente
                             </button>
                           )}
                         </div>,

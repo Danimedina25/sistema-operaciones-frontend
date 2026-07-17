@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { formatRole } from '@/shared/utils/role-labels';
 import { StatusBadge } from '@/shared/components/ui/StatusBadge';
+import { CanAccess } from '@/shared/components/CanAccess';
 import { UserVerificationBadge } from '@/modules/users/components/UserVerificationBadge';
 import type { UserResponse } from '@/modules/users/types/users.types';
 
@@ -13,6 +14,7 @@ interface UsersTableProps {
   onActivate: (userId: number) => void;
   onDeactivate: (userId: number) => void;
   onResendActivation: (userId: number) => void;
+  onDelete: (user: UserResponse) => void;
 }
 
 export function UsersTable({
@@ -23,6 +25,7 @@ export function UsersTable({
   onActivate,
   onDeactivate,
   onResendActivation,
+  onDelete,
 }: UsersTableProps) {
   const [openMenuUserId, setOpenMenuUserId] = useState<number | null>(null);
   const [menuPosition, setMenuPosition] = useState<{
@@ -228,6 +231,19 @@ export function UsersTable({
                               Reenviar activación
                             </button>
                           )}
+
+                          <CanAccess roles={['ADMIN', 'DIRECCION']}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                onDelete(user);
+                                closeMenu();
+                              }}
+                              className="block w-full border-t border-red-100 bg-red-50/50 px-4 py-2.5 text-left text-sm font-bold text-red-900 transition hover:bg-red-100"
+                            >
+                              Eliminar definitivamente
+                            </button>
+                          </CanAccess>
                         </div>,
                         document.body
                       )}

@@ -42,6 +42,10 @@ export async function deactivateUser(id: number): Promise<UserResponse> {
   return response.data.data;
 }
 
+export async function deleteUser(id: number): Promise<void> {
+  await api.delete(`${USERS_BASE_PATH}/${id}`);
+}
+
 export async function resendActivationEmail(id: number): Promise<void> {
   await api.post<VoidApiResponse>(`${USERS_BASE_PATH}/${id}/resend-activation-email`);
 }

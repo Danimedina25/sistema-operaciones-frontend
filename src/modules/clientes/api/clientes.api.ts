@@ -75,3 +75,7 @@ export async function deactivateCliente(id: number): Promise<ClienteResponse> {
   );
   return response.data.data;
 }
+
+export async function deleteCliente(id: number): Promise<void> {
+  await api.delete(`${CLIENTES_BASE_PATH}/${id}`);
+}
