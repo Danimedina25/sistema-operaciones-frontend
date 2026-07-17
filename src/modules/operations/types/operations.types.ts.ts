@@ -70,6 +70,8 @@ export interface CreateOperationRequest {
 
   porcentajeComisionOficina: number;
   porcentajeComisionSocio: number;
+  porcentajeComisionSocioNivel2?: number | null;
+  porcentajeComisionSocioNivel3?: number | null;
 
   observaciones?: string;
 }
@@ -86,6 +88,8 @@ export interface UpdateOperationRequest {
 
   porcentajeComisionOficina: number;
   porcentajeComisionSocio: number;
+  porcentajeComisionSocioNivel2?: number | null;
+  porcentajeComisionSocioNivel3?: number | null;
 
   observaciones?: string;
 }
@@ -161,7 +165,13 @@ export interface PaymentOperationResponse {
   nivelesRedComercial: number;
 
   porcentajeComisionSocio: number;
+  porcentajeComisionSocioNivel2?: number | null;
+  porcentajeComisionSocioNivel3?: number | null;
   porcentajeComisionOficina: number;
+
+  montoComisionSocioNivel1: number;
+  montoComisionSocioNivel2: number;
+  montoComisionSocioNivel3: number;
 
   porcentajeComisionRedTotal: number;
   montoComisionRedTotal: number;

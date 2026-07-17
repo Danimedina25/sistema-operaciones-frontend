@@ -161,8 +161,18 @@ shadow-slate-950/5
               />
 
               <SummaryItem
-                label="Comisión por cada socio comercial"
-                value={`${operation.porcentajeComisionSocio}%`}
+                label="Comisión por nivel de socio comercial"
+                value={
+                  <div className="space-y-0.5">
+                    <div>Nivel 1: {operation.porcentajeComisionSocio}%</div>
+                    {operation.nivelesRedComercial >= 2 && (
+                      <div>Nivel 2: {operation.porcentajeComisionSocioNivel2}%</div>
+                    )}
+                    {operation.nivelesRedComercial >= 3 && (
+                      <div>Nivel 3: {operation.porcentajeComisionSocioNivel3}%</div>
+                    )}
+                  </div>
+                }
               />
 
               <SummaryItem
@@ -279,7 +289,18 @@ shadow-slate-950/5
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               <SummaryItem
                 label="Porcentaje comisiones socios comerciales"
-                value={`${operation.porcentajeComisionRedTotal}% (${operation.porcentajeComisionSocio}% a cada uno)`}
+                value={
+                  <div className="space-y-0.5">
+                    <div>Total: {operation.porcentajeComisionRedTotal}%</div>
+                    <div className="text-xs font-normal">
+                      N1: {operation.porcentajeComisionSocio}%
+                      {operation.nivelesRedComercial >= 2 &&
+                        ` · N2: ${operation.porcentajeComisionSocioNivel2}%`}
+                      {operation.nivelesRedComercial >= 3 &&
+                        ` · N3: ${operation.porcentajeComisionSocioNivel3}%`}
+                    </div>
+                  </div>
+                }
               />
 
               <SummaryItem
@@ -300,7 +321,18 @@ shadow-slate-950/5
 
               <SummaryItem
                 label="Total comisiones socios comerciales"
-                value={formatCurrency(operation.montoComisionRedTotal) + ` ($${operation.montoComisionRedTotal / operation.nivelesRedComercial} a cada uno)`}
+                value={
+                  <div className="space-y-0.5">
+                    <div>{formatCurrency(operation.montoComisionRedTotal)}</div>
+                    <div className="text-xs font-normal">
+                      N1: {formatCurrency(operation.montoComisionSocioNivel1)}
+                      {operation.nivelesRedComercial >= 2 &&
+                        ` · N2: ${formatCurrency(operation.montoComisionSocioNivel2)}`}
+                      {operation.nivelesRedComercial >= 3 &&
+                        ` · N3: ${formatCurrency(operation.montoComisionSocioNivel3)}`}
+                    </div>
+                  </div>
+                }
                 variant="amber"
               />
 

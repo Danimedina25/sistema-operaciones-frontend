@@ -33,6 +33,10 @@ export function useUpdateOperation(options?: UseUpdateOperationOptions) {
             nivelesRedComercial: values.nivelesRedComercial,
             porcentajeComisionOficina: values.porcentajeComisionOficina,
             porcentajeComisionSocio: values.porcentajeComisionSocio,
+            porcentajeComisionSocioNivel2:
+              values.nivelesRedComercial >= 2 ? values.porcentajeComisionSocioNivel2 : undefined,
+            porcentajeComisionSocioNivel3:
+              values.nivelesRedComercial >= 3 ? values.porcentajeComisionSocioNivel3 : undefined,
             observaciones: values.observaciones?.trim() || undefined,
         });
 

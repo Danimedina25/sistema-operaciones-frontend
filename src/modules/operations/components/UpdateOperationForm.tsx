@@ -79,6 +79,8 @@ export function UpdateOperationForm({
       nivelesRedComercial: operation.nivelesRedComercial,
       porcentajeComisionOficina: operation.porcentajeComisionOficina,
       porcentajeComisionSocio: operation.porcentajeComisionSocio,
+      porcentajeComisionSocioNivel2: operation.porcentajeComisionSocioNivel2 ?? undefined,
+      porcentajeComisionSocioNivel3: operation.porcentajeComisionSocioNivel3 ?? undefined,
     },
     mode: 'onChange',
   });
@@ -108,6 +110,16 @@ export function UpdateOperationForm({
     name: 'porcentajeComisionSocio',
   });
 
+  const porcentajeComisionSocioNivel2Raw = useWatch({
+    control,
+    name: 'porcentajeComisionSocioNivel2',
+  });
+
+  const porcentajeComisionSocioNivel3Raw = useWatch({
+    control,
+    name: 'porcentajeComisionSocioNivel3',
+  });
+
   const montoTotalRaw = useWatch({
     control,
     name: 'montoTotal',
@@ -115,15 +127,24 @@ export function UpdateOperationForm({
 
   const comisionPreview = useMemo(() => {
     const oficina = Number(porcentajeComisionOficinaRaw) || 0;
-    const socio = Number(porcentajeComisionSocioRaw) || 0;
-    const total = oficina + socio * nivelesRedComercial;
+    const nivel1 = Number(porcentajeComisionSocioRaw) || 0;
+    const nivel2 = nivelesRedComercial >= 2 ? Number(porcentajeComisionSocioNivel2Raw) || 0 : 0;
+    const nivel3 = nivelesRedComercial >= 3 ? Number(porcentajeComisionSocioNivel3Raw) || 0 : 0;
+    const total = oficina + nivel1 + nivel2 + nivel3;
     const montoTotal = Number(String(montoTotalRaw).replace(/,/g, '')) || 0;
 
     return {
       total,
       monto: (montoTotal * total) / 100,
     };
-  }, [porcentajeComisionOficinaRaw, porcentajeComisionSocioRaw, nivelesRedComercial, montoTotalRaw]);
+  }, [
+    porcentajeComisionOficinaRaw,
+    porcentajeComisionSocioRaw,
+    porcentajeComisionSocioNivel2Raw,
+    porcentajeComisionSocioNivel3Raw,
+    nivelesRedComercial,
+    montoTotalRaw,
+  ]);
 
   const filteredClientes = useMemo(() => {
     const search = clienteSearch.trim().toLowerCase();
@@ -195,6 +216,16 @@ export function UpdateOperationForm({
 
     if (cliente.porcentajeComisionSocio !== undefined) {
       setValue('porcentajeComisionSocio', cliente.porcentajeComisionSocio, {
+        shouldValidate: true,
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+      setValue('porcentajeComisionSocioNivel2', cliente.porcentajeComisionSocio, {
+        shouldValidate: true,
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+      setValue('porcentajeComisionSocioNivel3', cliente.porcentajeComisionSocio, {
         shouldValidate: true,
         shouldDirty: true,
         shouldTouch: true,
@@ -343,10 +374,18 @@ export function UpdateOperationForm({
                       shouldValidate: true,
                       shouldDirty: true,
                     });
+                    setValue('porcentajeComisionSocioNivel3', undefined, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    });
                   }
 
                   if (value < 2) {
                     setValue('socioComercialNivel2Id', undefined, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    });
+                    setValue('porcentajeComisionSocioNivel2', undefined, {
                       shouldValidate: true,
                       shouldDirty: true,
                     });
@@ -388,7 +427,7 @@ export function UpdateOperationForm({
 
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">
-              Porcentaje de comisión por socio comercial
+              Porcentaje de comisión socio comercial nivel 1
             </label>
 
             <Input
@@ -461,6 +500,26 @@ export function UpdateOperationForm({
                     </option>
                   ))}
                 </select>
+
+                <div className="mt-3">
+                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                    Porcentaje de comisión socio comercial nivel 2
+                  </label>
+
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    {...register('porcentajeComisionSocioNivel2')}
+                  />
+
+                  {errors.porcentajeComisionSocioNivel2 && (
+                    <p className="mt-1 text-xs text-red-600">
+                      {errors.porcentajeComisionSocioNivel2.message}
+                    </p>
+                  )}
+                </div>
               </div>
             )}
 
@@ -487,6 +546,26 @@ export function UpdateOperationForm({
                     </option>
                   ))}
                 </select>
+
+                <div className="mt-3">
+                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                    Porcentaje de comisión socio comercial nivel 3
+                  </label>
+
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    {...register('porcentajeComisionSocioNivel3')}
+                  />
+
+                  {errors.porcentajeComisionSocioNivel3 && (
+                    <p className="mt-1 text-xs text-red-600">
+                      {errors.porcentajeComisionSocioNivel3.message}
+                    </p>
+                  )}
+                </div>
               </div>
             )}
 

@@ -93,6 +93,34 @@ export const updateOperationSchema = z.object({
       .min(0, 'El porcentaje de comisión por socio comercial no puede ser negativo'),
   ),
 
+  porcentajeComisionSocioNivel2: z.preprocess(
+    (value) => {
+      if (value === '' || value === null || value === undefined) {
+        return undefined;
+      }
+
+      return Number(value);
+    },
+    z
+      .number()
+      .min(0, 'El porcentaje de comisión del socio comercial nivel 2 no puede ser negativo')
+      .optional(),
+  ),
+
+  porcentajeComisionSocioNivel3: z.preprocess(
+    (value) => {
+      if (value === '' || value === null || value === undefined) {
+        return undefined;
+      }
+
+      return Number(value);
+    },
+    z
+      .number()
+      .min(0, 'El porcentaje de comisión del socio comercial nivel 3 no puede ser negativo')
+      .optional(),
+  ),
+
   observaciones: z
     .string()
     .max(500, 'Las observaciones no pueden exceder 500 caracteres')
@@ -145,9 +173,33 @@ export const updateOperationSchema = z.object({
       });
     }
 
+    if (
+      value.nivelesRedComercial >= 2 &&
+      value.porcentajeComisionSocioNivel2 === undefined
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['porcentajeComisionSocioNivel2'],
+        message: 'Debe indicar el porcentaje de comisión del socio comercial nivel 2',
+      });
+    }
+
+    if (
+      value.nivelesRedComercial >= 3 &&
+      value.porcentajeComisionSocioNivel3 === undefined
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['porcentajeComisionSocioNivel3'],
+        message: 'Debe indicar el porcentaje de comisión del socio comercial nivel 3',
+      });
+    }
+
     const totalComision =
       value.porcentajeComisionOficina +
-      value.porcentajeComisionSocio * value.nivelesRedComercial;
+      value.porcentajeComisionSocio +
+      (value.nivelesRedComercial >= 2 ? (value.porcentajeComisionSocioNivel2 ?? 0) : 0) +
+      (value.nivelesRedComercial >= 3 ? (value.porcentajeComisionSocioNivel3 ?? 0) : 0);
 
     if (totalComision > 100) {
       ctx.addIssue({
