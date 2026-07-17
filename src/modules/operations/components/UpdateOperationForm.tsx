@@ -278,8 +278,29 @@ export function UpdateOperationForm({
   const puedeEditarRedComercial =
     esAdmin && esSocioComercialNivel1DeLaOperacion;
 
-  function onInvalid() {
-    toast.error('Revisa el formulario, hay campos obligatorios sin completar.');
+  function onInvalid(formErrors: Record<string, unknown>) {
+    const fieldLabels: Record<string, string> = {
+      clienteId: 'Cliente',
+      montoTotal: 'Monto total',
+      nivelesRedComercial: 'Niveles de socios comerciales',
+      socioComercialNivel2Id: 'Socio comercial nivel 2',
+      socioComercialNivel3Id: 'Socio comercial nivel 3',
+      porcentajeComisionOficina: 'Comisión de oficina',
+      porcentajeComisionSocio: 'Comisión socio nivel 1',
+      porcentajeComisionSocioNivel2: 'Comisión socio nivel 2',
+      porcentajeComisionSocioNivel3: 'Comisión socio nivel 3',
+      observaciones: 'Observaciones',
+    };
+
+    const friendly = Object.keys(formErrors)
+      .map((key) => fieldLabels[key] ?? key)
+      .join(', ');
+
+    toast.error(
+      friendly
+        ? `Revisa el formulario, hay campos obligatorios sin completar: ${friendly}.`
+        : 'Revisa el formulario, hay campos obligatorios sin completar.',
+    );
   }
 
   return (
