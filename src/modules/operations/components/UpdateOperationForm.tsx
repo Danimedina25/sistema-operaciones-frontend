@@ -85,7 +85,8 @@ export function UpdateOperationForm({
     mode: 'onChange',
   });
 
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
+  const canEditCommission = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
 
   const [clienteSearch, setClienteSearch] = useState(
     operation.clienteNombre,
@@ -405,53 +406,57 @@ export function UpdateOperationForm({
             ) : null}
           </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Porcentaje de comisión para oficina
-            </label>
+          {canEditCommission && (
+            <>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Porcentaje de comisión para oficina
+                </label>
 
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              max="100"
-              {...register('porcentajeComisionOficina')}
-            />
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  {...register('porcentajeComisionOficina')}
+                />
 
-            {errors.porcentajeComisionOficina ? (
-              <p className="mt-1 text-xs text-red-600">
-                {errors.porcentajeComisionOficina.message}
-              </p>
-            ) : null}
-          </div>
+                {errors.porcentajeComisionOficina ? (
+                  <p className="mt-1 text-xs text-red-600">
+                    {errors.porcentajeComisionOficina.message}
+                  </p>
+                ) : null}
+              </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Porcentaje de comisión socio comercial nivel 1
-            </label>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Porcentaje de comisión socio comercial nivel 1
+                </label>
 
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              max="100"
-              {...register('porcentajeComisionSocio')}
-            />
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  {...register('porcentajeComisionSocio')}
+                />
 
-            {errors.porcentajeComisionSocio ? (
-              <p className="mt-1 text-xs text-red-600">
-                {errors.porcentajeComisionSocio.message}
-              </p>
-            ) : null}
-          </div>
+                {errors.porcentajeComisionSocio ? (
+                  <p className="mt-1 text-xs text-red-600">
+                    {errors.porcentajeComisionSocio.message}
+                  </p>
+                ) : null}
+              </div>
 
-          <div className="md:col-span-2 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-            Comisión total estimada:{' '}
-            <span className="font-semibold text-slate-900">
-              {comisionPreview.total.toFixed(2)}%
-            </span>{' '}
-            (${formatCurrencyDisplay(comisionPreview.monto)})
-          </div>
+              <div className="md:col-span-2 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                Comisión total estimada:{' '}
+                <span className="font-semibold text-slate-900">
+                  {comisionPreview.total.toFixed(2)}%
+                </span>{' '}
+                (${formatCurrencyDisplay(comisionPreview.monto)})
+              </div>
+            </>
+          )}
 
           {esAdmin && (
             <div className="md:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -501,25 +506,27 @@ export function UpdateOperationForm({
                   ))}
                 </select>
 
-                <div className="mt-3">
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Porcentaje de comisión socio comercial nivel 2
-                  </label>
+                {canEditCommission && (
+                  <div className="mt-3">
+                    <label className="mb-2 block text-sm font-medium text-slate-700">
+                      Porcentaje de comisión socio comercial nivel 2
+                    </label>
 
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    {...register('porcentajeComisionSocioNivel2')}
-                  />
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      {...register('porcentajeComisionSocioNivel2')}
+                    />
 
-                  {errors.porcentajeComisionSocioNivel2 && (
-                    <p className="mt-1 text-xs text-red-600">
-                      {errors.porcentajeComisionSocioNivel2.message}
-                    </p>
-                  )}
-                </div>
+                    {errors.porcentajeComisionSocioNivel2 && (
+                      <p className="mt-1 text-xs text-red-600">
+                        {errors.porcentajeComisionSocioNivel2.message}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
@@ -547,25 +554,27 @@ export function UpdateOperationForm({
                   ))}
                 </select>
 
-                <div className="mt-3">
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Porcentaje de comisión socio comercial nivel 3
-                  </label>
+                {canEditCommission && (
+                  <div className="mt-3">
+                    <label className="mb-2 block text-sm font-medium text-slate-700">
+                      Porcentaje de comisión socio comercial nivel 3
+                    </label>
 
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    {...register('porcentajeComisionSocioNivel3')}
-                  />
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      {...register('porcentajeComisionSocioNivel3')}
+                    />
 
-                  {errors.porcentajeComisionSocioNivel3 && (
-                    <p className="mt-1 text-xs text-red-600">
-                      {errors.porcentajeComisionSocioNivel3.message}
-                    </p>
-                  )}
-                </div>
+                    {errors.porcentajeComisionSocioNivel3 && (
+                      <p className="mt-1 text-xs text-red-600">
+                        {errors.porcentajeComisionSocioNivel3.message}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
