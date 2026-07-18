@@ -15,6 +15,7 @@ export function useUpdateOperation(options?: UseUpdateOperationOptions) {
 
   const submitUpdateOperation = async (
     operationId: number,
+    socioComercialId: number,
     values: UpdateOperationFormValues,
 ) => {
     try {
@@ -27,7 +28,7 @@ export function useUpdateOperation(options?: UseUpdateOperationOptions) {
         const operation = await updateOperation(operationId, {
             clienteId: values.clienteId,
             montoTotal: values.montoTotal,
-            socioComercialId: user.userId,
+            socioComercialId,
             socioComercialNivel2Id: values.socioComercialNivel2Id,
             socioComercialNivel3Id: values.socioComercialNivel3Id,
             nivelesRedComercial: values.nivelesRedComercial,

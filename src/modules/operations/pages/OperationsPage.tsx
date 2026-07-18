@@ -290,7 +290,11 @@ export default function OperationsPage() {
             clientes={clientes}
             commercialPartners={commercialPartners}
             onSubmit={(values) =>
-              submitUpdateOperation(operationToEdit.id, values)
+              submitUpdateOperation(
+                operationToEdit.id,
+                operationToEdit.socioComercialId,
+                values,
+              )
             }
           />
         )}
