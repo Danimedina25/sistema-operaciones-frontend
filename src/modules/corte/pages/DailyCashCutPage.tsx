@@ -1,9 +1,6 @@
 // src/modules/corte/pages/DailyCashCutPage.tsx
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { DateRange } from 'react-date-range';
-import 'react-date-range/dist/styles.css';
-import 'react-date-range/dist/theme/default.css';
+import { useEffect, useMemo, useState } from 'react';
 import type {
     BankGroupBalanceResponse,
     CashCutRangeResponse,
@@ -11,19 +8,10 @@ import type {
 } from '@/modules/corte/types/corte.types';
 import { useDailyCashCut } from '../hooks/use-daily-cash-cut';
 import { formatDate } from '@/modules/operations/utils/operation-formatters';
+import { DateRangeCalendarField } from '@/shared/components/ui/DateRangeCalendarField';
 
 function todayISO() {
     return new Date().toISOString().slice(0, 10);
-}
-
-function toISO(date?: Date) {
-    if (!date) return '';
-
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-
-    return `${year}-${month}-${day}`;
 }
 
 function formatCurrency(value?: number | null) {
@@ -43,12 +31,6 @@ export default function DailyCashCutPage() {
     const [fecha, setFecha] = useState(todayISO());
     const [startDate, setStartDate] = useState(todayISO());
     const [endDate, setEndDate] = useState(todayISO());
-    const [range, setRange] = useState({
-        startDate: new Date(),
-        endDate: new Date(),
-        key: 'selection' as const,
-    });
-    const [showRangeCalendar, setShowRangeCalendar] = useState(false);
 
     const {
         dailyCut,
@@ -235,60 +217,26 @@ export default function DailyCashCutPage() {
                                     />
                                 </div>
                             ) : (
-                                <div className="relative">
+                                <div>
                                     <label className="mb-1 block text-sm font-medium text-slate-700">
                                         Rango de fechas
                                     </label>
 
-                                    <>
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowRangeCalendar(true)}
-                                            className="flex h-11 min-w-[320px] items-center rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-700 shadow-sm"
-                                        >
-                                            {`${formatDate(startDate)} - ${formatDate(endDate)}`}
-                                        </button>
+                                    <DateRangeCalendarField
+                                        startDate={startDate}
+                                        endDate={endDate}
+                                        className="min-w-[320px]"
+                                        onChange={({ startDate: start, endDate: end }) => {
+                                            if (!start || !end) {
+                                                return;
+                                            }
 
-                                        {showRangeCalendar && (
-                                            <div className="absolute left-0 top-14 z-50 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
-                                                <DateRange
-                                                    ranges={[range]}
-                                                    showMonthArrow={true}
-                                                    moveRangeOnFirstSelection={false}
-                                                    editableDateInputs={false}
-                                                    showDateDisplay={false}
-                                                    showMonthAndYearPickers={true}
-                                                    rangeColors={['#0f172a']}
-                                                    months={1}
-                                                    direction="horizontal"
-                                                    onChange={(item: any) => {
-                                                        const selection = item.selection;
+                                            setStartDate(start);
+                                            setEndDate(end);
 
-                                                        setRange(selection);
-
-                                                        if (!selection.startDate || !selection.endDate) {
-                                                            return;
-                                                        }
-
-                                                        // Solo consulta cuando el usuario terminó de seleccionar
-                                                        if (item.selection.startDate === item.selection.endDate) {
-                                                            return;
-                                                        }
-
-                                                        const start = toISO(selection.startDate);
-                                                        const end = toISO(selection.endDate);
-
-                                                        setStartDate(start);
-                                                        setEndDate(end);
-
-                                                        fetchRangeCut(start, end);
-
-                                                        setShowRangeCalendar(false);
-                                                    }}
-                                                />
-                                            </div>
-                                        )}
-                                    </>
+                                            fetchRangeCut(start, end);
+                                        }}
+                                    />
                                 </div>
                             )}
 

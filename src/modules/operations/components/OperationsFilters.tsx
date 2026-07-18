@@ -1,5 +1,6 @@
 import { operationStatusLabels } from '@/modules/operations/constants/operations.constants';
 import { Input } from '@/shared/components/ui/Input';
+import { DateRangeCalendarField } from '@/shared/components/ui/DateRangeCalendarField';
 import {
   OperationDateFilter,
   OperationStatus,
@@ -32,36 +33,6 @@ export function OperationsFilters({
       dateFilter: filters.dateFilter === value ? '' : value,
       startDate: '',
       endDate: '',
-    });
-  }
-
-  function handleStartDateChange(value: string) {
-    let nextEndDate = filters.endDate;
-
-    if (value && nextEndDate && value > nextEndDate) {
-      nextEndDate = value;
-    }
-
-    onChange({
-      ...filters,
-      startDate: value,
-      endDate: nextEndDate,
-      dateFilter: '',
-    });
-  }
-
-  function handleEndDateChange(value: string) {
-    let nextStartDate = filters.startDate;
-
-    if (value && nextStartDate && value < nextStartDate) {
-      nextStartDate = value;
-    }
-
-    onChange({
-      ...filters,
-      startDate: nextStartDate,
-      endDate: value,
-      dateFilter: '',
     });
   }
 
@@ -122,29 +93,21 @@ export function OperationsFilters({
           </div>
         )}
 
-        <div className="md:col-span-2">
+        <div className="md:col-span-4">
           <label className="mb-1 block text-xs font-medium text-slate-600">
-            Fecha inicio
+            Rango de fechas
           </label>
-          <input
-            type="date"
-            value={filters.startDate}
-            max={filters.endDate || undefined}
-            onChange={(e) => handleStartDateChange(e.target.value)}
-            className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
-          />
-        </div>
-
-        <div className="md:col-span-2">
-          <label className="mb-1 block text-xs font-medium text-slate-600">
-            Fecha fin
-          </label>
-          <input
-            type="date"
-            value={filters.endDate}
-            min={filters.startDate || undefined}
-            onChange={(e) => handleEndDateChange(e.target.value)}
-            className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
+          <DateRangeCalendarField
+            startDate={filters.startDate}
+            endDate={filters.endDate}
+            onChange={({ startDate, endDate }) =>
+              onChange({
+                ...filters,
+                startDate,
+                endDate,
+                dateFilter: '',
+              })
+            }
           />
         </div>
 
