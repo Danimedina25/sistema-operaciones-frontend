@@ -16,6 +16,7 @@ import {
   PaymentOperationResponse,
 } from '../types/operations.types.ts';
 import { useFrequentClientNames } from '../hooks/use-frequently-client-names.js';
+import { isOperationEditableStatus } from '../utils/operation-formatters';
 import { useClientes } from '@/modules/clientes/hooks/use-clientes.js';
 import { useUpdateOperation } from '../hooks/use-update-operation.js';
 import { UpdateOperationForm } from '../components/UpdateOperationForm.js';
@@ -68,7 +69,7 @@ export default function OperationsPage() {
     return commercialPartnersCatalog.filter((partner) => partner.activo);
   }, [commercialPartnersCatalog]);
 
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
 
   useEffect(() => {
     if (user?.roles.includes('SOCIO_COMERCIAL'))
@@ -90,6 +91,13 @@ export default function OperationsPage() {
     handleActivate,
     handleDeactivate,
   } = useOperations(filters);
+
+  const canReviewCommission = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
+  const hasOperationsNeedingCommissionReview =
+    canReviewCommission &&
+    operations.some(
+      (op) => op.nivelesRedComercial >= 2 && isOperationEditableStatus(op.estatus),
+    );
 
   const clientes = useMemo(() => {
     return clientesCatalog
@@ -200,6 +208,14 @@ export default function OperationsPage() {
           <h2 className="text-lg font-semibold text-slate-900">
             Listado de operaciones
           </h2>
+
+          {hasOperationsNeedingCommissionReview && (
+            <div className="mt-3 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+              <p className="text-sm font-medium text-amber-800">
+                Hay operaciones en este listado con 2 o 3 niveles de socios comerciales (marcadas con el folio en círculo). Revisa si conviene personalizar los porcentajes de comisión al editarlas.
+              </p>
+            </div>
+          )}
         </div>
 
         <OperationsTable

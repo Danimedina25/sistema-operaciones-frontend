@@ -1,3 +1,9 @@
+import { OperationStatus } from '@/modules/operations/types/operations.types.ts';
+
+export function isOperationEditableStatus(estatus: OperationStatus): boolean {
+  return estatus === 'PENDIENTE_VALIDACION' || estatus === 'INGRESO_PARCIAL';
+}
+
 export function formatCurrency(value: number) {
   return new Intl.NumberFormat('es-MX', {
     style: 'currency',

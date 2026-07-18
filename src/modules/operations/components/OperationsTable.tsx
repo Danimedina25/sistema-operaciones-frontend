@@ -5,6 +5,7 @@ import { StatusBadge } from '@/shared/components/ui/StatusBadge';
 import {
   formatCurrency,
   formatDate,
+  isOperationEditableStatus,
 } from '@/modules/operations/utils/operation-formatters';
 import { PaymentOperationResponse } from '../types/operations.types.ts';
 import { useMarkOperationAsInvoiced } from '../hooks/use-mark-operations-as-invoiced.js';
@@ -60,10 +61,6 @@ export function OperationsTable({
   const canManageOperationFlow = !isSocioComercial;
   const canToggleOperationStatus = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
   const canReviewCommission = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
-
-  const canEditOperation = (status: string) => {
-    return status === 'PENDIENTE_VALIDACION' || status === 'INGRESO_PARCIAL';
-  };
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -166,6 +163,10 @@ export function OperationsTable({
             ) : (
               operations.map((operation) => {
                 const isMenuOpen = openMenuOperationId === operation.id;
+                const showCommissionReviewMark =
+                  canReviewCommission &&
+                  operation.nivelesRedComercial >= 2 &&
+                  isOperationEditableStatus(operation.estatus);
 
                 return (
                   <tr
@@ -173,7 +174,13 @@ export function OperationsTable({
                     className="border-t border-slate-200 text-sm"
                   >
                     <td className="px-4 py-4 font-medium text-slate-900">
-                      <div className="mt-1 text-xs font-normal text-slate-400">
+                      <div
+                        className={
+                          showCommissionReviewMark
+                            ? 'mt-1 inline-flex h-6 w-6 items-center justify-center rounded-full border-2 border-amber-500 text-xs font-semibold text-amber-800'
+                            : 'mt-1 text-xs font-normal text-slate-400'
+                        }
+                      >
                         {operation.id}
                       </div>
                     </td>
@@ -182,12 +189,7 @@ export function OperationsTable({
                     </td>
 
                     <td className="px-4 py-4 text-slate-600">
-                      <div>{operation.socioComercialNombre}</div>
-                      {canReviewCommission && operation.nivelesRedComercial >= 2 && (
-                        <span className="mt-1 inline-flex w-fit items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
-                          Revisar comisión
-                        </span>
-                      )}
+                      {operation.socioComercialNombre}
                     </td>
 
                     <td className="px-4 py-4 text-slate-600">
@@ -298,7 +300,7 @@ export function OperationsTable({
                               </button>
                             )}
 
-                            {canEditOperation(operation.estatus) ? (
+                            {isOperationEditableStatus(operation.estatus) ? (
                               <button
                                 type="button"
                                 onClick={() => onEditOperation?.(operation.id)}

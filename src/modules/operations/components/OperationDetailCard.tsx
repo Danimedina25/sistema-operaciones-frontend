@@ -2,6 +2,7 @@ import { operationStatusLabels } from '@/modules/operations/constants/operations
 import {
   formatCurrency,
   formatDate,
+  isOperationEditableStatus,
 } from '@/modules/operations/utils/operation-formatters';
 import { PaymentOperationResponse } from '../types/operations.types.ts';
 import { OperationStatusBadge } from './OperationStatusBadge.js';
@@ -121,7 +122,9 @@ shadow-slate-950/5
         </div>
       </div>
 
-      {canReviewCommission && operation.nivelesRedComercial >= 2 && (
+      {canReviewCommission &&
+        operation.nivelesRedComercial >= 2 &&
+        isOperationEditableStatus(operation.estatus) && (
         <div className="mt-4 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
           <p className="text-sm font-medium text-amber-800">
             Esta operación tiene {operation.nivelesRedComercial} niveles de socios comerciales. Revisa si conviene personalizar los porcentajes de comisión al editarla.
