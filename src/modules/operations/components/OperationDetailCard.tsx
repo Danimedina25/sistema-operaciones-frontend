@@ -8,6 +8,7 @@ import { OperationStatusBadge } from './OperationStatusBadge.js';
 import { useMarkOperationAsInvoiced } from '../hooks/use-mark-operations-as-invoiced.js';
 import { useLocation } from 'react-router-dom';
 import { paths } from '@/routes/paths.js';
+import { useAuth } from '@/modules/auth/store/auth.context';
 
 interface OperationDetailCardProps {
   operation: PaymentOperationResponse;
@@ -78,6 +79,9 @@ export function OperationDetailCard({
       onSuccess: onOperationUpdated,
     });
 
+  const { hasRole } = useAuth();
+  const canReviewCommission = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
+
   const location = useLocation();
 
   const isReturnRequestDetail = location.pathname.startsWith(
@@ -116,6 +120,14 @@ shadow-slate-950/5
           />
         </div>
       </div>
+
+      {canReviewCommission && operation.nivelesRedComercial >= 2 && (
+        <div className="mt-4 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+          <p className="text-sm font-medium text-amber-800">
+            Esta operación tiene {operation.nivelesRedComercial} niveles de socios comerciales. Revisa si conviene personalizar los porcentajes de comisión al editarla.
+          </p>
+        </div>
+      )}
 
       <div className="mt-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

@@ -59,6 +59,7 @@ export function OperationsTable({
   const isSocioComercial = hasRole(['SOCIO_COMERCIAL']);
   const canManageOperationFlow = !isSocioComercial;
   const canToggleOperationStatus = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
+  const canReviewCommission = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
 
   const canEditOperation = (status: string) => {
     return status === 'PENDIENTE_VALIDACION' || status === 'INGRESO_PARCIAL';
@@ -181,7 +182,12 @@ export function OperationsTable({
                     </td>
 
                     <td className="px-4 py-4 text-slate-600">
-                      {operation.socioComercialNombre}
+                      <div>{operation.socioComercialNombre}</div>
+                      {canReviewCommission && operation.nivelesRedComercial >= 2 && (
+                        <span className="mt-1 inline-flex w-fit items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
+                          Revisar comisión
+                        </span>
+                      )}
                     </td>
 
                     <td className="px-4 py-4 text-slate-600">
