@@ -46,7 +46,7 @@ export function OperationDetailContainer({
 
   const canViewFinancialDetails = !hasRole(['SOCIO_COMERCIAL']);
   const canRequestReturn = hasRole(['SOCIO_COMERCIAL']) || hasRole(['ADMIN']);
-  const canPayReturn = hasRole(['ADMIN']) || hasRole(['JEFA_CAJAS']) || hasRole(['JEFA_CUENTAS']);
+  const canPayReturn = hasRole(['ADMIN']) || hasRole(['JEFA_CAJAS']) || hasRole(['JEFA_CUENTAS']) || hasRole(['AUXILIAR_CUENTAS']);
   const isSocioComercial = hasRole(['SOCIO_COMERCIAL']);
 
   const { operation, isLoading, error, fetchOperation } =

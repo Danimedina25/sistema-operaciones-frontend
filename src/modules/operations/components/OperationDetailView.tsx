@@ -171,7 +171,8 @@ export function OperationDetailView({
           canManageReturnPayments={
             (user?.roles?.includes('ADMIN') ||
               user?.roles?.includes('JEFA_CAJAS') ||
-              user?.roles?.includes('JEFA_CUENTAS')) ??
+              user?.roles?.includes('JEFA_CUENTAS') ||
+              user?.roles?.includes('AUXILIAR_CUENTAS')) ??
             false
           }
           canEditRequestReturnPayments={

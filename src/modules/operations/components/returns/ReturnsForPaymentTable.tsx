@@ -26,6 +26,7 @@ export function ReturnsForPaymentTable({
 
   const isJefaCajas = roles.includes('JEFA_CAJAS');
   const isJefaCuentas = roles.includes('JEFA_CUENTAS');
+  const isAuxiliarCuentas = roles.includes('AUXILIAR_CUENTAS');
 
   if (!isLoading && operations.length === 0) {
     return (
@@ -106,7 +107,7 @@ export function ReturnsForPaymentTable({
                 const canPayReturns =
                   (isJefaCajas && operation.contieneRetornosEnEfectivo) ||
                   (isJefaCajas && operation.contieneRetornosRetiroSinTarjeta) ||
-                  (isJefaCuentas && operation.contieneRetornosEnTransferencia);
+                  ((isJefaCuentas || isAuxiliarCuentas) && operation.contieneRetornosEnTransferencia);
                 return (
                   <tr
                     key={operation.id}

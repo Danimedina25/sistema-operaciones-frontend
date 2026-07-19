@@ -52,6 +52,7 @@ export function ReturnPaymentsTable({
   const isAdmin = roles.includes('ADMIN');
   const isJefaCajas = roles.includes('JEFA_CAJAS');
   const isJefaCuentas = roles.includes('JEFA_CUENTAS');
+  const isAuxiliarCuentas = roles.includes('AUXILIAR_CUENTAS');
   const isSocioComercial = roles.includes('SOCIO_COMERCIAL')
   const hasPendingAmountToRequest = (montoPendientePorSolicitar ?? 0) > 0;
   const hasPendingAmountToPay = (montoPendientePorRetornar ?? 0) > 0;
@@ -167,7 +168,7 @@ export function ReturnPaymentsTable({
     if (returnPayment.estatus !== 'SOLICITADO') return false;
 
     return (
-      (isJefaCuentas || isAdmin) &&
+      (isJefaCuentas || isAuxiliarCuentas || isAdmin) &&
       returnPayment.tipoPago === 'TRANSFERENCIA'
     );
   }
