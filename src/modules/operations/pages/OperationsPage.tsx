@@ -22,6 +22,7 @@ import { useUpdateOperation } from '../hooks/use-update-operation.js';
 import { UpdateOperationForm } from '../components/UpdateOperationForm.js';
 import { useAuth } from '@/modules/auth/store/auth.context.js';
 import { useCommercialPartners } from '@/modules/socioscomerciales/hooks/use-commercial-partners.js';
+import { useConfiguracionGeneral } from '@/modules/configuraciones/hooks/use-configuracion-general';
 
 const initialFilters: OperationsFiltersType = {
   operationId: 0,
@@ -65,6 +66,8 @@ export default function OperationsPage() {
     commercialPartners: commercialPartnersCatalog,
   } = useCommercialPartners();
 
+  const { configuracionGeneral } = useConfiguracionGeneral();
+
   const commercialPartners = useMemo(() => {
     return commercialPartnersCatalog.filter((partner) => partner.activo);
   }, [commercialPartnersCatalog]);
@@ -106,8 +109,6 @@ export default function OperationsPage() {
         id: cliente.id,
         label: cliente.nombre,
         nivelesRedComercial: cliente.nivelesRedComercial,
-        porcentajeComisionOficina: cliente.porcentajeComisionOficina,
-        porcentajeComisionSocio: cliente.porcentajeComisionSocio,
       }));
   }, [clientesCatalog]);
 
@@ -266,6 +267,9 @@ export default function OperationsPage() {
             bankAccounts={bankAccounts}
             clientes={clientes}
             commercialPartners={commercialPartners}
+            porcentajeComisionOficinaDefault={
+              configuracionGeneral?.porcentajeComisionOficina ?? 1.5
+            }
             onSubmit={submitCreateOperation}
           />
         )}

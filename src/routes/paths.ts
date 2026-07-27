@@ -30,6 +30,8 @@ export const paths = {
 
   comisionessocios: '/comisiones-socios',
   miscomisiones: '/mis-comisiones',
+
+  configuraciones: '/configuraciones',
 } as const;
 
 export const buildOperationDetailPath = (

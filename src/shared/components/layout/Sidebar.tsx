@@ -11,7 +11,8 @@ import {
   BadgeDollarSign,
   LogOut,
   BanknoteArrowDown,
-  ClipboardCheck
+  ClipboardCheck,
+  Settings
 } from 'lucide-react';
 
 import { paths } from '@/routes/paths';
@@ -93,6 +94,12 @@ const navItems: NavItem[] = [
     label: 'Mis comisiones',
     icon: BadgeDollarSign,
     allowedRoles: ['ADMIN', 'SOCIO_COMERCIAL'],
+  },
+  {
+    to: paths.configuraciones,
+    label: 'Configuraciones',
+    icon: Settings,
+    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION'],
   },
 ];
 export function Sidebar() {

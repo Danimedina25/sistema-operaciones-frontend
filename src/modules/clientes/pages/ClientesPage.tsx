@@ -166,10 +166,6 @@ export default function ClientesPage() {
             initialValues={{
               nombre: editingCliente.nombre,
               activo: editingCliente.activo,
-              porcentajeComisionSocio:
-                editingCliente.porcentajeComisionSocio,
-              porcentajeComisionOficina:
-                editingCliente.porcentajeComisionOficina,
             }}
             onSubmit={(values) => submitUpdateCliente(editingCliente, values)}
             submitLabel="Guardar cambios"

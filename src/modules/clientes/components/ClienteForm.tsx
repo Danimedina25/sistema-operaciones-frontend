@@ -16,8 +16,6 @@ interface ClienteFormProps {
   initialValues?: {
     nombre: string;
     activo?: boolean;
-    porcentajeComisionSocio: number;
-    porcentajeComisionOficina: number;
   };
 }
 
@@ -37,8 +35,6 @@ export function ClienteForm({
     defaultValues: {
       nombre: '',
       activo: true,
-      porcentajeComisionSocio: 0,
-      porcentajeComisionOficina: 1.5,
     },
     mode: 'onBlur',
   });
@@ -48,8 +44,6 @@ export function ClienteForm({
       reset({
         nombre: '',
         activo: true,
-        porcentajeComisionSocio: 0,
-        porcentajeComisionOficina: 1.5,
       });
 
       return;
@@ -58,14 +52,10 @@ export function ClienteForm({
     reset({
       nombre: initialValues.nombre,
       activo: initialValues.activo ?? true,
-      porcentajeComisionSocio: initialValues.porcentajeComisionSocio,
-      porcentajeComisionOficina: initialValues.porcentajeComisionOficina,
     });
   }, [
     initialValues?.nombre,
     initialValues?.activo,
-    initialValues?.porcentajeComisionSocio,
-    initialValues?.porcentajeComisionOficina,
     reset,
   ]);
 
@@ -85,46 +75,6 @@ export function ClienteForm({
           placeholder="Ej. Cliente primario"
           error={errors.nombre?.message}
           {...register('nombre')}
-        />
-      </div>
-
-      <div>
-        <label className="mb-2 block text-sm font-medium text-slate-700">
-          Porcentaje de comisión por socio comercial
-        </label>
-
-        <Input
-          type="number"
-          step="0.01"
-          min="0"
-          max="100"
-          placeholder="Ej. 1.00"
-          error={errors.porcentajeComisionSocio?.message}
-          {...register('porcentajeComisionSocio', {
-            valueAsNumber: true,
-          })}
-        />
-
-        <p className="mt-1 text-xs text-slate-500">
-          Este porcentaje se aplica a cada socio comercial que participe en una operación de este cliente.
-        </p>
-      </div>
-
-      <div>
-        <label className="mb-2 block text-sm font-medium text-slate-700">
-          Porcentaje de comisión para oficina
-        </label>
-
-        <Input
-          type="number"
-          step="0.01"
-          min="0"
-          max="100"
-          placeholder="Ej. 1.50"
-          error={errors.porcentajeComisionOficina?.message}
-          {...register('porcentajeComisionOficina', {
-            valueAsNumber: true,
-          })}
         />
       </div>
 

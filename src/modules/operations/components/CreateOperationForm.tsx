@@ -17,7 +17,6 @@ interface SelectOption {
   id: number;
   label: string;
   nivelesRedComercial?: number;
-  porcentajeComisionOficina?: number;
 }
 
 interface CreateOperationFormProps {
@@ -25,6 +24,7 @@ interface CreateOperationFormProps {
   bankAccounts: SelectOption[];
   clientes: SelectOption[];
   commercialPartners: CommercialPartnerOption[];
+  porcentajeComisionOficinaDefault: number;
   onSubmit: (values: CreateOperationFormValues) => Promise<void>;
 }
 
@@ -75,6 +75,7 @@ export function CreateOperationForm({
   bankAccounts,
   clientes,
   commercialPartners,
+  porcentajeComisionOficinaDefault,
   onSubmit,
 }: CreateOperationFormProps) {
   const {
@@ -93,7 +94,7 @@ export function CreateOperationForm({
       nivelesRedComercial: 1,
       socioComercialNivel2Id: undefined,
       socioComercialNivel3Id: undefined,
-      porcentajeComisionOficina: 1.5,
+      porcentajeComisionOficina: porcentajeComisionOficinaDefault,
       porcentajeComisionSocio: 0,
       porcentajeComisionSocioNivel2: undefined,
       porcentajeComisionSocioNivel3: undefined,
@@ -161,7 +162,6 @@ export function CreateOperationForm({
               id: cliente.id,
               label: cliente.nombre,
               nivelesRedComercial: cliente.nivelesRedComercial,
-              porcentajeComisionOficina: cliente.porcentajeComisionOficina,
             })),
           );
         })
@@ -185,14 +185,6 @@ export function CreateOperationForm({
       shouldDirty: true,
       shouldTouch: true,
     });
-
-    if (cliente.porcentajeComisionOficina !== undefined) {
-      setValue('porcentajeComisionOficina', cliente.porcentajeComisionOficina, {
-        shouldValidate: true,
-        shouldDirty: true,
-        shouldTouch: true,
-      });
-    }
 
     setShowClienteOptions(false);
     void trigger('clienteId');

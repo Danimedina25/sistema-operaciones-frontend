@@ -17,7 +17,6 @@ interface SelectOption {
   id: number;
   label: string;
   nivelesRedComercial?: number;
-  porcentajeComisionOficina?: number;
 }
 
 interface CommercialPartnerOption {
@@ -184,7 +183,6 @@ export function UpdateOperationForm({
               id: cliente.id,
               label: cliente.nombre,
               nivelesRedComercial: cliente.nivelesRedComercial,
-              porcentajeComisionOficina: cliente.porcentajeComisionOficina,
             })),
           );
         })
@@ -209,14 +207,6 @@ export function UpdateOperationForm({
       shouldDirty: true,
       shouldTouch: true,
     });
-
-    if (cliente.porcentajeComisionOficina !== undefined) {
-      setValue('porcentajeComisionOficina', cliente.porcentajeComisionOficina, {
-        shouldValidate: true,
-        shouldDirty: true,
-        shouldTouch: true,
-      });
-    }
 
     setShowClienteOptions(false);
   }

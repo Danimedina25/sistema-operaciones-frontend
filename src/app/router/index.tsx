@@ -28,6 +28,7 @@ import CommercialPartnerCommissionsPage from '@/modules/comisionessocioscomercia
 import MyCommercialPartnerCommissionsPage from '@/modules/comisionessocioscomerciales/pages/MyCommercialPartnerCommissionsPage';
 import DailyCashCutPage from '@/modules/corte/pages/DailyCashCutPage';
 import ReturnsRequestedPage from '@/modules/operations/pages/ReturnsRequestedPage';
+import ConfiguracionesPage from '@/modules/configuraciones/pages/ConfiguracionesPage';
 
 export const router = createBrowserRouter([
   {
@@ -142,6 +143,15 @@ export const router = createBrowserRouter([
                {
                 path: paths.comisionessocios,
                 element: <CommercialPartnerCommissionsPage />,
+              },
+            ],
+          },
+          {
+            element: <RoleGuard allowedRoles={['ADMIN', 'GERENTE', 'DIRECCION']} />,
+            children: [
+              {
+                path: paths.configuraciones,
+                element: <ConfiguracionesPage />,
               },
             ],
           },
