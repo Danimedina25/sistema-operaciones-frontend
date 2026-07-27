@@ -10,6 +10,7 @@ export interface CommercialSettingsResponse {
   cuentaBancaria: string;
   banco: string;
   titularCuenta: string;
+  porcentajeComision: number;
 
   createdAt: string;
   updatedAt: string;
@@ -37,6 +38,7 @@ export interface CreateUserRequest {
   cuentaBancaria?: string;
   banco?: string;
   titularCuenta?: string;
+  porcentajeComision?: number;
 }
 
 export interface UpdateUserRequest {
@@ -47,6 +49,7 @@ export interface UpdateUserRequest {
   cuentaBancaria?: string;
   banco?: string;
   titularCuenta?: string;
+  porcentajeComision?: number;
 }
 
 export interface UpdateUserEmailRequest {

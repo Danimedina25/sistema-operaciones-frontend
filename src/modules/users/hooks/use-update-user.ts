@@ -42,6 +42,10 @@ export function useUpdateUser(options?: UseUpdateUserOptions) {
         titularCuenta: isSocioComercial
           ? values.titularCuenta?.trim() || undefined
           : undefined,
+
+        porcentajeComision: isSocioComercial
+          ? values.porcentajeComision
+          : undefined,
       });
 
       toast.success(

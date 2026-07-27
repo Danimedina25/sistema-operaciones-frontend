@@ -44,6 +44,7 @@ export function CreateCommercialPartnerForm({
       cuentaBancaria: '',
       banco: '',
       titularCuenta: '',
+      porcentajeComision: undefined,
       activo: true,
     },
     mode: 'onBlur',
@@ -206,6 +207,22 @@ export function CreateCommercialPartnerForm({
                   'titularCuenta',
                 ),
               })}
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Porcentaje de comisión
+            </label>
+
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              max="100"
+              placeholder="Ej. 5.00"
+              error={errors.porcentajeComision?.message}
+              {...register('porcentajeComision')}
             />
           </div>
         </div>

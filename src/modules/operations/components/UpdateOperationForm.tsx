@@ -18,12 +18,12 @@ interface SelectOption {
   label: string;
   nivelesRedComercial?: number;
   porcentajeComisionOficina?: number;
-  porcentajeComisionSocio?: number;
 }
 
 interface CommercialPartnerOption {
   id: number;
   nombre: string;
+  porcentajeComision?: number;
 }
 
 interface UpdateOperationFormProps {
@@ -185,7 +185,6 @@ export function UpdateOperationForm({
               label: cliente.nombre,
               nivelesRedComercial: cliente.nivelesRedComercial,
               porcentajeComisionOficina: cliente.porcentajeComisionOficina,
-              porcentajeComisionSocio: cliente.porcentajeComisionSocio,
             })),
           );
         })
@@ -213,24 +212,6 @@ export function UpdateOperationForm({
 
     if (cliente.porcentajeComisionOficina !== undefined) {
       setValue('porcentajeComisionOficina', cliente.porcentajeComisionOficina, {
-        shouldValidate: true,
-        shouldDirty: true,
-        shouldTouch: true,
-      });
-    }
-
-    if (cliente.porcentajeComisionSocio !== undefined) {
-      setValue('porcentajeComisionSocio', cliente.porcentajeComisionSocio, {
-        shouldValidate: true,
-        shouldDirty: true,
-        shouldTouch: true,
-      });
-      setValue('porcentajeComisionSocioNivel2', cliente.porcentajeComisionSocio, {
-        shouldValidate: true,
-        shouldDirty: true,
-        shouldTouch: true,
-      });
-      setValue('porcentajeComisionSocioNivel3', cliente.porcentajeComisionSocio, {
         shouldValidate: true,
         shouldDirty: true,
         shouldTouch: true,
@@ -519,7 +500,23 @@ export function UpdateOperationForm({
 
                 <select
                   className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
-                  {...register('socioComercialNivel2Id')}
+                  {...register('socioComercialNivel2Id', {
+                    onChange: (e) => {
+                      const partner = commercialPartners.find(
+                        (p) => String(p.id) === e.target.value,
+                      );
+
+                      setValue(
+                        'porcentajeComisionSocioNivel2',
+                        partner?.porcentajeComision ?? 0,
+                        {
+                          shouldValidate: true,
+                          shouldDirty: true,
+                          shouldTouch: true,
+                        },
+                      );
+                    },
+                  })}
                 >
                   <option value="">
                     Selecciona un socio comercial
@@ -567,7 +564,23 @@ export function UpdateOperationForm({
 
                 <select
                   className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
-                  {...register('socioComercialNivel3Id')}
+                  {...register('socioComercialNivel3Id', {
+                    onChange: (e) => {
+                      const partner = commercialPartners.find(
+                        (p) => String(p.id) === e.target.value,
+                      );
+
+                      setValue(
+                        'porcentajeComisionSocioNivel3',
+                        partner?.porcentajeComision ?? 0,
+                        {
+                          shouldValidate: true,
+                          shouldDirty: true,
+                          shouldTouch: true,
+                        },
+                      );
+                    },
+                  })}
                 >
                   <option value="">
                     Selecciona un socio comercial

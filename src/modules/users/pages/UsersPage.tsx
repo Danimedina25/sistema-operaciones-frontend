@@ -171,7 +171,9 @@ export default function UsersPage() {
                 editingUser.commercialSettings?.cuentaBancaria ?? '',
               banco: editingUser.commercialSettings?.banco ?? '',
               titularCuenta:
-                editingUser.commercialSettings?.titularCuenta ?? ''
+                editingUser.commercialSettings?.titularCuenta ?? '',
+              porcentajeComision:
+                editingUser.commercialSettings?.porcentajeComision
             }}
             //onSubmit={(values) => submitUpdateUser(editingUser, values)}
             onSubmit={async (values) => {

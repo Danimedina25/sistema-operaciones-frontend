@@ -24,6 +24,7 @@ interface UserFormProps {
     cuentaBancaria?: string;
     banco?: string;
     titularCuenta?: string;
+    porcentajeComision?: number;
   };
 }
 
@@ -51,6 +52,7 @@ export function UserForm({
       cuentaBancaria: '',
       banco: '',
       titularCuenta: '',
+      porcentajeComision: undefined,
     },
     mode: 'onBlur',
   });
@@ -100,6 +102,7 @@ export function UserForm({
         cuentaBancaria: initialValues.cuentaBancaria ?? '',
         banco: initialValues.banco ?? '',
         titularCuenta: initialValues.titularCuenta ?? '',
+        porcentajeComision: initialValues.porcentajeComision,
       });
       return;
     }
@@ -157,6 +160,15 @@ export function UserForm({
       setValue(
         'titularCuenta',
         '',
+        {
+          shouldValidate: false,
+          shouldDirty: false,
+        },
+      );
+
+      setValue(
+        'porcentajeComision',
+        undefined,
         {
           shouldValidate: false,
           shouldDirty: false,
@@ -341,6 +353,22 @@ export function UserForm({
                 placeholder="Nombre del titular"
                 error={errors.titularCuenta?.message}
                 {...register('titularCuenta')}
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                Porcentaje de comisión
+              </label>
+
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                placeholder="Ej. 5.00"
+                error={errors.porcentajeComision?.message}
+                {...register('porcentajeComision')}
               />
             </div>
           </div>

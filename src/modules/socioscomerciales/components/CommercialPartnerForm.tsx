@@ -29,6 +29,7 @@ interface CommercialPartnerFormProps {
     cuentaBancaria: string;
     banco: string;
     titularCuenta: string;
+    porcentajeComision: number;
     activo?: boolean;
   };
 }
@@ -57,6 +58,7 @@ export function CommercialPartnerForm({
       cuentaBancaria: '',
       banco: '',
       titularCuenta: '',
+      porcentajeComision: undefined,
       activo: true,
     },
     mode: 'onChange',
@@ -89,6 +91,7 @@ export function CommercialPartnerForm({
         cuentaBancaria: initialValues.cuentaBancaria,
         banco: initialValues.banco,
         titularCuenta: initialValues.titularCuenta,
+        porcentajeComision: initialValues.porcentajeComision,
         activo: initialValues.activo ?? true,
       });
 
@@ -100,6 +103,7 @@ export function CommercialPartnerForm({
       cuentaBancaria: '',
       banco: '',
       titularCuenta: '',
+      porcentajeComision: undefined,
       activo: true,
     });
   }, [initialValues, reset]);
@@ -255,6 +259,22 @@ export function CommercialPartnerForm({
                   'titularCuenta',
                 ),
               })}
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Porcentaje de comisión
+            </label>
+
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              max="100"
+              placeholder="Ej. 5.00"
+              error={errors.porcentajeComision?.message}
+              {...register('porcentajeComision')}
             />
           </div>
         </div>

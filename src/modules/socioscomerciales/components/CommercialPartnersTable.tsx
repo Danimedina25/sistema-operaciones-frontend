@@ -114,6 +114,7 @@ export function CommercialPartnersTable({
               <th className="px-4 py-3 font-medium">
                 Titular
               </th>
+              <th className="px-4 py-3 font-medium">Comisión</th>
               <th className="px-4 py-3 font-medium">Estado</th>
               <th className="px-4 py-3 font-medium text-right">
                 Acciones
@@ -148,6 +149,10 @@ export function CommercialPartnersTable({
 
                   <td className="px-4 py-4 text-slate-600">
                     {partner.titularCuenta}
+                  </td>
+
+                  <td className="px-4 py-4 text-slate-600">
+                    {partner.porcentajeComision}%
                   </td>
 
                   <td className="px-4 py-4">

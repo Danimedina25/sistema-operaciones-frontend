@@ -9,6 +9,7 @@ export interface CommercialPartnerResponse {
   banco: string;
   titularCuenta: string;
   activo: boolean;
+  porcentajeComision: number;
 
   socioComercialId: number;
   socioComercialNombre: string;
@@ -19,6 +20,7 @@ export interface CreateCommercialPartnerRequest {
   cuentaBancaria: string;
   banco: string;
   titularCuenta: string;
+  porcentajeComision: number;
   activo?: boolean;
 }
 
@@ -27,6 +29,7 @@ export interface UpdateCommercialPartnerRequest {
   cuentaBancaria: string;
   banco: string;
   titularCuenta: string;
+  porcentajeComision: number;
   activo?: boolean;
 }
 

@@ -30,6 +30,7 @@ export function useCreateCommercialPartner(
         cuentaBancaria: values.cuentaBancaria.trim(),
         banco: values.banco.trim(),
         titularCuenta: values.titularCuenta.trim(),
+        porcentajeComision: values.porcentajeComision,
         activo: values.activo,
       });
 

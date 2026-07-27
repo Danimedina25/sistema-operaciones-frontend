@@ -18,7 +18,6 @@ interface SelectOption {
   label: string;
   nivelesRedComercial?: number;
   porcentajeComisionOficina?: number;
-  porcentajeComisionSocio?: number;
 }
 
 interface CreateOperationFormProps {
@@ -53,6 +52,7 @@ function normalizeCurrencyInput(value: string) {
 interface CommercialPartnerOption {
   id: number;
   nombre: string;
+  porcentajeComision?: number;
 }
 
 function parseCurrency(value: unknown) {
@@ -162,7 +162,6 @@ export function CreateOperationForm({
               label: cliente.nombre,
               nivelesRedComercial: cliente.nivelesRedComercial,
               porcentajeComisionOficina: cliente.porcentajeComisionOficina,
-              porcentajeComisionSocio: cliente.porcentajeComisionSocio,
             })),
           );
         })
@@ -189,24 +188,6 @@ export function CreateOperationForm({
 
     if (cliente.porcentajeComisionOficina !== undefined) {
       setValue('porcentajeComisionOficina', cliente.porcentajeComisionOficina, {
-        shouldValidate: true,
-        shouldDirty: true,
-        shouldTouch: true,
-      });
-    }
-
-    if (cliente.porcentajeComisionSocio !== undefined) {
-      setValue('porcentajeComisionSocio', cliente.porcentajeComisionSocio, {
-        shouldValidate: true,
-        shouldDirty: true,
-        shouldTouch: true,
-      });
-      setValue('porcentajeComisionSocioNivel2', cliente.porcentajeComisionSocio, {
-        shouldValidate: true,
-        shouldDirty: true,
-        shouldTouch: true,
-      });
-      setValue('porcentajeComisionSocioNivel3', cliente.porcentajeComisionSocio, {
         shouldValidate: true,
         shouldDirty: true,
         shouldTouch: true,
@@ -410,21 +391,14 @@ export function CreateOperationForm({
 
           <div className="flex justify-end">
             <Button
-              type="button"
-              onClick={() => {
-                append({
-                  monto: '',
-                  tipoPago: '',
-                  fechaComprobante: '',
-                  cuentaDestinoId: undefined,
-                  comprobante: undefined,
-                  observaciones: '',
-                });
-
-                void trigger('pagos');
-              }}
+              type="submit"
+              isLoading={isSubmitting}
+              disabled={
+                excedeMontoTotal ||
+                !!errors.pagos?.message
+              }
             >
-              Registrar pago de ingreso
+              Registrar
             </Button>
           </div>
         </div>
@@ -630,7 +604,23 @@ export function CreateOperationForm({
 
               <select
                 className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
-                {...register('socioComercialNivel2Id')}
+                {...register('socioComercialNivel2Id', {
+                  onChange: (e) => {
+                    const partner = commercialPartners.find(
+                      (p) => String(p.id) === e.target.value,
+                    );
+
+                    setValue(
+                      'porcentajeComisionSocioNivel2',
+                      partner?.porcentajeComision ?? 0,
+                      {
+                        shouldValidate: true,
+                        shouldDirty: true,
+                        shouldTouch: true,
+                      },
+                    );
+                  },
+                })}
               >
                 <option value="">
                   Selecciona un socio comercial
@@ -684,7 +674,23 @@ export function CreateOperationForm({
 
               <select
                 className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
-                {...register('socioComercialNivel3Id')}
+                {...register('socioComercialNivel3Id', {
+                  onChange: (e) => {
+                    const partner = commercialPartners.find(
+                      (p) => String(p.id) === e.target.value,
+                    );
+
+                    setValue(
+                      'porcentajeComisionSocioNivel3',
+                      partner?.porcentajeComision ?? 0,
+                      {
+                        shouldValidate: true,
+                        shouldDirty: true,
+                        shouldTouch: true,
+                      },
+                    );
+                  },
+                })}
               >
                 <option value="">
                   Selecciona un socio comercial
@@ -1249,15 +1255,22 @@ export function CreateOperationForm({
 
       <div className="sticky bottom-0 z-30 -mx-5 border-t border-slate-200 bg-white/95 px-5 py-3 shadow-[0_-8px_20px_rgba(15,23,42,0.08)] backdrop-blur">
         <Button
-          type="submit"
-          isLoading={isSubmitting}
-          disabled={
-            excedeMontoTotal ||
-            !!errors.pagos?.message
-          }
+          type="button"
+          onClick={() => {
+            append({
+              monto: '',
+              tipoPago: '',
+              fechaComprobante: '',
+              cuentaDestinoId: undefined,
+              comprobante: undefined,
+              observaciones: '',
+            });
+
+            void trigger('pagos');
+          }}
           className="w-full justify-center"
         >
-          Registrar
+          Registrar pago de ingreso
         </Button>
       </div>
     </form>

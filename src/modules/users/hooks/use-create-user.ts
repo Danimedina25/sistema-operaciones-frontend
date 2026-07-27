@@ -38,6 +38,10 @@ export function useCreateUser(options?: UseCreateUserOptions) {
         titularCuenta: isSocioComercial
           ? values.titularCuenta?.trim() || undefined
           : undefined,
+
+        porcentajeComision: isSocioComercial
+          ? values.porcentajeComision
+          : undefined,
       });
 
       toast.success(result.message);

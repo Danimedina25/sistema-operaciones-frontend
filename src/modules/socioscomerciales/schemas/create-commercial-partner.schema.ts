@@ -26,6 +26,20 @@ export const createCommercialPartnerSchema = z.object({
     .min(1, 'El titular de la cuenta es obligatorio')
     .max(150, 'El titular de la cuenta no puede exceder 150 caracteres'),
 
+  porcentajeComision: z.preprocess(
+    (value) => {
+      if (value === '' || value === null || value === undefined) {
+        return undefined;
+      }
+
+      return Number(value);
+    },
+    z
+      .number({ error: 'El porcentaje de comisión es obligatorio' })
+      .min(0, 'El porcentaje de comisión no puede ser negativo')
+      .max(100, 'El porcentaje de comisión no puede ser mayor a 100'),
+  ),
+
   activo: z.boolean().optional().default(true)
 });
 export type CreateCommercialPartnerFormInput =

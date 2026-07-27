@@ -67,6 +67,21 @@ export const createUserSchema = z
         .max(150, 'El titular de la cuenta no puede exceder 150 caracteres')
         .optional(),
     ),
+
+    porcentajeComision: z.preprocess(
+      (value) => {
+        if (value === '' || value === null || value === undefined) {
+          return undefined;
+        }
+
+        return Number(value);
+      },
+      z
+        .number()
+        .min(0, 'El porcentaje de comisión no puede ser negativo')
+        .max(100, 'El porcentaje de comisión no puede ser mayor a 100')
+        .optional(),
+    ),
   })
   .superRefine((values, ctx) => {
     const requiresBankData =
@@ -97,6 +112,14 @@ export const createUserSchema = z
         code: z.ZodIssueCode.custom,
         path: ['titularCuenta'],
         message: 'El titular de la cuenta es obligatorio',
+      });
+    }
+
+    if (values.porcentajeComision === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['porcentajeComision'],
+        message: 'El porcentaje de comisión es obligatorio',
       });
     }
   });

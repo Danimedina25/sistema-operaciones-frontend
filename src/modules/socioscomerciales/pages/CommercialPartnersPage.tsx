@@ -177,6 +177,7 @@ export default function CommercialPartnersPage() {
               cuentaBancaria: editingPartner.cuentaBancaria,
               banco: editingPartner.banco,
               titularCuenta: editingPartner.titularCuenta,
+              porcentajeComision: editingPartner.porcentajeComision,
               activo: editingPartner.activo,
             }}
             onSubmit={(values) =>
