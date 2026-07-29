@@ -26,6 +26,7 @@ interface OperationDetailViewProps {
   onPayReturn?: (returnPayment: ReturnPaymentResponse) => void;
   canRequestReturn?: boolean;
   canViewFinancialDetails: boolean;
+  canViewOperationExtras: boolean;
   onOperationUpdated?: () => void | Promise<void>;
   scrollToPayments?: boolean;
   scrollToReturns?: boolean;
@@ -49,6 +50,7 @@ export function OperationDetailView({
   onAddRequestReturnPayment,
   onPayReturn,
   canViewFinancialDetails,
+  canViewOperationExtras,
   onOperationUpdated,
   scrollToPayments = false,
   scrollToReturns = false,
@@ -139,6 +141,7 @@ export function OperationDetailView({
       <OperationDetailCard
         operation={operation}
         canViewFinancialDetails={canViewFinancialDetails}
+        canViewOperationExtras={canViewOperationExtras}
         onOperationUpdated={onOperationUpdated}
       />
 

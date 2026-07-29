@@ -140,7 +140,12 @@ export const router = createBrowserRouter([
                 path: paths.bankAccounts,
                 element: <BankAccountsPage />,
               },
-               {
+            ],
+          },
+          {
+            element: <RoleGuard allowedRoles={['ADMIN', 'GERENTE', 'DIRECCION']} />,
+            children: [
+              {
                 path: paths.comisionessocios,
                 element: <CommercialPartnerCommissionsPage />,
               },

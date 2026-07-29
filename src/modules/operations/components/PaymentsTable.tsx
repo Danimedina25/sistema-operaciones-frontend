@@ -46,11 +46,12 @@ export function PaymentsTable({
   onEditPayment
 }: PaymentsTableProps) {
   const { hasRole } = useAuth();
+  const canModifyPayments = !hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS']);
 
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [rejectReasonError, setRejectReasonError] = useState('');
-  const canAddPayment = (montoPendientePorRegistrar ?? 0) > 0;
+  const canAddPayment = (montoPendientePorRegistrar ?? 0) > 0 && canModifyPayments;
   const [validationReceipt, setValidationReceipt] = useState<File | null>(null);
   const [validationReceiptError, setValidationReceiptError] = useState('');
   const [validationReceiptPreviewUrl, setValidationReceiptPreviewUrl] =
@@ -361,7 +362,8 @@ export function PaymentsTable({
                 const isPendingValidation =
                   payment.estatus === 'PENDIENTE_VALIDACION';
                 const isProcessing = processingPaymentId === payment.id;
-                const canEdit = isPendingValidation && !!onEditPayment;
+                const canEdit =
+                  isPendingValidation && !!onEditPayment && canModifyPayments;
                 const canValidate =
                   canValidatePaymentType(payment.tipoPago) && isPendingValidation;
                 const hasActions = canEdit || canValidate;

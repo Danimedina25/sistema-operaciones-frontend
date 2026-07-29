@@ -44,7 +44,8 @@ export function OperationDetailContainer({
 }: OperationDetailContainerProps) {
   const { hasRole } = useAuth();
 
-  const canViewFinancialDetails = !hasRole(['SOCIO_COMERCIAL']);
+  const canViewFinancialDetails = !hasRole(['SOCIO_COMERCIAL', 'JEFA_CUENTAS', 'AUXILIAR_CUENTAS', 'JEFA_CAJAS']);
+  const canViewOperationExtras = !hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS', 'JEFA_CAJAS']);
   const canRequestReturn = hasRole(['SOCIO_COMERCIAL']) || hasRole(['ADMIN']);
   const canPayReturn = hasRole(['ADMIN']) || hasRole(['JEFA_CAJAS']) || hasRole(['JEFA_CUENTAS']) || hasRole(['AUXILIAR_CUENTAS']);
   const isSocioComercial = hasRole(['SOCIO_COMERCIAL']);
@@ -130,6 +131,7 @@ export function OperationDetailContainer({
       onRejectPayment={submitRejectPayment}
       processingPaymentId={activeProcessingPaymentId}
       canViewFinancialDetails={canViewFinancialDetails}
+      canViewOperationExtras={canViewOperationExtras}
       canRequestReturn={canRequestReturn}
       onOperationUpdated={async () => {
         await fetchOperation();

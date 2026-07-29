@@ -41,30 +41,11 @@ export default function BankAccountsPage() {
 
   const pageSize = 10;
 
-  const roles = ['ADMIN'];
   const { hasRole } = useAuth();
   const canDelete = hasRole(['ADMIN', 'DIRECCION']);
-
-  const canView = useMemo(
-    () =>
-      roles.some((role) =>
-        ['ADMIN', 'GERENTE', 'AUXILIAR_CUENTAS', 'JEFA_CAJAS'].includes(role),
-      ),
-    [roles],
-  );
-
-  const canCreateOrEdit = useMemo(
-    () =>
-      roles.some((role) =>
-        ['ADMIN', 'GERENTE', 'AUXILIAR_CUENTAS'].includes(role),
-      ),
-    [roles],
-  );
-
-  const canToggleStatus = useMemo(
-    () => roles.some((role) => ['ADMIN', 'GERENTE'].includes(role)),
-    [roles],
-  );
+  const canView = hasRole(['ADMIN', 'GERENTE', 'DIRECCION', 'JEFA_CUENTAS', 'AUXILIAR_CUENTAS']);
+  const canCreateOrEdit = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
+  const canToggleStatus = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
 
   const { accounts, isLoading, loadBankAccounts, loadBankAccount } =
     useBankAccounts();

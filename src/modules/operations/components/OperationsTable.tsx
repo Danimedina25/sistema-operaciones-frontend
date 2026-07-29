@@ -59,6 +59,7 @@ export function OperationsTable({
 
   const isSocioComercial = hasRole(['SOCIO_COMERCIAL']);
   const canManageOperationFlow = !isSocioComercial;
+  const canModifyOperations = !hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS']);
   const canToggleOperationStatus = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
   const canReviewCommission = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
 
@@ -287,7 +288,7 @@ export function OperationsTable({
                                 </button>
                               )}
 
-                            {(operation.saldoPendientePorRegistrar > 0) && (
+                            {canModifyOperations && (operation.saldoPendientePorRegistrar > 0) && (
                               <button
                                 type="button"
                                 onClick={() => {
@@ -300,7 +301,7 @@ export function OperationsTable({
                               </button>
                             )}
 
-                            {isOperationEditableStatus(operation.estatus) ? (
+                            {canModifyOperations && isOperationEditableStatus(operation.estatus) ? (
                               <button
                                 type="button"
                                 onClick={() => onEditOperation?.(operation.id)}

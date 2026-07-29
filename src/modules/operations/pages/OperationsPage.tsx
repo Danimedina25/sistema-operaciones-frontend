@@ -174,13 +174,15 @@ export default function OperationsPage() {
       <div className="relative flex items-center rounded-2xl bg-white p-4 shadow-sm">
 
         {/* Botón (igual que lo tienes) */}
-        <button
-          type="button"
-          onClick={() => setIsCreateModalOpen(true)}
-          className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
-        >
-          Nueva operación
-        </button>
+        {hasRole(['SOCIO_COMERCIAL', 'ADMIN']) && (
+          <button
+            type="button"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
+          >
+            Nueva operación
+          </button>
+        )}
 
         {/* Texto centrado real */}
         <div className="absolute left-1/2 -translate-x-1/2 text-center">

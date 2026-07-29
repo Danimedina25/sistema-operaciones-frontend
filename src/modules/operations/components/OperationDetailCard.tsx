@@ -14,6 +14,7 @@ import { useAuth } from '@/modules/auth/store/auth.context';
 interface OperationDetailCardProps {
   operation: PaymentOperationResponse;
   canViewFinancialDetails: boolean;
+  canViewOperationExtras: boolean;
   onOperationUpdated?: () => void | Promise<void>;
 }
 
@@ -67,6 +68,7 @@ function SummaryItem({
 export function OperationDetailCard({
   operation,
   canViewFinancialDetails,
+  canViewOperationExtras,
   onOperationUpdated,
 }: OperationDetailCardProps) {
   const shouldShowUpdatedAt =
@@ -197,14 +199,16 @@ shadow-slate-950/5
             </>
           )}
 
-          <SummaryItem
-            label="Actualizada"
-            value={
-              shouldShowUpdatedAt
-                ? formatDate(operation.updatedAt)
-                : '-'
-            }
-          />
+          {canViewOperationExtras && (
+            <SummaryItem
+              label="Actualizada"
+              value={
+                shouldShowUpdatedAt
+                  ? formatDate(operation.updatedAt)
+                  : '-'
+              }
+            />
+          )}
         </div>
       </div>
 
@@ -401,17 +405,19 @@ shadow-slate-950/5
         </>
       )}
 
-      <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50/80
+      {canViewOperationExtras && (
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50/80
 shadow-sm p-4">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-          Observaciones
-        </p>
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            Observaciones
+          </p>
 
-        <p className="mt-2 text-sm leading-6 text-slate-700">
-          {operation.observaciones?.trim() ||
-            'Sin observaciones registradas.'}
-        </p>
-      </div>
+          <p className="mt-2 text-sm leading-6 text-slate-700">
+            {operation.observaciones?.trim() ||
+              'Sin observaciones registradas.'}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
