@@ -15,11 +15,11 @@ import type {
 
 import { getApiErrorMessage } from '@/shared/utils/errors';
 
-export function useCommercialPartners() {
+export function useCommercialPartners({ enabled = true }: { enabled?: boolean } = {}) {
   const [commercialPartners, setCommercialPartners] =
     useState<CommercialPartnerResponse[]>([]);
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(enabled);
 
   const [processingPartnerId, setProcessingPartnerId] =
     useState<number | null>(null);
@@ -39,8 +39,10 @@ export function useCommercialPartners() {
   }, []);
 
   useEffect(() => {
+    if (!enabled) return;
+
     fetchCommercialPartners();
-  }, [fetchCommercialPartners]);
+  }, [enabled, fetchCommercialPartners]);
 
   const handleActivate = async (partnerId: number) => {
     try {

@@ -10,9 +10,9 @@ import type { ClienteResponse } from '@/modules/clientes/types/clientes.types';
 import { getApiErrorMessage } from '@/shared/utils/errors';
 import { useAuth } from '@/modules/auth/store/auth.context';
 
-export function useClientes() {
+export function useClientes({ enabled = true }: { enabled?: boolean } = {}) {
   const [clientes, setClientes] = useState<ClienteResponse[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(enabled);
   const [processingClienteId, setProcessingClienteId] = useState<number | null>(
     null,
   );
@@ -43,12 +43,14 @@ export function useClientes() {
   }, []);
 
   useEffect(() => {
+    if (!enabled) return;
+
     if(user?.roles.includes('SOCIO_COMERCIAL')){
       void fetchMyClientes();
       return
     }
     void fetchClientes();
-  }, [fetchClientes]);
+  }, [enabled, fetchClientes]);
 
   const handleActivate = async (clienteId: number) => {
     try {

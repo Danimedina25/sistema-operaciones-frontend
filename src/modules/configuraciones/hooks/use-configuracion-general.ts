@@ -7,11 +7,11 @@ import { getConfiguracionGeneral } from '@/modules/configuraciones/api/configura
 import type { ConfiguracionGeneralResponse } from '@/modules/configuraciones/types/configuraciones.types';
 import { getApiErrorMessage } from '@/shared/utils/errors';
 
-export function useConfiguracionGeneral() {
+export function useConfiguracionGeneral({ enabled = true }: { enabled?: boolean } = {}) {
   const [configuracionGeneral, setConfiguracionGeneral] =
     useState<ConfiguracionGeneralResponse | null>(null);
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(enabled);
 
   const fetchConfiguracionGeneral = useCallback(async () => {
     try {
@@ -28,8 +28,10 @@ export function useConfiguracionGeneral() {
   }, []);
 
   useEffect(() => {
+    if (!enabled) return;
+
     fetchConfiguracionGeneral();
-  }, [fetchConfiguracionGeneral]);
+  }, [enabled, fetchConfiguracionGeneral]);
 
   return {
     configuracionGeneral,

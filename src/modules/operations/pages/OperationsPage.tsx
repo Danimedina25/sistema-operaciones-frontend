@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Pagination } from '@/shared/components/ui/Pagination';
@@ -45,13 +45,16 @@ export default function OperationsPage() {
   const [operationToEdit, setOperationToEdit] =
     useState<PaymentOperationResponse | null>(null);
 
+  const { hasRole } = useAuth();
+  const canCreateOperation = hasRole(['SOCIO_COMERCIAL', 'ADMIN']);
+  const canEditOperations = !hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS']);
+  const needsOperationCatalogs = canCreateOperation || canEditOperations;
+
   const { clientNames: frequentClientNames } = useFrequentClientNames();
   const {
     clientes: clientesCatalog,
     isLoading: isLoadingClientes,
-    fetchClientes,
-    fetchMyClientes
-  } = useClientes();
+  } = useClientes({ enabled: needsOperationCatalogs });
 
   const { isSubmitting: isSubmittingUpdate, submitUpdateOperation } =
     useUpdateOperation({
@@ -64,23 +67,13 @@ export default function OperationsPage() {
 
   const {
     commercialPartners: commercialPartnersCatalog,
-  } = useCommercialPartners();
+  } = useCommercialPartners({ enabled: needsOperationCatalogs });
 
-  const { configuracionGeneral } = useConfiguracionGeneral();
+  const { configuracionGeneral } = useConfiguracionGeneral({ enabled: canCreateOperation });
 
   const commercialPartners = useMemo(() => {
     return commercialPartnersCatalog.filter((partner) => partner.activo);
   }, [commercialPartnersCatalog]);
-
-  const { user, hasRole } = useAuth();
-
-  useEffect(() => {
-    if (user?.roles.includes('SOCIO_COMERCIAL'))
-      void fetchMyClientes();
-
-    else
-      fetchClientes();
-  }, [])
 
   const {
     operations,
@@ -174,7 +167,7 @@ export default function OperationsPage() {
       <div className="relative flex items-center rounded-2xl bg-white p-4 shadow-sm">
 
         {/* Botón (igual que lo tienes) */}
-        {hasRole(['SOCIO_COMERCIAL', 'ADMIN']) && (
+        {canCreateOperation && (
           <button
             type="button"
             onClick={() => setIsCreateModalOpen(true)}
