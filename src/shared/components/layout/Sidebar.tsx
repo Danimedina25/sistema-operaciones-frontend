@@ -63,7 +63,7 @@ const navItems: NavItem[] = [
     to: paths.operations,
     label: 'Operaciones',
     icon: ClipboardList,
-    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION', 'SOCIO_COMERCIAL'],
+    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION', 'SOCIO_COMERCIAL', 'JEFA_CAJAS'],
   },
   {
     to: paths.returnsforrequest,

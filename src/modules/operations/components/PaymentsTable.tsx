@@ -6,7 +6,7 @@ import {
   formatCurrency,
   formatDate,
 } from '@/modules/operations/utils/operation-formatters';
-import { OperationPaymentResponse } from '../types/operations.types.ts';
+import { OperationPaymentResponse, PaymentType } from '../types/operations.types.ts';
 import { createPortal } from 'react-dom';
 
 interface PaymentsTableProps {
@@ -112,11 +112,22 @@ export function PaymentsTable({
     };
   }, [validationReceipt]);
 
-  const canValidatePayments = hasRole([
-    'JEFA_CUENTAS',
-    'AUXILIAR_CUENTAS',
-    'ADMIN',
-  ]);
+  const isAdmin = hasRole(['ADMIN']);
+  const isJefaCajas = hasRole(['JEFA_CAJAS']);
+  const isCuentas = hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS']);
+
+  function canValidatePaymentType(tipoPago: PaymentType) {
+    if (isAdmin) return true;
+    if (tipoPago === 'EFECTIVO') return isJefaCajas;
+    if (
+      tipoPago === 'TRANSFERENCIA' ||
+      tipoPago === 'DEPOSITO' ||
+      tipoPago === 'CHEQUE'
+    ) {
+      return isCuentas;
+    }
+    return false; // RETIRO_SIN_TARJETA no aplica a ingresos
+  }
 
 
 
@@ -351,7 +362,8 @@ export function PaymentsTable({
                   payment.estatus === 'PENDIENTE_VALIDACION';
                 const isProcessing = processingPaymentId === payment.id;
                 const canEdit = isPendingValidation && !!onEditPayment;
-                const canValidate = canValidatePayments && isPendingValidation;
+                const canValidate =
+                  canValidatePaymentType(payment.tipoPago) && isPendingValidation;
                 const hasActions = canEdit || canValidate;
 
                 return (
