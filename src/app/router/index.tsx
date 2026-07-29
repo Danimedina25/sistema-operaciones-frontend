@@ -123,7 +123,7 @@ export const router = createBrowserRouter([
           {
             element: (
               <RoleGuard
-                allowedRoles={['ADMIN', 'SOCIO_COMERCIAL', 'GERENTE', 'DIRECCION', 'JEFA_CAJAS']}
+                allowedRoles={['ADMIN', 'SOCIO_COMERCIAL', 'GERENTE', 'DIRECCION', 'JEFA_CAJAS', 'JEFA_CUENTAS', 'AUXILIAR_CUENTAS']}
               />
             ),
             children: [
