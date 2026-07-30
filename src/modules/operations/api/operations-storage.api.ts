@@ -12,15 +12,16 @@ export async function uploadOperationProof(params: {
   file: File;
   userId: number;
   operationId?: number;
+  folder?: string;
 }) {
-  const { file, userId, operationId } = params;
+  const { file, userId, operationId, folder: category = 'comprobantes' } = params;
 
   const timestamp = Date.now();
   const safeFileName = sanitizeFileName(file.name);
 
   const folder = operationId
-    ? `comprobantes/operaciones/${operationId}`
-    : `comprobantes/usuarios/${userId}/temporales`;
+    ? `${category}/operaciones/${operationId}`
+    : `${category}/usuarios/${userId}/temporales`;
 
   const storageRef = ref(
     firebaseStorage,

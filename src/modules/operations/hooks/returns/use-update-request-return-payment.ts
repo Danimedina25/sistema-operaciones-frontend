@@ -2,6 +2,8 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 
 import { updateRequestReturnPayment } from '@/modules/operations/api/operations.api';
+import { uploadOperationProof } from '@/modules/operations/api/operations-storage.api';
+import { useAuth } from '@/modules/auth/store/auth.context';
 import { getApiErrorMessage } from '@/shared/utils/errors';
 
 import {
@@ -26,6 +28,7 @@ export function useUpdateRequestReturnPayment(
   options?: UseUpdateRequestReturnPaymentOptions,
 ) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
 
   const submitUpdateRequestReturnPayment = async (
     values: EditReturnPaymentFormValues,
@@ -34,6 +37,23 @@ export function useUpdateRequestReturnPayment(
       setIsSubmitting(true);
 
       const isCash = values.tipoPago === 'EFECTIVO';
+
+      let archivoNominaUrl = values.archivoNominaUrl ?? undefined;
+
+      if (values.archivoNominaFile) {
+        if (!user?.userId) {
+          throw new Error('No se pudo identificar el usuario autenticado');
+        }
+
+        const uploadResult = await uploadOperationProof({
+          file: values.archivoNominaFile,
+          userId: user.userId,
+          operationId: values.operationId,
+          folder: 'nominas',
+        });
+
+        archivoNominaUrl = uploadResult.downloadUrl;
+      }
 
       await updateRequestReturnPayment(
         values.id,
@@ -58,7 +78,7 @@ export function useUpdateRequestReturnPayment(
           autorizadoParaRecibirEfectivo1: values.autorizadoParaRecibirEfectivo1,
           autorizadoParaRecibirEfectivo2: values.autorizadoParaRecibirEfectivo2,
           autorizadoParaRecibirEfectivo3: values.autorizadoParaRecibirEfectivo3,
-
+          archivoNominaUrl,
         }
       );
 

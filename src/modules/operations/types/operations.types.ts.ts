@@ -215,6 +215,7 @@ export interface CreateReturnPaymentItemRequest {
   autorizadoParaRecibirEfectivo1?: string;
   autorizadoParaRecibirEfectivo2?: string;
   autorizadoParaRecibirEfectivo3?: string;
+  archivoNominaUrl?: string | null;
 }
 
 export interface CreateReturnPaymentRequest {
@@ -253,6 +254,7 @@ export interface ReturnPaymentResponse {
   cuentaDestinoTitular?: string | null;
   cuentaDestinoBanco?: string | null;
   comprobanteUrl?: string | null;
+  archivoNominaUrl?: string | null;
   observaciones?: string | null;
 
   solicitadoPorId?: number | null;

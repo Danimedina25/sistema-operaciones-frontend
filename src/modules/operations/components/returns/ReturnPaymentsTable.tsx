@@ -15,6 +15,7 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ReturnPaymentDetailModal } from './ReturnPaymentDetailModal.js';
 import { useAuth } from '@/modules/auth/store/auth.context.js';
+import { Paperclip } from 'lucide-react';
 
 interface ReturnPaymentsTableProps {
   returns: ReturnPaymentResponse[];
@@ -438,12 +439,34 @@ export function ReturnPaymentsTable({
                     </td>
 
                     <td className="px-4 py-4">
-                      <button
-                        type="button"
-                        onClick={(event) =>
-                          handleToggleOptionsMenu(returnPayment.id, event)
-                        }
-                        className="
+                      <div className="flex items-center gap-2">
+                        {returnPayment.archivoNominaUrl ? (
+                          <span
+                            title="Tiene archivo de nóminas adjunto"
+                            className="
+      inline-flex
+      h-9
+      w-9
+      shrink-0
+      items-center
+      justify-center
+      rounded-lg
+      border
+      border-emerald-200
+      bg-emerald-50
+      text-emerald-600
+    "
+                          >
+                            <Paperclip className="h-4 w-4" />
+                          </span>
+                        ) : null}
+
+                        <button
+                          type="button"
+                          onClick={(event) =>
+                            handleToggleOptionsMenu(returnPayment.id, event)
+                          }
+                          className="
       inline-flex
       h-9
       items-center
@@ -461,9 +484,10 @@ export function ReturnPaymentsTable({
       hover:bg-slate-50
       hover:-translate-y-0.5
     "
-                      >
-                        Ver opciones
-                      </button>
+                        >
+                          Ver opciones
+                        </button>
+                      </div>
 
                       {openOptionsReturnId === returnPayment.id &&
                         optionsMenuPosition &&
@@ -538,6 +562,29 @@ export function ReturnPaymentsTable({
                                 Sin comprobante
                               </div>
                             )}
+
+                            {returnPayment.archivoNominaUrl ? (
+                              <a
+                                href={returnPayment.archivoNominaUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={closeOptionsMenu}
+                                className="
+              block
+              border-t
+              border-slate-100
+              px-4
+              py-3
+              text-sm
+              font-medium
+              text-slate-700
+              transition
+              hover:bg-slate-50
+            "
+                              >
+                                Descargar archivo de nóminas
+                              </a>
+                            ) : null}
                           </div>,
                           document.body,
                         )}

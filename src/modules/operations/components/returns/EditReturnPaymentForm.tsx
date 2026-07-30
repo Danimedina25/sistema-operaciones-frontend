@@ -11,10 +11,12 @@ import {
 } from '../../types/operations.types.ts';
 
 import { useReturnDestinationAccountSuggestions } from '../../hooks/returns/use-operation-returns.js';
+import { NominaFileField } from './NominaFileField';
 
 
 export interface EditReturnPaymentFormValues {
     id: number;
+    operationId: number;
     monto: number;
     tipoPago: ReturnPaymentType;
     banco?: string;
@@ -25,6 +27,8 @@ export interface EditReturnPaymentFormValues {
     autorizadoParaRecibirEfectivo1?: string;
     autorizadoParaRecibirEfectivo2?: string;
     autorizadoParaRecibirEfectivo3?: string;
+    archivoNominaFile?: File | null;
+    archivoNominaUrl?: string | null;
 }
 
 interface EditReturnPaymentFormProps {
@@ -74,6 +78,11 @@ export function EditReturnPaymentForm({
 }: EditReturnPaymentFormProps) {
     const [form, setForm] = useState<FormState>(
         () => mapPaymentToForm(payment),
+    );
+
+    const [archivoNominaFile, setArchivoNominaFile] = useState<File | null>(null);
+    const [archivoNominaUrl, setArchivoNominaUrl] = useState<string | null>(
+        payment.archivoNominaUrl ?? null,
     );
 
     const [errors, setErrors] =
@@ -139,6 +148,8 @@ export function EditReturnPaymentForm({
     useEffect(() => {
         setForm(mapPaymentToForm(payment));
         setErrors({});
+        setArchivoNominaFile(null);
+        setArchivoNominaUrl(payment.archivoNominaUrl ?? null);
     }, [payment]);
 
     function updateField(
@@ -264,6 +275,7 @@ export function EditReturnPaymentForm({
 
         await onSubmit({
             id: payment.id,
+            operationId: payment.operationId,
             monto: parseCurrency(form.monto),
             tipoPago: form.tipoPago as ReturnPaymentType,
             banco: form.banco.trim(),
@@ -277,6 +289,8 @@ export function EditReturnPaymentForm({
                 form.autorizadoParaRecibirEfectivo2.trim() || undefined,
             autorizadoParaRecibirEfectivo3:
                 form.autorizadoParaRecibirEfectivo3.trim() || undefined,
+            archivoNominaFile,
+            archivoNominaUrl,
         });
     }
 
@@ -600,6 +614,13 @@ export function EditReturnPaymentForm({
                     />
                 </div>
             </div>
+
+            <NominaFileField
+                value={archivoNominaFile}
+                onChange={setArchivoNominaFile}
+                existingFileUrl={archivoNominaUrl}
+                onRemoveExisting={() => setArchivoNominaUrl(null)}
+            />
 
             <Button
                 type="submit"

@@ -9,6 +9,7 @@ import {
 } from '@/modules/operations/utils/operation-formatters';
 import { ReturnPaymentResponse } from '../../types/operations.types.ts';
 import { ReturnStatusBadge } from './ReturnStatusBadge.js';
+import { FileSpreadsheet, Download } from 'lucide-react';
 
 interface Props {
     open: boolean;
@@ -51,6 +52,27 @@ export function ReturnPaymentDetailModal({
                             <ReturnStatusBadge status={returnPayment.estatus} />
                         </div>
                     </div>
+
+                    {returnPayment.archivoNominaUrl ? (
+                        <div className="flex flex-col gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex items-center gap-3">
+                                <FileSpreadsheet className="h-7 w-7 shrink-0 text-emerald-600" />
+                                <p className="text-sm font-semibold text-emerald-900">
+                                    Archivo de nóminas adjunto
+                                </p>
+                            </div>
+
+                            <a
+                                href={returnPayment.archivoNominaUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-emerald-700"
+                            >
+                                <Download className="h-4 w-4" />
+                                Descargar archivo de nóminas
+                            </a>
+                        </div>
+                    ) : null}
 
                     <div className="grid gap-4 md:grid-cols-2">
                         <DetailItem

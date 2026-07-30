@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
+import { FileSpreadsheet, Download } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
 import { paymentTypeLabels } from '@/modules/operations/constants/operations.constants';
 import { ReturnPaymentResponse } from '../../types/operations.types.ts';
@@ -210,6 +211,32 @@ export function RealizeReturnPaymentForm({
                     </>
                 ) : null}
             </div>
+
+            {returnPayment.archivoNominaUrl && (
+                <div className="flex flex-col gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-3">
+                        <FileSpreadsheet className="h-8 w-8 shrink-0 text-emerald-600" />
+                        <div>
+                            <p className="text-sm font-semibold text-emerald-900">
+                                Este retorno tiene un archivo de nóminas
+                            </p>
+                            <p className="text-xs text-emerald-700">
+                                El socio comercial adjuntó un Excel para repartir el pago entre empleados.
+                            </p>
+                        </div>
+                    </div>
+
+                    <a
+                        href={returnPayment.archivoNominaUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-emerald-700"
+                    >
+                        <Download className="h-4 w-4" />
+                        Descargar archivo de nóminas
+                    </a>
+                </div>
+            )}
 
             {requiereCuentaOrigen ? (
                 <div>

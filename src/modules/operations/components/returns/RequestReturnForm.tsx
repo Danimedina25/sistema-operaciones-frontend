@@ -6,6 +6,7 @@ import { ReturnDestinationAccountSuggestion, ReturnPaymentResponse } from '../..
 import { ReturnPaymentType } from '@/shared/utils/form.utils.js';
 import { MEXICAN_BANKS } from '@/modules/bank-accounts/components/BankAccountFormModal.js';
 import { useReturnDestinationAccountSuggestions } from '../../hooks/returns/use-operation-returns.js';
+import { NominaFileField } from './NominaFileField';
 
 
 interface ReturnPaymentItem {
@@ -25,6 +26,7 @@ interface ReturnPaymentItem {
 
 export interface RequestReturnFormValues {
   operationId: number;
+  archivoNomina?: File | null;
   pagos: Array<{
     id?: number; // <- nuevo
     monto: number;
@@ -143,6 +145,8 @@ export function RequestReturnForm({
 
     return [createEmptyPayment()];
   });
+
+  const [archivoNomina, setArchivoNomina] = useState<File | null>(null);
 
   useEffect(() => {
     if (initialPayments?.length) {
@@ -455,6 +459,7 @@ export function RequestReturnForm({
 
     await onSubmit({
       operationId,
+      archivoNomina,
       pagos: pagos.map((pago) => ({
         id: pago.paymentId,
         monto: parseCurrency(pago.monto),
@@ -508,6 +513,8 @@ export function RequestReturnForm({
           </span>
         </div>
       </div>
+
+      <NominaFileField value={archivoNomina} onChange={setArchivoNomina} />
 
       {excedeMonto ? (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
