@@ -2,6 +2,7 @@ import { OperationDetailView } from '@/modules/operations/components/OperationDe
 import { useOperationDetail } from '@/modules/operations/hooks/use-operation-detail';
 import { useValidatePayment } from '../hooks/use-validate-payment';
 import { useRejectPayment } from '../hooks/use-reject-payment';
+import { useUpdateValidationReceipt } from '../hooks/use-update-validation-receipt';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { PaymentOperationResponse, ReturnPaymentResponse } from '../types/operations.types.ts';
 import { useReturnsByOperationId } from '../hooks/returns/use-operation-returns';
@@ -73,8 +74,20 @@ export function OperationDetailContainer({
       },
     });
 
+  const {
+    processingPaymentId: editingValidationReceiptPaymentId,
+    submitUpdateValidationReceipt,
+  } = useUpdateValidationReceipt({
+    onSuccess: async () => {
+      await fetchOperation();
+    },
+  });
+
   const activeProcessingPaymentId =
-    validatingPaymentId ?? rejectingPaymentId ?? null;
+    validatingPaymentId ??
+    rejectingPaymentId ??
+    editingValidationReceiptPaymentId ??
+    null;
 
   if (isLoading || isLoadingReturns) {
     return (
@@ -129,6 +142,7 @@ export function OperationDetailContainer({
       backLabel={backLabel}
       onValidatePayment={submitValidatePayment}
       onRejectPayment={submitRejectPayment}
+      onEditValidationReceipt={submitUpdateValidationReceipt}
       processingPaymentId={activeProcessingPaymentId}
       canViewFinancialDetails={canViewFinancialDetails}
       canViewOperationExtras={canViewOperationExtras}

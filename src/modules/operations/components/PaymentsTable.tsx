@@ -16,13 +16,17 @@ interface PaymentsTableProps {
     comprobanteValidacion: File
   ) => Promise<void> | void;
   onRejectPayment?: (paymentId: number, motivo: string) => Promise<void> | void;
+  onEditValidationReceipt?: (
+    paymentId: number,
+    comprobanteValidacion: File
+  ) => Promise<void> | void;
   processingPaymentId?: number | null;
   montoPendientePorRegistrar?: number | null;
   onAddPayment?: () => void;
   onEditPayment?: (paymentId: number) => void;
 }
 
-type PaymentActionType = 'VALIDATE' | 'REJECT';
+type PaymentActionType = 'VALIDATE' | 'REJECT' | 'EDIT_VALIDATION_RECEIPT';
 
 interface PendingAction {
   paymentId: number;
@@ -40,6 +44,7 @@ export function PaymentsTable({
   payments,
   onValidatePayment,
   onRejectPayment,
+  onEditValidationReceipt,
   processingPaymentId = null,
   montoPendientePorRegistrar = null,
   onAddPayment,
@@ -179,6 +184,23 @@ export function PaymentsTable({
         return;
       }
 
+      if (pendingAction.action === 'EDIT_VALIDATION_RECEIPT') {
+        if (!validationReceipt) {
+          setValidationReceiptError(
+            'El comprobante de validación es obligatorio.'
+          );
+          return;
+        }
+
+        await onEditValidationReceipt?.(
+          pendingAction.paymentId,
+          validationReceipt
+        );
+
+        resetModalState();
+        return;
+      }
+
       const trimmedReason = rejectReason.trim();
 
       if (!trimmedReason) {
@@ -205,22 +227,30 @@ export function PaymentsTable({
     pendingAction !== null && processingPaymentId === pendingAction.paymentId;
 
   const isRejectAction = pendingAction?.action === 'REJECT';
+  const isValidateAction = pendingAction?.action === 'VALIDATE';
+  const isEditReceiptAction = pendingAction?.action === 'EDIT_VALIDATION_RECEIPT';
+  const showReceiptPicker = isValidateAction || isEditReceiptAction;
 
-  const confirmTitle =
-    pendingAction?.action === 'VALIDATE'
-      ? 'Confirmar validación'
+  const confirmTitle = isValidateAction
+    ? 'Confirmar validación'
+    : isEditReceiptAction
+      ? 'Editar comprobante de validación'
       : 'Confirmar rechazo';
 
-  const confirmDescription =
-    pendingAction?.action === 'VALIDATE'
-      ? '¿Estás seguro de que deseas validar este comprobante? Esta acción actualizará el estatus.'
+  const confirmDescription = isValidateAction
+    ? '¿Estás seguro de que deseas validar este comprobante? Esta acción actualizará el estatus.'
+    : isEditReceiptAction
+      ? '¿Deseas reemplazar el comprobante de validación de este pago? El estatus no cambia.'
       : '¿Estás seguro de que deseas rechazar este comprobante? Esta acción cambiará el estatus a rechazado.';
 
-  const confirmButtonText =
-    pendingAction?.action === 'VALIDATE'
+  const confirmButtonText = isValidateAction
+    ? isConfirmingAction
+      ? 'Validando...'
+      : 'Sí, validar comprobante'
+    : isEditReceiptAction
       ? isConfirmingAction
-        ? 'Validando...'
-        : 'Sí, validar comprobante'
+        ? 'Guardando...'
+        : 'Sí, guardar comprobante'
       : isConfirmingAction
         ? 'Rechazando...'
         : 'Sí, rechazar comprobante';
@@ -366,6 +396,9 @@ export function PaymentsTable({
                   isPendingValidation && !!onEditPayment && canModifyPayments;
                 const canValidate =
                   canValidatePaymentType(payment.tipoPago) && isPendingValidation;
+                const canEditValidationReceipt =
+                  payment.estatus === 'VALIDADA' &&
+                  canValidatePaymentType(payment.tipoPago);
                 const hasActions = canEdit || canValidate;
 
                 return (
@@ -519,6 +552,35 @@ export function PaymentsTable({
                                 Ver comprobante de validación
                               </a>
                             ) : null}
+
+                            {canEditValidationReceipt ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  openConfirmModal(
+                                    payment.id,
+                                    'EDIT_VALIDATION_RECEIPT',
+                                  );
+                                  closeOptionsMenu();
+                                }}
+                                className="
+              block
+              w-full
+              border-t
+              border-slate-100
+              px-4
+              py-3
+              text-left
+              text-sm
+              font-medium
+              text-slate-700
+              transition
+              hover:bg-slate-50
+            "
+                              >
+                                Editar comprobante de validación
+                              </button>
+                            ) : null}
                           </div>,
                           document.body,
                         )}
@@ -664,7 +726,7 @@ shadow-slate-950/10">
               </div>
             ) : null}
 
-            {pendingAction.action === 'VALIDATE' ? (
+            {showReceiptPicker ? (
               <div className="mt-4">
                 <label className="mb-2 block text-sm font-medium text-slate-700">
                   Comprobante de validación <span className="text-rose-600">*</span>
@@ -860,7 +922,7 @@ shadow-slate-950/10">
                 type="button"
                 onClick={() => void handleConfirmAction()}
                 disabled={isConfirmingAction}
-                className={`inline-flex rounded-lg px-4 py-2 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-50 ${pendingAction.action === 'VALIDATE'
+                className={`inline-flex rounded-lg px-4 py-2 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-50 ${showReceiptPicker
                   ? 'bg-emerald-600 hover:bg-emerald-700'
                   : 'bg-rose-600 hover:bg-rose-700'
                   }`}

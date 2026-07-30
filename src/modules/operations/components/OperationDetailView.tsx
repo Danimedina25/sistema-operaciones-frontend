@@ -20,6 +20,11 @@ interface OperationDetailViewProps {
     comprobanteValidacion: File
   ) => Promise<void> | void;
   onRejectPayment?: (paymentId: number, motivo: string) => Promise<void> | void;
+  onEditValidationReceipt?: (
+    operationId: number,
+    paymentId: number,
+    comprobanteValidacion: File
+  ) => Promise<void> | void;
   processingPaymentId?: number | null;
   onAddPayment: (operationId: number) => void;
   onAddRequestReturnPayment?: (operation: PaymentOperationResponse, montoPendientePorSolicitar: number) => void;
@@ -45,6 +50,7 @@ export function OperationDetailView({
   backLabel = 'Operaciones',
   onValidatePayment,
   onRejectPayment,
+  onEditValidationReceipt,
   processingPaymentId = null,
   onAddPayment,
   onAddRequestReturnPayment,
@@ -158,6 +164,13 @@ export function OperationDetailView({
           onAddPayment={() => onAddPayment(operation.id)}
           onEditPayment={onEditPayment}
           onRejectPayment={onRejectPayment}
+          onEditValidationReceipt={(paymentId, comprobanteValidacion) =>
+            onEditValidationReceipt?.(
+              operation.id,
+              paymentId,
+              comprobanteValidacion
+            )
+          }
           montoPendientePorRegistrar={operation.saldoPendientePorRegistrar}
           processingPaymentId={processingPaymentId}
         />

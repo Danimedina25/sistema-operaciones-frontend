@@ -163,6 +163,17 @@ export async function rejectPayment(
   return response.data.data;
 }
 
+export async function updateValidationReceipt(
+  paymentId: number,
+  payload: UpdatePaymentStatusRequest,
+): Promise<OperationPaymentResponse> {
+  const response = await api.patch<PaymentApiResponse>(
+    `${OPERATIONS_BASE_PATH}/payments/${paymentId}/validation-receipt`,
+    payload,
+  );
+  return response.data.data;
+}
+
 export async function markOperationAsInvoiced(
   operationId: number,
 ): Promise<PaymentOperationResponse> {
