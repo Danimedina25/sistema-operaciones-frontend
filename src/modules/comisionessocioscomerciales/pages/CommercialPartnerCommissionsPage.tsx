@@ -63,6 +63,8 @@ export default function CommercialPartnerCommissionsPage() {
       'ADMIN',
     ]);
 
+  const canManagePayments = hasRole(['ADMIN', 'GERENTE']);
+
   const {
     summary: beneficiarySummary,
     isLoading: isLoadingBeneficiaries,
@@ -282,6 +284,9 @@ export default function CommercialPartnerCommissionsPage() {
             onViewDetail={
               handleOpenBeneficiaryDetail
             }
+            canManagePayments={
+              canManagePayments
+            }
           />
 
         ) : (
@@ -323,6 +328,9 @@ export default function CommercialPartnerCommissionsPage() {
             true,
           );
         }}
+        canManagePayments={
+          canManagePayments
+        }
       />
 
       {/* PAGO */}

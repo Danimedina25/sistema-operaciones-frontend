@@ -23,6 +23,8 @@ interface CommissionOperationDetailModalProps {
     onPayCommission: (
         beneficiary: CommissionBeneficiaryResponse,
     ) => void;
+
+    canManagePayments: boolean;
 }
 
 function formatCurrency(
@@ -43,6 +45,7 @@ export function CommissionOperationDetailModal({
     isLoading = false,
     onClose,
     onPayCommission,
+    canManagePayments,
 }: CommissionOperationDetailModalProps) {
     return (
         <Modal
@@ -155,6 +158,9 @@ export function CommissionOperationDetailModal({
                             }
                             onPayCommission={
                                 onPayCommission
+                            }
+                            canManagePayments={
+                                canManagePayments
                             }
                         />
                     </div>

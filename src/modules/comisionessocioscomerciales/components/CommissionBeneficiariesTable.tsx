@@ -15,6 +15,8 @@ interface Props {
     onViewDetail: (
         beneficiary: CommissionPartnerSummaryResponse,
     ) => void;
+
+    canManagePayments: boolean;
 }
 
 function formatCurrency(
@@ -33,6 +35,7 @@ export function CommissionBeneficiariesTable({
     beneficiaries,
     onPayBeneficiary,
     onViewDetail,
+    canManagePayments,
 }: Props) {
 
     if (!beneficiaries.length) {
@@ -233,19 +236,23 @@ export function CommissionBeneficiariesTable({
                                         <td className="px-4 py-4 text-center">
                                             <div className="flex items-center justify-center gap-2">
                                                 {canPay ? (
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            onPayBeneficiary(
-                                                                beneficiary,
-                                                            )
-                                                        }
-                                                        className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-                                                    >
-                                                        Pagar
-                                                    </button>
-
+                                                    canManagePayments ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                onPayBeneficiary(
+                                                                    beneficiary,
+                                                                )
+                                                            }
+                                                            className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                                                        >
+                                                            Pagar
+                                                        </button>
+                                                    ) : (
+                                                        <span className="text-xs text-slate-400">
+                                                            Pendiente de pago
+                                                        </span>
+                                                    )
                                                 ) : (
 
                                                     <button

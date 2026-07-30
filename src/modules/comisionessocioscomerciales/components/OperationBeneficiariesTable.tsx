@@ -12,6 +12,8 @@ interface OperationBeneficiariesTableProps {
     onPayCommission: (
         beneficiary: CommissionBeneficiaryResponse,
     ) => void;
+
+    canManagePayments: boolean;
 }
 
 function formatCurrency(
@@ -29,6 +31,7 @@ function formatCurrency(
 export function OperationBeneficiariesTable({
     beneficiaries,
     onPayCommission,
+    canManagePayments,
 }: OperationBeneficiariesTableProps) {
     return (
         <div className="rounded-2xl border border-slate-200 bg-white">
@@ -174,7 +177,7 @@ export function OperationBeneficiariesTable({
                                                     <span className="text-xs text-slate-400">
                                                         Sin comprobante
                                                     </span>
-                                                ) : (
+                                                ) : canManagePayments ? (
                                                     <button
                                                         type="button"
                                                         onClick={() =>
@@ -186,6 +189,10 @@ export function OperationBeneficiariesTable({
                                                     >
                                                         Pagar
                                                     </button>
+                                                ) : (
+                                                    <span className="text-xs text-slate-400">
+                                                        Pendiente de pago
+                                                    </span>
                                                 )}
                                             </div>
                                         </td>
