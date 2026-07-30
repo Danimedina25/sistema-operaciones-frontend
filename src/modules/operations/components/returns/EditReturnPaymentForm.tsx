@@ -12,6 +12,7 @@ import {
 
 import { useReturnDestinationAccountSuggestions } from '../../hooks/returns/use-operation-returns.js';
 import { NominaFileField } from './NominaFileField';
+import { detectDestinationAccountKind } from '../../utils/return-destination-account';
 
 
 export interface EditReturnPaymentFormValues {
@@ -184,7 +185,7 @@ export function EditReturnPaymentForm({
         }
 
         if (field === 'cuenta') {
-            formattedValue = onlyNumbers(value).slice(0, 12);
+            formattedValue = onlyNumbers(value).slice(0, 18);
         }
 
         if (field === 'clabe') {
@@ -236,9 +237,10 @@ export function EditReturnPaymentForm({
             const clabe = form.clabe.trim();
 
             if (!cuenta) {
-                newErrors.cuenta = 'El número de cuenta es obligatorio';
-            } else if (!/^\d{10,12}$/.test(cuenta)) {
-                newErrors.cuenta = 'La cuenta debe tener entre 10 y 12 dígitos';
+                newErrors.cuenta = 'El número de cuenta o tarjeta es obligatorio';
+            } else if (!/^\d{10,18}$/.test(cuenta)) {
+                newErrors.cuenta =
+                    'El número de cuenta o tarjeta debe tener entre 10 y 18 dígitos';
             }
 
             if (!clabe) {
@@ -364,15 +366,15 @@ export function EditReturnPaymentForm({
                     <>
                         <div>
                             <label className="mb-2 block text-sm font-medium text-slate-700">
-                                Número de cuenta
+                                Número de cuenta o tarjeta
                             </label>
 
                             <div className="relative">
                                 <Input
                                     type="text"
-                                    placeholder="Número de cuenta"
+                                    placeholder="Cuenta o tarjeta"
                                     inputMode="numeric"
-                                    maxLength={12}
+                                    maxLength={18}
                                     value={form.cuenta ?? ''}
                                     error={errors.cuenta}
                                     onFocus={() => setShowAccountOptions(true)}
@@ -424,6 +426,16 @@ export function EditReturnPaymentForm({
                                     </div>
                                 )}
                             </div>
+
+                            {detectDestinationAccountKind(form.cuenta) ? (
+                                <p className="mt-1.5 text-xs text-slate-500">
+                                    Se guardará como número de{' '}
+                                    {detectDestinationAccountKind(form.cuenta) === 'TARJETA'
+                                        ? 'tarjeta'
+                                        : 'cuenta'}
+                                    .
+                                </p>
+                            ) : null}
                         </div>
                         <div>
                             <label className="mb-2 block text-sm font-medium text-slate-700">

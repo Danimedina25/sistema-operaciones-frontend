@@ -4,6 +4,7 @@ import { FileSpreadsheet, Download } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
 import { paymentTypeLabels } from '@/modules/operations/constants/operations.constants';
 import { ReturnPaymentResponse } from '../../types/operations.types.ts';
+import { getDestinationAccountLabel } from '../../utils/return-destination-account';
 
 interface SelectOption {
     id: number;
@@ -189,7 +190,9 @@ export function RealizeReturnPaymentForm({
                         </div>
 
                         <div>
-                            <span className="block text-slate-500">Cuenta destino</span>
+                            <span className="block text-slate-500">
+                                {getDestinationAccountLabel(returnPayment.cuentaDestinoCliente)}
+                            </span>
                             <span className="font-semibold text-slate-900">
                                 {returnPayment.cuentaDestinoCliente ?? '-'}
                             </span>

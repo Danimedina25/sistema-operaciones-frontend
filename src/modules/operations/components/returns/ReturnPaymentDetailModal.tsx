@@ -10,6 +10,7 @@ import {
 import { ReturnPaymentResponse } from '../../types/operations.types.ts';
 import { ReturnStatusBadge } from './ReturnStatusBadge.js';
 import { FileSpreadsheet, Download } from 'lucide-react';
+import { getDestinationAccountLabel } from '../../utils/return-destination-account';
 
 interface Props {
     open: boolean;
@@ -125,7 +126,7 @@ export function ReturnPaymentDetailModal({
                                     value={returnPayment.cuentaDestinoTitular ?? '-'}
                                 />
                                 <DetailItem
-                                    label="Cuenta"
+                                    label={getDestinationAccountLabel(returnPayment.cuentaDestinoCliente)}
                                     value={returnPayment.cuentaDestinoCliente ?? '-'}
                                 />
                                 <DetailItem

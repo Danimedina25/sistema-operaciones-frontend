@@ -7,6 +7,7 @@ import { ReturnPaymentType } from '@/shared/utils/form.utils.js';
 import { MEXICAN_BANKS } from '@/modules/bank-accounts/components/BankAccountFormModal.js';
 import { useReturnDestinationAccountSuggestions } from '../../hooks/returns/use-operation-returns.js';
 import { NominaFileField } from './NominaFileField';
+import { detectDestinationAccountKind } from '../../utils/return-destination-account';
 
 
 interface ReturnPaymentItem {
@@ -273,9 +274,10 @@ export function RequestReturnForm({
         const clabe = pago.clabe?.trim() ?? '';
 
         if (!cuenta) {
-          pagoErrors.cuenta = 'El número de cuenta es obligatorio';
-        } else if (!/^\d{10,12}$/.test(cuenta)) {
-          pagoErrors.cuenta = 'La cuenta debe tener entre 10 y 12 dígitos';
+          pagoErrors.cuenta = 'El número de cuenta o tarjeta es obligatorio';
+        } else if (!/^\d{10,18}$/.test(cuenta)) {
+          pagoErrors.cuenta =
+            'El número de cuenta o tarjeta debe tener entre 10 y 18 dígitos';
         }
 
         if (!clabe) {
@@ -395,7 +397,7 @@ export function RequestReturnForm({
     }
 
     if (field === 'cuenta') {
-      formattedValue = onlyNumbers(value).slice(0, 12);
+      formattedValue = onlyNumbers(value).slice(0, 18);
     }
 
     if (field === 'clabe') {
@@ -613,16 +615,16 @@ export function RequestReturnForm({
                   <>
                     <div>
                       <label className="mb-2 block text-sm font-medium text-slate-700">
-                        Número de cuenta
+                        Número de cuenta o tarjeta
                       </label>
 
                       <div className="relative">
                         <Input
                           type="text"
-                          placeholder="Número de cuenta"
+                          placeholder="Cuenta o tarjeta"
                           value={pago.cuenta ?? ''}
                           inputMode="numeric"
-                          maxLength={12}
+                          maxLength={18}
                           error={errors[pago.id]?.cuenta}
                           onFocus={() =>
                             setShowAccountOptions((prev) => ({
@@ -685,6 +687,16 @@ export function RequestReturnForm({
                           </div>
                         )}
                       </div>
+
+                      {detectDestinationAccountKind(pago.cuenta) ? (
+                        <p className="mt-1.5 text-xs text-slate-500">
+                          Se guardará como número de{' '}
+                          {detectDestinationAccountKind(pago.cuenta) === 'TARJETA'
+                            ? 'tarjeta'
+                            : 'cuenta'}
+                          .
+                        </p>
+                      ) : null}
                     </div>
 
                     <div>
