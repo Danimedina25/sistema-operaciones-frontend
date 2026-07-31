@@ -30,6 +30,7 @@ interface ReturnPaymentsTableProps {
     returnPayment: ReturnPaymentResponse,
   ) => void;
   onConfirmCashReturnPickup?: (returnPayment: ReturnPaymentResponse) => void;
+  onMarkCashReturnDelivered?: (returnPayment: ReturnPaymentResponse) => void;
   operationStatus?: OperationStatus;
 }
 
@@ -44,6 +45,7 @@ export function ReturnPaymentsTable({
   onPayReturn,
   onEditReturn,
   onConfirmCashReturnPickup,
+  onMarkCashReturnDelivered,
   operationStatus,
 }: ReturnPaymentsTableProps) {
   const { user } = useAuth();
@@ -154,11 +156,23 @@ export function ReturnPaymentsTable({
   function canConfirmCashReturnPickup(returnPayment: ReturnPaymentResponse) {
     if (!isSocioComercial) return false;
     if (!onConfirmCashReturnPickup) return false;
-    if (returnPayment.estatus !== 'EN_RECOLECCION') return false;
+    if (returnPayment.estatus !== 'ENTREGADO') return false;
 
     return (
       returnPayment.tipoPago === 'EFECTIVO' ||
       returnPayment.tipoPago === 'RETIRO_SIN_TARJETA'
+    );
+  }
+
+  function canMarkCashReturnDelivered(returnPayment: ReturnPaymentResponse) {
+    if (!canManageReturnPayments) return false;
+    if (!onMarkCashReturnDelivered) return false;
+    // estatus EN_RECOLECCION ya implica que hay fecha de recolección programada
+    if (returnPayment.estatus !== 'EN_RECOLECCION') return false;
+
+    return (
+      (isJefaCajas || isAdmin) &&
+      (returnPayment.tipoPago === 'EFECTIVO' || returnPayment.tipoPago === 'RETIRO_SIN_TARJETA')
     );
   }
 
@@ -355,13 +369,15 @@ export function ReturnPaymentsTable({
                 const canEditPickupTime = canDefineTime && hasPickupScheduled;
                 const canCreatePickupTime = canDefineTime && !hasPickupScheduled;
                 const canConfirmPickup = canConfirmCashReturnPickup(returnPayment);
+                const canMarkDelivered = canMarkCashReturnDelivered(returnPayment);
 
                 const hasActions =
                   canPayReturn ||
                   canCreatePickupTime ||
                   canEditPickupTime ||
                   canEditReturn ||
-                  canConfirmPickup;
+                  canConfirmPickup ||
+                  canMarkDelivered;
                 return (
                   <tr
                     key={returnPayment.id}
@@ -618,6 +634,32 @@ export function ReturnPaymentsTable({
                                 {canEditPickupTime
                                   ? 'Editar recolección'
                                   : 'Programar recolección'}
+                              </button>
+                            )}
+
+                            {canMarkDelivered && (
+                              <button
+                                type="button"
+                                onClick={() => onMarkCashReturnDelivered?.(returnPayment)}
+                                className="
+      inline-flex
+      h-8
+      w-44
+      items-center
+      justify-center
+      rounded-lg
+      bg-indigo-600
+      px-3
+      text-center
+      text-xs
+      font-medium
+      text-white
+      shadow-sm
+      transition
+      hover:bg-indigo-700
+    "
+                              >
+                                Marcar como entregado
                               </button>
                             )}
 

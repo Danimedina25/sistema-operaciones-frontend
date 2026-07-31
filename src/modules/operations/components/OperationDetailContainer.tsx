@@ -26,6 +26,7 @@ interface OperationDetailContainerProps {
     returnPayment: ReturnPaymentResponse,
   ) => void;
   onConfirmCashReturnPickup?: (returnPayment: ReturnPaymentResponse) => void;
+  onMarkCashReturnDelivered?: (returnPayment: ReturnPaymentResponse) => void;
 }
 
 export function OperationDetailContainer({
@@ -41,7 +42,8 @@ export function OperationDetailContainer({
   scrollToReturns = false,
   onEditPayment,
   onEditReturn,
-  onConfirmCashReturnPickup
+  onConfirmCashReturnPickup,
+  onMarkCashReturnDelivered
 }: OperationDetailContainerProps) {
   const { hasRole } = useAuth();
 
@@ -137,6 +139,11 @@ export function OperationDetailContainer({
       onConfirmCashReturnPickup={
         isSocioComercial && onConfirmCashReturnPickup
           ? (returnPayment) => onConfirmCashReturnPickup(returnPayment)
+          : undefined
+      }
+      onMarkCashReturnDelivered={
+        canPayReturn && onMarkCashReturnDelivered
+          ? (returnPayment) => onMarkCashReturnDelivered(returnPayment)
           : undefined
       }
       backLabel={backLabel}

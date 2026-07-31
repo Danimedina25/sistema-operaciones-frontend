@@ -96,14 +96,34 @@ export function ReturnPaymentDetailModal({
                         />
 
                         {isCashReturn ? (
-                            <DetailItem
-                                label="Fecha y hora de recolección"
-                                value={
-                                    returnPayment.fechaHoraRecoleccionEfectivo
-                                        ? formatDateTime(returnPayment.fechaHoraRecoleccionEfectivo)
-                                        : 'Pendiente por programar'
-                                }
-                            />
+                            <>
+                                <DetailItem
+                                    label="Fecha y hora de recolección"
+                                    value={
+                                        returnPayment.fechaHoraRecoleccionEfectivo
+                                            ? formatDateTime(returnPayment.fechaHoraRecoleccionEfectivo)
+                                            : 'Pendiente por programar'
+                                    }
+                                />
+
+                                {returnPayment.entregadoPorNombre ? (
+                                    <>
+                                        <DetailItem
+                                            label="Entregado por"
+                                            value={returnPayment.entregadoPorNombre}
+                                        />
+
+                                        <DetailItem
+                                            label="Fecha de entrega"
+                                            value={
+                                                returnPayment.fechaEntrega
+                                                    ? formatDateTime(returnPayment.fechaEntrega)
+                                                    : '-'
+                                            }
+                                        />
+                                    </>
+                                ) : null}
+                            </>
                         ) : (
                             <DetailItem
                                 label="Fecha retorno"

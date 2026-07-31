@@ -18,6 +18,7 @@ import { EditReturnPaymentForm } from '../components/returns/EditReturnPaymentFo
 import { useUpdateRequestReturnPayment } from '../hooks/returns/use-update-request-return-payment';
 import { useScheduleCashReturnPickup } from '../hooks/returns/use-schedule-cash-return-pickup';
 import { useConfirmCashReturnPickup } from '../hooks/returns/use-confirm-cash-return-pickup';
+import { useMarkCashReturnDelivered } from '../hooks/returns/use-mark-cash-return-delivered';
 import { formatCurrency } from '../utils/operation-formatters';
 
 export default function OperationDetailPage() {
@@ -55,6 +56,8 @@ export default function OperationDetailPage() {
   const [isAddReturnModalOpen, setIsAddReturnModalOpen] = useState(false);
   const [isPayReturnModalOpen, setIsPayReturnModalOpen] = useState(false);
   const [isConfirmCashPickupModalOpen, setIsConfirmCashPickupModalOpen] =
+    useState(false);
+  const [isMarkCashDeliveredModalOpen, setIsMarkCashDeliveredModalOpen] =
     useState(false);
   const [selectedReturnPayment, setSelectedReturnPayment] =
     useState<ReturnPaymentResponse | null>(null);
@@ -162,6 +165,17 @@ export default function OperationDetailPage() {
   });
 
   const {
+    isSubmitting: isSubmittingMarkCashDelivered,
+    submitMarkCashReturnDelivered,
+  } = useMarkCashReturnDelivered({
+    onSuccess: async () => {
+      setIsMarkCashDeliveredModalOpen(false);
+      setSelectedReturnPayment(null);
+      setRefreshKey((prev) => prev + 1);
+    },
+  });
+
+  const {
     isSubmitting: isSubmittingUpdateReturn,
     submitUpdateRequestReturnPayment,
   } = useUpdateRequestReturnPayment({
@@ -254,6 +268,10 @@ export default function OperationDetailPage() {
         onConfirmCashReturnPickup={(returnPayment) => {
           setSelectedReturnPayment(returnPayment);
           setIsConfirmCashPickupModalOpen(true);
+        }}
+        onMarkCashReturnDelivered={(returnPayment) => {
+          setSelectedReturnPayment(returnPayment);
+          setIsMarkCashDeliveredModalOpen(true);
         }}
         onEditReturn={(returnPayment) => {
           setSelectedReturnToEdit(returnPayment);
@@ -407,6 +425,47 @@ export default function OperationDetailPage() {
             className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
           >
             {isSubmittingConfirmCashPickup ? 'Confirmando...' : 'Sí, la recibí'}
+          </button>
+        </div>
+      </Modal>
+
+      <Modal
+        open={isMarkCashDeliveredModalOpen}
+        title="Marcar efectivo como entregado"
+        onClose={() => {
+          setIsMarkCashDeliveredModalOpen(false);
+          setSelectedReturnPayment(null);
+        }}
+      >
+        <p className="text-sm text-slate-600">
+          ¿Confirmas que ya entregaste el retorno en efectivo por{' '}
+          <span className="font-semibold text-slate-900">
+            {selectedReturnPayment ? formatCurrency(selectedReturnPayment.monto) : ''}
+          </span>{' '}
+          de esta operación? El socio comercial podrá confirmar la recepción después de esto.
+        </p>
+
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              setIsMarkCashDeliveredModalOpen(false);
+              setSelectedReturnPayment(null);
+            }}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            disabled={isSubmittingMarkCashDelivered}
+            onClick={() =>
+              selectedReturnPayment &&
+              submitMarkCashReturnDelivered(selectedReturnPayment.id)
+            }
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
+          >
+            {isSubmittingMarkCashDelivered ? 'Guardando...' : 'Sí, marcar como entregado'}
           </button>
         </div>
       </Modal>

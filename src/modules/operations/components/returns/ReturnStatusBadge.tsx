@@ -1,7 +1,7 @@
 import { cn } from "@/shared/lib/cn";
 
 interface ReturnStatusBadgeProps {
-  status: 'SOLICITADO' | 'EN_RECOLECCION' | 'RETORNADO';
+  status: 'SOLICITADO' | 'EN_RECOLECCION' | 'ENTREGADO' | 'RETORNADO';
 }
 
 export function ReturnStatusBadge({ status }: ReturnStatusBadgeProps) {
@@ -24,6 +24,9 @@ export function ReturnStatusBadge({ status }: ReturnStatusBadgeProps) {
         status === 'RETORNADO' &&
           'border-emerald-200 bg-emerald-50 text-emerald-700',
 
+        status === 'ENTREGADO' &&
+          'border-indigo-200 bg-indigo-50 text-indigo-700',
+
         status === 'EN_RECOLECCION' &&
           'border-blue-200 bg-blue-50 text-blue-700',
 
@@ -33,9 +36,11 @@ export function ReturnStatusBadge({ status }: ReturnStatusBadgeProps) {
     >
       {status === 'RETORNADO'
         ? 'Retornado'
-        : status === 'EN_RECOLECCION'
-          ? 'En recolección'
-          : 'Solicitado'}
+        : status === 'ENTREGADO'
+          ? 'Entregado'
+          : status === 'EN_RECOLECCION'
+            ? 'En recolección'
+            : 'Solicitado'}
     </span>
   );
 }

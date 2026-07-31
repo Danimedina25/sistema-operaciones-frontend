@@ -19,6 +19,7 @@ export type PaymentStatus =
 export type ReturnPaymentStatus =
   | 'SOLICITADO'
   | 'EN_RECOLECCION'
+  | 'ENTREGADO'
   | 'RETORNADO';
 
 export type PaymentType =
@@ -263,8 +264,12 @@ export interface ReturnPaymentResponse {
   pagadoPorId?: number | null;
   pagadoPorNombre?: string | null;
 
+  entregadoPorId?: number | null;
+  entregadoPorNombre?: string | null;
+
   fechaSolicitud: string;
   fechaPago?: string | null;
+  fechaEntrega?: string | null;
 
   autorizadoParaRecibirEfectivo1?: string;
   autorizadoParaRecibirEfectivo2?: string;
@@ -292,6 +297,8 @@ export type ReturnRealizePaymentApiResponse = ApiResponse<ReturnPaymentResponse>
 export type ScheduleCashReturnPickupApiResponse =
   ApiResponse<ReturnPaymentResponse>;
 export type ConfirmCashReturnPickupApiResponse =
+  ApiResponse<ReturnPaymentResponse>;
+export type MarkCashReturnDeliveredApiResponse =
   ApiResponse<ReturnPaymentResponse>;
 export type ReturnPaymentsListApiResponse = ApiResponse<ReturnPaymentResponse[]>;
 export type ReturnDestinationAccountSuggestionsApiResponse =
