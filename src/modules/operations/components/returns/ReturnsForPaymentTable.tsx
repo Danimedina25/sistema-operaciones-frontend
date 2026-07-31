@@ -145,10 +145,6 @@ export function ReturnsForPaymentTable({
                       </div>
                     </td>
 
-                    <td className="px-4 py-4 font-semibold text-slate-600 text-center">
-                      {operation.numeroRetornosSolicitados}
-                    </td>
-
                     <td className="px-4 py-4 text-slate-600">
                       <div>{formatCurrency(operation.montoSolicitadoRetorno)}</div>
 
