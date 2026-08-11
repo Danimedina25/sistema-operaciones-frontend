@@ -47,6 +47,7 @@ export default function OperationsPage() {
 
   const { hasRole } = useAuth();
   const canCreateOperation = hasRole(['SOCIO_COMERCIAL', 'ADMIN']);
+  const canReadConfiguracionGeneral = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
   const canEditOperations = !hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS']);
   const needsOperationCatalogs = canCreateOperation || canEditOperations;
 
@@ -69,7 +70,9 @@ export default function OperationsPage() {
     commercialPartners: commercialPartnersCatalog,
   } = useCommercialPartners({ enabled: needsOperationCatalogs });
 
-  const { configuracionGeneral } = useConfiguracionGeneral({ enabled: canCreateOperation });
+  const { configuracionGeneral } = useConfiguracionGeneral({
+    enabled: canCreateOperation && canReadConfiguracionGeneral,
+  });
 
   const commercialPartners = useMemo(() => {
     return commercialPartnersCatalog.filter((partner) => partner.activo);
