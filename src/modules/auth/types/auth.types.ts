@@ -17,6 +17,8 @@ export interface AuthUser {
   correo: string;
   nombre: string;
   roles: RoleName[];
+  porcentajeComision?: number;
+  commercialSettings?: { porcentajeComision?: number } | null;
 }
 
 export interface AuthResponse {
@@ -25,6 +27,8 @@ export interface AuthResponse {
   correo: string;
   nombre: string;
   roles: RoleName[];
+  porcentajeComision?: number;
+  commercialSettings?: { porcentajeComision?: number } | null;
 }
 
 

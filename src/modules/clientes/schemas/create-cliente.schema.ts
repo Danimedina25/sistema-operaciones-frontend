@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export const createClienteSchema = z.object({
+  userId: z.coerce.number().min(1, 'Selecciona el socio comercial nivel 1'),
   nombre: z
     .string()
     .min(1, 'El nombre del cliente es obligatorio')

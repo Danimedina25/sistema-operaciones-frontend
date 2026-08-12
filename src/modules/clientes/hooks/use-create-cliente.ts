@@ -11,15 +11,21 @@ interface UseCreateClienteOptions {
 
 export function useCreateCliente(options?: UseCreateClienteOptions) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
 
   const submitCreateCliente = async (values: CreateClienteFormValues) => {
     try {
       setIsSubmitting(true);
 
+      const canAssignOwner = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
+      const ownerUserId = canAssignOwner ? values.userId : user?.userId;
+
+      if (!ownerUserId) {
+        throw new Error('No se pudo identificar al socio comercial nivel 1');
+      }
+
       const cliente = await createCliente({
-        userId: user?.userId ?? 0,
+        userId: ownerUserId,
         nombre: values.nombre.trim(),
         nivelesRedComercial: 1,
       });

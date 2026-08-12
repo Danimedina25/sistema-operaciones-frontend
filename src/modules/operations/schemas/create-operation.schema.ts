@@ -97,6 +97,7 @@ const paymentSchema = z
 
 export const createOperationSchema = z
   .object({
+    socioComercialId: z.coerce.number().min(1, 'Selecciona el socio comercial nivel 1'),
     clienteId: z.preprocess(
       (value) => {
         if (value === '' || value === null || value === undefined) {

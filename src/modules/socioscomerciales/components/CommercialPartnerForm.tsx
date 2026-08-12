@@ -264,7 +264,7 @@ export function CommercialPartnerForm({
 
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">
-              Porcentaje de comisión
+              Porcentaje de comisión sugerido
             </label>
 
             <Input
@@ -276,6 +276,7 @@ export function CommercialPartnerForm({
               error={errors.porcentajeComision?.message}
               {...register('porcentajeComision')}
             />
+            <p className="mt-1 text-xs text-slate-500">Se usa como valor inicial y no modifica operaciones existentes.</p>
           </div>
         </div>
       </div>

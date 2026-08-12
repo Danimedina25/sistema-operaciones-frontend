@@ -23,6 +23,7 @@ import { UpdateOperationForm } from '../components/UpdateOperationForm.js';
 import { useAuth } from '@/modules/auth/store/auth.context.js';
 import { useCommercialPartners } from '@/modules/socioscomerciales/hooks/use-commercial-partners.js';
 import { useConfiguracionGeneral } from '@/modules/configuraciones/hooks/use-configuracion-general';
+import { useCommercialLevelOneUsers } from '@/modules/users/hooks/use-commercial-level-one-users';
 
 const initialFilters: OperationsFiltersType = {
   operationId: 0,
@@ -45,9 +46,14 @@ export default function OperationsPage() {
   const [operationToEdit, setOperationToEdit] =
     useState<PaymentOperationResponse | null>(null);
 
-  const { hasRole } = useAuth();
+  const { hasRole, user } = useAuth();
   const canCreateOperation = hasRole(['SOCIO_COMERCIAL', 'ADMIN']);
   const canReadConfiguracionGeneral = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
+  const canAssignLevelOne = hasRole(['ADMIN']);
+  const {
+    commercialLevelOneUsers,
+    isLoading: isLoadingLevelOneUsers,
+  } = useCommercialLevelOneUsers({ enabled: canAssignLevelOne });
   const canEditOperations = !hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS']);
   const needsOperationCatalogs = canCreateOperation || canEditOperations;
 
@@ -255,7 +261,7 @@ export default function OperationsPage() {
         title="Nueva operación"
         onClose={() => setIsCreateModalOpen(false)}
       >
-        {isLoadingBankAccounts || isLoadingClientes ? (
+        {isLoadingBankAccounts || isLoadingClientes || (canAssignLevelOne && isLoadingLevelOneUsers) ? (
           <div className="py-8 text-center text-sm text-slate-500">
             Cargando cuentas bancarias...
           </div>
@@ -268,6 +274,14 @@ export default function OperationsPage() {
             porcentajeComisionOficinaDefault={
               configuracionGeneral?.porcentajeComisionOficina ?? 1.5
             }
+            levelOneUsers={commercialLevelOneUsers.map((item) => ({
+              id: item.id,
+              nombre: item.nombre,
+              porcentajeComision: item.commercialSettings?.porcentajeComision ?? 0,
+            }))}
+            currentLevelOneId={canAssignLevelOne ? 0 : (user?.userId ?? 0)}
+            currentLevelOneCommission={user?.porcentajeComision ?? 0}
+            canAssignLevelOne={canAssignLevelOne}
             onSubmit={submitCreateOperation}
           />
         )}

@@ -26,7 +26,7 @@ interface ValidatedPayment {
 
 export function useCreateOperation(options?: UseCreateOperationOptions) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
 
   const submitCreateOperation = async (
     values: CreateOperationFormValues,
@@ -91,10 +91,19 @@ export function useCreateOperation(options?: UseCreateOperationOptions) {
       /**
        * CREAR OPERACIÓN
        */
+      const socioComercialId = hasRole(['ADMIN'])
+        ? values.socioComercialId
+        : user.userId;
+
+      if (!socioComercialId) {
+        toast.error('Selecciona el socio comercial nivel 1');
+        return;
+      }
+
       const operation = await createOperation({
         clienteId: values.clienteId,
         montoTotal: values.montoTotal,
-        socioComercialId: user.userId,
+        socioComercialId,
         socioComercialNivel2Id: values.socioComercialNivel2Id,
         socioComercialNivel3Id: values.socioComercialNivel3Id,
         nivelesRedComercial: values.nivelesRedComercial,

@@ -263,7 +263,7 @@ export function CreateUserForm({
 
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">
-                Porcentaje de comisión
+                Porcentaje de comisión sugerido
               </label>
 
               <Input
@@ -275,6 +275,7 @@ export function CreateUserForm({
                 error={errors.porcentajeComision?.message}
                 {...register('porcentajeComision')}
               />
+              <p className="mt-1 text-xs text-slate-500">Se copiará como valor inicial al crear operaciones y podrá ajustarse por operación.</p>
             </div>
           </div>
         </div>

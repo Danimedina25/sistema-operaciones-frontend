@@ -358,7 +358,7 @@ export function UserForm({
 
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">
-                Porcentaje de comisión
+                Porcentaje de comisión sugerido
               </label>
 
               <Input
@@ -370,6 +370,7 @@ export function UserForm({
                 error={errors.porcentajeComision?.message}
                 {...register('porcentajeComision')}
               />
+              <p className="mt-1 text-xs text-slate-500">El cambio solo afecta nuevas operaciones; no recalcula las existentes.</p>
             </div>
           </div>
         </div>

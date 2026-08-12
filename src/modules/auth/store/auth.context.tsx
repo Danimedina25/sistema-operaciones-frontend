@@ -28,6 +28,8 @@ function mapAuthResponseToUser(authData: AuthResponse): AuthUser {
     correo: authData.correo,
     nombre: authData.nombre,
     roles: authData.roles,
+    porcentajeComision:
+      authData.porcentajeComision ?? authData.commercialSettings?.porcentajeComision,
   };
 }
 

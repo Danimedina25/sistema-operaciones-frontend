@@ -25,6 +25,10 @@ interface CreateOperationFormProps {
   clientes: SelectOption[];
   commercialPartners: CommercialPartnerOption[];
   porcentajeComisionOficinaDefault: number;
+  levelOneUsers: Array<{ id: number; nombre: string; porcentajeComision: number }>;
+  currentLevelOneId: number;
+  currentLevelOneCommission: number;
+  canAssignLevelOne: boolean;
   onSubmit: (values: CreateOperationFormValues) => Promise<void>;
 }
 
@@ -76,6 +80,10 @@ export function CreateOperationForm({
   clientes,
   commercialPartners,
   porcentajeComisionOficinaDefault,
+  levelOneUsers,
+  currentLevelOneId,
+  currentLevelOneCommission,
+  canAssignLevelOne,
   onSubmit,
 }: CreateOperationFormProps) {
   const {
@@ -88,6 +96,7 @@ export function CreateOperationForm({
   } = useForm<CreateOperationFormInput, unknown, CreateOperationFormValues>({
     resolver: zodResolver(createOperationSchema),
     defaultValues: {
+      socioComercialId: currentLevelOneId,
       clienteId: undefined,
       montoTotal: '',
       observaciones: '',
@@ -95,7 +104,7 @@ export function CreateOperationForm({
       socioComercialNivel2Id: undefined,
       socioComercialNivel3Id: undefined,
       porcentajeComisionOficina: porcentajeComisionOficinaDefault,
-      porcentajeComisionSocio: 0,
+      porcentajeComisionSocio: currentLevelOneCommission,
       porcentajeComisionSocioNivel2: undefined,
       porcentajeComisionSocioNivel3: undefined,
       pagos: [
@@ -330,6 +339,7 @@ export function CreateOperationForm({
 
   function onInvalid(formErrors: Record<string, unknown>) {
     const fieldLabels: Record<string, string> = {
+      socioComercialId: 'Socio comercial nivel 1',
       clienteId: 'Cliente',
       montoTotal: 'Monto total',
       nivelesRedComercial: 'Niveles de socios comerciales',
@@ -410,6 +420,32 @@ export function CreateOperationForm({
         </div>
 
         <div className="grid gap-5 md:grid-cols-2">
+          {canAssignLevelOne ? (
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-sm font-medium text-slate-700">Socio comercial nivel 1</label>
+              <select
+                className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm"
+                {...register('socioComercialId', {
+                  onChange: (event) => {
+                    const selected = levelOneUsers.find((item) => item.id === Number(event.target.value));
+                    setValue('porcentajeComisionSocio', selected?.porcentajeComision ?? 0, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    });
+                  },
+                })}
+              >
+                <option value="">Selecciona un socio comercial</option>
+                {levelOneUsers.map((item) => (
+                  <option key={item.id} value={item.id}>{item.nombre}</option>
+                ))}
+              </select>
+              {errors.socioComercialId ? <p className="mt-1 text-xs text-red-600">{errors.socioComercialId.message}</p> : null}
+              <p className="mt-1 text-xs text-slate-500">Su porcentaje se carga como sugerencia y puede ajustarse solo para esta operación.</p>
+            </div>
+          ) : (
+            <input type="hidden" {...register('socioComercialId')} />
+          )}
           <div className="md:col-span-2">
             <label className="mb-2 block text-sm font-medium text-slate-700">
               Nombre del cliente

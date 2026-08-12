@@ -18,6 +18,7 @@ import { ClientesFilters } from '../components/ClientesFilters';
 import { ClientesTable } from '../components/ClientesTable';
 import { CreateClienteForm } from '../components/CreateClienteForm';
 import { useAuth } from '@/modules/auth/store/auth.context';
+import { useCommercialLevelOneUsers } from '@/modules/users/hooks/use-commercial-level-one-users';
 
 const initialFilters: ClientesFiltersType = {
   search: '',
@@ -47,7 +48,9 @@ export default function ClientesPage() {
     handleDeactivate,
   } = useClientes();
 
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
+  const canAssignLevelOne = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
+  const { commercialLevelOneUsers } = useCommercialLevelOneUsers({ enabled: canAssignLevelOne });
 
   const { isSubmitting: isCreating, submitCreateCliente } = useCreateCliente({
     onSuccess: async () => {
@@ -151,6 +154,9 @@ export default function ClientesPage() {
       >
         <CreateClienteForm
           isSubmitting={isCreating}
+          levelOneUsers={commercialLevelOneUsers}
+          currentUserId={canAssignLevelOne ? 0 : (user?.userId ?? 0)}
+          canAssignLevelOne={canAssignLevelOne}
           onSubmit={submitCreateCliente}
         />
       </Modal>
