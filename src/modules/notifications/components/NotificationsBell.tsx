@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useNotifications } from '@/modules/notifications/hooks/use-notifications';
 import { NotificationsDropdown } from '@/modules/notifications/components/NotificationsDropdown';
 import type { NotificationResponse } from '@/modules/notifications/types/notifications.types';
@@ -57,17 +58,7 @@ export function NotificationsBell() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!lastIncomingNotification) return;
-
-    const timeout = window.setTimeout(() => {
-      setLastIncomingNotification(null);
-    }, 6000);
-
-    return () => window.clearTimeout(timeout);
-  }, [lastIncomingNotification, setLastIncomingNotification]);
-
-  const handleNotificationClick = async (notification: NotificationResponse) => {
+  const handleNotificationClick = useCallback(async (notification: NotificationResponse) => {
     try {
       if (!notification.leida) {
         await submitMarkAsRead(notification.id);
@@ -79,14 +70,38 @@ export function NotificationsBell() {
         navigate(notification.actionUrl);
       }
     } catch {
-
+      // El hook muestra el mensaje de error correspondiente.
     }
-  };
+  }, [navigate, submitMarkAsRead]);
+
+  useEffect(() => {
+    if (!lastIncomingNotification) return;
+
+    const notification = lastIncomingNotification;
+    toast.custom(
+      (currentToast) => (
+        <IncomingNotificationAlert
+          notification={notification}
+          visible={currentToast.visible}
+          onOpen={() => {
+            toast.dismiss(currentToast.id);
+            void handleNotificationClick(notification);
+          }}
+          onClose={() => toast.dismiss(currentToast.id)}
+        />
+      ),
+      { duration: 3000 },
+    );
+
+    setLastIncomingNotification(null);
+  }, [handleNotificationClick, lastIncomingNotification, setLastIncomingNotification]);
 
   return (
     <div ref={containerRef} className="relative">
       <button
         type="button"
+        aria-label={unreadCount > 0 ? `Notificaciones, ${unreadCount} sin leer` : 'Notificaciones'}
+        aria-expanded={isOpen}
         onClick={() => setIsOpen((current) => !current)}
         className={`relative rounded-xl border p-2 transition ${isOpen
           ? 'border-blue-200 bg-blue-50 text-blue-600'
@@ -114,16 +129,6 @@ export function NotificationsBell() {
         />
       ) : null}
 
-      {lastIncomingNotification ? (
-        <IncomingNotificationAlert
-          notification={lastIncomingNotification}
-          onOpen={() => {
-            setIsOpen(true);
-            setLastIncomingNotification(null);
-          }}
-          onClose={() => setLastIncomingNotification(null)}
-        />
-      ) : null}
     </div>
 
   );
