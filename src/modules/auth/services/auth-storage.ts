@@ -3,17 +3,30 @@ import type { AuthUser } from '@/modules/auth/types/auth.types';
 const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'auth_user';
 
+function getStoredValue(key: string): string | null {
+  return localStorage.getItem(key) ?? sessionStorage.getItem(key);
+}
+
+function clearStorage(storage: Storage) {
+  storage.removeItem(TOKEN_KEY);
+  storage.removeItem(USER_KEY);
+}
+
 export const authStorage = {
   getToken(): string | null {
-    return localStorage.getItem(TOKEN_KEY);
+    return getStoredValue(TOKEN_KEY);
   },
 
-  setToken(token: string) {
-    localStorage.setItem(TOKEN_KEY, token);
+  setToken(token: string, rememberMe = false) {
+    const storage = rememberMe ? localStorage : sessionStorage;
+    const otherStorage = rememberMe ? sessionStorage : localStorage;
+
+    otherStorage.removeItem(TOKEN_KEY);
+    storage.setItem(TOKEN_KEY, token);
   },
 
   getUser(): AuthUser | null {
-    const raw = localStorage.getItem(USER_KEY);
+    const raw = getStoredValue(USER_KEY);
     if (!raw) return null;
 
     try {
@@ -23,12 +36,16 @@ export const authStorage = {
     }
   },
 
-  setUser(user: AuthUser) {
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
+  setUser(user: AuthUser, rememberMe = false) {
+    const storage = rememberMe ? localStorage : sessionStorage;
+    const otherStorage = rememberMe ? sessionStorage : localStorage;
+
+    otherStorage.removeItem(USER_KEY);
+    storage.setItem(USER_KEY, JSON.stringify(user));
   },
 
   clear() {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    clearStorage(localStorage);
+    clearStorage(sessionStorage);
   },
 };

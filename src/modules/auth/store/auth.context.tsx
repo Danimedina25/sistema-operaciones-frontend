@@ -15,7 +15,7 @@ interface AuthContextValue {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (authData: AuthResponse) => void;
+  login: (authData: AuthResponse, rememberMe?: boolean) => void;
   logout: () => void;
   hasRole: (roles: RoleName | RoleName[]) => boolean;
 }
@@ -42,11 +42,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
-  const login = useCallback((authData: AuthResponse) => {
+  const login = useCallback((authData: AuthResponse, rememberMe = false) => {
     const mappedUser = mapAuthResponseToUser(authData);
 
-    authStorage.setToken(authData.token);
-    authStorage.setUser(mappedUser);
+    authStorage.setToken(authData.token, rememberMe);
+    authStorage.setUser(mappedUser, rememberMe);
 
     setToken(authData.token);
     setUser(mappedUser);
@@ -102,4 +102,3 @@ export function useAuth() {
 
   return context;
 }
-

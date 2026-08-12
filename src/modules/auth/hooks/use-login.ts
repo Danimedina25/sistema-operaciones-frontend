@@ -12,7 +12,7 @@ export function useLogin() {
   const { login } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const submitLogin = async (values: LoginRequest) => {
+  const submitLogin = async (values: LoginRequest, rememberMe = false) => {
     try {
       setIsSubmitting(true);
 
@@ -21,7 +21,7 @@ export function useLogin() {
         password: values.password,
       });
 
-      login(authData);
+      login(authData, rememberMe);
 
       toast.success(`Bienvenido, ${authData.nombre}`);
       navigate(paths.operations, { replace: true });

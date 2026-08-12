@@ -29,7 +29,7 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (values: LoginFormValues) => {
-    await submitLogin(values);
+    await submitLogin(values, rememberMe);
   };
 
   return (
