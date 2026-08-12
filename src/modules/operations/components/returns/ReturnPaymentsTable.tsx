@@ -15,7 +15,7 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ReturnPaymentDetailModal } from './ReturnPaymentDetailModal.js';
 import { useAuth } from '@/modules/auth/store/auth.context.js';
-import { Paperclip } from 'lucide-react';
+import { ArrowUpRight, BanknoteArrowDown, Paperclip, Plus } from 'lucide-react';
 
 interface ReturnPaymentsTableProps {
   returns: ReturnPaymentResponse[];
@@ -218,43 +218,30 @@ export function ReturnPaymentsTable({
     <div
       className="
     overflow-hidden
-    rounded-[2rem]
+    rounded-[1.75rem]
     border
     border-slate-200/80
     bg-white
-    shadow-lg
-    shadow-slate-950/5
+    shadow-xl
+    shadow-slate-950/[0.06]
   "
     >
-      <div className="px-6 py-5">
+      <div className="bg-gradient-to-r from-slate-950 to-slate-800 px-6 py-5 text-white">
         <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
           <div className="text-left">
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-blue-500">
-              RETORNOS
-            </p>
-
-            <h3 className="mt-1 text-xl font-bold tracking-tight text-slate-950">
-              Retornos de dinero al cliente
-            </h3>
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300"><BanknoteArrowDown className="h-4 w-4" /> Egresos</p>
+            <h3 className="mt-1 text-xl font-bold tracking-tight text-white">Retornos al cliente</h3>
+            <p className="mt-1 text-sm text-slate-400">Seguimiento de solicitudes y liquidaciones.</p>
           </div>
 
           <div className="grid w-full grid-cols-1 items-start gap-10 md:w-auto md:grid-cols-[1fr_1fr]">
-            <div
-              className="
-    rounded-2xl
-    border
-    border-blue-200
-    bg-blue-50/70
-    px-5
-    py-4
-  "
-            >
+            <div className="rounded-xl border border-white/10 bg-white/5 px-5 py-3">
               <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
                 Pendiente por solicitar
               </p>
 
               <p
-                className={`mt-0.5 text-base font-semibold ${hasPendingAmountToRequest ? 'text-blue-700' : 'text-slate-400'
+                className={`mt-1 text-lg font-bold tabular-nums ${hasPendingAmountToRequest ? 'text-cyan-300' : 'text-slate-500'
                   }`}
               >
                 {formatCurrency(montoPendientePorSolicitar ?? 0)}
@@ -273,8 +260,8 @@ export function ReturnPaymentsTable({
                     inline-flex
                     items-center
                     justify-center
-                    rounded-xl
-                    bg-slate-900
+                    gap-1.5 rounded-lg
+                    bg-blue-600
                     px-4
                     py-2
                     text-xs
@@ -282,11 +269,11 @@ export function ReturnPaymentsTable({
                     text-white
                     shadow-sm
                     transition
-                    hover:bg-slate-800
+                    hover:bg-blue-500
                     hover:-translate-y-0.5
                     "
                   >
-                    Solicitar retorno
+                    <Plus className="h-3.5 w-3.5" /> Solicitar retorno
                   </button>
                 ) : requestStatusMessage ? (
                   <p className="text-xs font-medium text-slate-400">
@@ -296,22 +283,13 @@ export function ReturnPaymentsTable({
               </div>
             </div>
 
-            <div
-              className="
-    rounded-2xl
-    border
-    border-amber-200
-    bg-amber-50/70
-    px-5
-    py-4
-  "
-            >
+            <div className="rounded-xl border border-white/10 bg-white/5 px-5 py-3">
               <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
                 Pendiente por retornar
               </p>
 
               <p
-                className={`mt-0.5 text-base font-semibold ${hasPendingAmountToPay ? 'text-amber-700' : 'text-slate-400'
+                className={`mt-1 text-lg font-bold tabular-nums ${hasPendingAmountToPay ? 'text-amber-300' : 'text-slate-500'
                   }`}
               >
                 {formatCurrency(montoPendientePorRetornar ?? 0)}
@@ -326,20 +304,21 @@ export function ReturnPaymentsTable({
           </div>
         </div>
 
-        <div className="mt-5 h-px w-full bg-slate-200" />
       </div>
 
       {returns.length === 0 ? (
         <div className="px-6 pb-6">
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-500">
-            Esta operación aún no tiene pagos de retorno registrados.
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
+            <ArrowUpRight className="mx-auto h-8 w-8 text-slate-300" />
+            <p className="mt-3 text-sm font-semibold text-slate-700">Sin retornos registrados</p>
+            <p className="mt-1 text-xs text-slate-500">Las solicitudes y pagos de retorno aparecerán aquí.</p>
           </div>
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead className="bg-slate-50/80">
-              <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <table className="min-w-full border-separate border-spacing-0">
+            <thead className="sticky top-0 z-[1] bg-slate-100">
+              <tr className="text-left text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
                 <th className="px-4 py-3 font-medium">Monto</th>
                 <th className="px-4 py-3 font-medium">Estatus</th>
                 <th className="px-4 py-3 font-medium">Tipo</th>
@@ -386,10 +365,10 @@ export function ReturnPaymentsTable({
           border-slate-100
           text-sm
           transition
-          hover:bg-slate-50/70
+          hover:bg-cyan-50/40
         "
                   >
-                    <td className="px-4 py-4 font-medium text-slate-900">
+                    <td className="whitespace-nowrap px-4 py-4 font-bold tabular-nums text-slate-950">
                       {formatCurrency(returnPayment.monto)}
                     </td>
 

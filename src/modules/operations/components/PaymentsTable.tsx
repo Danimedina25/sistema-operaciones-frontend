@@ -9,6 +9,7 @@ import {
 import { OperationPaymentResponse, PaymentType } from '../types/operations.types.ts';
 import { createPortal } from 'react-dom';
 import { ValidationReceiptViewerModal } from './ValidationReceiptViewerModal';
+import { CircleDollarSign, FileCheck2, Plus, ReceiptText } from 'lucide-react';
 
 interface PaymentsTableProps {
   payments: OperationPaymentResponse[];
@@ -207,8 +208,10 @@ export function PaymentsTable({
 
   if (payments.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
-        Esta operación aún no tiene pagos registrados.
+      <div className="rounded-[1.75rem] border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
+        <ReceiptText className="mx-auto h-8 w-8 text-slate-300" />
+        <p className="mt-3 text-sm font-semibold text-slate-700">Sin pagos registrados</p>
+        <p className="mt-1 text-xs text-slate-500">Los comprobantes de ingreso aparecerán aquí.</p>
       </div>
     );
   }
@@ -273,24 +276,20 @@ export function PaymentsTable({
       <div
         className="
     overflow-hidden
-    rounded-[2rem]
+    rounded-[1.75rem]
     border
     border-slate-200/80
     bg-white
-    shadow-lg
-    shadow-slate-950/5
+    shadow-xl
+    shadow-slate-950/[0.06]
   "
       >
-        <div className="px-6 py-5">
+        <div className="bg-gradient-to-r from-slate-950 to-slate-800 px-6 py-5 text-white">
           <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div className="text-left">
-              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-blue-600">
-                Ingreso
-              </p>
-
-              <h3 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">
-                Comprobantes y validaciones de ingreso de dinero
-              </h3>
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-blue-300"><FileCheck2 className="h-4 w-4" /> Ingresos</p>
+              <h3 className="mt-1 text-xl font-bold tracking-tight text-white">Pagos y comprobantes</h3>
+              <p className="mt-1 text-sm text-slate-400">Registro, conciliación y validación de ingresos.</p>
             </div>
 
             <div className="flex flex-col items-start gap-2 md:items-end">
@@ -298,22 +297,22 @@ export function PaymentsTable({
                 className="
     rounded-2xl
     border
-    border-amber-200
-    bg-amber-50
+    border-white/10
+    bg-white/5
     px-4
     py-3
   "
               >
-                <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
                   Pendiente de registro en ingreso
                 </p>
 
-                <p className="mt-0.5 text-base font-semibold text-red-600">
+                <p className="mt-1 text-lg font-bold tabular-nums text-amber-300">
                   {formatCurrency(montoPendientePorRegistrar ?? 0)}
                 </p>
 
                 {montoPendientePorRegistrar === 0 && (
-                  <p className="mt-1 text-sm font-medium text-emerald-600">
+                  <p className="mt-1 text-xs font-medium text-emerald-300">
                     No hay más pagos de ingreso por registrar
                   </p>
                 )}
@@ -328,33 +327,32 @@ export function PaymentsTable({
                 min-w-[200px]
                 items-center
                 justify-center
-                rounded-2xl
-                bg-slate-950
+                gap-2 rounded-xl
+                bg-blue-600
                 px-5
                 py-3
                 text-sm
                 font-semibold
                 text-white
                 shadow-lg
-                shadow-blue-500/20
+                shadow-blue-950/30
                 transition-all
                 duration-200
                 hover:-translate-y-0.5
-                hover:bg-slate-900
+                hover:bg-blue-500
                 "
                 >
-                  Registrar pago de ingreso
+                  <Plus className="h-4 w-4" /> Registrar ingreso
                 </button>
               ) : null}
             </div>
           </div>
-          <div className="mt-6 h-px bg-slate-100" />
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead className="bg-slate-50/80 backdrop-blur">
-              <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <table className="min-w-full border-separate border-spacing-0">
+            <thead className="sticky top-0 z-[1] bg-slate-100">
+              <tr className="text-left text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
                 <th className="px-4 py-3 font-medium">Monto</th>
                 <th className="px-4 py-3 font-medium">Tipo</th>
                 <th className="px-4 py-3 font-medium">Cuenta destino</th>
@@ -388,11 +386,11 @@ export function PaymentsTable({
                     border-slate-100
                     text-sm
                     transition-colors
-                    hover:bg-slate-50/70
+                    hover:bg-blue-50/40
                     "
                   >
-                    <td className="px-4 py-4">
-                      <span className="font-semibold text-slate-950">
+                    <td className="whitespace-nowrap px-4 py-4">
+                      <span className="inline-flex items-center gap-2 font-bold tabular-nums text-slate-950"><CircleDollarSign className="h-4 w-4 text-emerald-600" />
                         {formatCurrency(payment.monto)}
                       </span>
                     </td>
@@ -448,17 +446,17 @@ export function PaymentsTable({
       h-9
       items-center
       justify-center
-      rounded-lg
+      rounded-xl
       border
-      border-slate-300
-      bg-white
+      border-slate-200
+      bg-slate-50
       px-4
       text-xs
       font-medium
       text-slate-700
       shadow-sm
       transition-all
-      hover:bg-slate-50
+      hover:border-slate-300 hover:bg-white
       hover:-translate-y-0.5
     "
                       >

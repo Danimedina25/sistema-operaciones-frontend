@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowDown, ArrowLeft } from 'lucide-react';
+import { ArrowDown, ArrowLeft, Landmark } from 'lucide-react';
 import { OperationDetailCard } from '@/modules/operations/components/OperationDetailCard';
 import { PaymentsTable } from '@/modules/operations/components/PaymentsTable';
 import {
@@ -134,16 +134,20 @@ export function OperationDetailView({
 
   const montoPendientePorRetornar = operation.saldoPendienteRetornar
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-2 text-sm text-slate-500">
+    <div className="mx-auto max-w-[1600px] space-y-5 pb-8">
+      <div className="flex items-center justify-between">
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-slate-100 hover:text-slate-900"
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 shadow-sm transition hover:border-slate-300 hover:text-slate-950"
         >
           <ArrowLeft className="h-4 w-4" />
           {backLabel}
         </button>
+        <div className="hidden items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 sm:flex">
+          <Landmark className="h-4 w-4" />
+          Vista financiera
+        </div>
       </div>
 
       <OperationDetailCard
@@ -153,7 +157,7 @@ export function OperationDetailView({
         onOperationUpdated={onOperationUpdated}
       />
 
-      <div ref={paymentsSectionRef}>
+      <div ref={paymentsSectionRef} className="scroll-mt-20">
         <PaymentsTable
           payments={operation.pagos}
           onValidatePayment={(paymentId, comprobanteValidacion) =>
@@ -178,7 +182,7 @@ export function OperationDetailView({
         />
       </div>
 
-      <div ref={returnsSectionRef}>
+      <div ref={returnsSectionRef} className="scroll-mt-20">
         <ReturnPaymentsTable
           returns={returns}
           montoPendientePorRetornar={montoPendientePorRetornar}
@@ -225,11 +229,13 @@ h-14
 w-14
 items-center
 justify-center
-rounded-full
-bg-slate-950
+rounded-2xl
+border
+border-slate-700
+bg-slate-900
 text-white
 shadow-xl
-shadow-blue-500/20
+shadow-slate-950/20
 backdrop-blur
 transition-all
 duration-200

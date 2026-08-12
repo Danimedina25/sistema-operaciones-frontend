@@ -10,6 +10,7 @@ import { useMarkOperationAsInvoiced } from '../hooks/use-mark-operations-as-invo
 import { useLocation } from 'react-router-dom';
 import { paths } from '@/routes/paths.js';
 import { useAuth } from '@/modules/auth/store/auth.context';
+import { BriefcaseBusiness, CalendarDays, CircleDollarSign, ReceiptText, TrendingDown } from 'lucide-react';
 
 interface OperationDetailCardProps {
   operation: PaymentOperationResponse;
@@ -25,7 +26,7 @@ function SummaryItem({
 }: {
   label: string;
   value: React.ReactNode;
-  variant?: 'default' | 'emerald' | 'blue' | 'amber';
+  variant?: 'default' | 'emerald' | 'blue' | 'amber' | 'dark';
 }) {
   const variants = {
     default: {
@@ -44,21 +45,26 @@ function SummaryItem({
       value: 'text-blue-900',
     },
     amber: {
-      container: 'border-amber-200 bg-amber-50',
+      container: 'border-amber-200/80 bg-amber-50/70',
       label: 'text-amber-700',
-      value: 'text-amber-900',
+      value: 'text-amber-950',
+    },
+    dark: {
+      container: 'border-slate-700 bg-slate-800/80',
+      label: 'text-slate-400',
+      value: 'text-white',
     },
   };
 
   const styles = variants[variant];
 
   return (
-    <div className={`rounded-3xl border p-5 shadow-sm ${styles.container} transition-all hover:-translate-y-0.5`}>
-      <p className={`text-xs font-medium uppercase tracking-wide ${styles.label}`}>
+    <div className={`rounded-2xl border p-4 ${styles.container}`}>
+      <p className={`text-[11px] font-semibold uppercase tracking-[0.12em] ${styles.label}`}>
         {label}
       </p>
 
-      <div className={`mt-2 text-sm font-semibold ${styles.value}`}>
+      <div className={`mt-2 text-base font-semibold tabular-nums ${styles.value}`}>
         {value}
       </div>
     </div>
@@ -92,64 +98,73 @@ export function OperationDetailCard({
   );
 
   return (
-    <div className="
-rounded-[2rem]
-border
-border-slate-200/80
-bg-white
-p-8
-shadow-lg
-shadow-slate-950/5
-">
-      <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 md:flex-row md:items-start md:justify-between">
-        <div>
-          <p className="text-sm font-medium text-slate-500">
-            Operación #{operation.id}
-          </p>
+    <div className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-xl shadow-slate-950/[0.06]">
+      <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 px-6 py-6 text-white md:px-8 md:py-7">
+        <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-semibold tracking-wide text-slate-300">
+                <ReceiptText className="h-3.5 w-3.5" />
+                FOLIO #{operation.id}
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-xs text-slate-400">
+                <CalendarDays className="h-3.5 w-3.5" />
+                {formatDate(operation.createdAt)}
+              </span>
+            </div>
+            <h2 className="mt-4 truncate text-2xl font-bold tracking-tight md:text-3xl">
+              {operation.clienteNombre}
+            </h2>
+            <p className="mt-1.5 flex items-center gap-2 text-sm text-slate-400">
+              <BriefcaseBusiness className="h-4 w-4" />
+              Socio comercial: <span className="font-medium text-slate-200">{operation.socioComercialNombre}</span>
+            </p>
+          </div>
 
-          <h2 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">
-            Cliente: {operation.clienteNombre}
-          </h2>
-
-          <p className="mt-2 text-sm text-slate-500">
-            Registrada el {formatDate(operation.createdAt)}
-          </p>
-        </div>
-
-        <div className="self-start">
+          <div className="self-start rounded-xl bg-white p-1 shadow-lg">
           <OperationStatusBadge
             status={operation.estatus}
             isReturn={isReturnRequestDetail}
           />
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <SummaryItem label="Monto de la operación" value={formatCurrency(operation.montoTotal)} variant="dark" />
+          <SummaryItem label="Ingreso validado" value={formatCurrency(operation.montoValidado)} variant="dark" />
+          <SummaryItem label="Pendiente por validar" value={formatCurrency(operation.saldoPendientePorValidar)} variant="dark" />
+          <SummaryItem label="Retorno al cliente" value={formatCurrency(operation.montoTotalDevolverCliente)} variant="dark" />
         </div>
       </div>
+
+      <div className="p-6 md:p-8">
 
       {canReviewCommission &&
         operation.nivelesRedComercial >= 2 &&
         isOperationEditableStatus(operation.estatus) && (
-        <div className="mt-4 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
           <p className="text-sm font-medium text-amber-800">
             Esta operación tiene {operation.nivelesRedComercial} niveles de socios comerciales. Revisa si conviene personalizar los porcentajes de comisión al editarla.
           </p>
         </div>
       )}
 
-      <div className="mt-6">
+      <div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
-            Información general
+          <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
+            Datos de control
           </h3>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           <SummaryItem
             label="Socio comercial"
             value={operation.socioComercialNombre}
           />
 
           <SummaryItem
-            label="Monto total"
-            value={formatCurrency(operation.montoTotal)}
+            label="Fecha de registro"
+            value={formatDate(operation.createdAt)}
           />
 
           <SummaryItem
@@ -160,13 +175,13 @@ shadow-slate-950/5
           />
 
           <SummaryItem
-            label="Monto validado"
-            value={formatCurrency(operation.montoValidado)}
+            label="Pagos registrados"
+            value={`${operation.pagos.length} comprobante${operation.pagos.length === 1 ? '' : 's'}`}
           />
 
           <SummaryItem
-            label="Monto pendiente por validar"
-            value={formatCurrency(operation.saldoPendientePorValidar)}
+            label="Última actualización"
+            value={shouldShowUpdatedAt ? formatDate(operation.updatedAt) : 'Sin cambios posteriores'}
           />
 
           {canViewFinancialDetails && (
@@ -199,25 +214,15 @@ shadow-slate-950/5
             </>
           )}
 
-          {canViewOperationExtras && (
-            <SummaryItem
-              label="Actualizada"
-              value={
-                shouldShowUpdatedAt
-                  ? formatDate(operation.updatedAt)
-                  : '-'
-              }
-            />
-          )}
         </div>
       </div>
 
       {canViewFinancialDetails && (
-        <div className="mt-8 border-t border-slate-200 pt-6">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
+        <div className="mt-8 border-t border-slate-200 pt-7">
+          <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
             Red comercial asignada
           </h3>
-          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80 shadow-sm p-5">
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <div className="rounded-xl border border-slate-200 bg-white p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                 Configuración de red comercial
@@ -235,7 +240,7 @@ shadow-slate-950/5
               </p>
             </div>
 
-            <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
               <div className="rounded-xl border border-slate-200 bg-white p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">
@@ -300,12 +305,13 @@ shadow-slate-950/5
 
       {canViewFinancialDetails && (
         <>
-          <div className="mt-8 border-t border-slate-200 pt-6">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
-              Resumen financiero
-            </h3>
+          <div className="mt-8 rounded-2xl bg-slate-950 p-5 md:p-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-400/10 text-emerald-400"><CircleDollarSign className="h-5 w-5" /></div>
+              <div><h3 className="text-sm font-bold text-white">Resumen financiero</h3><p className="text-xs text-slate-400">Distribución de comisiones y descuentos</p></div>
+            </div>
 
-            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
               <SummaryItem
                 label="Porcentaje comisiones socios comerciales"
                 value={
@@ -352,13 +358,13 @@ shadow-slate-950/5
                     </div>
                   </div>
                 }
-                variant="amber"
+                variant="dark"
               />
 
               <SummaryItem
                 label="Total comisión oficina"
                 value={formatCurrency(operation.montoComisionOficinaTotal)}
-                variant="emerald"
+                variant="dark"
               />
 
               <SummaryItem
@@ -371,29 +377,28 @@ shadow-slate-950/5
                   operation.montoComisionOficinaTotal +
                   operation.montoComisionRedTotal,
                 )}
-                variant="blue"
+                variant="dark"
               />
             </div>
           </div>
 
           <div
             className="
-    mt-6
-    rounded-[2rem]
+    mt-4
+    rounded-2xl
     border
     border-blue-200
     bg-gradient-to-br
     from-blue-50
     to-slate-50
     p-5
-    shadow-sm
   "
           >
-            <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-blue-700"><TrendingDown className="h-4 w-4" />
               Retorno estimado al cliente
             </p>
 
-            <p className="mt-2 text-3xl font-bold text-blue-900">
+            <p className="mt-2 text-3xl font-bold tabular-nums text-blue-950">
               {formatCurrency(operation.montoTotalDevolverCliente)}
             </p>
 
@@ -406,8 +411,7 @@ shadow-slate-950/5
       )}
 
       {canViewOperationExtras && (
-        <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50/80
-shadow-sm p-4">
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
             Observaciones
           </p>
@@ -418,6 +422,7 @@ shadow-sm p-4">
           </p>
         </div>
       )}
+      </div>
     </div>
   );
 }

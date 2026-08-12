@@ -54,7 +54,7 @@ export function OperationStatusBadge({
 
   return (
     <span
-      className={`inline-flex min-w-[140px] items-center justify-center rounded-full px-3 py-1 text-center text-xs font-medium ${style}`}
+      className={`inline-flex min-w-[140px] items-center justify-center rounded-lg border border-current/15 px-3 py-1.5 text-center text-xs font-bold ${style}`}
     >
       {label}
     </span>

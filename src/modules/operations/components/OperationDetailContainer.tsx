@@ -93,8 +93,15 @@ export function OperationDetailContainer({
 
   if (isLoading || isLoadingReturns) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-sm">
-        Cargando detalle de la operación...
+      <div className="mx-auto max-w-[1600px] overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-xl shadow-slate-950/[0.06]">
+        <div className="animate-pulse bg-gradient-to-r from-slate-950 to-slate-800 p-8">
+          <div className="h-4 w-28 rounded bg-white/10" />
+          <div className="mt-4 h-8 w-72 max-w-full rounded bg-white/10" />
+          <div className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {[1, 2, 3, 4].map((item) => <div key={item} className="h-20 rounded-2xl bg-white/5" />)}
+          </div>
+        </div>
+        <p className="p-6 text-center text-sm font-medium text-slate-500">Preparando resumen financiero...</p>
       </div>
     );
   }
@@ -110,7 +117,7 @@ export function OperationDetailContainer({
           Regresar
         </button>
 
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm font-medium text-red-700 shadow-sm">
           {error ?? 'No se pudo cargar el detalle de la operación.'}
         </div>
       </div>
