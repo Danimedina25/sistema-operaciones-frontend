@@ -16,7 +16,7 @@ export function Pagination({
   if (totalPages <= 1 && totalElements === 0) return null;
 
   return (
-    <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3">
+    <div className="flex flex-col items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row">
       <div className="text-sm text-slate-500">
         {totalElements > 0
           ? `Mostrando página ${currentPage} de ${totalPages} · ${totalElements} registros en total`
@@ -28,12 +28,12 @@ export function Pagination({
           type="button"
           disabled={currentPage === 1 || isLoading}
           onClick={() => onPageChange(currentPage - 1)}
-          className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Anterior
         </button>
 
-        <span className="text-sm text-slate-600">
+        <span className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold tabular-nums text-white">
           {currentPage} / {Math.max(totalPages, 1)}
         </span>
 
@@ -41,7 +41,7 @@ export function Pagination({
           type="button"
           disabled={currentPage >= totalPages || isLoading}
           onClick={() => onPageChange(currentPage + 1)}
-          className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Siguiente
         </button>

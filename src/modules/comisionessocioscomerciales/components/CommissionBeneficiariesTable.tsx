@@ -74,15 +74,15 @@ export function CommissionBeneficiariesTable({
         );
 
     return (
-        <div className="rounded-2xl border border-slate-200 bg-white">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/5">
 
             <div className="overflow-x-auto">
 
                 <table className="min-w-full">
 
-                    <thead className="bg-slate-50">
+                    <thead className="bg-slate-100">
 
-                        <tr className="text-left text-sm text-slate-600">
+                        <tr className="text-left text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
 
                             <th className="px-4 py-3 text-center">
                                 Beneficiario
@@ -144,7 +144,7 @@ export function CommissionBeneficiariesTable({
 
                                     <tr
                                         key={`${beneficiary.beneficiaryType}-${beneficiary.beneficiaryId}`}
-                                        className="border-t border-slate-200 text-sm"
+                                        className="border-t border-slate-200 text-sm transition-colors hover:bg-blue-50/40"
                                     >
 
                                         <td className="px-4 py-4 text-center">

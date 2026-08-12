@@ -1,6 +1,6 @@
 export function CommissionOperationsTableSkeleton() {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white">
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/5">
       <div className="animate-pulse p-4">
         {Array.from({ length: 6 }).map((_, index) => (
           <div

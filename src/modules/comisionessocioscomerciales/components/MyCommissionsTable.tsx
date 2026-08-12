@@ -81,13 +81,13 @@ export function MyCommissionsTable({
         );
 
     return (
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/5">
 
             <div className="overflow-x-auto">
 
                 <table className="min-w-full">
 
-                    <thead className="bg-slate-50">
+                    <thead className="bg-slate-100">
 
                         <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
 

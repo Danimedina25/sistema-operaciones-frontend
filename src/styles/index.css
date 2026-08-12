@@ -18,6 +18,73 @@ button {
   @apply cursor-pointer;
 }
 
+/* Sistema visual empresarial compartido para formularios y tablas. */
+main form label,
+.modal-content form label {
+  color: #334155;
+  font-weight: 600;
+}
+
+main input:not([type='checkbox']):not([type='radio']):not([type='file']),
+main select,
+main textarea,
+.modal-content input:not([type='checkbox']):not([type='radio']):not([type='file']),
+.modal-content select,
+.modal-content textarea {
+  border-color: #cbd5e1;
+  border-radius: 0.75rem;
+  background-color: #fff;
+  color: #0f172a;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+main input:not([type='checkbox']):not([type='radio']):not([type='file']):focus,
+main select:focus,
+main textarea:focus,
+.modal-content input:not([type='checkbox']):not([type='radio']):not([type='file']):focus,
+.modal-content select:focus,
+.modal-content textarea:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgb(59 130 246 / 0.1);
+  outline: none;
+}
+
+main table,
+.modal-content table {
+  font-variant-numeric: tabular-nums;
+}
+
+main table thead,
+.modal-content table thead {
+  background: #f1f5f9;
+}
+
+main table thead th,
+.modal-content table thead th {
+  color: #475569;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+main table tbody tr,
+.modal-content table tbody tr {
+  transition: background-color 150ms ease;
+}
+
+main table tbody tr:hover,
+.modal-content table tbody tr:hover {
+  background-color: rgb(239 246 255 / 0.55);
+}
+
+main table tbody td,
+.modal-content table tbody td {
+  border-color: #e2e8f0;
+}
+
 @keyframes return-pickup-highlight {
   0% {
     box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.35);

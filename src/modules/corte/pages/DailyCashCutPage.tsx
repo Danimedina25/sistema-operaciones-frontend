@@ -9,6 +9,7 @@ import type {
 import { useDailyCashCut } from '../hooks/use-daily-cash-cut';
 import { formatDate } from '@/modules/operations/utils/operation-formatters';
 import { DateRangeCalendarField } from '@/shared/components/ui/DateRangeCalendarField';
+import { ArrowDownToLine, ArrowUpFromLine, Building2, CalendarDays, Landmark, LoaderCircle, Scale } from 'lucide-react';
 
 function todayISO() {
     return new Date().toISOString().slice(0, 10);
@@ -121,12 +122,12 @@ export default function DailyCashCutPage() {
 
     return (
 
-        <div className="relative">
+        <div className="relative mx-auto max-w-[1600px]">
             {showLoadingOverlay ? (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-[1px]">
-                    <div className="flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white px-6 py-5 shadow-xl">
-                        <div className="h-9 w-9 animate-spin rounded-full border-4 border-slate-200 border-t-slate-900" />
-                        <p className="text-sm font-medium text-slate-700">
+                    <div className="flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-slate-950 px-7 py-6 text-white shadow-2xl">
+                        <LoaderCircle className="h-8 w-8 animate-spin text-blue-400" />
+                        <p className="text-sm font-semibold text-slate-200">
                             Calculando corte...
                         </p>
                     </div>
@@ -135,13 +136,13 @@ export default function DailyCashCutPage() {
 
             <div className={`space-y-6 ${showLoadingOverlay ? 'pointer-events-none opacity-60' : ''}`}>
                 <div className="space-y-6">
-                    <section className="rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
+                    <section className="rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
                         <div className="grid grid-cols-2 gap-2">
                             <button
                                 type="button"
                                 onClick={() => setMainView('cashCuts')}
                                 className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${mainView === 'cashCuts'
-                                    ? 'bg-slate-900 text-white shadow-sm'
+                                    ? 'bg-slate-900 text-white shadow-md'
                                     : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                                     }`}
                             >
@@ -152,7 +153,7 @@ export default function DailyCashCutPage() {
                                 type="button"
                                 onClick={() => setMainView('bankBalances')}
                                 className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${mainView === 'bankBalances'
-                                    ? 'bg-slate-900 text-white shadow-sm'
+                                    ? 'bg-slate-900 text-white shadow-md'
                                     : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                                     }`}
                             >
@@ -160,29 +161,30 @@ export default function DailyCashCutPage() {
                             </button>
                         </div>
                     </section>
-                    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <section className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-xl shadow-slate-950/[0.06]">
+                        <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 p-6 text-white">
                         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                             <div>
-                                <p className="text-sm font-medium text-slate-500">
-                                    Cortes y saldos
+                                <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-blue-300">
+                                    <Scale className="h-4 w-4" /> Cortes y saldos
                                 </p>
 
-                                <h1 className="mt-1 text-2xl font-semibold text-slate-900">
+                                <h1 className="mt-2 text-2xl font-bold tracking-tight text-white">
                                     {pageTitle}
                                 </h1>
 
-                                <p className="mt-1 text-sm text-slate-500">
+                                <p className="mt-1 text-sm text-slate-400">
                                     {pageDescription}
                                 </p>
                             </div>
                             {isCashCutsView ? (
-                                <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1">
+                                <div className="inline-flex rounded-xl border border-white/10 bg-white/5 p-1">
                                     <button
                                         type="button"
                                         onClick={() => setDateMode('daily')}
                                         className={`rounded-lg px-4 py-2 text-sm font-medium transition ${dateMode === 'daily'
-                                            ? 'bg-white text-slate-900 shadow-sm'
-                                            : 'text-slate-500 hover:text-slate-800'
+                                            ? 'bg-white text-slate-950 shadow-sm'
+                                            : 'text-slate-400 hover:text-white'
                                             }`}
                                     >
                                         Día
@@ -192,8 +194,8 @@ export default function DailyCashCutPage() {
                                         type="button"
                                         onClick={() => setDateMode('range')}
                                         className={`rounded-lg px-4 py-2 text-sm font-medium transition ${dateMode === 'range'
-                                            ? 'bg-white text-slate-900 shadow-sm'
-                                            : 'text-slate-500 hover:text-slate-800'
+                                            ? 'bg-white text-slate-950 shadow-sm'
+                                            : 'text-slate-400 hover:text-white'
                                             }`}
                                     >
                                         Rango de fechas
@@ -201,9 +203,9 @@ export default function DailyCashCutPage() {
                                 </div>
                             ) : null}
 
-                        </div>
+                        </div></div>
 
-                        <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
+                        <div className="grid gap-4 bg-white p-6 lg:grid-cols-[1fr_auto] lg:items-end">
                             {isBankBalancesView || isDailyMode ? (
                                 <div>
                                     <label className="mb-1 block text-sm font-medium text-slate-700">
@@ -285,13 +287,15 @@ export default function DailyCashCutPage() {
 
                     {isCashCutsView && currentData ? (
                         <>
-                            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                                <div className="flex flex-col gap-2 border-b border-slate-100 pb-4 md:flex-row md:items-center md:justify-between">
+                            <section className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-xl shadow-slate-950/[0.06]">
+                                <div className="bg-gradient-to-r from-slate-950 to-slate-800 px-6 py-5 text-white">
+                                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                                     <div>
-                                        <h2 className="text-lg font-semibold text-slate-900">
+                                        <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-blue-300"><CalendarDays className="h-4 w-4" /> Resumen del periodo</p>
+                                        <h2 className="mt-1 text-xl font-bold text-white">
                                             {cashCutTitle}
                                         </h2>
-                                        <p className="mt-1 text-sm text-slate-500">
+                                        <p className="mt-1 text-sm text-slate-400">
                                             {isDailyMode
                                                 ? dailyCut?.registrado
                                                     ? 'Corte registrado en sistema.'
@@ -313,9 +317,9 @@ export default function DailyCashCutPage() {
                   {dailyCut?.registrado ? 'Registrado' : 'En vivo'}
                 </span>
               ) : null} */}
-                                </div>
+                                </div></div>
 
-                                <div className="mt-5 grid gap-4 md:grid-cols-3">
+                                <div className="grid gap-4 p-6 md:grid-cols-3">
                                     <SummaryCard
                                         label="Saldo inicial"
                                         value={currentData.saldoInicial}
@@ -397,12 +401,12 @@ export default function DailyCashCutPage() {
                                 />
                             </div>
 
-                            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                                <h3 className="text-base font-semibold text-slate-900">
+                            <section className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-lg shadow-slate-950/[0.05]">
+                                <div className="flex items-center gap-2 bg-slate-900 px-5 py-4 text-white"><Scale className="h-4 w-4 text-blue-300" /><h3 className="text-sm font-bold">
                                     Resumen operativo
-                                </h3>
+                                </h3></div>
 
-                                <div className="mt-4 overflow-hidden rounded-xl border border-slate-200">
+                                <div className="m-5 overflow-hidden rounded-xl border border-slate-200">
                                     <table className="min-w-full divide-y divide-slate-200 text-sm">
                                         <tbody className="divide-y divide-slate-100 bg-white">
                                             <SummaryRow
@@ -482,12 +486,12 @@ function SummaryCard({
     }[variant];
 
     return (
-        <div className={`rounded-2xl border p-5 ${cardStyles}`}>
-            <p className={`text-sm font-medium ${labelStyles}`}>
+        <div className={`rounded-2xl border p-5 shadow-sm ${cardStyles}`}>
+            <p className={`text-xs font-bold uppercase tracking-[0.1em] ${labelStyles}`}>
                 {label}
             </p>
 
-            <p className="mt-3 text-2xl font-semibold">
+            <p className="mt-3 text-2xl font-bold tabular-nums">
                 {formatCurrency(value)}
             </p>
 
@@ -531,10 +535,13 @@ function BreakdownCard({
                 : 'border-slate-200 bg-slate-50 text-slate-900';
 
     return (
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <section className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-lg shadow-slate-950/[0.05]">
+            <div className={`h-1 ${highlight === 'positive' ? 'bg-emerald-500' : highlight === 'negative' ? 'bg-rose-500' : 'bg-blue-500'}`} />
+            <div className="p-5">
             <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                    <h3 className="text-base font-semibold text-slate-900">
+                    <h3 className="flex items-center gap-2 text-base font-bold text-slate-900">
+                        {highlight === 'positive' ? <ArrowDownToLine className="h-5 w-5 text-emerald-600" /> : <ArrowUpFromLine className="h-5 w-5 text-rose-600" />}
                         {title}
                     </h3>
                     <p className="mt-1 max-w-xl text-sm text-slate-500">
@@ -548,7 +555,7 @@ function BreakdownCard({
                     <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
                         {totalLabel}
                     </p>
-                    <p className="mt-1 text-xl font-bold">
+                    <p className="mt-1 text-xl font-bold tabular-nums">
                         {formatCurrency(total)}
                     </p>
                 </div>
@@ -564,7 +571,7 @@ function BreakdownCard({
                             <span className="text-sm font-medium text-slate-600">
                                 {row.label}
                             </span>
-                            <span className="text-sm font-semibold text-slate-900">
+                            <span className="text-sm font-bold tabular-nums text-slate-900">
                                 {formatCurrency(row.value)}
                             </span>
                         </div>
@@ -576,7 +583,7 @@ function BreakdownCard({
                         ) : null}
                     </div>
                 ))}
-            </div>
+            </div></div>
         </section>
     );
 }
@@ -640,22 +647,23 @@ function BankBalancesSection({
     );
 
     return (
-        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex flex-col gap-3 border-b border-slate-100 pb-4 md:flex-row md:items-center md:justify-between">
+        <section className="mt-6 overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-xl shadow-slate-950/[0.06]">
+            <div className="flex flex-col gap-3 bg-gradient-to-r from-slate-950 to-slate-800 p-6 text-white md:flex-row md:items-center md:justify-between">
                 <div>
-                    <h3 className="text-base font-semibold text-slate-900">
+                    <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-blue-300"><Landmark className="h-4 w-4" /> Posición bancaria</p>
+                    <h3 className="mt-1 text-lg font-bold text-white">
                         {title}
                     </h3>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="mt-1 text-sm text-slate-400">
                         Consulta el saldo total agrupado por banco y el detalle de cada cuenta bancaria.
                     </p>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-right">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-right">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                         Saldo total bancario
                     </p>
-                    <p className="mt-1 text-xl font-bold text-slate-900">
+                    <p className="mt-1 text-xl font-bold tabular-nums text-white">
                         {formatCurrency(totalGeneral)}
                     </p>
                 </div>
@@ -668,7 +676,7 @@ function BankBalancesSection({
             ) : null}
 
             {!isLoading && safeGroups.length > 0 ? (
-                <div className="mt-5 space-y-3">
+                <div className="space-y-3 p-5">
                     {safeGroups.map((group) => (
                         <BankGroupAccordion
                             key={group.banco}
@@ -691,14 +699,14 @@ function BankGroupAccordion({
     const [isOpen, setIsOpen] = useState(false);
 
     return (
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <button
                 type="button"
                 onClick={() => setIsOpen((current) => !current)}
-                className="flex w-full items-center justify-between gap-4 bg-slate-50 px-4 py-4 text-left transition hover:bg-slate-100"
+                className="flex w-full items-center justify-between gap-4 bg-slate-100 px-4 py-4 text-left transition hover:bg-slate-200/70"
             >
                 <div>
-                    <p className="text-sm font-semibold text-slate-900">
+                    <p className="flex items-center gap-2 text-sm font-bold text-slate-900"><Building2 className="h-4 w-4 text-blue-600" />
                         {group.banco}
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
@@ -711,7 +719,7 @@ function BankGroupAccordion({
                         <p className="text-xs font-medium text-slate-500">
                             Saldo banco
                         </p>
-                        <p className="text-base font-bold text-slate-900">
+                        <p className="text-base font-bold tabular-nums text-slate-900">
                             {formatCurrency(group.saldoTotalBanco)}
                         </p>
                     </div>

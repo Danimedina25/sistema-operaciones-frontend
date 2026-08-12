@@ -110,8 +110,8 @@ export function BankAccountsTable({
     <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="overflow-x-auto">
         <table className="min-w-full">
-          <thead className="bg-slate-50">
-            <tr className="text-left text-sm text-slate-600">
+          <thead className="bg-slate-100">
+            <tr className="text-left text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
               <th className="px-4 py-3 font-medium">Banco</th>
               <th className="px-4 py-3 font-medium">Titular</th>
               <th className="px-4 py-3 font-medium">Número de cuenta</th>
@@ -130,7 +130,7 @@ export function BankAccountsTable({
               return (
                 <tr
                   key={account.id}
-                  className="border-t border-slate-200 text-sm"
+                  className="border-t border-slate-200 text-sm transition-colors hover:bg-blue-50/40"
                 >
                   <td className="px-4 py-4 font-medium text-slate-900">
                     {account.banco}

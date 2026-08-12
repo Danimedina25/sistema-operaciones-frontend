@@ -45,11 +45,11 @@ export function ReturnsForPaymentTable({
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white">
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/5">
       <div className="overflow-x-auto">
         <table className="min-w-full">
-          <thead className="bg-slate-50">
-            <tr className="text-left text-sm text-slate-600">
+          <thead className="bg-slate-100">
+            <tr className="text-left text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
               <th className="px-4 py-3 font-medium text-center">
                 Folio
               </th>
