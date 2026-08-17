@@ -6,16 +6,21 @@ export type NotificationType =
   | 'PAYMENT_VALIDATED'
   | 'PAYMENT_REJECTED'
   | 'OPERATION_STATUS_CHANGED'
+  | 'COMMISSION_PAID'
+  | 'CASH_RETURN_REQUESTED'
   | 'SYSTEM_ALERT';
 
 export type NotificationModule =
   | 'OPERACIONES'
   | 'PAGOS'
+  | 'COMISIONES'
   | 'SISTEMA';
 
 export type NotificationReferenceType =
   | 'PAYMENT_OPERATION'
   | 'OPERATION_PAYMENT'
+  | 'COMMISSION'
+  | 'RETURN_PAYMENT'
   | 'NONE';
 
 export type NotificationPriority =

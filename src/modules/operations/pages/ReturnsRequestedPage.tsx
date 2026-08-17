@@ -8,6 +8,7 @@ import {
   OperationsFilters as OperationsFiltersType} from '../types/operations.types.ts';
 import { buildReturnsRequestedDetailPath } from '@/routes/paths';
 import { ReturnsRequestedTable } from '../components/returns/ReturnsRequestedTable';
+import { useUrlFilters } from '@/shared/hooks/use-url-filters';
 
 
 const initialFilters: OperationsFiltersType = {
@@ -18,6 +19,12 @@ const initialFilters: OperationsFiltersType = {
   startDate: '',
   endDate: '',
   activo: 'ACTIVE',
+  paymentTypes: '',
+  paymentStatus: '',
+  returnStatuses: '',
+  cuentaDestinoId: 0,
+  banco: '',
+  socioComercialId: 0,
 };
 
 const PAGE_SIZE = 10;
@@ -25,8 +32,7 @@ const PAGE_SIZE = 10;
 export default function ReturnsRequestedPage() {
   const navigate = useNavigate();
 
-  const [filters, setFilters] =
-    useState<OperationsFiltersType>(initialFilters);
+  const { filters, setFilters } = useUrlFilters<OperationsFiltersType>(initialFilters);
 
   const [currentPage, setCurrentPage] = useState(0);
 

@@ -19,6 +19,7 @@ import { useUpdateRequestReturnPayment } from '../hooks/returns/use-update-reque
 import { useScheduleCashReturnPickup } from '../hooks/returns/use-schedule-cash-return-pickup';
 import { useConfirmCashReturnPickup } from '../hooks/returns/use-confirm-cash-return-pickup';
 import { useMarkCashReturnDelivered } from '../hooks/returns/use-mark-cash-return-delivered';
+import { MarkCashReturnDeliveredModal } from '../components/returns/MarkCashReturnDeliveredModal';
 import { formatCurrency } from '../utils/operation-formatters';
 
 export default function OperationDetailPage() {
@@ -429,46 +430,15 @@ export default function OperationDetailPage() {
         </div>
       </Modal>
 
-      <Modal
-        open={isMarkCashDeliveredModalOpen}
-        title="Marcar efectivo como entregado"
+      <MarkCashReturnDeliveredModal
+        returnPayment={isMarkCashDeliveredModalOpen ? selectedReturnPayment : null}
+        isSubmitting={isSubmittingMarkCashDelivered}
+        onConfirm={(returnPaymentId) => void submitMarkCashReturnDelivered(returnPaymentId)}
         onClose={() => {
           setIsMarkCashDeliveredModalOpen(false);
           setSelectedReturnPayment(null);
         }}
-      >
-        <p className="text-sm text-slate-600">
-          ¿Confirmas que ya entregaste el retorno en efectivo por{' '}
-          <span className="font-semibold text-slate-900">
-            {selectedReturnPayment ? formatCurrency(selectedReturnPayment.monto) : ''}
-          </span>{' '}
-          de esta operación? El socio comercial podrá confirmar la recepción después de esto.
-        </p>
-
-        <div className="mt-6 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              setIsMarkCashDeliveredModalOpen(false);
-              setSelectedReturnPayment(null);
-            }}
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            disabled={isSubmittingMarkCashDelivered}
-            onClick={() =>
-              selectedReturnPayment &&
-              submitMarkCashReturnDelivered(selectedReturnPayment.id)
-            }
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
-          >
-            {isSubmittingMarkCashDelivered ? 'Guardando...' : 'Sí, marcar como entregado'}
-          </button>
-        </div>
-      </Modal>
+      />
 
       <Modal
         open={isEditReturnModalOpen}

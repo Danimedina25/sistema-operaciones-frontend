@@ -10,6 +10,7 @@ import {
 import { PaymentOperationResponse } from '../types/operations.types.ts';
 import { useMarkOperationAsInvoiced } from '../hooks/use-mark-operations-as-invoiced.js';
 import { useAuth } from '@/modules/auth/store/auth.context.js';
+import { ProgressBar } from '@/shared/components/ui/ProgressBar';
 
 interface OperationsTableProps {
   operations: PaymentOperationResponse[];
@@ -144,6 +145,7 @@ export function OperationsTable({
               <th className="px-4 py-3 font-medium text-center">Cliente primario</th>
               <th className="px-4 py-3 font-medium text-center">Socio comercial</th>
               <th className="px-4 py-3 font-medium text-center">Fecha de creación</th>
+              <th className="px-4 py-3 font-medium text-center">Última actualización</th>
               <th className="px-4 py-3 font-medium text-center">Monto total</th>
               <th className="px-4 py-3 font-medium text-center">Monto ingresado</th>
               {/*  <th className="px-4 py-3 font-medium text-center">Red comercial</th> */}
@@ -157,7 +159,7 @@ export function OperationsTable({
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-sm text-slate-500">
+                <td colSpan={10} className="px-4 py-8 text-center text-sm text-slate-500">
                   Cargando operaciones...
                 </td>
               </tr>
@@ -198,18 +200,30 @@ export function OperationsTable({
                     </td>
 
                     <td className="px-4 py-4 text-slate-600">
-                      {formatCurrency(operation.montoTotal)}
+                      {operation.updatedAt &&
+                      operation.createdAt &&
+                      new Date(operation.updatedAt).getTime() !==
+                        new Date(operation.createdAt).getTime()
+                        ? formatDate(operation.updatedAt)
+                        : 'Sin cambios posteriores'}
                     </td>
 
                     <td className="px-4 py-4 text-slate-600">
+                      {formatCurrency(operation.montoTotal)}
+                    </td>
+
+                    <td className="min-w-[160px] px-4 py-4 text-slate-600">
                       <div>
                         {operation.pagos.length} pago
                         {operation.pagos.length === 1 ? '' : 's'} registrado
                         {operation.pagos.length === 1 ? '' : 's'}
                       </div>
-                      <div className="mt-1 text-xs text-slate-400">
-                        {formatCurrency(operation.montoValidado)} validados
-                      </div>
+                      <ProgressBar
+                        className="mt-2"
+                        total={operation.montoTotal}
+                        registered={operation.montoRegistrado}
+                        validated={operation.montoValidado}
+                      />
                     </td>
 
                     {/*                     <td className="px-4 py-4 text-slate-600">

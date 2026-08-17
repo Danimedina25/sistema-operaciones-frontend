@@ -57,6 +57,37 @@ export interface OperationsFilters {
   startDate: string;
   endDate: string;
   activo: OperationActivoFilter;
+  /**
+   * Filtra operaciones con al menos un pago de alguno de estos tipos.
+   * Lista separada por comas (ej. "TRANSFERENCIA,DEPOSITO,CHEQUE") — se
+   * guarda como string (no array) para poder sincronizarse con la URL vía
+   * `useUrlFilters`, que solo admite valores primitivos.
+   */
+  paymentTypes: string;
+  /** Filtra operaciones con al menos un pago con este estatus. */
+  paymentStatus: PaymentStatus | '';
+  /**
+   * Filtra operaciones cuyo(s) retorno(s) tengan alguno de estos estatus
+   * (solo aplica a los listados de retornos solicitados). Mismo formato
+   * CSV que `paymentTypes`.
+   */
+  returnStatuses: string;
+  /** Filtra operaciones con al menos un pago hacia esta cuenta destino. 0 = sin filtro. */
+  cuentaDestinoId: number;
+  /** Filtra operaciones con al menos un pago hacia una cuenta de este banco. */
+  banco: string;
+  /** Filtra operaciones de este socio comercial (nivel 1). 0 = sin filtro. */
+  socioComercialId: number;
+}
+
+export function parsePaymentTypesFilter(value: string): PaymentType[] {
+  if (!value.trim()) return [];
+  return value.split(',').filter(Boolean) as PaymentType[];
+}
+
+export function parseReturnStatusesFilter(value: string): ReturnPaymentStatus[] {
+  if (!value.trim()) return [];
+  return value.split(',').filter(Boolean) as ReturnPaymentStatus[];
 }
 
 export interface CreateOperationRequest {
@@ -242,6 +273,9 @@ export interface ReturnPaymentResponse {
   id: number;
   operationId: number;
   clientId: number;
+  clienteNombre?: string | null;
+  socioComercialNombre?: string | null;
+  socioComercialTelefono?: string | null;
   monto: number;
   tipoPago: PaymentType;
   estatus: ReturnPaymentStatus;
@@ -270,6 +304,7 @@ export interface ReturnPaymentResponse {
   fechaSolicitud: string;
   fechaPago?: string | null;
   fechaEntrega?: string | null;
+  fechaConfirmacionRecoleccion?: string | null;
 
   autorizadoParaRecibirEfectivo1?: string;
   autorizadoParaRecibirEfectivo2?: string;
@@ -301,5 +336,6 @@ export type ConfirmCashReturnPickupApiResponse =
 export type MarkCashReturnDeliveredApiResponse =
   ApiResponse<ReturnPaymentResponse>;
 export type ReturnPaymentsListApiResponse = ApiResponse<ReturnPaymentResponse[]>;
+export type ReturnPaymentsPageApiResponse = ApiResponse<PageResponse<ReturnPaymentResponse>>;
 export type ReturnDestinationAccountSuggestionsApiResponse =
   ApiResponse<ReturnDestinationAccountSuggestion[]>;

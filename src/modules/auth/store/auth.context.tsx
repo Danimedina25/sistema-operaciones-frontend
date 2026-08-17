@@ -17,7 +17,7 @@ interface AuthContextValue {
   isLoading: boolean;
   login: (authData: AuthResponse, rememberMe?: boolean) => void;
   logout: () => void;
-  hasRole: (roles: RoleName | RoleName[]) => boolean;
+  hasRole: (roles: RoleName | readonly RoleName[]) => boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const hasRole = useCallback(
-    (roles: RoleName | RoleName[]) => {
+    (roles: RoleName | readonly RoleName[]) => {
         if (!user) return false;
 
         const allowedRoles = Array.isArray(roles) ? roles : [roles];

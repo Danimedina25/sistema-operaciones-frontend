@@ -19,6 +19,7 @@ export const paths = {
   returnsforrequest: '/retornos-por-solicitar',
   returnsRequested: '/retornos-solicitados',
   returnsforpayment: '/retornos-por-pagar',
+  todayCashDeliveries: '/entregas-de-hoy',
 
   returnRequestDetail:
     '/retornos-por-solicitar/:operationId',

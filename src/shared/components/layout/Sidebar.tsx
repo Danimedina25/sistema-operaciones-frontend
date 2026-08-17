@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
+  Gauge,
   Users,
   Landmark,
   UserSquare,
@@ -12,98 +13,115 @@ import {
   LogOut,
   BanknoteArrowDown,
   ClipboardCheck,
-  Settings
+  Settings,
+  Clock
 } from 'lucide-react';
 
 import { paths } from '@/routes/paths';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { cn } from '@/shared/lib/cn';
 import { formatRoles } from '@/shared/utils/role-labels';
+import { ROUTE_ACCESS } from '@/shared/constants/access-control';
+import { usePendingPaymentsCount } from '@/modules/operations/hooks/use-pending-payments-count';
 import type { RoleName } from '@/modules/auth/types/auth.types';
 
 interface NavItem {
   to: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  allowedRoles?: RoleName[];
+  allowedRoles?: readonly RoleName[];
 }
 
 const navItems: NavItem[] = [
   {
+    to: paths.dashboard,
+    label: 'Dashboard',
+    icon: Gauge,
+    allowedRoles: ['GERENTE', 'DIRECCION', 'ADMIN'],
+  },
+  {
     to: paths.corte,
     label: 'Cortes y saldos',
     icon: LayoutDashboard,
-    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION'],
+    allowedRoles: ROUTE_ACCESS.corte,
   },
   {
     to: paths.users,
     label: 'Usuarios',
     icon: Users,
-    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION',],
+    allowedRoles: ROUTE_ACCESS.users,
   },
   {
     to: paths.bankAccounts,
     label: 'Cuentas bancarias',
     icon: Landmark,
-    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION', 'AUXILIAR_CUENTAS', 'JEFA_CUENTAS'],
+    allowedRoles: ROUTE_ACCESS.bankAccounts,
   },
   {
     to: paths.clientes,
     label: 'Clientes',
     icon: UserSquare,
-    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION', 'SOCIO_COMERCIAL'],
+    allowedRoles: ROUTE_ACCESS.clientes,
   },
   {
     to: paths.mycomercialpartners,
     label: 'Mi red de socios comerciales',
     icon: Network,
-    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION', 'SOCIO_COMERCIAL'],
+    allowedRoles: ROUTE_ACCESS.mycomercialpartners,
   },
   {
     to: paths.operations,
     label: 'Operaciones',
     icon: ClipboardList,
-    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION', 'SOCIO_COMERCIAL', 'JEFA_CAJAS', 'JEFA_CUENTAS', 'AUXILIAR_CUENTAS'],
+    allowedRoles: ROUTE_ACCESS.operations,
   },
   {
     to: paths.returnsforrequest,
     label: 'Retornos por solicitar',
     icon: HandCoins,
-    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION', 'SOCIO_COMERCIAL'],
+    allowedRoles: ROUTE_ACCESS.returnsforrequest,
   },
   {
     to: paths.returnsRequested,
     label: 'Retornos solicitados',
     icon: ClipboardCheck,
-    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION', 'SOCIO_COMERCIAL'],
+    allowedRoles: ROUTE_ACCESS.returnsRequested,
   },
   {
     to: paths.returnsforpayment,
     label: 'Retornos por pagar',
     icon: BanknoteArrowDown,
-    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION', 'JEFA_CAJAS', 'JEFA_CUENTAS', 'AUXILIAR_CUENTAS'],
+    allowedRoles: ROUTE_ACCESS.returnsforpayment,
+  },
+  {
+    to: paths.todayCashDeliveries,
+    label: 'Entregas de hoy',
+    icon: Clock,
+    allowedRoles: ROUTE_ACCESS.todayCashDeliveries,
   },
   {
     to: paths.comisionessocios,
     label: 'Pago de comisiones a socios comerciales',
     icon: BadgeDollarSign,
-    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION'],
+    allowedRoles: ROUTE_ACCESS.comisionessocios,
   },
   {
     to: paths.miscomisiones,
     label: 'Mis comisiones',
     icon: BadgeDollarSign,
-    allowedRoles: ['ADMIN', 'SOCIO_COMERCIAL'],
+    allowedRoles: ROUTE_ACCESS.miscomisiones,
   },
   {
     to: paths.configuraciones,
     label: 'Configuraciones',
     icon: Settings,
-    allowedRoles: ['ADMIN', 'GERENTE', 'DIRECCION'],
+    allowedRoles: ROUTE_ACCESS.configuraciones,
   },
 ];
 export function Sidebar() {
   const { logout, user, hasRole } = useAuth();
+  const { count: pendingPaymentsCount, enabled: showPendingPaymentsBadge } =
+    usePendingPaymentsCount();
 
   const visibleNavItems = navItems.filter((item) => {
     if (!item.allowedRoles) return true;
@@ -135,15 +153,22 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto p-4">
-        {visibleNavItems.map(({ to, label, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) =>
-              cn(
-                'flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200',
-                isActive
-                  ? `
+        {visibleNavItems.map(({ to, label, icon: Icon }) => {
+          const showBadge =
+            showPendingPaymentsBadge &&
+            to === paths.operations &&
+            pendingPaymentsCount !== null &&
+            pendingPaymentsCount > 0;
+
+          return (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200',
+                  isActive
+                    ? `
         bg-gradient-to-r
         from-blue-600
         to-blue-500
@@ -151,18 +176,27 @@ export function Sidebar() {
         shadow-lg
         shadow-blue-500/20
       `
-                  : `
+                    : `
         text-slate-300
         hover:bg-white/10
         hover:text-white
       `,
-              )
-            }
-          >
-            <Icon className="h-4 w-4 shrink-0" />
-            {label}
-          </NavLink>
-        ))}
+                )
+              }
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              <span className="flex-1">{label}</span>
+              {showBadge && (
+                <span
+                  title="Pagos pendientes de validación"
+                  className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-500 px-1.5 text-[11px] font-bold text-slate-950"
+                >
+                  {pendingPaymentsCount}
+                </span>
+              )}
+            </NavLink>
+          );
+        })}
       </nav>
 
       <div className="border-t border-white/10 p-4">

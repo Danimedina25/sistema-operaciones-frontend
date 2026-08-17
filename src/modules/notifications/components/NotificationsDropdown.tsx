@@ -1,7 +1,9 @@
 import type { NotificationResponse } from '@/modules/notifications/types/notifications.types';
 import {
   AlertTriangle,
+  BadgeDollarSign,
   BellOff,
+  Banknote,
   Check,
   CheckCheck,
   ChevronRight,
@@ -74,6 +76,14 @@ const notificationPresentation = {
     icon: RefreshCw,
     iconClassName: 'bg-violet-50 text-violet-600',
   },
+  COMMISSION_PAID: {
+    icon: BadgeDollarSign,
+    iconClassName: 'bg-emerald-50 text-emerald-600',
+  },
+  CASH_RETURN_REQUESTED: {
+    icon: Banknote,
+    iconClassName: 'bg-amber-50 text-amber-600',
+  },
   SYSTEM_ALERT: {
     icon: AlertTriangle,
     iconClassName: 'bg-orange-50 text-orange-600',
@@ -83,6 +93,7 @@ const notificationPresentation = {
 const moduleLabels = {
   OPERACIONES: 'Operaciones',
   PAGOS: 'Pagos',
+  COMISIONES: 'Comisiones',
   SISTEMA: 'Sistema',
 } as const;
 

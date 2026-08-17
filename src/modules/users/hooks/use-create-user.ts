@@ -22,6 +22,7 @@ export function useCreateUser(options?: UseCreateUserOptions) {
         nombre: values.nombre.trim(),
         correo: values.correo.trim().toLowerCase(),
         roleId: values.roleId,
+        telefono: values.telefono?.trim() || undefined,
 
         appliesToNetwork: isSocioComercial
           ? values.appliesToNetwork

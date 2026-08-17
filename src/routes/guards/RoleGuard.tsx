@@ -4,7 +4,7 @@ import type { RoleName } from '@/modules/auth/types/auth.types';
 import { paths } from '@/routes/paths';
 
 interface RoleGuardProps {
-  allowedRoles: RoleName[];
+  allowedRoles: readonly RoleName[];
 }
 
 export function RoleGuard({ allowedRoles }: RoleGuardProps) {

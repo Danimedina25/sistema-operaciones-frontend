@@ -121,6 +121,15 @@ export function ReturnPaymentDetailModal({
                                                     : '-'
                                             }
                                         />
+
+                                        <DetailItem
+                                            label="Confirmación del socio"
+                                            value={
+                                                returnPayment.fechaConfirmacionRecoleccion
+                                                    ? formatDateTime(returnPayment.fechaConfirmacionRecoleccion)
+                                                    : 'Pendiente de confirmación'
+                                            }
+                                        />
                                     </>
                                 ) : null}
                             </>

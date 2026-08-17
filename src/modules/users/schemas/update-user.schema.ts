@@ -32,6 +32,15 @@ export const updateUserSchema = z
 
     activo: z.boolean().optional(),
 
+    telefono: z.preprocess(
+      emptyStringToUndefined,
+      z
+        .string()
+        .trim()
+        .regex(/^\d{10}$/, 'El teléfono debe contener exactamente 10 dígitos')
+        .optional(),
+    ),
+
     appliesToNetwork: z.boolean().optional().default(true),
 
     cuentaBancaria: z.preprocess(
@@ -80,6 +89,20 @@ export const updateUserSchema = z
     ),
   })
   .superRefine((values, ctx) => {
+    const requiresTelefono =
+      values.roleName === 'SOCIO_COMERCIAL' ||
+      values.roleName === 'JEFA_CAJAS' ||
+      values.roleName === 'JEFA_CUENTAS' ||
+      values.roleName === 'AUXILIAR_CUENTAS';
+
+    if (requiresTelefono && !values.telefono) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['telefono'],
+        message: 'El teléfono es obligatorio para este rol',
+      });
+    }
+
     const requiresBankData =
       values.roleName === 'SOCIO_COMERCIAL' || values.roleName === 'ADMIN';
 

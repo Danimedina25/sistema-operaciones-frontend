@@ -1,9 +1,11 @@
-import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Pagination } from '@/shared/components/ui/Pagination';
+import { useUrlFilters } from '@/shared/hooks/use-url-filters';
 import { CreateOperationForm } from '@/modules/operations/components/CreateOperationForm';
 import { OperationsFilters } from '@/modules/operations/components/OperationsFilters';
+import { SocioPendingSummaryCards } from '@/modules/operations/components/SocioPendingSummaryCards';
 import { OperationsTable } from '@/modules/operations/components/OperationsTable';
 import { useCreateOperation } from '@/modules/operations/hooks/use-create-operation';
 import { useOperations } from '@/modules/operations/hooks/use-operations';
@@ -33,12 +35,18 @@ const initialFilters: OperationsFiltersType = {
   startDate: '',
   endDate: '',
   activo: 'ACTIVE',
+  paymentTypes: '',
+  paymentStatus: '',
+  returnStatuses: '',
+  cuentaDestinoId: 0,
+  banco: '',
+  socioComercialId: 0,
 };
 
 export default function OperationsPage() {
   const navigate = useNavigate();
 
-  const [filters, setFilters] = useState<OperationsFiltersType>(initialFilters);
+  const { filters, setFilters } = useUrlFilters<OperationsFiltersType>(initialFilters);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isAddPaymentModalOpen, setIsAddPaymentModalOpen] = useState(false);
   const [selectedOperation, setSelectedOperation] = useState<PaymentOperationResponse | null>(null);
@@ -49,11 +57,37 @@ export default function OperationsPage() {
   const { hasRole, user } = useAuth();
   const canCreateOperation = hasRole(['SOCIO_COMERCIAL', 'ADMIN']);
   const canReadConfiguracionGeneral = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
+  const showPaymentTypeFilter = !hasRole(['SOCIO_COMERCIAL']);
+
+  const [searchParams] = useSearchParams();
+  const appliedRoleDefaultFilter = useRef(false);
+  const isJefaCajas = hasRole(['JEFA_CAJAS']);
+  const isCuentas = hasRole(['AUXILIAR_CUENTAS', 'JEFA_CUENTAS']);
+
+  useEffect(() => {
+    if (appliedRoleDefaultFilter.current) return;
+    appliedRoleDefaultFilter.current = true;
+
+    // Si ya llegó con filtros en la URL (ej. desde un enlace de un
+    // contador del dashboard), no se sobreescribe con el default de rol.
+    if (searchParams.toString() !== '') return;
+
+    if (isJefaCajas) {
+      setFilters({ ...initialFilters, paymentTypes: 'EFECTIVO', paymentStatus: 'PENDIENTE_VALIDACION' });
+    } else if (isCuentas) {
+      setFilters({
+        ...initialFilters,
+        paymentTypes: 'TRANSFERENCIA,DEPOSITO,CHEQUE',
+        paymentStatus: 'PENDIENTE_VALIDACION',
+      });
+    }
+  }, [searchParams, isJefaCajas, isCuentas, setFilters]);
   const canAssignLevelOne = hasRole(['ADMIN']);
+  const showSocioFilter = hasRole(['GERENTE', 'DIRECCION', 'ADMIN']);
   const {
     commercialLevelOneUsers,
     isLoading: isLoadingLevelOneUsers,
-  } = useCommercialLevelOneUsers({ enabled: canAssignLevelOne });
+  } = useCommercialLevelOneUsers({ enabled: canAssignLevelOne || showSocioFilter });
   const canEditOperations = !hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS']);
   const needsOperationCatalogs = canCreateOperation || canEditOperations;
 
@@ -173,6 +207,8 @@ export default function OperationsPage() {
 
   return (
     <div className="space-y-3">
+      <SocioPendingSummaryCards />
+
       <div className="relative flex items-center rounded-2xl bg-white p-4 shadow-sm">
 
         {/* Botón (igual que lo tienes) */}
@@ -205,7 +241,14 @@ export default function OperationsPage() {
           </h2>
         </div>
 
-        <OperationsFilters filters={filters} onChange={setFilters} />
+        <OperationsFilters
+          filters={filters}
+          onChange={setFilters}
+          showPaymentTypeFilter={showPaymentTypeFilter}
+          bankAccounts={bankAccountsCatalog}
+          showSocioFilter={showSocioFilter}
+          socios={commercialLevelOneUsers}
+        />
       </section>
 
       <section className="rounded-2xl bg-white p-4 shadow-sm">

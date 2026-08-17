@@ -20,6 +20,7 @@ export interface UserResponse {
   id: number;
   nombre: string;
   correo: string;
+  telefono: string | null;
   activo: boolean;
   roleId: number;
   roleName: RoleName;
@@ -32,6 +33,7 @@ export interface CreateUserRequest {
   nombre: string;
   correo: string;
   roleId: number;
+  telefono?: string;
 
   appliesToNetwork?: boolean;
 
@@ -45,6 +47,7 @@ export interface UpdateUserRequest {
   nombre: string;
   activo?: boolean;
   roleId: number;
+  telefono?: string;
   appliesToNetwork?: boolean;
   cuentaBancaria?: string;
   banco?: string;

@@ -34,6 +34,8 @@ export interface CommissionPartnerSummaryResponse {
 
   totalOperaciones: number;
 
+  montoOperado: number;
+
   totalComisiones: number;
 
   totalPendientes: number;
@@ -56,6 +58,8 @@ export interface CommissionPartnerSummaryListResponse {
   totalPendientes: number;
 
   totalPagadas: number;
+
+  totalMontoOperado: number;
 
   totalBeneficiarios: number;
 

@@ -1,18 +1,29 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { PaymentStatusBadge } from '@/modules/operations/components/PaymentStatusBadge';
-import { paymentTypeLabels } from '@/modules/operations/constants/operations.constants';
+import {
+  PAYMENT_REJECT_REASONS,
+  paymentTypeLabels,
+  type PaymentRejectReasonCode,
+} from '@/modules/operations/constants/operations.constants';
 import {
   formatCurrency,
   formatDate,
 } from '@/modules/operations/utils/operation-formatters';
+import { buildRejectReasonText } from '@/modules/operations/utils/reject-reason';
 import { OperationPaymentResponse, PaymentType } from '../types/operations.types.ts';
 import { createPortal } from 'react-dom';
 import { ValidationReceiptViewerModal } from './ValidationReceiptViewerModal';
-import { CircleDollarSign, FileCheck2, Plus, ReceiptText } from 'lucide-react';
+import { AgingBadge } from '@/shared/components/dashboard/AgingBadge';
+import { useClipboard } from '@/shared/hooks/use-clipboard';
+import { CircleDollarSign, ClipboardCopy, Check, FileCheck2, Plus, ReceiptText } from 'lucide-react';
+
+const BANK_PAYMENT_TYPES: PaymentType[] = ['TRANSFERENCIA', 'DEPOSITO', 'CHEQUE'];
 
 interface PaymentsTableProps {
   payments: OperationPaymentResponse[];
+  operationId?: number;
+  clienteNombre?: string;
   onValidatePayment?: (
     paymentId: number,
     comprobanteValidacion: File
@@ -44,6 +55,8 @@ function isImageFile(file?: File | null) {
 
 export function PaymentsTable({
   payments,
+  operationId,
+  clienteNombre,
   onValidatePayment,
   onRejectPayment,
   onEditValidationReceipt,
@@ -54,8 +67,11 @@ export function PaymentsTable({
 }: PaymentsTableProps) {
   const { hasRole } = useAuth();
   const canModifyPayments = !hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS']);
+  const { copy } = useClipboard();
+  const [copiedPaymentId, setCopiedPaymentId] = useState<number | null>(null);
 
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+  const [rejectReasonCode, setRejectReasonCode] = useState<PaymentRejectReasonCode | ''>('');
   const [rejectReason, setRejectReason] = useState('');
   const [rejectReasonError, setRejectReasonError] = useState('');
   const canAddPayment = (montoPendientePorRegistrar ?? 0) > 0 && canModifyPayments;
@@ -152,6 +168,7 @@ export function PaymentsTable({
 
   const resetModalState = () => {
     setPendingAction(null);
+    setRejectReasonCode('');
     setRejectReason('');
     setRejectReasonError('');
     setValidationReceipt(null);
@@ -165,10 +182,33 @@ export function PaymentsTable({
 
   const openConfirmModal = (paymentId: number, action: PaymentActionType) => {
     setPendingAction({ paymentId, action });
+    setRejectReasonCode('');
     setRejectReason('');
     setRejectReasonError('');
     setValidationReceipt(null);
     setValidationReceiptError('');
+  };
+
+  const handleCopyPaymentData = async (payment: OperationPaymentResponse) => {
+    const text = [
+      operationId ? `ID operación: ${operationId}` : null,
+      `ID pago: ${payment.id}`,
+      clienteNombre ? `Cliente: ${clienteNombre}` : null,
+      `Monto: ${formatCurrency(payment.monto)}`,
+      `Fecha: ${formatDate(payment.fechaComprobante ?? payment.fechaPago)}`,
+      `Tipo: ${paymentTypeLabels[payment.tipoPago]}`,
+      `Banco: ${payment.cuentaDestinoBanco ?? '-'}`,
+      `Titular cuenta destino: ${payment.cuentaDestinoTitular ?? '-'}`,
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    const success = await copy(text);
+
+    if (success) {
+      setCopiedPaymentId(payment.id);
+      window.setTimeout(() => setCopiedPaymentId(null), 2000);
+    }
   };
 
   const handleConfirmAction = async () => {
@@ -192,14 +232,21 @@ export function PaymentsTable({
         return;
       }
 
-      const trimmedReason = rejectReason.trim();
-
-      if (!trimmedReason) {
-        setRejectReasonError('El motivo de rechazo es obligatorio.');
+      if (!rejectReasonCode) {
+        setRejectReasonError('Selecciona un motivo de rechazo.');
         return;
       }
 
-      await onRejectPayment?.(pendingAction.paymentId, trimmedReason);
+      const trimmedReason = rejectReason.trim();
+
+      if (rejectReasonCode === 'OTRO' && !trimmedReason) {
+        setRejectReasonError('Escribe el motivo del rechazo.');
+        return;
+      }
+
+      const finalReason = buildRejectReasonText(rejectReasonCode, trimmedReason);
+
+      await onRejectPayment?.(pendingAction.paymentId, finalReason);
       resetModalState();
     } catch (error) {
       console.error('Error al procesar la acción del pago:', error);
@@ -359,6 +406,7 @@ export function PaymentsTable({
                 <th className="px-4 py-3 font-medium">Observaciones</th>
                 <th className="px-4 py-3 font-medium">Fecha registro</th>
                 <th className="px-4 py-3 font-medium">Fecha comprobante</th>
+                <th className="px-4 py-3 font-medium">Antigüedad</th>
                 <th className="px-4 py-3 font-medium">Validado por</th>
                 <th className="px-4 py-3 font-medium">Fecha validación</th>
                 <th className="px-4 py-3 font-medium">Estatus</th>
@@ -425,6 +473,17 @@ export function PaymentsTable({
                       {formatDate(payment.fechaComprobante)}
                     </td>
 
+                    <td className="px-4 py-4">
+                      {BANK_PAYMENT_TYPES.includes(payment.tipoPago) ? (
+                        <AgingBadge
+                          effectiveDate={payment.fechaComprobante}
+                          createdAt={payment.createdAt}
+                        />
+                      ) : (
+                        <span className="text-xs text-slate-400">—</span>
+                      )}
+                    </td>
+
                     <td className="px-4 py-4 text-slate-600">
                       {payment.validadoPorNombre ?? '-'}
                     </td>
@@ -438,10 +497,11 @@ export function PaymentsTable({
                     </td>
 
                     <td className="px-4 py-4">
-                      <button
-                        type="button"
-                        onClick={(event) => handleToggleOptionsMenu(payment.id, event)}
-                        className="
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={(event) => handleToggleOptionsMenu(payment.id, event)}
+                          className="
       inline-flex
       h-9
       items-center
@@ -459,9 +519,38 @@ export function PaymentsTable({
       hover:border-slate-300 hover:bg-white
       hover:-translate-y-0.5
     "
-                      >
-                        Ver opciones
-                      </button>
+                        >
+                          Ver opciones
+                        </button>
+
+                        <button
+                          type="button"
+                          title="Copiar datos del comprobante"
+                          onClick={() => void handleCopyPaymentData(payment)}
+                          className="
+      inline-flex
+      h-9
+      w-9
+      items-center
+      justify-center
+      rounded-xl
+      border
+      border-slate-200
+      bg-slate-50
+      text-slate-600
+      shadow-sm
+      transition-all
+      hover:border-slate-300 hover:bg-white
+      hover:-translate-y-0.5
+    "
+                        >
+                          {copiedPaymentId === payment.id ? (
+                            <Check className="h-4 w-4 text-emerald-600" />
+                          ) : (
+                            <ClipboardCopy className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
 
                       {openOptionsPaymentId === payment.id &&
                         optionsMenuPosition &&
@@ -812,27 +901,26 @@ shadow-slate-950/10">
             ) : null}
 
             {isRejectAction ? (
-              <div className="mt-4">
-                <label
-                  htmlFor="reject-reason"
-                  className="mb-2 block text-sm font-medium text-slate-700"
-                >
-                  Motivo del rechazo <span className="text-rose-600">*</span>
-                </label>
+              <div className="mt-4 space-y-3">
+                <div>
+                  <label
+                    htmlFor="reject-reason-code"
+                    className="mb-2 block text-sm font-medium text-slate-700"
+                  >
+                    Motivo del rechazo <span className="text-rose-600">*</span>
+                  </label>
 
-                <textarea
-                  id="reject-reason"
-                  rows={4}
-                  value={rejectReason}
-                  onChange={(event) => {
-                    setRejectReason(event.target.value);
-                    if (rejectReasonError) {
-                      setRejectReasonError('');
-                    }
-                  }}
-                  disabled={isConfirmingAction}
-                  placeholder="Escribe el motivo del rechazo"
-                  className={`
+                  <select
+                    id="reject-reason-code"
+                    value={rejectReasonCode}
+                    disabled={isConfirmingAction}
+                    onChange={(event) => {
+                      setRejectReasonCode(event.target.value as PaymentRejectReasonCode);
+                      if (rejectReasonError) {
+                        setRejectReasonError('');
+                      }
+                    }}
+                    className={`
   w-full
   rounded-2xl
   border
@@ -844,17 +932,74 @@ shadow-slate-950/10">
   outline-none
   transition
   focus:bg-white
-  ${rejectReasonError
-                      ? 'border-rose-500'
-                      : 'border-slate-200 focus:border-slate-400'
-                    }
+  ${rejectReasonError && !rejectReasonCode
+                        ? 'border-rose-500'
+                        : 'border-slate-200 focus:border-slate-400'
+                      }
 `}
-                />
+                  >
+                    <option value="" disabled>
+                      Selecciona un motivo
+                    </option>
+                    {PAYMENT_REJECT_REASONS.map((reason) => (
+                      <option key={reason.value} value={reason.value}>
+                        {reason.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="reject-reason"
+                    className="mb-2 block text-sm font-medium text-slate-700"
+                  >
+                    Observaciones{' '}
+                    {rejectReasonCode === 'OTRO' ? (
+                      <span className="text-rose-600">*</span>
+                    ) : (
+                      <span className="font-normal text-slate-400">(opcional)</span>
+                    )}
+                  </label>
+
+                  <textarea
+                    id="reject-reason"
+                    rows={4}
+                    value={rejectReason}
+                    onChange={(event) => {
+                      setRejectReason(event.target.value);
+                      if (rejectReasonError) {
+                        setRejectReasonError('');
+                      }
+                    }}
+                    disabled={isConfirmingAction}
+                    placeholder={
+                      rejectReasonCode === 'OTRO'
+                        ? 'Escribe el motivo del rechazo'
+                        : 'Agrega contexto adicional (opcional)'
+                    }
+                    className={`
+  w-full
+  rounded-2xl
+  border
+  bg-slate-50
+  px-4
+  py-3
+  text-sm
+  text-slate-700
+  outline-none
+  transition
+  focus:bg-white
+  ${rejectReasonError && rejectReasonCode === 'OTRO'
+                        ? 'border-rose-500'
+                        : 'border-slate-200 focus:border-slate-400'
+                      }
+`}
+                  />
+                </div>
 
                 {rejectReasonError ? (
-                  <p className="mt-2 text-sm text-rose-600">
-                    {rejectReasonError}
-                  </p>
+                  <p className="text-sm text-rose-600">{rejectReasonError}</p>
                 ) : null}
               </div>
             ) : null}

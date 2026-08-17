@@ -3,7 +3,7 @@ import { useAuth } from '@/modules/auth/store/auth.context';
 import type { RoleName } from '@/modules/auth/types/auth.types';
 
 interface CanAccessProps {
-  roles: RoleName[];
+  roles: readonly RoleName[];
   children: ReactNode;
   fallback?: ReactNode;
 }

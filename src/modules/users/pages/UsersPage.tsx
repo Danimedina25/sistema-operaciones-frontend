@@ -165,6 +165,7 @@ export default function UsersPage() {
               roleId: editingUser.roleId,
               activo: editingUser.activo,
               roleName: editingUser.roleName,
+              telefono: editingUser.telefono,
               appliesToNetwork:
                 editingUser.commercialSettings?.appliesToNetwork ?? true,
               cuentaBancaria:

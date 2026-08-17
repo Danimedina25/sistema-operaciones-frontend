@@ -160,6 +160,8 @@ export function OperationDetailView({
       <div ref={paymentsSectionRef} className="scroll-mt-20">
         <PaymentsTable
           payments={operation.pagos}
+          operationId={operation.id}
+          clienteNombre={operation.clienteNombre}
           onValidatePayment={(paymentId, comprobanteValidacion) =>
             onValidatePayment?.(
               operation.id,

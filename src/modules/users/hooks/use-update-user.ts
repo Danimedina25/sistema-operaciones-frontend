@@ -26,6 +26,7 @@ export function useUpdateUser(options?: UseUpdateUserOptions) {
         nombre: values.nombre.trim(),
         roleId: values.roleId,
         activo: values.activo,
+        telefono: values.telefono?.trim() || undefined,
 
         appliesToNetwork: isSocioComercial
           ? values.appliesToNetwork

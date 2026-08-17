@@ -23,6 +23,12 @@ const initialFilters: OperationsFiltersType = {
   startDate: '',
   endDate: '',
   activo: 'ACTIVE',
+  paymentTypes: '',
+  paymentStatus: '',
+  returnStatuses: '',
+  cuentaDestinoId: 0,
+  banco: '',
+  socioComercialId: 0,
 };
 
 const PAGE_SIZE = 10;

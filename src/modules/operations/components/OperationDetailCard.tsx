@@ -10,7 +10,10 @@ import { useMarkOperationAsInvoiced } from '../hooks/use-mark-operations-as-invo
 import { useLocation } from 'react-router-dom';
 import { paths } from '@/routes/paths.js';
 import { useAuth } from '@/modules/auth/store/auth.context';
-import { BriefcaseBusiness, CalendarDays, CircleDollarSign, ReceiptText, TrendingDown } from 'lucide-react';
+import { ProgressBar } from '@/shared/components/ui/ProgressBar';
+import { useWhatsAppLink } from '@/shared/hooks/use-whatsapp-link';
+import { buildOperationShareMessage } from '@/shared/utils/whatsapp-message';
+import { BriefcaseBusiness, CalendarDays, CircleDollarSign, MessageCircle, ReceiptText, TrendingDown } from 'lucide-react';
 
 interface OperationDetailCardProps {
   operation: PaymentOperationResponse;
@@ -90,12 +93,36 @@ export function OperationDetailCard({
 
   const { hasRole } = useAuth();
   const canReviewCommission = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
+  const canShareViaWhatsApp = hasRole(['SOCIO_COMERCIAL', 'ADMIN', 'GERENTE', 'DIRECCION']);
 
   const location = useLocation();
 
   const isReturnRequestDetail = location.pathname.startsWith(
     paths.returnsforrequest,
   );
+
+  const { openWhatsApp } = useWhatsAppLink();
+
+  function handleShareViaWhatsApp() {
+    const relevantPendingBalance =
+      operation.saldoPendientePorRegistrar > 0
+        ? `Saldo pendiente por registrar: ${formatCurrency(operation.saldoPendientePorRegistrar)}`
+        : operation.saldoPendientePorValidar > 0
+          ? `Saldo pendiente por validar: ${formatCurrency(operation.saldoPendientePorValidar)}`
+          : operation.saldoPendienteRetornar > 0
+            ? `Saldo pendiente por retornar: ${formatCurrency(operation.saldoPendienteRetornar)}`
+            : null;
+
+    const message = buildOperationShareMessage({
+      operationId: operation.id,
+      clienteNombre: operation.clienteNombre,
+      montoTotal: operation.montoTotal,
+      estatusLabel: operationStatusLabels[operation.estatus] ?? operation.estatus,
+      saldoPendienteLabel: relevantPendingBalance,
+    });
+
+    openWhatsApp(message);
+  }
 
   return (
     <div className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-xl shadow-slate-950/[0.06]">
@@ -121,11 +148,24 @@ export function OperationDetailCard({
             </p>
           </div>
 
-          <div className="self-start rounded-xl bg-white p-1 shadow-lg">
-          <OperationStatusBadge
-            status={operation.estatus}
-            isReturn={isReturnRequestDetail}
-          />
+          <div className="flex flex-col items-start gap-2 md:items-end">
+            <div className="self-start rounded-xl bg-white p-1 shadow-lg md:self-end">
+              <OperationStatusBadge
+                status={operation.estatus}
+                isReturn={isReturnRequestDetail}
+              />
+            </div>
+
+            {canShareViaWhatsApp && (
+              <button
+                type="button"
+                onClick={handleShareViaWhatsApp}
+                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/10"
+              >
+                <MessageCircle className="h-4 w-4 text-emerald-400" />
+                Compartir por WhatsApp
+              </button>
+            )}
           </div>
         </div>
 
@@ -134,6 +174,18 @@ export function OperationDetailCard({
           <SummaryItem label="Ingreso validado" value={formatCurrency(operation.montoValidado)} variant="dark" />
           <SummaryItem label="Pendiente por validar" value={formatCurrency(operation.saldoPendientePorValidar)} variant="dark" />
           <SummaryItem label="Retorno al cliente" value={formatCurrency(operation.montoTotalDevolverCliente)} variant="dark" />
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+            Avance de la operación
+          </p>
+          <ProgressBar
+            total={operation.montoTotal}
+            registered={operation.montoRegistrado}
+            validated={operation.montoValidado}
+            variant="dark"
+          />
         </div>
       </div>
 

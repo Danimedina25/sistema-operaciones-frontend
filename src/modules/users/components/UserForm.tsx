@@ -20,6 +20,7 @@ interface UserFormProps {
     roleId: number;
     activo?: boolean;
     roleName?: string;
+    telefono?: string | null;
     appliesToNetwork?: boolean;
     cuentaBancaria?: string;
     banco?: string;
@@ -48,6 +49,7 @@ export function UserForm({
       roleId: '' as unknown as number,
       roleName: '',
       activo: true,
+      telefono: '',
       appliesToNetwork: true,
       cuentaBancaria: '',
       banco: '',
@@ -98,6 +100,7 @@ export function UserForm({
         roleId: initialValues.roleId as unknown as number,
         roleName: initialValues.roleName ?? '',
         activo: initialValues.activo ?? true,
+        telefono: initialValues.telefono ?? '',
         appliesToNetwork: initialValues.appliesToNetwork ?? true,
         cuentaBancaria: initialValues.cuentaBancaria ?? '',
         banco: initialValues.banco ?? '',
@@ -112,6 +115,7 @@ export function UserForm({
       roleId: '' as unknown as number,
       roleName: '',
       activo: true,
+      telefono: '',
       appliesToNetwork: true,
     });
   }, [initialValues, reset]);
@@ -239,6 +243,37 @@ export function UserForm({
             {errors.roleId && (
               <p className="mt-1 text-xs text-red-600">
                 {errors.roleId.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Teléfono
+            </label>
+
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={10}
+              placeholder="10 dígitos"
+              {...register('telefono')}
+              onInput={(e) => {
+                e.currentTarget.value = e.currentTarget.value.replace(
+                  /\D/g,
+                  '',
+                );
+              }}
+              className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-slate-400"
+            />
+
+            <p className="mt-1 text-xs text-slate-500">
+              Se usa para enviar avisos por WhatsApp.
+            </p>
+
+            {errors.telefono && (
+              <p className="mt-1 text-xs text-red-600">
+                {errors.telefono.message}
               </p>
             )}
           </div>

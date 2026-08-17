@@ -13,6 +13,7 @@ import {
   OperationsFilters,
   ReturnPaymentResponse,
   ReturnPaymentsListApiResponse,
+  ReturnPaymentsPageApiResponse,
   CreateReturnPaymentRequest,
   RealizeReturnPaymentRequest,
   UpdateOperationRequest,
@@ -36,12 +37,13 @@ function buildOperationsQuery(
   page: number,
   pageSize: number,
   filters: OperationsFilters,
+  sort: string = 'createdAt,desc',
 ) {
   const params = new URLSearchParams();
 
   params.append('page', String(page));
   params.append('size', String(pageSize));
-  params.append('sort', 'createdAt,desc');
+  params.append('sort', sort);
 
   if (filters.search.trim()) {
     params.append('search', filters.search.trim());
@@ -68,6 +70,30 @@ function buildOperationsQuery(
   }
 
   params.append('activo', filters.activo);
+
+  if (filters.paymentTypes) {
+    params.append('paymentTypes', filters.paymentTypes);
+  }
+
+  if (filters.paymentStatus) {
+    params.append('paymentStatus', filters.paymentStatus);
+  }
+
+  if (filters.returnStatuses) {
+    params.append('returnStatuses', filters.returnStatuses);
+  }
+
+  if (filters.cuentaDestinoId) {
+    params.append('cuentaDestinoId', String(filters.cuentaDestinoId));
+  }
+
+  if (filters.banco) {
+    params.append('banco', filters.banco);
+  }
+
+  if (filters.socioComercialId) {
+    params.append('socioComercialId', String(filters.socioComercialId));
+  }
 
   return params.toString();
 }
@@ -98,8 +124,9 @@ export async function getOperations(
   page: number,
   pageSize: number,
   filters: OperationsFilters,
+  sort?: string,
 ): Promise<PageResponse<PaymentOperationResponse>> {
-  const query = buildOperationsQuery(page, pageSize, filters);
+  const query = buildOperationsQuery(page, pageSize, filters, sort);
 
   const response = await api.get<OperationsPageApiResponse>(
     `${OPERATIONS_BASE_PATH}?${query}`,
@@ -180,6 +207,24 @@ export async function markOperationAsInvoiced(
 ): Promise<PaymentOperationResponse> {
   const response = await api.patch<OperationApiResponse>(
     `${OPERATIONS_BASE_PATH}/${operationId}/invoice`,
+  );
+
+  return response.data.data;
+}
+
+export async function getStalledOperations(
+  page: number,
+  pageSize: number,
+  thresholdHours: number,
+): Promise<PageResponse<PaymentOperationResponse>> {
+  const params = new URLSearchParams();
+
+  params.append('page', String(page));
+  params.append('size', String(pageSize));
+  params.append('thresholdHours', String(thresholdHours));
+
+  const response = await api.get<OperationsPageApiResponse>(
+    `${OPERATIONS_BASE_PATH}/stalled?${params.toString()}`,
   );
 
   return response.data.data;
@@ -332,6 +377,52 @@ export async function getReturnsByOperationId(
 ): Promise<ReturnPaymentResponse[]> {
   const response = await api.get<ReturnPaymentsListApiResponse>(
     `${RETURNS_BASE_PATH}/${operationId}/payments`,
+  );
+
+  return response.data.data;
+}
+
+export interface TodayCashDeliveriesFilters {
+  fecha?: string;
+  tipoPago?: string;
+}
+
+export async function getTodayCashDeliveries(
+  page: number,
+  pageSize: number,
+  filters: TodayCashDeliveriesFilters = {},
+): Promise<PageResponse<ReturnPaymentResponse>> {
+  const params = new URLSearchParams();
+
+  params.append('page', String(page));
+  params.append('size', String(pageSize));
+
+  if (filters.fecha) {
+    params.append('fecha', filters.fecha);
+  }
+
+  if (filters.tipoPago) {
+    params.append('tipoPago', filters.tipoPago);
+  }
+
+  const response = await api.get<ReturnPaymentsPageApiResponse>(
+    `${RETURNS_BASE_PATH}/today-deliveries?${params.toString()}`,
+  );
+
+  return response.data.data;
+}
+
+export async function getLateReturns(
+  page: number,
+  pageSize: number,
+): Promise<PageResponse<ReturnPaymentResponse>> {
+  const params = new URLSearchParams();
+
+  params.append('page', String(page));
+  params.append('size', String(pageSize));
+
+  const response = await api.get<ReturnPaymentsPageApiResponse>(
+    `${RETURNS_BASE_PATH}/late?${params.toString()}`,
   );
 
   return response.data.data;
