@@ -209,21 +209,21 @@ export default function OperationsPage() {
     <div className="space-y-3">
       <SocioPendingSummaryCards />
 
-      <div className="relative flex items-center rounded-2xl bg-white p-4 shadow-sm">
+      <div className="flex items-center justify-between rounded-2xl bg-white p-4 shadow-sm">
 
-        {/* Botón (igual que lo tienes) */}
-        {canCreateOperation && (
-          <button
-            type="button"
-            onClick={() => setIsCreateModalOpen(true)}
-            className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
-          >
-            Nueva operación
-          </button>
-        )}
+        <div className="flex-1">
+          {canCreateOperation && (
+            <button
+              type="button"
+              onClick={() => setIsCreateModalOpen(true)}
+              className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
+            >
+              Nueva operación
+            </button>
+          )}
+        </div>
 
-        {/* Texto centrado real */}
-        <div className="absolute left-1/2 -translate-x-1/2 text-center">
+        <div className="flex-1 text-center">
           <h1 className="text-lg font-semibold text-slate-900">
             Operaciones
           </h1>
@@ -231,6 +231,8 @@ export default function OperationsPage() {
             Gestiona operaciones y registra comprobantes
           </p>
         </div>
+
+        <div className="flex-1" />
 
       </div>
 
