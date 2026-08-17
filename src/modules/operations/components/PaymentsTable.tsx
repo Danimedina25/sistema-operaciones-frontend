@@ -66,7 +66,12 @@ export function PaymentsTable({
   onEditPayment
 }: PaymentsTableProps) {
   const { hasRole } = useAuth();
-  const canModifyPayments = !hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS']);
+  const canModifyPayments = hasRole([
+    'ADMIN',
+    'GERENTE',
+    'DIRECCION',
+    'SOCIO_COMERCIAL',
+  ]);
   const { copy } = useClipboard();
   const [copiedPaymentId, setCopiedPaymentId] = useState<number | null>(null);
 

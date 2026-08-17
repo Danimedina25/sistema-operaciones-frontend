@@ -88,7 +88,12 @@ export default function OperationsPage() {
     commercialLevelOneUsers,
     isLoading: isLoadingLevelOneUsers,
   } = useCommercialLevelOneUsers({ enabled: canAssignLevelOne || showSocioFilter });
-  const canEditOperations = !hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS']);
+  const canEditOperations = hasRole([
+    'ADMIN',
+    'GERENTE',
+    'DIRECCION',
+    'SOCIO_COMERCIAL',
+  ]);
   const needsOperationCatalogs = canCreateOperation || canEditOperations;
 
   const { clientNames: frequentClientNames } = useFrequentClientNames();

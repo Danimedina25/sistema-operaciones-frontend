@@ -60,7 +60,12 @@ export function OperationsTable({
 
   const isSocioComercial = hasRole(['SOCIO_COMERCIAL']);
   const canManageOperationFlow = !isSocioComercial;
-  const canModifyOperations = !hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS']);
+  const canModifyOperations = hasRole([
+    'ADMIN',
+    'GERENTE',
+    'DIRECCION',
+    'SOCIO_COMERCIAL',
+  ]);
   const canToggleOperationStatus = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
   const canReviewCommission = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
 
