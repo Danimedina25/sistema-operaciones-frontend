@@ -159,7 +159,16 @@ export function PaymentsTable({
     return false; // RETIRO_SIN_TARJETA no aplica a ingresos
   }
 
+  function canSeePayment(tipoPago: PaymentType) {
+    if (isJefaCajas) return tipoPago === 'EFECTIVO';
+    if (isCuentas) return BANK_PAYMENT_TYPES.includes(tipoPago);
+    return true; // ADMIN, GERENTE, DIRECCION, SOCIO_COMERCIAL ven todo
+  }
 
+  const visiblePayments = useMemo(
+    () => payments.filter((payment) => canSeePayment(payment.tipoPago)),
+    [payments, isJefaCajas, isCuentas],
+  );
 
   const selectedPayment = useMemo(() => {
     if (!pendingAction) return null;
@@ -258,12 +267,20 @@ export function PaymentsTable({
     }
   };
 
-  if (payments.length === 0) {
+  if (visiblePayments.length === 0) {
+    const hasOtherTypePayments = payments.length > 0;
+
     return (
       <div className="rounded-[1.75rem] border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
         <ReceiptText className="mx-auto h-8 w-8 text-slate-300" />
-        <p className="mt-3 text-sm font-semibold text-slate-700">Sin pagos registrados</p>
-        <p className="mt-1 text-xs text-slate-500">Los comprobantes de ingreso aparecerán aquí.</p>
+        <p className="mt-3 text-sm font-semibold text-slate-700">
+          {hasOtherTypePayments ? 'Sin comprobantes de tu tipo' : 'Sin pagos registrados'}
+        </p>
+        <p className="mt-1 text-xs text-slate-500">
+          {hasOtherTypePayments
+            ? 'Esta operación no tiene comprobantes del tipo que te corresponde validar.'
+            : 'Los comprobantes de ingreso aparecerán aquí.'}
+        </p>
       </div>
     );
   }
@@ -421,7 +438,7 @@ export function PaymentsTable({
             </thead>
 
             <tbody>
-              {payments.map((payment) => {
+              {visiblePayments.map((payment) => {
                 const isPendingValidation =
                   payment.estatus === 'PENDIENTE_VALIDACION';
                 const isProcessing = processingPaymentId === payment.id;
