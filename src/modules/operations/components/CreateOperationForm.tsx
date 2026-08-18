@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import { Input } from '@/shared/components/ui/Input';
 import { Button } from '@/shared/components/ui/Button';
+import { formatDate } from '@/shared/utils/weeks';
 import { searchClientes } from '@/modules/clientes/api/clientes.api';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import {
@@ -915,7 +916,7 @@ export function CreateOperationForm({
 
                       <input
                         type="date"
-                        max={new Date().toISOString().split('T')[0]}
+                        max={formatDate(new Date())}
                         className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
                         {...register(`pagos.${index}.fechaComprobante`)}
                         onChange={(event) => {

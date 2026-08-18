@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Input } from '@/shared/components/ui/Input';
 import { Button } from '@/shared/components/ui/Button';
+import { formatDate } from '@/shared/utils/weeks';
 import { PaymentOperationResponse, OperationPaymentResponse } from '../types/operations.types.ts';
 
 
@@ -352,7 +353,7 @@ export function UpdateOperationPaymentForm({
 
             <input
               type="date"
-              max={new Date().toISOString().split('T')[0]}
+              max={formatDate(new Date())}
               className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
               {...register('fechaComprobante', {
                 required: 'La fecha del comprobante es obligatoria',

@@ -8,11 +8,12 @@ import type {
 } from '@/modules/corte/types/corte.types';
 import { useDailyCashCut } from '../hooks/use-daily-cash-cut';
 import { formatDate } from '@/modules/operations/utils/operation-formatters';
+import { formatDate as toISODate } from '@/shared/utils/weeks';
 import { DateRangeCalendarField } from '@/shared/components/ui/DateRangeCalendarField';
 import { ArrowDownToLine, ArrowUpFromLine, Building2, CalendarDays, Landmark, LoaderCircle, Scale } from 'lucide-react';
 
 function todayISO() {
-    return new Date().toISOString().slice(0, 10);
+    return toISODate(new Date());
 }
 
 function formatCurrency(value?: number | null) {
