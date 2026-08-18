@@ -152,7 +152,7 @@ export function Sidebar() {
         </p>
       </div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto p-4">
+      <nav className="sidebar-nav-scroll flex-1 space-y-1 overflow-y-auto p-4">
         {visibleNavItems.map(({ to, label, icon: Icon }) => {
           const showBadge =
             showPendingPaymentsBadge &&
