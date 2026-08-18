@@ -8,6 +8,11 @@ export type CommissionBeneficiaryType =
   | 'USER'
   | 'COMMERCIAL_PARTNER';
 
+export type CommissionBeneficiaryPaymentStatus =
+  | 'PAGADA'
+  | 'PARCIAL'
+  | 'PENDIENTE';
+
 export interface PayCommissionRequest {
   paymentProofUrl: string;
 }
@@ -49,6 +54,8 @@ export interface CommissionPartnerSummaryResponse {
   commissionIdsToPay: number[];
 
   paymentProofUrl: string | null;
+
+  estatus: CommissionBeneficiaryPaymentStatus;
 }
 
 export interface CommissionPartnerSummaryListResponse {

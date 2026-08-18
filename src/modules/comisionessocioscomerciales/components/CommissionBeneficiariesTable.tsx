@@ -133,12 +133,11 @@ export function CommissionBeneficiariesTable({
                                     beneficiary.commissionIdsToPay
                                         ?.length > 0;
 
-                                const paymentStatus =
-                                    beneficiary.totalPendientes === 0
-                                        ? 'PAGADA'
-                                        : beneficiary.totalPagadas === 0
-                                            ? 'PENDIENTE'
-                                            : 'PARCIAL';
+                                // Estatus autoritativo del backend, derivado
+                                // de commissionIdsToPay (misma fuente que
+                                // canPay) — no de totalPendientes, que puede
+                                // dar $0 con comisiones GENERADA de monto $0.
+                                const paymentStatus = beneficiary.estatus;
 
                                 return (
 
