@@ -252,7 +252,7 @@ export function CommissionBeneficiariesTable({
                                                             Pendiente de pago
                                                         </span>
                                                     )
-                                                ) : (
+                                                ) : beneficiary.paymentProofUrl ? (
 
                                                     <button
                                                         type="button"
@@ -283,6 +283,10 @@ export function CommissionBeneficiariesTable({
                                                         Ver comprobante
                                                     </button>
 
+                                                ) : (
+                                                    <span className="text-xs text-slate-400">
+                                                        Sin comprobante
+                                                    </span>
                                                 )}
 
                                             </div>
