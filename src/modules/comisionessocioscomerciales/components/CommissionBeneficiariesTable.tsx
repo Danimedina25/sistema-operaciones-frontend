@@ -4,6 +4,10 @@ import type {
 } from '../types/commercial-partner-commissions.types';
 import { CommissionBeneficiaryPaymentStatusBadge } from './CommissionBeneficiaryPaymentStatusBadge';
 import { formatDate } from '@/modules/operations/utils/operation-formatters';
+import { useWhatsAppLink } from '@/shared/hooks/use-whatsapp-link';
+import { buildCommissionPaidMessage } from '@/shared/utils/whatsapp-message';
+import { paths } from '@/routes/paths';
+import { MessageCircle } from 'lucide-react';
 
 interface Props {
     beneficiaries: CommissionPartnerSummaryResponse[];
@@ -38,8 +42,21 @@ export function CommissionBeneficiariesTable({
     canManagePayments,
 }: Props) {
 
+    const { openWhatsApp } = useWhatsAppLink();
+
     if (!beneficiaries.length) {
         return null;
+    }
+
+    function handleNotifyCommissionPaid(beneficiary: CommissionPartnerSummaryResponse) {
+        const publicUrl = `${window.location.origin}${paths.miscomisiones}`;
+
+        const message = buildCommissionPaidMessage({
+            monto: beneficiary.totalPagadas,
+            publicUrl,
+        });
+
+        openWhatsApp(message, beneficiary.telefono);
     }
 
     useEffect(
@@ -287,6 +304,38 @@ export function CommissionBeneficiariesTable({
                                                     <span className="text-xs text-slate-400">
                                                         Sin comprobante
                                                     </span>
+                                                )}
+
+                                                {!canPay && beneficiary.telefono && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            handleNotifyCommissionPaid(
+                                                                beneficiary,
+                                                            )
+                                                        }
+                                                        className="
+    inline-flex
+    h-9
+    items-center
+    justify-center
+    gap-1.5
+    rounded-lg
+    border
+    border-emerald-200
+    bg-emerald-50
+    px-4
+    text-xs
+    font-medium
+    text-emerald-700
+    shadow-sm
+    transition
+    hover:bg-emerald-100
+  "
+                                                    >
+                                                        <MessageCircle className="h-3.5 w-3.5" />
+                                                        Avisar por WhatsApp
+                                                    </button>
                                                 )}
 
                                             </div>

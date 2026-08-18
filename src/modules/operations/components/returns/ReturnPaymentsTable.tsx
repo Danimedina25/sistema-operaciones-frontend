@@ -15,7 +15,10 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ReturnPaymentDetailModal } from './ReturnPaymentDetailModal.js';
 import { useAuth } from '@/modules/auth/store/auth.context.js';
-import { ArrowUpRight, BanknoteArrowDown, Paperclip, Plus } from 'lucide-react';
+import { useWhatsAppLink } from '@/shared/hooks/use-whatsapp-link';
+import { buildReturnPaidMessage } from '@/shared/utils/whatsapp-message';
+import { buildOperationDetailPath } from '@/routes/paths';
+import { ArrowUpRight, BanknoteArrowDown, MessageCircle, Paperclip, Plus } from 'lucide-react';
 
 interface ReturnPaymentsTableProps {
   returns: ReturnPaymentResponse[];
@@ -49,6 +52,19 @@ export function ReturnPaymentsTable({
   operationStatus,
 }: ReturnPaymentsTableProps) {
   const { user } = useAuth();
+  const { openWhatsApp } = useWhatsAppLink();
+
+  function handleNotifyReturnPaid(returnPayment: ReturnPaymentResponse) {
+    const publicUrl = `${window.location.origin}${buildOperationDetailPath(returnPayment.operationId)}`;
+
+    const message = buildReturnPaidMessage({
+      operationId: returnPayment.operationId,
+      monto: returnPayment.monto,
+      publicUrl,
+    });
+
+    openWhatsApp(message, returnPayment.socioComercialTelefono);
+  }
 
   const roles = user?.roles ?? [];
 
@@ -349,6 +365,10 @@ export function ReturnPaymentsTable({
                 const canCreatePickupTime = canDefineTime && !hasPickupScheduled;
                 const canConfirmPickup = canConfirmCashReturnPickup(returnPayment);
                 const canMarkDelivered = canMarkCashReturnDelivered(returnPayment);
+                const canNotify =
+                  canManageReturnPayments &&
+                  returnPayment.estatus === 'RETORNADO' &&
+                  !!returnPayment.socioComercialTelefono;
 
                 const hasActions =
                   canPayReturn ||
@@ -356,7 +376,8 @@ export function ReturnPaymentsTable({
                   canEditPickupTime ||
                   canEditReturn ||
                   canConfirmPickup ||
-                  canMarkDelivered;
+                  canMarkDelivered ||
+                  canNotify;
                 return (
                   <tr
                     key={returnPayment.id}
@@ -660,6 +681,35 @@ export function ReturnPaymentsTable({
     "
                               >
                                 Retornar
+                              </button>
+                            )}
+
+                            {canNotify && (
+                              <button
+                                type="button"
+                                onClick={() => handleNotifyReturnPaid(returnPayment)}
+                                className="
+      inline-flex
+      h-8
+      w-44
+      items-center
+      justify-center
+      gap-1.5
+      rounded-lg
+      border
+      border-emerald-200
+      bg-emerald-50
+      px-3
+      text-xs
+      font-medium
+      text-emerald-700
+      shadow-sm
+      transition
+      hover:bg-emerald-100
+    "
+                              >
+                                <MessageCircle className="h-3.5 w-3.5" />
+                                Avisar por WhatsApp
                               </button>
                             )}
 

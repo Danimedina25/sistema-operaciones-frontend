@@ -162,6 +162,7 @@ export function OperationDetailView({
           payments={operation.pagos}
           operationId={operation.id}
           clienteNombre={operation.clienteNombre}
+          socioComercialTelefono={operation.socioComercialTelefono}
           onValidatePayment={(paymentId, comprobanteValidacion) =>
             onValidatePayment?.(
               operation.id,

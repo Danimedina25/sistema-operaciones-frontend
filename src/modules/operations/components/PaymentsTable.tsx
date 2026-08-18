@@ -16,7 +16,13 @@ import { createPortal } from 'react-dom';
 import { ValidationReceiptViewerModal } from './ValidationReceiptViewerModal';
 import { AgingBadge } from '@/shared/components/dashboard/AgingBadge';
 import { useClipboard } from '@/shared/hooks/use-clipboard';
-import { CircleDollarSign, ClipboardCopy, Check, FileCheck2, Plus, ReceiptText } from 'lucide-react';
+import { useWhatsAppLink } from '@/shared/hooks/use-whatsapp-link';
+import {
+  buildPaymentRejectedMessage,
+  buildPaymentValidatedMessage,
+} from '@/shared/utils/whatsapp-message';
+import { buildOperationDetailPath } from '@/routes/paths';
+import { CircleDollarSign, ClipboardCopy, Check, FileCheck2, MessageCircle, Plus, ReceiptText } from 'lucide-react';
 
 const BANK_PAYMENT_TYPES: PaymentType[] = ['TRANSFERENCIA', 'DEPOSITO', 'CHEQUE'];
 
@@ -24,6 +30,7 @@ interface PaymentsTableProps {
   payments: OperationPaymentResponse[];
   operationId?: number;
   clienteNombre?: string;
+  socioComercialTelefono?: string | null;
   onValidatePayment?: (
     paymentId: number,
     comprobanteValidacion: File
@@ -57,6 +64,7 @@ export function PaymentsTable({
   payments,
   operationId,
   clienteNombre,
+  socioComercialTelefono,
   onValidatePayment,
   onRejectPayment,
   onEditValidationReceipt,
@@ -66,6 +74,30 @@ export function PaymentsTable({
   onEditPayment
 }: PaymentsTableProps) {
   const { hasRole } = useAuth();
+  const { openWhatsApp } = useWhatsAppLink();
+
+  function handleNotifyPaymentStatus(payment: OperationPaymentResponse) {
+    if (!operationId) return;
+
+    const publicUrl = `${window.location.origin}${buildOperationDetailPath(operationId)}`;
+
+    const message =
+      payment.estatus === 'RECHAZADA'
+        ? buildPaymentRejectedMessage({
+            operationId,
+            monto: payment.monto,
+            motivo: payment.observaciones,
+            publicUrl,
+          })
+        : buildPaymentValidatedMessage({
+            operationId,
+            monto: payment.monto,
+            publicUrl,
+          });
+
+    openWhatsApp(message, socioComercialTelefono);
+  }
+
   const canModifyPayments = hasRole([
     'ADMIN',
     'GERENTE',
@@ -446,7 +478,11 @@ export function PaymentsTable({
                   isPendingValidation && !!onEditPayment && canModifyPayments;
                 const canValidate =
                   canValidatePaymentType(payment.tipoPago) && isPendingValidation;
-                const hasActions = canEdit || canValidate;
+                const canNotify =
+                  (payment.estatus === 'VALIDADA' || payment.estatus === 'RECHAZADA') &&
+                  canValidatePaymentType(payment.tipoPago) &&
+                  !!socioComercialTelefono;
+                const hasActions = canEdit || canValidate || canNotify;
 
                 return (
                   <tr
@@ -736,6 +772,36 @@ export function PaymentsTable({
 "
                           >
                             Editar pago
+                          </button>
+                        )}
+
+                        {canNotify && (
+                          <button
+                            type="button"
+                            onClick={() => handleNotifyPaymentStatus(payment)}
+                            className="
+  flex-1
+  inline-flex
+  items-center
+  justify-center
+  gap-1.5
+  h-9
+  rounded-lg
+  border
+  border-emerald-200
+  bg-emerald-50
+  px-4
+  text-xs
+  font-medium
+  text-emerald-700
+  shadow-sm
+  transition-all
+  hover:bg-emerald-100
+  hover:-translate-y-0.5
+"
+                          >
+                            <MessageCircle className="h-3.5 w-3.5" />
+                            Avisar por WhatsApp
                           </button>
                         )}
 

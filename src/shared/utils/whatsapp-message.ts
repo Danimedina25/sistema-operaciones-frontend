@@ -62,3 +62,83 @@ export function buildDeliveryNoticeMessage(input: DeliveryNoticeMessageInput): s
     'Por favor revisa el sistema para más detalles.',
   ].join('\n');
 }
+
+export interface PaymentValidatedMessageInput {
+  operationId: number | string;
+  monto: number;
+  publicUrl?: string | null;
+}
+
+/**
+ * Aviso al socio comercial de que su comprobante de pago fue validado.
+ * Sin datos bancarios ni de comprobante, solo referencia al sistema.
+ */
+export function buildPaymentValidatedMessage(input: PaymentValidatedMessageInput): string {
+  const lines = [
+    `Tu comprobante de pago por ${formatAmount(input.monto)} de la operación #${input.operationId} fue validado.`,
+  ];
+
+  if (input.publicUrl) {
+    lines.push(input.publicUrl);
+  }
+
+  return lines.join('\n');
+}
+
+export interface PaymentRejectedMessageInput {
+  operationId: number | string;
+  monto: number;
+  motivo?: string | null;
+  publicUrl?: string | null;
+}
+
+export function buildPaymentRejectedMessage(input: PaymentRejectedMessageInput): string {
+  const lines = [
+    `Tu comprobante de pago por ${formatAmount(input.monto)} de la operación #${input.operationId} fue rechazado.`,
+  ];
+
+  if (input.motivo) {
+    lines.push(`Motivo: ${input.motivo}`);
+  }
+
+  if (input.publicUrl) {
+    lines.push(input.publicUrl);
+  }
+
+  return lines.join('\n');
+}
+
+export interface ReturnPaidMessageInput {
+  operationId: number | string;
+  monto: number;
+  publicUrl?: string | null;
+}
+
+export function buildReturnPaidMessage(input: ReturnPaidMessageInput): string {
+  const lines = [
+    `Se realizó tu retorno por ${formatAmount(input.monto)} de la operación #${input.operationId}.`,
+  ];
+
+  if (input.publicUrl) {
+    lines.push(input.publicUrl);
+  }
+
+  return lines.join('\n');
+}
+
+export interface CommissionPaidMessageInput {
+  monto: number;
+  publicUrl?: string | null;
+}
+
+export function buildCommissionPaidMessage(input: CommissionPaidMessageInput): string {
+  const lines = [
+    `Se pagó tu comisión por ${formatAmount(input.monto)}.`,
+  ];
+
+  if (input.publicUrl) {
+    lines.push(input.publicUrl);
+  }
+
+  return lines.join('\n');
+}

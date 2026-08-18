@@ -187,6 +187,7 @@ export interface PaymentOperationResponse {
 
   socioComercialId: number;
   socioComercialNombre: string;
+  socioComercialTelefono?: string | null;
 
   socioComercialNivel2Id?: number | null;
   socioComercialNivel2Nombre?: string | null;

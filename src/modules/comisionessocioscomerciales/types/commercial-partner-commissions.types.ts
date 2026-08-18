@@ -37,6 +37,8 @@ export interface CommissionPartnerSummaryResponse {
 
   titularCuenta: string | null;
 
+  telefono: string | null;
+
   totalOperaciones: number;
 
   montoOperado: number;
