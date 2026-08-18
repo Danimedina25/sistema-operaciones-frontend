@@ -44,7 +44,8 @@ export default function BankAccountsPage() {
   const { hasRole } = useAuth();
   const canDelete = hasRole(['ADMIN', 'DIRECCION']);
   const canView = hasRole(['ADMIN', 'GERENTE', 'DIRECCION', 'JEFA_CUENTAS', 'AUXILIAR_CUENTAS']);
-  const canCreateOrEdit = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
+  const canCreate = hasRole(['ADMIN', 'GERENTE', 'DIRECCION', 'JEFA_CUENTAS']);
+  const canEdit = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
   const canToggleStatus = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
 
   const { accounts, isLoading, loadBankAccounts, loadBankAccount } =
@@ -154,7 +155,7 @@ export default function BankAccountsPage() {
             </p>
           </div>
 
-          {canCreateOrEdit && (
+          {canCreate && (
             <button
               type="button"
               onClick={handleOpenCreate}
@@ -177,7 +178,7 @@ export default function BankAccountsPage() {
           <BankAccountsTable
             accounts={paginatedAccounts}
             processingAccountId={processingAccountId}
-            canEdit={canCreateOrEdit}
+            canEdit={canEdit}
             canToggleStatus={canToggleStatus}
             canDelete={canDelete}
             onEdit={handleOpenEdit}
