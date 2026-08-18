@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { getMyOperations, getOperationsWithRequestedReturns } from '@/modules/operations/api/operations.api';
 import { getMyWeeklyCommissions } from '@/modules/comisionessocioscomerciales/api/commercial-partner-commissions.api';
-import { formatDate } from '@/shared/utils/weeks';
+import { resolveDateFilterRange } from '@/shared/utils/date-filter-range';
 import type { OperationsFilters } from '@/modules/operations/types/operations.types.ts';
 
 const BASE_FILTERS: OperationsFilters = {
@@ -37,14 +37,10 @@ const EMPTY_SUMMARY: SocioPendingSummary = {
   pendingCommissions: null,
 };
 
-function getCurrentWeekRange(): { startDate: string; endDate: string } {
-  const now = new Date();
-  const sunday = new Date(now);
-  sunday.setDate(now.getDate() - now.getDay());
-  const saturday = new Date(sunday);
-  saturday.setDate(sunday.getDate() + 6);
-
-  return { startDate: formatDate(sunday), endDate: formatDate(saturday) };
+export interface SocioPendingSummaryParams {
+  dateFilter: OperationsFilters['dateFilter'];
+  startDate: string;
+  endDate: string;
 }
 
 /**
@@ -52,8 +48,14 @@ function getCurrentWeekRange(): { startDate: string; endDate: string } {
  * con `totalElements` real del servidor (nunca sobre una sola página).
  * "Comprobantes rechazados" cuenta operaciones con al menos un pago
  * rechazado (el backend no expone conteo a nivel de pago individual).
+ * Respeta el mismo filtro de fecha (dateFilter/startDate/endDate) que la
+ * tabla principal de operaciones.
  */
-export function useSocioPendingSummary() {
+export function useSocioPendingSummary({
+  dateFilter,
+  startDate,
+  endDate,
+}: SocioPendingSummaryParams) {
   const { hasRole } = useAuth();
   const enabled = hasRole(['SOCIO_COMERCIAL']);
 
@@ -68,7 +70,8 @@ export function useSocioPendingSummary() {
     setError(null);
 
     try {
-      const { startDate, endDate } = getCurrentWeekRange();
+      const dateFilters = { dateFilter, startDate, endDate };
+      const commissionsRange = resolveDateFilterRange(dateFilter, startDate, endDate);
 
       const [
         rejected,
@@ -78,12 +81,12 @@ export function useSocioPendingSummary() {
         returnsAwaitingConfirmation,
         weeklyCommissions,
       ] = await Promise.all([
-        getMyOperations(0, 1, { ...BASE_FILTERS, paymentStatus: 'RECHAZADA' }),
-        getMyOperations(0, 1, { ...BASE_FILTERS, status: 'PENDIENTE_VALIDACION' }),
-        getMyOperations(0, 1, { ...BASE_FILTERS, status: 'INGRESO_PARCIAL' }),
-        getMyOperations(0, 1, { ...BASE_FILTERS, status: 'VALIDADA' }),
-        getOperationsWithRequestedReturns(0, 1, { ...BASE_FILTERS, returnStatuses: 'ENTREGADO' }),
-        getMyWeeklyCommissions({ startDate, endDate }),
+        getMyOperations(0, 1, { ...BASE_FILTERS, ...dateFilters, paymentStatus: 'RECHAZADA' }),
+        getMyOperations(0, 1, { ...BASE_FILTERS, ...dateFilters, status: 'PENDIENTE_VALIDACION' }),
+        getMyOperations(0, 1, { ...BASE_FILTERS, ...dateFilters, status: 'INGRESO_PARCIAL' }),
+        getMyOperations(0, 1, { ...BASE_FILTERS, ...dateFilters, status: 'VALIDADA' }),
+        getOperationsWithRequestedReturns(0, 1, { ...BASE_FILTERS, ...dateFilters, returnStatuses: 'ENTREGADO' }),
+        getMyWeeklyCommissions(commissionsRange),
       ]);
 
       const pendingCommissions = weeklyCommissions.operaciones.filter(
@@ -102,7 +105,7 @@ export function useSocioPendingSummary() {
     } finally {
       setIsLoading(false);
     }
-  }, [enabled]);
+  }, [enabled, dateFilter, startDate, endDate]);
 
   useEffect(() => {
     void fetchSummary();

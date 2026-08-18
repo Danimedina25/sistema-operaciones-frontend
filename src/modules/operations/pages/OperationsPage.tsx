@@ -212,7 +212,11 @@ export default function OperationsPage() {
 
   return (
     <div className="space-y-3">
-      <SocioPendingSummaryCards />
+      <SocioPendingSummaryCards
+        dateFilter={filters.dateFilter}
+        startDate={filters.startDate}
+        endDate={filters.endDate}
+      />
 
       <div className="flex items-center justify-between rounded-2xl bg-white p-4 shadow-sm">
 

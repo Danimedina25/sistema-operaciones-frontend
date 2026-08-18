@@ -1,4 +1,4 @@
-import { OperationStatus, PaymentStatus, PaymentType } from "../types/operations.types.ts";
+import { OperationDateFilter, OperationStatus, PaymentStatus, PaymentType } from "../types/operations.types.ts";
 
 export const paymentTypeLabels: Record<PaymentType, string> = {
   TRANSFERENCIA: 'Transferencia',
@@ -12,6 +12,13 @@ export const paymentStatusLabels: Record<PaymentStatus, string> = {
   PENDIENTE_VALIDACION: 'Pendiente',
   VALIDADA: 'Validado',
   RECHAZADA: 'Rechazado',
+};
+
+export const dateFilterLabels: Record<OperationDateFilter, string> = {
+  TODAY: 'hoy',
+  THIS_WEEK: 'esta semana',
+  THIS_MONTH: 'este mes',
+  LAST_MONTH: 'el mes pasado',
 };
 
 /**
