@@ -22,7 +22,7 @@ import {
   buildPaymentValidatedMessage,
 } from '@/shared/utils/whatsapp-message';
 import { buildOperationDetailPath } from '@/routes/paths';
-import { CircleDollarSign, ClipboardCopy, Check, FileCheck2, MessageCircle, Plus, ReceiptText } from 'lucide-react';
+import { CircleDollarSign, ClipboardCopy, Check, FileCheck2, MessageCircle, Plus, ReceiptText, X } from 'lucide-react';
 
 const BANK_PAYMENT_TYPES: PaymentType[] = ['TRANSFERENCIA', 'DEPOSITO', 'CHEQUE'];
 
@@ -48,15 +48,15 @@ interface PaymentsTableProps {
 
 type PaymentActionType = 'VALIDATE' | 'REJECT';
 
-interface PendingAction {
-  paymentId: number;
-  action: PaymentActionType;
-}
-
 function isImageFile(file?: File | null) {
   if (!file) return false;
 
   return file.type.startsWith('image/');
+}
+
+function isImageUrl(url: string) {
+  const path = url.split('?')[0].toLowerCase();
+  return /\.(jpe?g|png|webp|gif)$/.test(path);
 }
 
 
@@ -107,7 +107,8 @@ export function PaymentsTable({
   const { copy } = useClipboard();
   const [copiedPaymentId, setCopiedPaymentId] = useState<number | null>(null);
 
-  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+  const [reviewingPaymentId, setReviewingPaymentId] = useState<number | null>(null);
+  const [activeAction, setActiveAction] = useState<PaymentActionType | null>(null);
   const [rejectReasonCode, setRejectReasonCode] = useState<PaymentRejectReasonCode | ''>('');
   const [rejectReason, setRejectReason] = useState('');
   const [rejectReasonError, setRejectReasonError] = useState('');
@@ -202,18 +203,18 @@ export function PaymentsTable({
     [payments, isJefaCajas, isCuentas],
   );
 
-  const selectedPayment = useMemo(() => {
-    if (!pendingAction) return null;
-    return payments.find((payment) => payment.id === pendingAction.paymentId) ?? null;
-  }, [pendingAction, payments]);
+  const reviewingPayment = useMemo(() => {
+    if (reviewingPaymentId === null) return null;
+    return payments.find((payment) => payment.id === reviewingPaymentId) ?? null;
+  }, [reviewingPaymentId, payments]);
 
   const viewingPayment = useMemo(() => {
     if (viewingPaymentId === null) return null;
     return payments.find((payment) => payment.id === viewingPaymentId) ?? null;
   }, [viewingPaymentId, payments]);
 
-  const resetModalState = () => {
-    setPendingAction(null);
+  const resetReviewFormState = () => {
+    setActiveAction(null);
     setRejectReasonCode('');
     setRejectReason('');
     setRejectReasonError('');
@@ -221,18 +222,15 @@ export function PaymentsTable({
     setValidationReceiptError('');
   };
 
-  const closeModal = () => {
+  const closeReviewDrawer = () => {
     if (processingPaymentId !== null) return;
-    resetModalState();
+    setReviewingPaymentId(null);
+    resetReviewFormState();
   };
 
-  const openConfirmModal = (paymentId: number, action: PaymentActionType) => {
-    setPendingAction({ paymentId, action });
-    setRejectReasonCode('');
-    setRejectReason('');
-    setRejectReasonError('');
-    setValidationReceipt(null);
-    setValidationReceiptError('');
+  const openReviewDrawer = (paymentId: number) => {
+    setReviewingPaymentId(paymentId);
+    resetReviewFormState();
   };
 
   const handleCopyPaymentData = async (payment: OperationPaymentResponse) => {
@@ -258,10 +256,10 @@ export function PaymentsTable({
   };
 
   const handleConfirmAction = async () => {
-    if (!pendingAction) return;
+    if (reviewingPaymentId === null || !activeAction) return;
 
     try {
-      if (pendingAction.action === 'VALIDATE') {
+      if (activeAction === 'VALIDATE') {
         if (!validationReceipt) {
           setValidationReceiptError(
             'El comprobante de validación es obligatorio.'
@@ -270,11 +268,12 @@ export function PaymentsTable({
         }
 
         await onValidatePayment?.(
-          pendingAction.paymentId,
+          reviewingPaymentId,
           validationReceipt
         );
 
-        resetModalState();
+        setReviewingPaymentId(null);
+        resetReviewFormState();
         return;
       }
 
@@ -292,8 +291,9 @@ export function PaymentsTable({
 
       const finalReason = buildRejectReasonText(rejectReasonCode, trimmedReason);
 
-      await onRejectPayment?.(pendingAction.paymentId, finalReason);
-      resetModalState();
+      await onRejectPayment?.(reviewingPaymentId, finalReason);
+      setReviewingPaymentId(null);
+      resetReviewFormState();
     } catch (error) {
       console.error('Error al procesar la acción del pago:', error);
     }
@@ -318,28 +318,18 @@ export function PaymentsTable({
   }
 
   const isConfirmingAction =
-    pendingAction !== null && processingPaymentId === pendingAction.paymentId;
+    reviewingPaymentId !== null && processingPaymentId === reviewingPaymentId;
 
-  const isRejectAction = pendingAction?.action === 'REJECT';
-
-  const confirmTitle =
-    pendingAction?.action === 'VALIDATE'
-      ? 'Confirmar validación'
-      : 'Confirmar rechazo';
-
-  const confirmDescription =
-    pendingAction?.action === 'VALIDATE'
-      ? '¿Estás seguro de que deseas validar este comprobante? Esta acción actualizará el estatus.'
-      : '¿Estás seguro de que deseas rechazar este comprobante? Esta acción cambiará el estatus a rechazado.';
+  const isRejectAction = activeAction === 'REJECT';
 
   const confirmButtonText =
-    pendingAction?.action === 'VALIDATE'
+    activeAction === 'VALIDATE'
       ? isConfirmingAction
         ? 'Validando...'
-        : 'Sí, validar comprobante'
+        : 'Confirmar validación'
       : isConfirmingAction
         ? 'Rechazando...'
-        : 'Sí, rechazar comprobante';
+        : 'Confirmar rechazo';
 
   function handleToggleOptionsMenu(
     paymentId: number,
@@ -687,21 +677,18 @@ export function PaymentsTable({
                     <td className="px-4 py-4">
                       <div className="flex flex-wrap gap-2">
                         {canValidate && (
-                          <>
-                            <button
-                              type="button"
-                              disabled={isProcessing}
-                              onClick={() =>
-                                openConfirmModal(payment.id, 'VALIDATE')
-                              }
-                              className="
+                          <button
+                            type="button"
+                            disabled={isProcessing}
+                            onClick={() => openReviewDrawer(payment.id)}
+                            className="
   flex-1
   inline-flex
   h-9
   items-center
   justify-center
   rounded-lg
-  bg-emerald-600
+  bg-blue-600
   px-4
   text-sm
   font-medium
@@ -709,43 +696,13 @@ export function PaymentsTable({
   shadow-sm
   transition-all
   hover:-translate-y-0.5
-  hover:bg-emerald-700
+  hover:bg-blue-700
   disabled:cursor-not-allowed
   disabled:opacity-50
 "
-                            >
-                              {isProcessing ? 'Validando...' : 'Validar'}
-                            </button>
-
-                            <button
-                              type="button"
-                              disabled={isProcessing}
-                              onClick={() =>
-                                openConfirmModal(payment.id, 'REJECT')
-                              }
-                              className="
-  flex-1
-  inline-flex
-  h-9
-  items-center
-  justify-center
-  rounded-lg
-  bg-rose-600
-  px-4
-  text-sm
-  font-medium
-  text-white
-  shadow-sm
-  transition-all
-  hover:-translate-y-0.5
-  hover:bg-rose-700
-  disabled:cursor-not-allowed
-  disabled:opacity-50
-"
-                            >
-                              {isProcessing ? 'Procesando...' : 'Rechazar'}
-                            </button>
-                          </>
+                          >
+                            {isProcessing ? 'Procesando...' : 'Revisar'}
+                          </button>
                         )}
 
                         {canEdit && (
@@ -820,48 +777,122 @@ export function PaymentsTable({
         </div>
       </div>
 
-      {pendingAction ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm px-4">
-          <div className="w-full max-w-md rounded-[2rem]
-border
-border-slate-200
-bg-white
-p-8
-shadow-2xl
-shadow-slate-950/10">
-            <h4 className="text-lg font-semibold text-slate-900">
-              {confirmTitle}
-            </h4>
+      {reviewingPayment ? (
+        <div className="fixed inset-0 z-50">
+          <button
+            type="button"
+            aria-label="Cerrar panel de revisión"
+            onClick={closeReviewDrawer}
+            className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+          />
 
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              {confirmDescription}
-            </p>
+          <div className="absolute right-0 top-0 flex h-full w-full max-w-2xl flex-col bg-white shadow-2xl shadow-slate-950/20">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
+                  Revisar comprobante
+                </p>
+                <h4 className="mt-1 text-lg font-semibold text-slate-900">
+                  {formatCurrency(reviewingPayment.monto)} · {paymentTypeLabels[reviewingPayment.tipoPago]}
+                </h4>
+              </div>
 
-            {selectedPayment ? (
-              <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+              <button
+                type="button"
+                onClick={closeReviewDrawer}
+                disabled={isConfirmingAction}
+                aria-label="Cerrar"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
+              <div>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-slate-700">
+                    Comprobante de ingreso
+                  </p>
+
+                  <a
+                    href={reviewingPayment.comprobanteUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs font-medium text-blue-600 hover:underline"
+                  >
+                    Ver en pestaña nueva
+                  </a>
+                </div>
+
+                <div className="mt-2 flex max-h-[420px] items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                  {isImageUrl(reviewingPayment.comprobanteUrl) ? (
+                    <img
+                      src={reviewingPayment.comprobanteUrl}
+                      alt="Comprobante de ingreso"
+                      className="max-h-[420px] w-full object-contain"
+                    />
+                  ) : (
+                    <iframe
+                      src={reviewingPayment.comprobanteUrl}
+                      title="Comprobante de ingreso"
+                      className="h-[420px] w-full border-0"
+                    />
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
                 <p>
-                  <span className="font-medium">Monto:</span>{' '}
-                  {formatCurrency(selectedPayment.monto)}
+                  <span className="font-medium">Cuenta destino:</span>{' '}
+                  {reviewingPayment.cuentaDestinoBanco ?? '-'}
                 </p>
                 <p>
-                  <span className="font-medium">Tipo:</span>{' '}
-                  {paymentTypeLabels[selectedPayment.tipoPago]}
+                  <span className="font-medium">Titular:</span>{' '}
+                  {reviewingPayment.cuentaDestinoTitular ?? '-'}
+                </p>
+                <p>
+                  <span className="font-medium">Fecha comprobante:</span>{' '}
+                  {formatDate(reviewingPayment.fechaComprobante)}
                 </p>
                 <p>
                   <span className="font-medium">Registrado por:</span>{' '}
-                  {selectedPayment.registradoPorNombre}
+                  {reviewingPayment.registradoPorNombre}
                 </p>
+                {reviewingPayment.observaciones ? (
+                  <p className="col-span-2">
+                    <span className="font-medium">Observaciones:</span>{' '}
+                    {reviewingPayment.observaciones}
+                  </p>
+                ) : null}
               </div>
-            ) : null}
 
-            {pendingAction.action === 'VALIDATE' ? (
-              <div className="mt-4">
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Comprobante de validación <span className="text-rose-600">*</span>
-                </label>
+              {activeAction === null ? (
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setActiveAction('VALIDATE')}
+                    className="flex-1 inline-flex h-11 items-center justify-center rounded-xl bg-emerald-600 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-emerald-700"
+                  >
+                    Validar
+                  </button>
 
-                <label
-                  className={`
+                  <button
+                    type="button"
+                    onClick={() => setActiveAction('REJECT')}
+                    className="flex-1 inline-flex h-11 items-center justify-center rounded-xl bg-rose-600 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-rose-700"
+                  >
+                    Rechazar
+                  </button>
+                </div>
+              ) : activeAction === 'VALIDATE' ? (
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                    Comprobante de validación <span className="text-rose-600">*</span>
+                  </label>
+
+                  <label
+                    className={`
         flex
         min-h-[130px]
         w-full
@@ -877,59 +908,59 @@ shadow-slate-950/10">
         text-center
         transition
         ${validationReceiptError
-                      ? 'border-rose-400 bg-rose-50'
-                      : 'border-slate-300 bg-white hover:border-slate-400'
-                    }
+                        ? 'border-rose-400 bg-rose-50'
+                        : 'border-slate-300 bg-white hover:border-slate-400'
+                      }
       `}
-                >
-                  <input
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png,.webp"
-                    className="hidden"
-                    disabled={isConfirmingAction}
-                    onChange={(event) => {
-                      const file = event.target.files?.[0] ?? null;
+                  >
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.webp"
+                      className="hidden"
+                      disabled={isConfirmingAction}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0] ?? null;
 
-                      setValidationReceipt(file);
-                      setValidationReceiptError('');
+                        setValidationReceipt(file);
+                        setValidationReceiptError('');
 
-                      event.target.value = '';
-                    }}
-                  />
+                        event.target.value = '';
+                      }}
+                    />
 
-                  {validationReceipt ? (
-                    <div className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="flex items-start gap-4">
-                        <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
-                          {validationReceiptPreviewUrl ? (
-                            <img
-                              src={validationReceiptPreviewUrl}
-                              alt="Comprobante de validación"
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <div className="px-2 text-center text-xs text-slate-500">
-                              PDF
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="min-w-0 flex-1 text-left">
-                          <p className="text-sm font-semibold text-slate-900">
-                            Comprobante seleccionado
-                          </p>
-
-                          <p className="mt-1 break-all text-xs text-slate-500">
-                            {validationReceipt.name}
-                          </p>
-
-                          <div className="mt-3 flex flex-wrap gap-2">
+                    {validationReceipt ? (
+                      <div className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="flex items-start gap-4">
+                          <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
                             {validationReceiptPreviewUrl ? (
-                              <a
-                                href={validationReceiptPreviewUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="
+                              <img
+                                src={validationReceiptPreviewUrl}
+                                alt="Comprobante de validación"
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="px-2 text-center text-xs text-slate-500">
+                                PDF
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="min-w-0 flex-1 text-left">
+                            <p className="text-sm font-semibold text-slate-900">
+                              Comprobante seleccionado
+                            </p>
+
+                            <p className="mt-1 break-all text-xs text-slate-500">
+                              {validationReceipt.name}
+                            </p>
+
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {validationReceiptPreviewUrl ? (
+                                <a
+                                  href={validationReceiptPreviewUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="
                 inline-flex
                 items-center
                 rounded-lg
@@ -943,13 +974,13 @@ shadow-slate-950/10">
                 text-slate-700
                 hover:bg-slate-50
               "
-                              >
-                                Ver imagen
-                              </a>
-                            ) : null}
+                                >
+                                  Ver imagen
+                                </a>
+                              ) : null}
 
-                            <span
-                              className="
+                              <span
+                                className="
               inline-flex
               items-center
               rounded-lg
@@ -960,55 +991,53 @@ shadow-slate-950/10">
               font-semibold
               text-white
             "
-                            >
-                              Cambiar comprobante
-                            </span>
+                              >
+                                Cambiar comprobante
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ) : (
-                    <>
-                      <p className="text-sm font-medium text-slate-700">
-                        Haz clic para seleccionar el comprobante
-                      </p>
+                    ) : (
+                      <>
+                        <p className="text-sm font-medium text-slate-700">
+                          Haz clic para seleccionar el comprobante
+                        </p>
 
-                      <p className="mt-2 text-xs text-slate-400">
-                        PDF, JPG, JPEG, PNG o WEBP
-                      </p>
-                    </>
-                  )}
-                </label>
-
-                {validationReceiptError ? (
-                  <p className="mt-2 text-sm text-rose-600">
-                    {validationReceiptError}
-                  </p>
-                ) : null}
-              </div>
-            ) : null}
-
-            {isRejectAction ? (
-              <div className="mt-4 space-y-3">
-                <div>
-                  <label
-                    htmlFor="reject-reason-code"
-                    className="mb-2 block text-sm font-medium text-slate-700"
-                  >
-                    Motivo del rechazo <span className="text-rose-600">*</span>
+                        <p className="mt-2 text-xs text-slate-400">
+                          PDF, JPG, JPEG, PNG o WEBP
+                        </p>
+                      </>
+                    )}
                   </label>
 
-                  <select
-                    id="reject-reason-code"
-                    value={rejectReasonCode}
-                    disabled={isConfirmingAction}
-                    onChange={(event) => {
-                      setRejectReasonCode(event.target.value as PaymentRejectReasonCode);
-                      if (rejectReasonError) {
-                        setRejectReasonError('');
-                      }
-                    }}
-                    className={`
+                  {validationReceiptError ? (
+                    <p className="mt-2 text-sm text-rose-600">
+                      {validationReceiptError}
+                    </p>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div>
+                    <label
+                      htmlFor="reject-reason-code"
+                      className="mb-2 block text-sm font-medium text-slate-700"
+                    >
+                      Motivo del rechazo <span className="text-rose-600">*</span>
+                    </label>
+
+                    <select
+                      id="reject-reason-code"
+                      value={rejectReasonCode}
+                      disabled={isConfirmingAction}
+                      onChange={(event) => {
+                        setRejectReasonCode(event.target.value as PaymentRejectReasonCode);
+                        if (rejectReasonError) {
+                          setRejectReasonError('');
+                        }
+                      }}
+                      className={`
   w-full
   rounded-2xl
   border
@@ -1021,52 +1050,52 @@ shadow-slate-950/10">
   transition
   focus:bg-white
   ${rejectReasonError && !rejectReasonCode
-                        ? 'border-rose-500'
-                        : 'border-slate-200 focus:border-slate-400'
-                      }
+                          ? 'border-rose-500'
+                          : 'border-slate-200 focus:border-slate-400'
+                        }
 `}
-                  >
-                    <option value="" disabled>
-                      Selecciona un motivo
-                    </option>
-                    {PAYMENT_REJECT_REASONS.map((reason) => (
-                      <option key={reason.value} value={reason.value}>
-                        {reason.label}
+                    >
+                      <option value="" disabled>
+                        Selecciona un motivo
                       </option>
-                    ))}
-                  </select>
-                </div>
+                      {PAYMENT_REJECT_REASONS.map((reason) => (
+                        <option key={reason.value} value={reason.value}>
+                          {reason.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                <div>
-                  <label
-                    htmlFor="reject-reason"
-                    className="mb-2 block text-sm font-medium text-slate-700"
-                  >
-                    Observaciones{' '}
-                    {rejectReasonCode === 'OTRO' ? (
-                      <span className="text-rose-600">*</span>
-                    ) : (
-                      <span className="font-normal text-slate-400">(opcional)</span>
-                    )}
-                  </label>
+                  <div>
+                    <label
+                      htmlFor="reject-reason"
+                      className="mb-2 block text-sm font-medium text-slate-700"
+                    >
+                      Observaciones{' '}
+                      {rejectReasonCode === 'OTRO' ? (
+                        <span className="text-rose-600">*</span>
+                      ) : (
+                        <span className="font-normal text-slate-400">(opcional)</span>
+                      )}
+                    </label>
 
-                  <textarea
-                    id="reject-reason"
-                    rows={4}
-                    value={rejectReason}
-                    onChange={(event) => {
-                      setRejectReason(event.target.value);
-                      if (rejectReasonError) {
-                        setRejectReasonError('');
+                    <textarea
+                      id="reject-reason"
+                      rows={4}
+                      value={rejectReason}
+                      onChange={(event) => {
+                        setRejectReason(event.target.value);
+                        if (rejectReasonError) {
+                          setRejectReasonError('');
+                        }
+                      }}
+                      disabled={isConfirmingAction}
+                      placeholder={
+                        rejectReasonCode === 'OTRO'
+                          ? 'Escribe el motivo del rechazo'
+                          : 'Agrega contexto adicional (opcional)'
                       }
-                    }}
-                    disabled={isConfirmingAction}
-                    placeholder={
-                      rejectReasonCode === 'OTRO'
-                        ? 'Escribe el motivo del rechazo'
-                        : 'Agrega contexto adicional (opcional)'
-                    }
-                    className={`
+                      className={`
   w-full
   rounded-2xl
   border
@@ -1079,41 +1108,44 @@ shadow-slate-950/10">
   transition
   focus:bg-white
   ${rejectReasonError && rejectReasonCode === 'OTRO'
-                        ? 'border-rose-500'
-                        : 'border-slate-200 focus:border-slate-400'
-                      }
+                          ? 'border-rose-500'
+                          : 'border-slate-200 focus:border-slate-400'
+                        }
 `}
-                  />
-                </div>
+                    />
+                  </div>
 
-                {rejectReasonError ? (
-                  <p className="text-sm text-rose-600">{rejectReasonError}</p>
-                ) : null}
+                  {rejectReasonError ? (
+                    <p className="text-sm text-rose-600">{rejectReasonError}</p>
+                  ) : null}
+                </div>
+              )}
+            </div>
+
+            {activeAction ? (
+              <div className="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
+                <button
+                  type="button"
+                  onClick={resetReviewFormState}
+                  disabled={isConfirmingAction}
+                  className="inline-flex rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Volver
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => void handleConfirmAction()}
+                  disabled={isConfirmingAction}
+                  className={`inline-flex rounded-lg px-4 py-2 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-50 ${isRejectAction
+                    ? 'bg-rose-600 hover:bg-rose-700'
+                    : 'bg-emerald-600 hover:bg-emerald-700'
+                    }`}
+                >
+                  {confirmButtonText}
+                </button>
               </div>
             ) : null}
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={closeModal}
-                disabled={isConfirmingAction}
-                className="inline-flex rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-
-              <button
-                type="button"
-                onClick={() => void handleConfirmAction()}
-                disabled={isConfirmingAction}
-                className={`inline-flex rounded-lg px-4 py-2 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-50 ${pendingAction.action === 'VALIDATE'
-                  ? 'bg-emerald-600 hover:bg-emerald-700'
-                  : 'bg-rose-600 hover:bg-rose-700'
-                  }`}
-              >
-                {confirmButtonText}
-              </button>
-            </div>
           </div>
         </div>
       ) : null}
