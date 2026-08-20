@@ -218,31 +218,54 @@ export default function OperationsPage() {
         endDate={filters.endDate}
       />
 
-      <div className="flex items-center justify-between rounded-2xl bg-white p-4 shadow-sm">
+      <div className="rounded-2xl bg-white p-4 shadow-sm">
+        {/* Móvil: título arriba, botón de ancho completo debajo */}
+        <div className="flex flex-col gap-3 sm:hidden">
+          <div className="text-center">
+            <h1 className="text-lg font-semibold text-slate-900">
+              Operaciones
+            </h1>
+            <p className="text-xs text-slate-500">
+              Gestiona operaciones y registra comprobantes
+            </p>
+          </div>
 
-        <div className="flex-1">
           {canCreateOperation && (
             <button
               type="button"
               onClick={() => setIsCreateModalOpen(true)}
-              className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
+              className="min-h-[44px] w-full rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
             >
               Nueva operación
             </button>
           )}
         </div>
 
-        <div className="flex-1 text-center">
-          <h1 className="text-lg font-semibold text-slate-900">
-            Operaciones
-          </h1>
-          <p className="text-xs text-slate-500">
-            Gestiona operaciones y registra comprobantes
-          </p>
+        {/* sm+: título centrado con el botón balanceado a los lados */}
+        <div className="hidden sm:flex sm:items-center sm:justify-between">
+          <div className="flex-1">
+            {canCreateOperation && (
+              <button
+                type="button"
+                onClick={() => setIsCreateModalOpen(true)}
+                className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
+              >
+                Nueva operación
+              </button>
+            )}
+          </div>
+
+          <div className="flex-1 text-center">
+            <h1 className="text-lg font-semibold text-slate-900">
+              Operaciones
+            </h1>
+            <p className="text-xs text-slate-500">
+              Gestiona operaciones y registra comprobantes
+            </p>
+          </div>
+
+          <div className="flex-1" />
         </div>
-
-        <div className="flex-1" />
-
       </div>
 
       <section className="rounded-2xl bg-white p-4 shadow-sm">

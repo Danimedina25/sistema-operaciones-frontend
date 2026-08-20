@@ -55,7 +55,7 @@ export function ExecutiveDashboard() {
   return (
     <div className="space-y-3">
       <div className="rounded-2xl bg-white p-4 shadow-sm">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-lg font-semibold text-slate-900">Dashboard ejecutivo</h1>
             <p className="text-xs text-slate-500">
@@ -69,7 +69,7 @@ export function ExecutiveDashboard() {
                 key={option.value}
                 type="button"
                 onClick={() => setFilters({ ...filters, period: option.value })}
-                className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
+                className={`min-h-[40px] rounded-lg border px-3 py-2 text-xs font-medium transition ${
                   filters.period === option.value
                     ? 'border-slate-900 bg-slate-900 text-white'
                     : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
