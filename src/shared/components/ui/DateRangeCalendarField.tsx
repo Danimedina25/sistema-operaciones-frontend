@@ -80,60 +80,68 @@ export function DateRangeCalendarField({
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="flex h-9 w-full items-center rounded-lg border border-slate-300 bg-white px-3 text-left text-sm text-slate-700 outline-none focus:border-slate-900"
+        className="flex h-11 w-full items-center rounded-lg border border-slate-300 bg-white px-3 text-left text-sm text-slate-700 outline-none focus:border-slate-900"
       >
         <span className={hasValue ? '' : 'text-slate-400'}>{label}</span>
       </button>
 
       {open && (
-        <div className="absolute left-0 top-11 z-50 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
-          <DateRange
-            ranges={[draftRange]}
-            onChange={(item: any) => {
-              const selection = item.selection;
-
-              setDraftRange({
-                startDate: selection.startDate ?? new Date(),
-                endDate: selection.endDate ?? new Date(),
-                key: 'selection',
-              });
-            }}
-            showMonthArrow
-            moveRangeOnFirstSelection={false}
-            editableDateInputs={false}
-            showDateDisplay={false}
-            showMonthAndYearPickers
-            rangeColors={['#0f172a']}
-            months={1}
-            direction="horizontal"
+        <>
+          <div
+            onClick={() => setOpen(false)}
+            aria-hidden="true"
+            className="fixed inset-0 z-40 bg-slate-950/40 sm:hidden"
           />
 
-          <div className="mt-2 flex justify-end gap-2 border-t border-slate-100 pt-3">
-            <button
-              type="button"
-              onClick={handleClear}
-              className="rounded-lg px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
-            >
-              Limpiar
-            </button>
+          <div className="fixed inset-x-2 top-1/2 z-50 max-h-[85vh] -translate-y-1/2 overflow-x-auto overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3 shadow-xl sm:absolute sm:inset-x-auto sm:left-0 sm:top-11 sm:max-h-none sm:translate-y-0 sm:overflow-visible sm:p-4">
+            <DateRange
+              ranges={[draftRange]}
+              onChange={(item: any) => {
+                const selection = item.selection;
 
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
-            >
-              Cancelar
-            </button>
+                setDraftRange({
+                  startDate: selection.startDate ?? new Date(),
+                  endDate: selection.endDate ?? new Date(),
+                  key: 'selection',
+                });
+              }}
+              showMonthArrow
+              moveRangeOnFirstSelection={false}
+              editableDateInputs={false}
+              showDateDisplay={false}
+              showMonthAndYearPickers
+              rangeColors={['#0f172a']}
+              months={1}
+              direction="horizontal"
+            />
 
-            <button
-              type="button"
-              onClick={handleApply}
-              className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-slate-800"
-            >
-              Aplicar
-            </button>
+            <div className="mt-2 flex justify-end gap-2 border-t border-slate-100 pt-3">
+              <button
+                type="button"
+                onClick={handleClear}
+                className="rounded-lg px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
+              >
+                Limpiar
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={handleApply}
+                className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium text-white transition hover:bg-slate-800"
+              >
+                Aplicar
+              </button>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

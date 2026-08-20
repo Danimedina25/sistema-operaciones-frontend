@@ -14,7 +14,8 @@ import {
   BanknoteArrowDown,
   ClipboardCheck,
   Settings,
-  Clock
+  Clock,
+  X
 } from 'lucide-react';
 
 import { paths } from '@/routes/paths';
@@ -118,7 +119,12 @@ const navItems: NavItem[] = [
     allowedRoles: ROUTE_ACCESS.configuraciones,
   },
 ];
-export function Sidebar() {
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { logout, user, hasRole } = useAuth();
   const { count: pendingPaymentsCount, enabled: showPendingPaymentsBadge } =
     usePendingPaymentsCount();
@@ -129,46 +135,61 @@ export function Sidebar() {
   });
 
   return (
-    <aside
-      className="
-    flex
-    h-full
-    w-72
-    flex-shrink-0
-    flex-col
-    border-r
-    border-white/10
-    bg-slate-950
-    text-white
-  "
-    >
-      <div className="border-b border-white/10 px-6 py-6">
-        <h1 className="text-xl font-bold tracking-tight text-white">
-          Sistema de operaciones
-        </h1>
+    <>
+      {isOpen && (
+        <div
+          onClick={onClose}
+          aria-hidden="true"
+          className="fixed inset-0 z-30 bg-slate-950/50 lg:hidden"
+        />
+      )}
 
-        <p className="mt-1 text-sm text-slate-400">
-          {user ? formatRoles(user.roles) : 'Panel administrativo'}
-        </p>
-      </div>
+      <aside
+        className={cn(
+          'fixed inset-y-0 left-0 z-40 flex h-full w-72 flex-shrink-0 flex-col border-r border-white/10 bg-slate-950 text-white transition-transform duration-200 ease-in-out',
+          'lg:static lg:translate-x-0',
+          isOpen ? 'translate-x-0' : '-translate-x-full',
+        )}
+      >
+        <div className="flex items-start justify-between gap-3 border-b border-white/10 px-6 py-6">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-white">
+              Sistema de operaciones
+            </h1>
 
-      <nav className="sidebar-nav-scroll flex-1 space-y-1 overflow-y-auto p-4">
-        {visibleNavItems.map(({ to, label, icon: Icon }) => {
-          const showBadge =
-            showPendingPaymentsBadge &&
-            to === paths.operations &&
-            pendingPaymentsCount !== null &&
-            pendingPaymentsCount > 0;
+            <p className="mt-1 text-sm text-slate-400">
+              {user ? formatRoles(user.roles) : 'Panel administrativo'}
+            </p>
+          </div>
 
-          return (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200',
-                  isActive
-                    ? `
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Cerrar menú"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-slate-300 hover:bg-white/10 hover:text-white lg:hidden"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <nav className="sidebar-nav-scroll flex-1 space-y-1 overflow-y-auto p-4">
+          {visibleNavItems.map(({ to, label, icon: Icon }) => {
+            const showBadge =
+              showPendingPaymentsBadge &&
+              to === paths.operations &&
+              pendingPaymentsCount !== null &&
+              pendingPaymentsCount > 0;
+
+            return (
+              <NavLink
+                key={to}
+                to={to}
+                onClick={onClose}
+                className={({ isActive }) =>
+                  cn(
+                    'flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200',
+                    isActive
+                      ? `
         bg-gradient-to-r
         from-blue-600
         to-blue-500
@@ -176,33 +197,33 @@ export function Sidebar() {
         shadow-lg
         shadow-blue-500/20
       `
-                    : `
+                      : `
         text-slate-300
         hover:bg-white/10
         hover:text-white
       `,
-                )
-              }
-            >
-              <Icon className="h-4 w-4 shrink-0" />
-              <span className="flex-1">{label}</span>
-              {showBadge && (
-                <span
-                  title="Pagos pendientes de validación"
-                  className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-500 px-1.5 text-[11px] font-bold text-slate-950"
-                >
-                  {pendingPaymentsCount}
-                </span>
-              )}
-            </NavLink>
-          );
-        })}
-      </nav>
+                  )
+                }
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                <span className="flex-1">{label}</span>
+                {showBadge && (
+                  <span
+                    title="Pagos pendientes de validación"
+                    className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-500 px-1.5 text-[11px] font-bold text-slate-950"
+                  >
+                    {pendingPaymentsCount}
+                  </span>
+                )}
+              </NavLink>
+            );
+          })}
+        </nav>
 
-      <div className="border-t border-white/10 p-4">
-        <button
-          onClick={logout}
-          className="
+        <div className="border-t border-white/10 p-4">
+          <button
+            onClick={logout}
+            className="
 flex
 w-full
 items-center
@@ -218,10 +239,11 @@ duration-200
 hover:bg-red-500/10
 hover:text-red-300
 "        >
-          <LogOut className="h-4 w-4" />
-          Cerrar sesión
-        </button>
-      </div>
-    </aside>
+            <LogOut className="h-4 w-4" />
+            Cerrar sesión
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }
