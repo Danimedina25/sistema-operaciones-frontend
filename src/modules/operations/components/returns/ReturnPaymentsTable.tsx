@@ -73,6 +73,22 @@ export function ReturnPaymentsTable({
   const isJefaCuentas = roles.includes('JEFA_CUENTAS');
   const isAuxiliarCuentas = roles.includes('AUXILIAR_CUENTAS');
   const isSocioComercial = roles.includes('SOCIO_COMERCIAL')
+
+  const visibleReturns = returns.filter((returnPayment) => {
+    if (isJefaCajas) {
+      return (
+        returnPayment.tipoPago === 'EFECTIVO' ||
+        returnPayment.tipoPago === 'RETIRO_SIN_TARJETA'
+      );
+    }
+
+    if (isJefaCuentas || isAuxiliarCuentas) {
+      return returnPayment.tipoPago === 'TRANSFERENCIA';
+    }
+
+    return true; // ADMIN, GERENTE, DIRECCION, SOCIO_COMERCIAL ven todo
+  });
+
   const hasPendingAmountToRequest = (montoPendientePorSolicitar ?? 0) > 0;
   const hasPendingAmountToPay = (montoPendientePorRetornar ?? 0) > 0;
   const [openOptionsReturnId, setOpenOptionsReturnId] = useState<number | null>(null);
@@ -322,12 +338,18 @@ export function ReturnPaymentsTable({
 
       </div>
 
-      {returns.length === 0 ? (
+      {visibleReturns.length === 0 ? (
         <div className="px-6 pb-6">
           <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
             <ArrowUpRight className="mx-auto h-8 w-8 text-slate-300" />
-            <p className="mt-3 text-sm font-semibold text-slate-700">Sin retornos registrados</p>
-            <p className="mt-1 text-xs text-slate-500">Las solicitudes y pagos de retorno aparecerán aquí.</p>
+            <p className="mt-3 text-sm font-semibold text-slate-700">
+              {returns.length > 0 ? 'Sin retornos de tu tipo' : 'Sin retornos registrados'}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              {returns.length > 0
+                ? 'Esta operación no tiene retornos del tipo que te corresponde.'
+                : 'Las solicitudes y pagos de retorno aparecerán aquí.'}
+            </p>
           </div>
         </div>
       ) : (
@@ -352,7 +374,7 @@ export function ReturnPaymentsTable({
             </thead>
 
             <tbody>
-              {returns.map((returnPayment) => {
+              {visibleReturns.map((returnPayment) => {
                 //const canEditReturn = canEditRequestReturnPayments && returnPayment.estatus === 'SOLICITADO'
                 const canPayReturn = canPayThisReturn(returnPayment);
                 const hasPickupScheduled = !!returnPayment.fechaHoraRecoleccionEfectivo;

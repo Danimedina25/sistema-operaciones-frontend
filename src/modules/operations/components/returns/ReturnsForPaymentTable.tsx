@@ -1,11 +1,10 @@
-import { Eye, HandCoins } from 'lucide-react';
+import { HandCoins } from 'lucide-react';
 import { OperationStatusBadge } from '@/modules/operations/components/OperationStatusBadge';
 import {
   formatCurrency,
   formatDate,
 } from '@/modules/operations/utils/operation-formatters';
 import { PaymentOperationResponse } from '../../types/operations.types.ts.js';
-import { useEffect } from 'react';
 import { useAuth } from '@/modules/auth/store/auth.context.js';
 
 interface ReturnsTableProps {
@@ -28,17 +27,36 @@ export function ReturnsForPaymentTable({
   const isJefaCuentas = roles.includes('JEFA_CUENTAS');
   const isAuxiliarCuentas = roles.includes('AUXILIAR_CUENTAS');
 
-  if (!isLoading && operations.length === 0) {
+  const visibleOperations = operations.filter((operation) => {
+    if (isJefaCajas) {
+      return (
+        operation.contieneRetornosEnEfectivo ||
+        operation.contieneRetornosRetiroSinTarjeta
+      );
+    }
+
+    if (isJefaCuentas || isAuxiliarCuentas) {
+      return operation.contieneRetornosEnTransferencia;
+    }
+
+    return true; // ADMIN, GERENTE, DIRECCION ven todo
+  });
+
+  if (!isLoading && visibleOperations.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
         <HandCoins className="mx-auto mb-3 h-8 w-8 text-slate-400" />
 
         <p className="text-sm font-medium text-slate-700">
-          No hay operaciones listas para registrar retorno
+          {operations.length > 0
+            ? 'No hay operaciones de tu tipo listas para registrar retorno'
+            : 'No hay operaciones listas para registrar retorno'}
         </p>
 
         <p className="mt-1 text-xs text-slate-500">
-          Cuando una operación tenga solicitudes de retorno que no hayan sido pagadas, aparecerá aquí.
+          {operations.length > 0
+            ? 'No hay retornos pendientes del tipo que te corresponde pagar.'
+            : 'Cuando una operación tenga solicitudes de retorno que no hayan sido pagadas, aparecerá aquí.'}
         </p>
       </div>
     );
@@ -102,8 +120,7 @@ export function ReturnsForPaymentTable({
                 </td>
               </tr>
             ) : (
-              operations.map((operation) => {
-                console.log("operation", operation)
+              visibleOperations.map((operation) => {
                 const canPayReturns =
                   (isJefaCajas && operation.contieneRetornosEnEfectivo) ||
                   (isJefaCajas && operation.contieneRetornosRetiroSinTarjeta) ||
