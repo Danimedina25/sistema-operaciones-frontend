@@ -259,7 +259,7 @@ export function BankAccountFormModal({
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 border-t border-slate-200 pt-4">
+          <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end">
             <button
               type="button"
               onClick={onClose}

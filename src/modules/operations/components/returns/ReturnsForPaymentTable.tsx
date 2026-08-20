@@ -71,39 +71,39 @@ export function ReturnsForPaymentTable({
               <th className="px-4 py-3 font-medium text-center">
                 Folio
               </th>
-              <th className="px-4 py-3 font-medium text-center">
+              <th className="min-w-[140px] px-4 py-3 font-medium text-center">
                 Cliente primario
               </th>
 
-              <th className="px-4 py-3 font-medium text-center">
+              <th className="min-w-[140px] px-4 py-3 font-medium text-center">
                 Socio comercial
               </th>
 
-              <th className="px-4 py-3 font-medium text-center">
+              <th className="min-w-[120px] px-4 py-3 font-medium text-center">
                 Fecha de creación
               </th>
 
-              <th className="px-4 py-3 font-medium text-center">
+              <th className="min-w-[110px] px-4 py-3 font-medium text-center">
                 Monto total
               </th>
 
-              <th className="px-4 py-3 font-medium text-center">
+              <th className="min-w-[130px] px-4 py-3 font-medium text-center">
                 Monto a retornar
               </th>
 
-              <th className="px-4 py-3 font-medium text-center">
+              <th className="min-w-[130px] px-4 py-3 font-medium text-center">
                 Monto solicitado
               </th>
 
-              <th className="px-4 py-3 font-medium text-center">
+              <th className="min-w-[130px] px-4 py-3 font-medium text-center">
                 Monto retornado
               </th>
 
-              <th className="px-4 py-3 font-medium text-center">
+              <th className="min-w-[150px] px-4 py-3 font-medium text-center">
                 Estatus retorno
               </th>
 
-              <th className="px-4 py-3 font-medium text-center">
+              <th className="min-w-[180px] px-4 py-3 font-medium text-center">
                 Acciones
               </th>
             </tr>
@@ -191,7 +191,7 @@ export function ReturnsForPaymentTable({
                           onClick={() => {
                             onReturnPayments(operation.id);
                           }}
-                          className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                          className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
                         >
                           {isJefaCajas ? 'Programar recolecciones' : 'Pagar retornos'}
                         </button>

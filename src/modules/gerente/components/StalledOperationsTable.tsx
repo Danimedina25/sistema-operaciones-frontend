@@ -53,10 +53,10 @@ export function StalledOperationsTable() {
             <thead className="bg-slate-100">
               <tr className="text-left text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
                 <th className="px-4 py-3 font-medium">Folio</th>
-                <th className="px-4 py-3 font-medium">Cliente</th>
+                <th className="min-w-[160px] px-4 py-3 font-medium">Cliente</th>
                 <th className="px-4 py-3 font-medium">Monto</th>
                 <th className="px-4 py-3 font-medium">Estatus</th>
-                <th className="px-4 py-3 font-medium">Sin actualizar</th>
+                <th className="min-w-[160px] px-4 py-3 font-medium">Sin actualizar</th>
                 <th className="px-4 py-3 font-medium">Detalle</th>
               </tr>
             </thead>
@@ -77,7 +77,7 @@ export function StalledOperationsTable() {
                   <td className="px-4 py-3">
                     <Link
                       to={buildOperationDetailPath(operation.id)}
-                      className="text-xs font-semibold text-blue-600 hover:underline"
+                      className="inline-flex min-h-[40px] items-center text-xs font-semibold text-blue-600 hover:underline"
                     >
                       Ver detalle
                     </Link>

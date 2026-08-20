@@ -1,7 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { StatusBadge } from '@/shared/components/ui/StatusBadge';
 import { CanAccess } from '@/shared/components/CanAccess';
+import { RowActionsMenu } from '@/shared/components/ui/RowActionsMenu';
 import type { ClienteResponse } from '@/modules/clientes/types/clientes.types';
 import { ClienteStatusBadge } from './ClienteStatusBadge';
 
@@ -22,77 +20,6 @@ export function ClientesTable({
   onDeactivate,
   onDelete,
 }: ClientesTableProps) {
-  const [openMenuClienteId, setOpenMenuClienteId] = useState<number | null>(
-    null,
-  );
-  const [menuPosition, setMenuPosition] = useState<{
-    top: number;
-    left: number;
-    openUp: boolean;
-  } | null>(null);
-
-  const menuRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setOpenMenuClienteId(null);
-        setMenuPosition(null);
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  useEffect(() => {
-    function handleCloseMenu() {
-      setOpenMenuClienteId(null);
-      setMenuPosition(null);
-    }
-
-    window.addEventListener('scroll', handleCloseMenu, true);
-    window.addEventListener('resize', handleCloseMenu);
-
-    return () => {
-      window.removeEventListener('scroll', handleCloseMenu, true);
-      window.removeEventListener('resize', handleCloseMenu);
-    };
-  }, []);
-
-  function handleToggleMenu(
-    clienteId: number,
-    event: React.MouseEvent<HTMLButtonElement>,
-  ) {
-    if (openMenuClienteId === clienteId) {
-      setOpenMenuClienteId(null);
-      setMenuPosition(null);
-      return;
-    }
-
-    const rect = event.currentTarget.getBoundingClientRect();
-
-    const menuWidth = 208;
-    const estimatedMenuHeight = 120;
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const openUp = spaceBelow < estimatedMenuHeight;
-
-    setMenuPosition({
-      top: openUp ? rect.top - 8 : rect.bottom + 8,
-      left: Math.max(8, rect.right - menuWidth),
-      openUp,
-    });
-
-    setOpenMenuClienteId(clienteId);
-  }
-
-  function closeMenu() {
-    setOpenMenuClienteId(null);
-    setMenuPosition(null);
-  }
-
   if (clientes.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
@@ -107,7 +34,7 @@ export function ClientesTable({
         <table className="min-w-full">
           <thead className="bg-slate-100">
             <tr className="text-left text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
-              <th className="px-4 py-3 font-medium">Nombre</th>
+              <th className="min-w-[180px] px-4 py-3 font-medium">Nombre</th>
               <th className="px-4 py-3 font-medium">Estado</th>
               <th className="px-4 py-3 font-medium text-right">Acciones</th>
             </tr>
@@ -116,7 +43,6 @@ export function ClientesTable({
           <tbody>
             {clientes.map((cliente) => {
               const isProcessing = processingClienteId === cliente.id;
-              const isMenuOpen = openMenuClienteId === cliente.id;
 
               return (
                 <tr
@@ -132,79 +58,46 @@ export function ClientesTable({
                   </td>
 
                   <td className="px-4 py-4 text-right">
-                    <button
-                      type="button"
-                      disabled={isProcessing}
-                      onClick={(event) => handleToggleMenu(cliente.id, event)}
-                      className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                    <RowActionsMenu
+                      triggerLabel={isProcessing ? 'Procesando...' : 'Opciones'}
+                      triggerDisabled={isProcessing}
                     >
-                      {isProcessing ? 'Procesando...' : 'Opciones'}
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => onEdit(cliente)}
+                        className="block w-full px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50"
+                      >
+                        Editar
+                      </button>
 
-                    {isMenuOpen &&
-                      menuPosition &&
-                      createPortal(
-                        <div
-                          ref={menuRef}
-                          className="fixed z-[9999] w-52 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg"
-                          style={{
-                            top: menuPosition.top,
-                            left: menuPosition.left,
-                            transform: menuPosition.openUp
-                              ? 'translateY(-100%)'
-                              : 'none',
-                          }}
+                      {cliente.activo ? (
+                        <button
+                          type="button"
+                          onClick={() => onDeactivate(cliente.id)}
+                          className="block w-full px-4 py-2.5 text-left text-sm font-semibold  text-red-700 transition hover:bg-red-50"
                         >
-                          <button
-                            type="button"
-                            onClick={() => {
-                              onEdit(cliente);
-                              closeMenu();
-                            }}
-                            className="block w-full px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50"
-                          >
-                            Editar
-                          </button>
-
-                          {cliente.activo ? (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                onDeactivate(cliente.id);
-                                closeMenu();
-                              }}
-                              className="block w-full px-4 py-2.5 text-left text-sm font-semibold  text-red-700 transition hover:bg-red-50"
-                            >
-                              Desactivar
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                onActivate(cliente.id);
-                                closeMenu();
-                              }}
-                              className="block w-full px-4 py-2.5 text-left text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50"
-                            >
-                              Activar
-                            </button>
-                          )}
-
-                          <CanAccess roles={['ADMIN', 'DIRECCION']}>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                onDelete(cliente);
-                                closeMenu();
-                              }}
-                              className="block w-full border-t border-red-100 bg-red-50/50 px-4 py-2.5 text-left text-sm font-bold text-red-900 transition hover:bg-red-100"
-                            >
-                              Eliminar definitivamente
-                            </button>
-                          </CanAccess>
-                        </div>,
-                        document.body,
+                          Desactivar
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => onActivate(cliente.id)}
+                          className="block w-full px-4 py-2.5 text-left text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50"
+                        >
+                          Activar
+                        </button>
                       )}
+
+                      <CanAccess roles={['ADMIN', 'DIRECCION']}>
+                        <button
+                          type="button"
+                          onClick={() => onDelete(cliente)}
+                          className="block w-full border-t border-red-100 bg-red-50/50 px-4 py-2.5 text-left text-sm font-bold text-red-900 transition hover:bg-red-100"
+                        >
+                          Eliminar definitivamente
+                        </button>
+                      </CanAccess>
+                    </RowActionsMenu>
                   </td>
                 </tr>
               );

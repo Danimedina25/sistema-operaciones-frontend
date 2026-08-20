@@ -1121,7 +1121,7 @@ export function PaymentsTable({
             </div>
 
             {activeAction ? (
-              <div className="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
+              <div className="flex flex-col-reverse gap-3 border-t border-slate-200 px-6 py-4 sm:flex-row sm:justify-end">
                 <button
                   type="button"
                   onClick={resetReviewFormState}

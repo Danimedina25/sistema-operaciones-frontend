@@ -1,10 +1,8 @@
 // src/modules/socioscomerciales/components/CommercialPartnersTable.tsx
 
-import { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-
 import { StatusBadge } from '@/shared/components/ui/StatusBadge';
 import { CanAccess } from '@/shared/components/CanAccess';
+import { RowActionsMenu } from '@/shared/components/ui/RowActionsMenu';
 
 import type {
   CommercialPartnerResponse,
@@ -27,71 +25,6 @@ export function CommercialPartnersTable({
   onDeactivate,
   onDelete,
 }: CommercialPartnersTableProps) {
-  const [openMenuPartnerId, setOpenMenuPartnerId] =
-    useState<number | null>(null);
-
-  const [menuPosition, setMenuPosition] = useState<{
-    top: number;
-    left: number;
-    openUp: boolean;
-  } | null>(null);
-
-  const menuRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        menuRef.current &&
-        !menuRef.current.contains(event.target as Node)
-      ) {
-        setOpenMenuPartnerId(null);
-        setMenuPosition(null);
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside);
-
-    return () => {
-      document.removeEventListener(
-        'mousedown',
-        handleClickOutside,
-      );
-    };
-  }, []);
-
-  function handleToggleMenu(
-    partnerId: number,
-    event: React.MouseEvent<HTMLButtonElement>,
-  ) {
-    if (openMenuPartnerId === partnerId) {
-      setOpenMenuPartnerId(null);
-      setMenuPosition(null);
-      return;
-    }
-
-    const rect = event.currentTarget.getBoundingClientRect();
-
-    const menuWidth = 208;
-    const estimatedMenuHeight = 180;
-
-    const spaceBelow = window.innerHeight - rect.bottom;
-
-    const openUp = spaceBelow < estimatedMenuHeight;
-
-    setMenuPosition({
-      top: openUp ? rect.top - 8 : rect.bottom + 8,
-      left: Math.max(8, rect.right - menuWidth),
-      openUp,
-    });
-
-    setOpenMenuPartnerId(partnerId);
-  }
-
-  function closeMenu() {
-    setOpenMenuPartnerId(null);
-    setMenuPosition(null);
-  }
-
   if (commercialPartners.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
@@ -106,12 +39,12 @@ export function CommercialPartnersTable({
         <table className="min-w-full">
           <thead className="bg-slate-100">
             <tr className="text-left text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
-              <th className="px-4 py-3 font-medium">Nombre</th>
-              <th className="px-4 py-3 font-medium">
+              <th className="min-w-[160px] px-4 py-3 font-medium">Nombre</th>
+              <th className="min-w-[150px] px-4 py-3 font-medium">
                 Cuenta bancaria
               </th>
-              <th className="px-4 py-3 font-medium">Banco</th>
-              <th className="px-4 py-3 font-medium">
+              <th className="min-w-[120px] px-4 py-3 font-medium">Banco</th>
+              <th className="min-w-[160px] px-4 py-3 font-medium">
                 Titular
               </th>
               <th className="px-4 py-3 font-medium">Comisión</th>
@@ -126,9 +59,6 @@ export function CommercialPartnersTable({
             {commercialPartners.map((partner) => {
               const isProcessing =
                 processingPartnerId === partner.id;
-
-              const isMenuOpen =
-                openMenuPartnerId === partner.id;
 
               return (
                 <tr
@@ -160,83 +90,48 @@ export function CommercialPartnersTable({
                   </td>
 
                   <td className="px-4 py-4 text-right">
-                    <button
-                      type="button"
-                      disabled={isProcessing}
-                      onClick={(event) =>
-                        handleToggleMenu(partner.id, event)
+                    <RowActionsMenu
+                      triggerLabel={
+                        isProcessing ? 'Procesando...' : 'Opciones'
                       }
-                      className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                      triggerDisabled={isProcessing}
                     >
-                      {isProcessing
-                        ? 'Procesando...'
-                        : 'Opciones'}
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => onEdit(partner)}
+                        className="block w-full px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50"
+                      >
+                        Editar
+                      </button>
 
-                    {isMenuOpen &&
-                      menuPosition &&
-                      createPortal(
-                        <div
-                          ref={menuRef}
-                          className="fixed z-[9999] w-52 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg"
-                          style={{
-                            top: menuPosition.top,
-                            left: menuPosition.left,
-                            transform: menuPosition.openUp
-                              ? 'translateY(-100%)'
-                              : 'none',
-                          }}
+                      {partner.activo ? (
+                        <button
+                          type="button"
+                          onClick={() => onDeactivate(partner.id)}
+                          className="block w-full px-4 py-2.5 text-left text-sm font-semibold text-red-700 transition hover:bg-red-50"
                         >
-                          <button
-                            type="button"
-                            onClick={() => {
-                              onEdit(partner);
-                              closeMenu();
-                            }}
-                            className="block w-full px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50"
-                          >
-                            Editar
-                          </button>
-
-                          {partner.activo ? (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                onDeactivate(partner.id);
-                                closeMenu();
-                              }}
-                              className="block w-full px-4 py-2.5 text-left text-sm font-semibold text-red-700 transition hover:bg-red-50"
-                            >
-                              Desactivar
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                onActivate(partner.id);
-                                closeMenu();
-                              }}
-                              className="block w-full px-4 py-2.5 text-left text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50"
-                            >
-                              Activar
-                            </button>
-                          )}
-
-                          <CanAccess roles={['ADMIN', 'DIRECCION']}>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                onDelete(partner);
-                                closeMenu();
-                              }}
-                              className="block w-full border-t border-red-100 bg-red-50/50 px-4 py-2.5 text-left text-sm font-bold text-red-900 transition hover:bg-red-100"
-                            >
-                              Eliminar definitivamente
-                            </button>
-                          </CanAccess>
-                        </div>,
-                        document.body,
+                          Desactivar
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => onActivate(partner.id)}
+                          className="block w-full px-4 py-2.5 text-left text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50"
+                        >
+                          Activar
+                        </button>
                       )}
+
+                      <CanAccess roles={['ADMIN', 'DIRECCION']}>
+                        <button
+                          type="button"
+                          onClick={() => onDelete(partner)}
+                          className="block w-full border-t border-red-100 bg-red-50/50 px-4 py-2.5 text-left text-sm font-bold text-red-900 transition hover:bg-red-100"
+                        >
+                          Eliminar definitivamente
+                        </button>
+                      </CanAccess>
+                    </RowActionsMenu>
                   </td>
                 </tr>
               );

@@ -54,13 +54,13 @@ export function TodayDeliveriesTable({ deliveries, onMarkAsDelivered }: TodayDel
         <table className="min-w-full border-separate border-spacing-0">
           <thead className="bg-slate-100">
             <tr className="text-left text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
-              <th className="px-4 py-3 font-medium">Hora</th>
-              <th className="px-4 py-3 font-medium">Operación</th>
-              <th className="px-4 py-3 font-medium">Socio o cliente autorizado</th>
-              <th className="px-4 py-3 font-medium">Monto</th>
-              <th className="px-4 py-3 font-medium">Tipo</th>
-              <th className="px-4 py-3 font-medium">Estado</th>
-              <th className="px-4 py-3 font-medium">Acciones</th>
+              <th className="min-w-[110px] px-4 py-3 font-medium">Hora</th>
+              <th className="min-w-[130px] px-4 py-3 font-medium">Operación</th>
+              <th className="min-w-[170px] px-4 py-3 font-medium">Socio o cliente autorizado</th>
+              <th className="min-w-[110px] px-4 py-3 font-medium">Monto</th>
+              <th className="min-w-[130px] px-4 py-3 font-medium">Tipo</th>
+              <th className="min-w-[160px] px-4 py-3 font-medium">Estado</th>
+              <th className="min-w-[260px] px-4 py-3 font-medium">Acciones</th>
             </tr>
           </thead>
 
@@ -109,7 +109,7 @@ export function TodayDeliveriesTable({ deliveries, onMarkAsDelivered }: TodayDel
                         <button
                           type="button"
                           onClick={() => handleNotifyViaWhatsApp(delivery)}
-                          className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100"
+                          className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100"
                         >
                           <MessageCircle className="h-3.5 w-3.5" />
                           Avisar por WhatsApp
@@ -117,7 +117,7 @@ export function TodayDeliveriesTable({ deliveries, onMarkAsDelivered }: TodayDel
                         <button
                           type="button"
                           onClick={() => onMarkAsDelivered(delivery)}
-                          className="inline-flex h-8 items-center rounded-lg bg-indigo-600 px-3 text-xs font-medium text-white transition hover:bg-indigo-700"
+                          className="inline-flex min-h-[40px] items-center rounded-lg bg-indigo-600 px-3 text-xs font-medium text-white transition hover:bg-indigo-700"
                         >
                           Marcar como entregado
                         </button>

@@ -43,19 +43,19 @@ export function OperationBeneficiariesTable({
                                 Nivel
                             </th>
 
-                            <th className="px-4 py-3">
+                            <th className="min-w-[160px] px-4 py-3">
                                 Nombre
                             </th>
 
-                            <th className="px-4 py-3">
+                            <th className="min-w-[140px] px-4 py-3">
                                 Banco
                             </th>
 
-                            <th className="px-4 py-3">
+                            <th className="min-w-[140px] px-4 py-3">
                                 Cuenta
                             </th>
 
-                            <th className="px-4 py-3">
+                            <th className="min-w-[160px] px-4 py-3">
                                 Titular
                             </th>
 
@@ -155,7 +155,7 @@ export function OperationBeneficiariesTable({
                                                         }
                                                         className="
     inline-flex
-    h-9
+    min-h-[40px]
     items-center
     justify-center
     rounded-lg
@@ -185,7 +185,7 @@ export function OperationBeneficiariesTable({
                                                                 beneficiary,
                                                             )
                                                         }
-                                                        className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                                                        className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
                                                     >
                                                         Pagar
                                                     </button>

@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { BankAccountStatusBadge } from '@/modules/bank-accounts/components/BankAccountStatusBadge';
 import type { BankAccountResponse } from '@/modules/bank-accounts/types/bank-accounts.types';
 import { formatDate } from '@/modules/operations/utils/operation-formatters';
+import { RowActionsMenu } from '@/shared/components/ui/RowActionsMenu';
 
 interface BankAccountsTableProps {
   accounts: BankAccountResponse[];
@@ -27,77 +26,6 @@ export function BankAccountsTable({
   onDeactivate,
   onDelete,
 }: BankAccountsTableProps) {
-  const [openMenuAccountId, setOpenMenuAccountId] = useState<number | null>(null);
-  const [menuPosition, setMenuPosition] = useState<{
-    top: number;
-    left: number;
-    openUp: boolean;
-  } | null>(null);
-
-  const menuRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        menuRef.current &&
-        !menuRef.current.contains(event.target as Node)
-      ) {
-        setOpenMenuAccountId(null);
-        setMenuPosition(null);
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside);
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  useEffect(() => {
-    function handleCloseMenu() {
-      setOpenMenuAccountId(null);
-      setMenuPosition(null);
-    }
-
-    window.addEventListener('scroll', handleCloseMenu, true);
-    window.addEventListener('resize', handleCloseMenu);
-
-    return () => {
-      window.removeEventListener('scroll', handleCloseMenu, true);
-      window.removeEventListener('resize', handleCloseMenu);
-    };
-  }, []);
-
-  const closeMenu = () => {
-    setOpenMenuAccountId(null);
-    setMenuPosition(null);
-  };
-
-  const handleToggleMenu = (
-    accountId: number,
-    event: React.MouseEvent<HTMLButtonElement>,
-  ) => {
-    if (openMenuAccountId === accountId) {
-      closeMenu();
-      return;
-    }
-
-    const rect = event.currentTarget.getBoundingClientRect();
-    const menuWidth = 220;
-    const estimatedMenuHeight = 180;
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const openUp = spaceBelow < estimatedMenuHeight;
-
-    setMenuPosition({
-      top: openUp ? rect.top - 8 : rect.bottom + 8,
-      left: Math.max(8, rect.right - menuWidth),
-      openUp,
-    });
-
-    setOpenMenuAccountId(accountId);
-  };
-
   if (accounts.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500 shadow-sm">
@@ -113,11 +41,11 @@ export function BankAccountsTable({
           <thead className="bg-slate-100">
             <tr className="text-left text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
               <th className="px-4 py-3 font-medium">Banco</th>
-              <th className="px-4 py-3 font-medium">Titular</th>
-              <th className="px-4 py-3 font-medium">Número de cuenta</th>
-              <th className="px-4 py-3 font-medium">CLABE</th>
+              <th className="min-w-[160px] px-4 py-3 font-medium">Titular</th>
+              <th className="min-w-[150px] px-4 py-3 font-medium">Número de cuenta</th>
+              <th className="min-w-[170px] px-4 py-3 font-medium">CLABE</th>
               <th className="px-4 py-3 font-medium">Estado</th>
-              <th className="px-4 py-3 font-medium">Actualizada</th>
+              <th className="min-w-[120px] px-4 py-3 font-medium">Actualizada</th>
               <th className="px-4 py-3 font-medium text-right">Acciones</th>
             </tr>
           </thead>
@@ -125,7 +53,6 @@ export function BankAccountsTable({
           <tbody>
             {accounts.map((account) => {
               const isProcessing = processingAccountId === account.id;
-              const isMenuOpen = openMenuAccountId === account.id;
 
               return (
                 <tr
@@ -158,84 +85,51 @@ export function BankAccountsTable({
 
                   <td className="px-4 py-4 text-right">
                     {(canEdit || canToggleStatus || canDelete) && (
-                      <button
-                        type="button"
-                        disabled={isProcessing}
-                        onClick={(event) => handleToggleMenu(account.id, event)}
-                        className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                      <RowActionsMenu
+                        triggerLabel={isProcessing ? 'Procesando...' : 'Opciones'}
+                        triggerDisabled={isProcessing}
                       >
-                        {isProcessing ? 'Procesando...' : 'Opciones'}
-                      </button>
+                        {canEdit && (
+                          <button
+                            type="button"
+                            onClick={() => onEdit(account)}
+                            className="block w-full px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50"
+                          >
+                            Editar
+                          </button>
+                        )}
+
+                        {canToggleStatus && account.activo && (
+                          <button
+                            type="button"
+                            onClick={() => void onDeactivate(account.id)}
+                            className="block w-full px-4 py-2.5 text-left text-sm font-semibold  text-red-700 transition hover:bg-red-50"
+                          >
+                            Desactivar
+                          </button>
+                        )}
+
+                        {canToggleStatus && !account.activo && (
+                          <button
+                            type="button"
+                            onClick={() => void onActivate(account.id)}
+                            className="block w-full px-4 py-2.5 text-left text-sm font-semibold  text-emerald-700 transition hover:bg-emerald-50"
+                          >
+                            Activar
+                          </button>
+                        )}
+
+                        {canDelete && (
+                          <button
+                            type="button"
+                            onClick={() => onDelete(account)}
+                            className="block w-full border-t border-red-100 bg-red-50/50 px-4 py-2.5 text-left text-sm font-bold text-red-900 transition hover:bg-red-100"
+                          >
+                            Eliminar definitivamente
+                          </button>
+                        )}
+                      </RowActionsMenu>
                     )}
-
-                    {isMenuOpen &&
-                      menuPosition &&
-                      createPortal(
-                        <div
-                          ref={menuRef}
-                          className="fixed z-[9999] w-[220px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg"
-                          style={{
-                            top: menuPosition.top,
-                            left: menuPosition.left,
-                            transform: menuPosition.openUp
-                              ? 'translateY(-100%)'
-                              : 'none',
-                          }}
-                        >
-                          {canEdit && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                onEdit(account);
-                                closeMenu();
-                              }}
-                              className="block w-full px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50"
-                            >
-                              Editar
-                            </button>
-                          )}
-
-                          {canToggleStatus && account.activo && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                void onDeactivate(account.id);
-                                closeMenu();
-                              }}
-                              className="block w-full px-4 py-2.5 text-left text-sm font-semibold  text-red-700 transition hover:bg-red-50"
-                            >
-                              Desactivar
-                            </button>
-                          )}
-
-                          {canToggleStatus && !account.activo && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                void onActivate(account.id);
-                                closeMenu();
-                              }}
-                              className="block w-full px-4 py-2.5 text-left text-sm font-semibold  text-emerald-700 transition hover:bg-emerald-50"
-                            >
-                              Activar
-                            </button>
-                          )}
-
-                          {canDelete && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                onDelete(account);
-                                closeMenu();
-                              }}
-                              className="block w-full border-t border-red-100 bg-red-50/50 px-4 py-2.5 text-left text-sm font-bold text-red-900 transition hover:bg-red-100"
-                            >
-                              Eliminar definitivamente
-                            </button>
-                          )}
-                        </div>,
-                        document.body,
-                      )}
                   </td>
                 </tr>
               );
