@@ -8,6 +8,7 @@ interface RowActionsMenuProps {
   triggerLabel?: string;
   triggerClassName?: string;
   menuClassName?: string;
+  triggerDisabled?: boolean;
 }
 
 interface MenuPosition {
@@ -29,6 +30,7 @@ export function RowActionsMenu({
   triggerLabel = 'Opciones',
   triggerClassName,
   menuClassName,
+  triggerDisabled = false,
 }: RowActionsMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [position, setPosition] = useState<MenuPosition | null>(null);
@@ -101,9 +103,10 @@ export function RowActionsMenu({
       <button
         ref={triggerRef}
         type="button"
+        disabled={triggerDisabled}
         onClick={() => setIsOpen((prev) => !prev)}
         className={cn(
-          'inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50',
+          'inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50',
           triggerClassName,
         )}
       >

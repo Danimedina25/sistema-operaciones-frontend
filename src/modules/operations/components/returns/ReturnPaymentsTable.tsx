@@ -11,14 +11,14 @@ import {
   ReturnPaymentResponse,
 } from '../../types/operations.types.ts';
 import { ReturnStatusBadge } from './ReturnStatusBadge.js';
-import { useState, useRef, useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import { useState, type ReactNode } from 'react';
 import { ReturnPaymentDetailModal } from './ReturnPaymentDetailModal.js';
 import { useAuth } from '@/modules/auth/store/auth.context.js';
 import { useWhatsAppLink } from '@/shared/hooks/use-whatsapp-link';
 import { buildReturnPaidMessage } from '@/shared/utils/whatsapp-message';
 import { buildOperationDetailPath } from '@/routes/paths';
 import { ArrowUpRight, BanknoteArrowDown, MessageCircle, Paperclip, Plus } from 'lucide-react';
+import { RowActionsMenu } from '@/shared/components/ui/RowActionsMenu';
 
 interface ReturnPaymentsTableProps {
   returns: ReturnPaymentResponse[];
@@ -91,78 +91,48 @@ export function ReturnPaymentsTable({
 
   const hasPendingAmountToRequest = (montoPendientePorSolicitar ?? 0) > 0;
   const hasPendingAmountToPay = (montoPendientePorRetornar ?? 0) > 0;
-  const [openOptionsReturnId, setOpenOptionsReturnId] = useState<number | null>(null);
-
-  const [optionsMenuPosition, setOptionsMenuPosition] = useState<{
-    top: number;
-    left: number;
-    openUp: boolean;
-  } | null>(null);
-
-  const optionsMenuRef = useRef<HTMLDivElement | null>(null);
   const [selectedReturnDetail, setSelectedReturnDetail] =
     useState<ReturnPaymentResponse | null>(null);
 
-  function closeOptionsMenu() {
-    setOpenOptionsReturnId(null);
-    setOptionsMenuPosition(null);
+  function renderOptionsMenu(returnPayment: ReturnPaymentResponse): ReactNode {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => setSelectedReturnDetail(returnPayment)}
+          className="block w-full px-4 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+        >
+          Ver detalles de retorno
+        </button>
+
+        {returnPayment.comprobanteUrl ? (
+          <a
+            href={returnPayment.comprobanteUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="block border-t border-slate-100 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          >
+            Ver comprobante de retorno
+          </a>
+        ) : (
+          <div className="border-t border-slate-100 px-4 py-3 text-sm text-slate-400">
+            Sin comprobante
+          </div>
+        )}
+
+        {returnPayment.archivoNominaUrl ? (
+          <a
+            href={returnPayment.archivoNominaUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="block border-t border-slate-100 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          >
+            Descargar archivo de nóminas
+          </a>
+        ) : null}
+      </>
+    );
   }
-
-  function handleToggleOptionsMenu(
-    returnPaymentId: number,
-    event: React.MouseEvent<HTMLButtonElement>,
-  ) {
-    if (openOptionsReturnId === returnPaymentId) {
-      closeOptionsMenu();
-      return;
-    }
-
-    const rect = event.currentTarget.getBoundingClientRect();
-
-    const menuWidth = 260;
-    const estimatedMenuHeight = 80;
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const openUp = spaceBelow < estimatedMenuHeight;
-
-    setOptionsMenuPosition({
-      top: openUp ? rect.top - 8 : rect.bottom + 8,
-      left: Math.max(8, rect.right - menuWidth),
-      openUp,
-    });
-
-    setOpenOptionsReturnId(returnPaymentId);
-  }
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        optionsMenuRef.current &&
-        !optionsMenuRef.current.contains(event.target as Node)
-      ) {
-        closeOptionsMenu();
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside);
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  useEffect(() => {
-    function handleCloseMenu() {
-      closeOptionsMenu();
-    }
-
-    window.addEventListener('scroll', handleCloseMenu, true);
-    window.addEventListener('resize', handleCloseMenu);
-
-    return () => {
-      window.removeEventListener('scroll', handleCloseMenu, true);
-      window.removeEventListener('resize', handleCloseMenu);
-    };
-  }, []);
 
   const hasRequestedReturns = returns.some(
     (returnPayment) =>
@@ -248,6 +218,123 @@ export function ReturnPaymentsTable({
       : !hasRequestedReturns
         ? 'Esperando solicitud de retorno'
         : 'Pendiente de pago';
+
+  interface StatusActionFlags {
+    canPayReturn: boolean;
+    canCreatePickupTime: boolean;
+    canEditPickupTime: boolean;
+    canMarkDelivered: boolean;
+    canNotify: boolean;
+    canEditReturn: boolean;
+    canConfirmPickup: boolean;
+  }
+
+  function getStatusActionFlags(returnPayment: ReturnPaymentResponse): StatusActionFlags {
+    const hasPickupScheduled = !!returnPayment.fechaHoraRecoleccionEfectivo;
+    const canDefineTime = canDefineCashReturnTime(returnPayment);
+
+    return {
+      canPayReturn: canPayThisReturn(returnPayment),
+      canCreatePickupTime: canDefineTime && !hasPickupScheduled,
+      canEditPickupTime: canDefineTime && hasPickupScheduled,
+      canMarkDelivered: canMarkCashReturnDelivered(returnPayment),
+      canNotify:
+        canManageReturnPayments &&
+        returnPayment.estatus === 'RETORNADO' &&
+        !!returnPayment.socioComercialTelefono,
+      canEditReturn:
+        canEditRequestReturnPayments &&
+        returnPayment.estatus === 'SOLICITADO' &&
+        !hasPickupScheduled,
+      canConfirmPickup: canConfirmCashReturnPickup(returnPayment),
+    };
+  }
+
+  function hasAnyStatusAction(flags: StatusActionFlags): boolean {
+    return (
+      flags.canPayReturn ||
+      flags.canCreatePickupTime ||
+      flags.canEditPickupTime ||
+      flags.canEditReturn ||
+      flags.canConfirmPickup ||
+      flags.canMarkDelivered ||
+      flags.canNotify
+    );
+  }
+
+  function renderStatusActionButtons(
+    returnPayment: ReturnPaymentResponse,
+    flags: StatusActionFlags,
+    variant: 'desktop' | 'mobile',
+  ): ReactNode {
+    const fixedWidth = variant === 'mobile' ? 'w-full' : 'w-44';
+    const autoWidth = variant === 'mobile' ? 'w-full' : '';
+
+    return (
+      <>
+        {(flags.canCreatePickupTime || flags.canEditPickupTime) && (
+          <button
+            type="button"
+            onClick={() => onDefineCashReturnTime?.(returnPayment)}
+            className={`inline-flex h-10 ${fixedWidth} items-center justify-center rounded-lg bg-amber-600 px-3 text-center text-xs font-medium text-white shadow-sm transition hover:bg-amber-700`}
+          >
+            {flags.canEditPickupTime ? 'Editar recolección' : 'Programar recolección'}
+          </button>
+        )}
+
+        {flags.canMarkDelivered && (
+          <button
+            type="button"
+            onClick={() => onMarkCashReturnDelivered?.(returnPayment)}
+            className={`inline-flex h-10 ${fixedWidth} items-center justify-center rounded-lg bg-indigo-600 px-3 text-center text-xs font-medium text-white shadow-sm transition hover:bg-indigo-700`}
+          >
+            Marcar como entregado
+          </button>
+        )}
+
+        {flags.canPayReturn && (
+          <button
+            type="button"
+            onClick={() => onPayReturn?.(returnPayment)}
+            className={`h-10 ${autoWidth} rounded-lg bg-emerald-600 px-3 text-xs font-medium text-white shadow-sm transition hover:bg-emerald-700`}
+          >
+            Retornar
+          </button>
+        )}
+
+        {flags.canNotify && (
+          <button
+            type="button"
+            onClick={() => handleNotifyReturnPaid(returnPayment)}
+            className={`inline-flex h-10 ${fixedWidth} items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-medium text-emerald-700 shadow-sm transition hover:bg-emerald-100`}
+          >
+            <MessageCircle className="h-3.5 w-3.5" />
+            Avisar por WhatsApp
+          </button>
+        )}
+
+        {flags.canEditReturn && (
+          <button
+            type="button"
+            onClick={() => onEditReturn?.(returnPayment)}
+            className={`h-10 ${autoWidth} rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-700 shadow-sm transition hover:bg-slate-50`}
+          >
+            Editar
+          </button>
+        )}
+
+        {flags.canConfirmPickup && (
+          <button
+            type="button"
+            onClick={() => onConfirmCashReturnPickup?.(returnPayment)}
+            className={`h-10 ${autoWidth} rounded-lg bg-blue-600 px-3 text-xs font-medium text-white shadow-sm transition hover:bg-blue-700`}
+          >
+            Confirmar recepción
+          </button>
+        )}
+      </>
+    );
+  }
 
   return (
     <div
@@ -356,445 +443,236 @@ export function ReturnPaymentsTable({
           </div>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full border-separate border-spacing-0">
-            <thead className="sticky top-0 z-[1] bg-slate-100">
-              <tr className="text-left text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
-                <th className="px-4 py-3 font-medium">Monto</th>
-                <th className="px-4 py-3 font-medium">Estatus</th>
-                <th className="px-4 py-3 font-medium">Tipo</th>
-                <th className="px-4 py-3 font-medium">Cuenta destino</th>
-                <th className="px-4 py-3 font-medium">Fecha solicitud</th>
-                <th className="px-4 py-3 font-medium">Pagado por</th>
-                <th className="px-4 py-3 font-medium">Fecha de recolección</th>
-                <th className="px-4 py-3 font-medium">Fecha retorno</th>
-                <th className="px-4 py-3 font-medium">Observaciones</th>
-                <th className="px-4 py-3 font-medium">Opciones</th>
-                {(canManageReturnPayments || canEditRequestReturnPayments) && (
-                  <th className="px-4 py-3 font-medium">Acciones</th>
-                )}
-              </tr>
-            </thead>
+        <>
+          {/* Desktop / tablet ancho: tabla completa */}
+          <div className="hidden overflow-x-auto md:block">
+            <table className="min-w-full border-separate border-spacing-0">
+              <thead className="sticky top-0 z-[1] bg-slate-100">
+                <tr className="text-left text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+                  <th className="px-4 py-3 font-medium">Monto</th>
+                  <th className="px-4 py-3 font-medium">Estatus</th>
+                  <th className="px-4 py-3 font-medium">Tipo</th>
+                  <th className="px-4 py-3 font-medium">Cuenta destino</th>
+                  <th className="px-4 py-3 font-medium">Fecha solicitud</th>
+                  <th className="px-4 py-3 font-medium">Pagado por</th>
+                  <th className="px-4 py-3 font-medium">Fecha de recolección</th>
+                  <th className="px-4 py-3 font-medium">Fecha retorno</th>
+                  <th className="px-4 py-3 font-medium">Observaciones</th>
+                  <th className="px-4 py-3 font-medium">Opciones</th>
+                  {(canManageReturnPayments || canEditRequestReturnPayments) && (
+                    <th className="px-4 py-3 font-medium">Acciones</th>
+                  )}
+                </tr>
+              </thead>
 
-            <tbody>
-              {visibleReturns.map((returnPayment) => {
-                //const canEditReturn = canEditRequestReturnPayments && returnPayment.estatus === 'SOLICITADO'
-                const canPayReturn = canPayThisReturn(returnPayment);
-                const hasPickupScheduled = !!returnPayment.fechaHoraRecoleccionEfectivo;
-                const canEditReturn =
-                  canEditRequestReturnPayments &&
-                  returnPayment.estatus === 'SOLICITADO' &&
-                  !hasPickupScheduled;
-                const canDefineTime = canDefineCashReturnTime(returnPayment);
-                const canEditPickupTime = canDefineTime && hasPickupScheduled;
-                const canCreatePickupTime = canDefineTime && !hasPickupScheduled;
-                const canConfirmPickup = canConfirmCashReturnPickup(returnPayment);
-                const canMarkDelivered = canMarkCashReturnDelivered(returnPayment);
-                const canNotify =
-                  canManageReturnPayments &&
-                  returnPayment.estatus === 'RETORNADO' &&
-                  !!returnPayment.socioComercialTelefono;
+              <tbody>
+                {visibleReturns.map((returnPayment) => {
+                  const flags = getStatusActionFlags(returnPayment);
+                  const hasActions = hasAnyStatusAction(flags);
 
-                const hasActions =
-                  canPayReturn ||
-                  canCreatePickupTime ||
-                  canEditPickupTime ||
-                  canEditReturn ||
-                  canConfirmPickup ||
-                  canMarkDelivered ||
-                  canNotify;
-                return (
-                  <tr
-                    key={returnPayment.id}
-                    className="
+                  return (
+                    <tr
+                      key={returnPayment.id}
+                      className="
           border-t
           border-slate-100
           text-sm
           transition
           hover:bg-cyan-50/40
         "
-                  >
-                    <td className="whitespace-nowrap px-4 py-4 font-bold tabular-nums text-slate-950">
-                      {formatCurrency(returnPayment.monto)}
-                    </td>
+                    >
+                      <td className="whitespace-nowrap px-4 py-4 font-bold tabular-nums text-slate-950">
+                        {formatCurrency(returnPayment.monto)}
+                      </td>
 
-                    <td className="px-4 py-4">
-                      <div className="flex justify-center md:justify-start">
-                        <ReturnStatusBadge status={returnPayment.estatus} />
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-slate-600">
-                      {paymentTypeLabels[returnPayment.tipoPago]}
-                    </td>
+                      <td className="px-4 py-4">
+                        <div className="flex justify-center md:justify-start">
+                          <ReturnStatusBadge status={returnPayment.estatus} />
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-slate-600">
+                        {paymentTypeLabels[returnPayment.tipoPago]}
+                      </td>
 
-                    <td className="px-4 py-4">
-                      <div className="max-w-[240px]">
-                        <p className="text-sm font-semibold tracking-tight text-slate-900">
-                          {returnPayment.cuentaClabeCliente ?? '-'}
-                        </p>
+                      <td className="px-4 py-4">
+                        <div className="max-w-[240px]">
+                          <p className="text-sm font-semibold tracking-tight text-slate-900">
+                            {returnPayment.cuentaClabeCliente ?? '-'}
+                          </p>
 
-                        <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
-                          <span>
-                            {returnPayment.cuentaDestinoBanco ?? 'Sin banco'}
+                          <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
+                            <span>
+                              {returnPayment.cuentaDestinoBanco ?? 'Sin banco'}
+                            </span>
+
+                            <span className="h-1 w-1 rounded-full bg-slate-300" />
+
+                            <span className="truncate">
+                              {returnPayment.cuentaDestinoTitular ?? '-'}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="px-4 py-4 text-slate-600">
+                        {returnPayment.fechaSolicitud
+                          ? formatDate(returnPayment.fechaSolicitud)
+                          : '-'}
+                      </td>
+
+                      <td className="px-4 py-4 text-slate-600">
+                        {returnPayment.pagadoPorNombre ?? '-'}
+                      </td>
+
+                      <td className="px-4 py-4">
+                        {(returnPayment.tipoPago === 'EFECTIVO' ||
+                          returnPayment.tipoPago === 'RETIRO_SIN_TARJETA') &&
+                        returnPayment.fechaHoraRecoleccionEfectivo ? (
+                          <span className="animate-return-pickup-highlight inline-flex items-center rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                            {formatDateTime(returnPayment.fechaHoraRecoleccionEfectivo)}
                           </span>
+                        ) : (
+                          <span className="text-slate-600">-</span>
+                        )}
+                      </td>
 
-                          <span className="h-1 w-1 rounded-full bg-slate-300" />
+                      <td className="px-4 py-4 text-slate-600">
+                        {returnPayment.estatus === 'RETORNADO' && returnPayment.fechaPago
+                          ? formatDateTime(returnPayment.fechaPago)
+                          : '-'}
+                      </td>
 
-                          <span className="truncate">
-                            {returnPayment.cuentaDestinoTitular ?? '-'}
+                      <td className="px-4 py-4 text-slate-600">
+                        {returnPayment.observaciones ?? '-'}
+                      </td>
+
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-2">
+                          {returnPayment.archivoNominaUrl ? (
+                            <span
+                              title="Tiene archivo de nóminas adjunto"
+                              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600"
+                            >
+                              <Paperclip className="h-4 w-4" />
+                            </span>
+                          ) : null}
+
+                          <RowActionsMenu triggerLabel="Ver opciones" menuClassName="w-64">
+                            {renderOptionsMenu(returnPayment)}
+                          </RowActionsMenu>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex flex-col items-stretch gap-2">
+                          {hasActions ? (
+                            renderStatusActionButtons(returnPayment, flags, 'desktop')
+                          ) : (
+                            <span className="text-xs text-slate-400">
+                              Sin acciones
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Móvil: tarjetas apiladas */}
+          <div className="space-y-3 px-4 pb-4 md:hidden">
+            {visibleReturns.map((returnPayment) => {
+              const flags = getStatusActionFlags(returnPayment);
+              const hasActions = hasAnyStatusAction(flags);
+
+              return (
+                <div
+                  key={returnPayment.id}
+                  className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-lg font-bold tabular-nums text-slate-950">
+                        {formatCurrency(returnPayment.monto)}
+                      </p>
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        {paymentTypeLabels[returnPayment.tipoPago]}
+                      </p>
+                    </div>
+                    <ReturnStatusBadge status={returnPayment.estatus} />
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs text-slate-600">
+                    <div className="col-span-2">
+                      <p className="text-[10px] uppercase tracking-wide text-slate-400">Cuenta destino</p>
+                      <p className="font-medium text-slate-900">
+                        {returnPayment.cuentaClabeCliente ?? '-'}
+                      </p>
+                      <p className="text-slate-500">
+                        {returnPayment.cuentaDestinoBanco ?? 'Sin banco'} · {returnPayment.cuentaDestinoTitular ?? '-'}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wide text-slate-400">Fecha solicitud</p>
+                      <p>{returnPayment.fechaSolicitud ? formatDate(returnPayment.fechaSolicitud) : '-'}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wide text-slate-400">Pagado por</p>
+                      <p>{returnPayment.pagadoPorNombre ?? '-'}</p>
+                    </div>
+
+                    {(returnPayment.tipoPago === 'EFECTIVO' ||
+                      returnPayment.tipoPago === 'RETIRO_SIN_TARJETA') &&
+                      returnPayment.fechaHoraRecoleccionEfectivo && (
+                        <div className="col-span-2">
+                          <p className="text-[10px] uppercase tracking-wide text-slate-400">Recolección programada</p>
+                          <span className="animate-return-pickup-highlight mt-0.5 inline-flex items-center rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                            {formatDateTime(returnPayment.fechaHoraRecoleccionEfectivo)}
                           </span>
                         </div>
-                      </div>
-                    </td>
-
-                    <td className="px-4 py-4 text-slate-600">
-                      {returnPayment.fechaSolicitud
-                        ? formatDate(returnPayment.fechaSolicitud)
-                        : '-'}
-                    </td>
-
-                    <td className="px-4 py-4 text-slate-600">
-                      {returnPayment.pagadoPorNombre ?? '-'}
-                    </td>
-
-                    <td className="px-4 py-4">
-                      {(returnPayment.tipoPago === 'EFECTIVO' ||
-                        returnPayment.tipoPago === 'RETIRO_SIN_TARJETA') &&
-                      returnPayment.fechaHoraRecoleccionEfectivo ? (
-                        <span className="animate-return-pickup-highlight inline-flex items-center rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
-                          {formatDateTime(returnPayment.fechaHoraRecoleccionEfectivo)}
-                        </span>
-                      ) : (
-                        <span className="text-slate-600">-</span>
                       )}
-                    </td>
 
-                    <td className="px-4 py-4 text-slate-600">
-                      {returnPayment.estatus === 'RETORNADO' && returnPayment.fechaPago
-                        ? formatDateTime(returnPayment.fechaPago)
-                        : '-'}
-                    </td>
+                    {returnPayment.estatus === 'RETORNADO' && returnPayment.fechaPago && (
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wide text-slate-400">Fecha retorno</p>
+                        <p>{formatDateTime(returnPayment.fechaPago)}</p>
+                      </div>
+                    )}
 
-                    <td className="px-4 py-4 text-slate-600">
-                      {returnPayment.observaciones ?? '-'}
-                    </td>
+                    {returnPayment.observaciones && (
+                      <div className="col-span-2">
+                        <p className="text-[10px] uppercase tracking-wide text-slate-400">Observaciones</p>
+                        <p>{returnPayment.observaciones}</p>
+                      </div>
+                    )}
+                  </div>
 
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-2">
-                        {returnPayment.archivoNominaUrl ? (
-                          <span
-                            title="Tiene archivo de nóminas adjunto"
-                            className="
-      inline-flex
-      h-9
-      w-9
-      shrink-0
-      items-center
-      justify-center
-      rounded-lg
-      border
-      border-emerald-200
-      bg-emerald-50
-      text-emerald-600
-    "
-                          >
-                            <Paperclip className="h-4 w-4" />
-                          </span>
-                        ) : null}
+                  <div className="mt-4 flex flex-col gap-2">
+                    {hasActions && renderStatusActionButtons(returnPayment, flags, 'mobile')}
 
-                        <button
-                          type="button"
-                          onClick={(event) =>
-                            handleToggleOptionsMenu(returnPayment.id, event)
-                          }
-                          className="
-      inline-flex
-      h-9
-      items-center
-      justify-center
-      rounded-lg
-      border
-      border-slate-300
-      bg-white
-      px-4
-      text-xs
-      font-medium
-      text-slate-700
-      shadow-sm
-      transition-all
-      hover:bg-slate-50
-      hover:-translate-y-0.5
-    "
+                    <div className="flex items-center gap-2">
+                      {returnPayment.archivoNominaUrl ? (
+                        <span
+                          title="Tiene archivo de nóminas adjunto"
+                          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600"
                         >
-                          Ver opciones
-                        </button>
-                      </div>
+                          <Paperclip className="h-4 w-4" />
+                        </span>
+                      ) : null}
 
-                      {openOptionsReturnId === returnPayment.id &&
-                        optionsMenuPosition &&
-                        createPortal(
-                          <div
-                            ref={optionsMenuRef}
-                            className="
-          fixed
-          z-[9999]
-          w-64
-          overflow-hidden
-          rounded-xl
-          border
-          border-slate-200
-          bg-white
-          shadow-xl
-          shadow-slate-950/10
-        "
-                            style={{
-                              top: optionsMenuPosition.top,
-                              left: optionsMenuPosition.left,
-                              transform: optionsMenuPosition.openUp
-                                ? 'translateY(-100%)'
-                                : 'none',
-                            }}
-                          >
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedReturnDetail(returnPayment);
-                                closeOptionsMenu();
-                              }}
-                              className="
-            block
-            w-full
-            px-4
-            py-3
-            text-left
-            text-sm
-            font-medium
-            text-slate-700
-            transition
-            hover:bg-slate-50
-          "
-                            >
-                              Ver detalles de retorno
-                            </button>
-
-                            {returnPayment.comprobanteUrl ? (
-                              <a
-                                href={returnPayment.comprobanteUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                onClick={closeOptionsMenu}
-                                className="
-              block
-              border-t
-              border-slate-100
-              px-4
-              py-3
-              text-sm
-              font-medium
-              text-slate-700
-              transition
-              hover:bg-slate-50
-            "
-                              >
-                                Ver comprobante de retorno
-                              </a>
-                            ) : (
-                              <div className="border-t border-slate-100 px-4 py-3 text-sm text-slate-400">
-                                Sin comprobante
-                              </div>
-                            )}
-
-                            {returnPayment.archivoNominaUrl ? (
-                              <a
-                                href={returnPayment.archivoNominaUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                onClick={closeOptionsMenu}
-                                className="
-              block
-              border-t
-              border-slate-100
-              px-4
-              py-3
-              text-sm
-              font-medium
-              text-slate-700
-              transition
-              hover:bg-slate-50
-            "
-                              >
-                                Descargar archivo de nóminas
-                              </a>
-                            ) : null}
-                          </div>,
-                          document.body,
-                        )}
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex flex-col items-stretch gap-2">
-                        {hasActions ? (
-                          <>
-                            {(canCreatePickupTime || canEditPickupTime) && (
-                              <button
-                                type="button"
-                                onClick={() => onDefineCashReturnTime?.(returnPayment)}
-                                className="
-      inline-flex
-      h-8
-      w-44
-      items-center
-      justify-center
-      rounded-lg
-      bg-amber-600
-      px-3
-      text-center
-      text-xs
-      font-medium
-      text-white
-      shadow-sm
-      transition
-      hover:bg-amber-700
-    "
-                              >
-                                {canEditPickupTime
-                                  ? 'Editar recolección'
-                                  : 'Programar recolección'}
-                              </button>
-                            )}
-
-                            {canMarkDelivered && (
-                              <button
-                                type="button"
-                                onClick={() => onMarkCashReturnDelivered?.(returnPayment)}
-                                className="
-      inline-flex
-      h-8
-      w-44
-      items-center
-      justify-center
-      rounded-lg
-      bg-indigo-600
-      px-3
-      text-center
-      text-xs
-      font-medium
-      text-white
-      shadow-sm
-      transition
-      hover:bg-indigo-700
-    "
-                              >
-                                Marcar como entregado
-                              </button>
-                            )}
-
-                            {canPayReturn && (
-                              <button
-                                type="button"
-                                onClick={() => onPayReturn?.(returnPayment)}
-                                className="
-      h-8
-      rounded-lg
-      bg-emerald-600
-      px-3
-      text-xs
-      font-medium
-      text-white
-      shadow-sm
-      transition
-      hover:bg-emerald-700
-    "
-                              >
-                                Retornar
-                              </button>
-                            )}
-
-                            {canNotify && (
-                              <button
-                                type="button"
-                                onClick={() => handleNotifyReturnPaid(returnPayment)}
-                                className="
-      inline-flex
-      h-8
-      w-44
-      items-center
-      justify-center
-      gap-1.5
-      rounded-lg
-      border
-      border-emerald-200
-      bg-emerald-50
-      px-3
-      text-xs
-      font-medium
-      text-emerald-700
-      shadow-sm
-      transition
-      hover:bg-emerald-100
-    "
-                              >
-                                <MessageCircle className="h-3.5 w-3.5" />
-                                Avisar por WhatsApp
-                              </button>
-                            )}
-
-                            {canEditReturn && (
-                              <button
-                                type="button"
-                                onClick={() => onEditReturn?.(returnPayment)}
-                                className="
-              h-8
-              rounded-lg
-              border
-              border-slate-300
-              bg-white
-              px-3
-              text-xs
-              font-medium
-              text-slate-700
-              shadow-sm
-              transition
-              hover:bg-slate-50
-            "
-                              >
-                                Editar
-                              </button>
-                            )}
-
-                            {canConfirmPickup && (
-                              <button
-                                type="button"
-                                onClick={() => onConfirmCashReturnPickup?.(returnPayment)}
-                                className="
-      h-8
-      rounded-lg
-      bg-blue-600
-      px-3
-      text-xs
-      font-medium
-      text-white
-      shadow-sm
-      transition
-      hover:bg-blue-700
-    "
-                              >
-                                Confirmar recepción
-                              </button>
-                            )}
-                          </>
-                        ) : (
-                          <span className="text-xs text-slate-400">
-                            Sin acciones
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                      <RowActionsMenu triggerLabel="Ver opciones" triggerClassName="flex-1 justify-center" menuClassName="w-64">
+                        {renderOptionsMenu(returnPayment)}
+                      </RowActionsMenu>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
 
       <ReturnPaymentDetailModal

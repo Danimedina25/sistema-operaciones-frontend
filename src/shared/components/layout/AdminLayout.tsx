@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from '@/shared/components/layout/Sidebar';
 import { Header } from '@/shared/components/layout/Header';
@@ -6,10 +6,12 @@ import { Header } from '@/shared/components/layout/Header';
 export function AdminLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
+  const [lastPathname, setLastPathname] = useState(location.pathname);
 
-  useEffect(() => {
+  if (location.pathname !== lastPathname) {
+    setLastPathname(location.pathname);
     setIsSidebarOpen(false);
-  }, [location.pathname]);
+  }
 
   return (
     <div className="h-screen bg-slate-50">

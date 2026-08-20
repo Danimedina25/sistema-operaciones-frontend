@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { PaymentStatusBadge } from '@/modules/operations/components/PaymentStatusBadge';
 import {
@@ -12,7 +12,6 @@ import {
 } from '@/modules/operations/utils/operation-formatters';
 import { buildRejectReasonText } from '@/modules/operations/utils/reject-reason';
 import { OperationPaymentResponse, PaymentType } from '../types/operations.types.ts';
-import { createPortal } from 'react-dom';
 import { ValidationReceiptViewerModal } from './ValidationReceiptViewerModal';
 import { AgingBadge } from '@/shared/components/dashboard/AgingBadge';
 import { useClipboard } from '@/shared/hooks/use-clipboard';
@@ -22,6 +21,7 @@ import {
   buildPaymentValidatedMessage,
 } from '@/shared/utils/whatsapp-message';
 import { buildOperationDetailPath } from '@/routes/paths';
+import { RowActionsMenu } from '@/shared/components/ui/RowActionsMenu';
 import { CircleDollarSign, ClipboardCopy, Check, FileCheck2, MessageCircle, Plus, ReceiptText, X } from 'lucide-react';
 
 const BANK_PAYMENT_TYPES: PaymentType[] = ['TRANSFERENCIA', 'DEPOSITO', 'CHEQUE'];
@@ -118,47 +118,6 @@ export function PaymentsTable({
   const [validationReceiptPreviewUrl, setValidationReceiptPreviewUrl] =
     useState<string | null>(null);
   const [viewingPaymentId, setViewingPaymentId] = useState<number | null>(null);
-  const [openOptionsPaymentId, setOpenOptionsPaymentId] = useState<number | null>(null);
-  const [optionsMenuPosition, setOptionsMenuPosition] = useState<{
-    top: number;
-    left: number;
-    openUp: boolean;
-  } | null>(null);
-
-  const optionsMenuRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        optionsMenuRef.current &&
-        !optionsMenuRef.current.contains(event.target as Node)
-      ) {
-        setOpenOptionsPaymentId(null);
-        setOptionsMenuPosition(null);
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside);
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  useEffect(() => {
-    function handleCloseMenu() {
-      setOpenOptionsPaymentId(null);
-      setOptionsMenuPosition(null);
-    }
-
-    window.addEventListener('scroll', handleCloseMenu, true);
-    window.addEventListener('resize', handleCloseMenu);
-
-    return () => {
-      window.removeEventListener('scroll', handleCloseMenu, true);
-      window.removeEventListener('resize', handleCloseMenu);
-    };
-  }, []);
 
   useEffect(() => {
     if (!validationReceipt || !isImageFile(validationReceipt)) {
@@ -331,35 +290,145 @@ export function PaymentsTable({
         ? 'Rechazando...'
         : 'Confirmar rechazo';
 
-  function handleToggleOptionsMenu(
-    paymentId: number,
-    event: React.MouseEvent<HTMLButtonElement>,
-  ) {
-    if (openOptionsPaymentId === paymentId) {
-      setOpenOptionsPaymentId(null);
-      setOptionsMenuPosition(null);
-      return;
-    }
+  function getPaymentActionFlags(payment: OperationPaymentResponse) {
+    const isPendingValidation = payment.estatus === 'PENDIENTE_VALIDACION';
+    const isProcessing = processingPaymentId === payment.id;
+    const canEdit = isPendingValidation && !!onEditPayment && canModifyPayments;
+    const canValidate =
+      canValidatePaymentType(payment.tipoPago) && isPendingValidation;
+    const canNotify =
+      (payment.estatus === 'VALIDADA' || payment.estatus === 'RECHAZADA') &&
+      canValidatePaymentType(payment.tipoPago) &&
+      !!socioComercialTelefono;
+    const hasActions = canEdit || canValidate || canNotify;
 
-    const rect = event.currentTarget.getBoundingClientRect();
-
-    const menuWidth = 260;
-    const estimatedMenuHeight = 120;
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const openUp = spaceBelow < estimatedMenuHeight;
-
-    setOptionsMenuPosition({
-      top: openUp ? rect.top - 8 : rect.bottom + 8,
-      left: Math.max(8, rect.right - menuWidth),
-      openUp,
-    });
-
-    setOpenOptionsPaymentId(paymentId);
+    return { isProcessing, canEdit, canValidate, canNotify, hasActions };
   }
 
-  function closeOptionsMenu() {
-    setOpenOptionsPaymentId(null);
-    setOptionsMenuPosition(null);
+  function renderViewOptions(payment: OperationPaymentResponse): ReactNode {
+    return (
+      <>
+        <a
+          href={payment.comprobanteUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="block px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+        >
+          Ver comprobante de ingreso
+        </a>
+
+        {payment.comprobanteValidacionUrl ? (
+          <button
+            type="button"
+            onClick={() => setViewingPaymentId(payment.id)}
+            className="block w-full border-t border-slate-100 px-4 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          >
+            Ver comprobante de validación
+          </button>
+        ) : null}
+      </>
+    );
+  }
+
+  function renderRowActions(payment: OperationPaymentResponse): ReactNode {
+    const { isProcessing, canEdit, canValidate, canNotify, hasActions } =
+      getPaymentActionFlags(payment);
+
+    return (
+      <>
+        {canValidate && (
+          <button
+            type="button"
+            disabled={isProcessing}
+            onClick={() => openReviewDrawer(payment.id)}
+            className="
+  flex-1
+  inline-flex
+  h-9
+  items-center
+  justify-center
+  rounded-lg
+  bg-blue-600
+  px-4
+  text-sm
+  font-medium
+  text-white
+  shadow-sm
+  transition-all
+  hover:-translate-y-0.5
+  hover:bg-blue-700
+  disabled:cursor-not-allowed
+  disabled:opacity-50
+"
+          >
+            {isProcessing ? 'Procesando...' : 'Revisar'}
+          </button>
+        )}
+
+        {canEdit && (
+          <button
+            type="button"
+            onClick={() => onEditPayment?.(payment.id)}
+            className="
+  flex-1
+  inline-flex
+  h-9
+  items-center
+  justify-center
+  rounded-lg
+  border
+  border-slate-300
+  bg-white
+  px-4
+  text-xs
+  font-medium
+  shadow-sm
+  transition-all
+  hover:bg-slate-50
+  hover:-translate-y-0.5
+"
+          >
+            Editar pago
+          </button>
+        )}
+
+        {canNotify && (
+          <button
+            type="button"
+            onClick={() => handleNotifyPaymentStatus(payment)}
+            className="
+  flex-1
+  inline-flex
+  items-center
+  justify-center
+  gap-1.5
+  h-9
+  rounded-lg
+  border
+  border-emerald-200
+  bg-emerald-50
+  px-4
+  text-xs
+  font-medium
+  text-emerald-700
+  shadow-sm
+  transition-all
+  hover:bg-emerald-100
+  hover:-translate-y-0.5
+"
+          >
+            <MessageCircle className="h-3.5 w-3.5" />
+            Avisar por WhatsApp
+          </button>
+        )}
+
+        {!hasActions && (
+          <span className="text-xs text-slate-400">
+            Sin acciones
+          </span>
+        )}
+      </>
+    );
   }
 
   return (
@@ -440,7 +509,7 @@ export function PaymentsTable({
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="hidden overflow-x-auto md:block">
           <table className="min-w-full border-separate border-spacing-0">
             <thead className="sticky top-0 z-[1] bg-slate-100">
               <tr className="text-left text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
@@ -461,19 +530,6 @@ export function PaymentsTable({
 
             <tbody>
               {visiblePayments.map((payment) => {
-                const isPendingValidation =
-                  payment.estatus === 'PENDIENTE_VALIDACION';
-                const isProcessing = processingPaymentId === payment.id;
-                const canEdit =
-                  isPendingValidation && !!onEditPayment && canModifyPayments;
-                const canValidate =
-                  canValidatePaymentType(payment.tipoPago) && isPendingValidation;
-                const canNotify =
-                  (payment.estatus === 'VALIDADA' || payment.estatus === 'RECHAZADA') &&
-                  canValidatePaymentType(payment.tipoPago) &&
-                  !!socioComercialTelefono;
-                const hasActions = canEdit || canValidate || canNotify;
-
                 return (
                   <tr
                     key={payment.id}
@@ -546,30 +602,9 @@ export function PaymentsTable({
 
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={(event) => handleToggleOptionsMenu(payment.id, event)}
-                          className="
-      inline-flex
-      h-9
-      items-center
-      justify-center
-      rounded-xl
-      border
-      border-slate-200
-      bg-slate-50
-      px-4
-      text-xs
-      font-medium
-      text-slate-700
-      shadow-sm
-      transition-all
-      hover:border-slate-300 hover:bg-white
-      hover:-translate-y-0.5
-    "
-                        >
-                          Ver opciones
-                        </button>
+                        <RowActionsMenu triggerLabel="Ver opciones">
+                          {renderViewOptions(payment)}
+                        </RowActionsMenu>
 
                         <button
                           type="button"
@@ -599,174 +634,11 @@ export function PaymentsTable({
                           )}
                         </button>
                       </div>
-
-                      {openOptionsPaymentId === payment.id &&
-                        optionsMenuPosition &&
-                        createPortal(
-                          <div
-                            ref={optionsMenuRef}
-                            className="
-          fixed
-          z-[9999]
-          w-64
-          overflow-hidden
-          rounded-xl
-          border
-          border-slate-200
-          bg-white
-          shadow-xl
-          shadow-slate-950/10
-        "
-                            style={{
-                              top: optionsMenuPosition.top,
-                              left: optionsMenuPosition.left,
-                              transform: optionsMenuPosition.openUp
-                                ? 'translateY(-100%)'
-                                : 'none',
-                            }}
-                          >
-                            <a
-                              href={payment.comprobanteUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              onClick={closeOptionsMenu}
-                              className="
-            block
-            px-4
-            py-3
-            text-sm
-            font-medium
-            text-slate-700
-            transition
-            hover:bg-slate-50
-          "
-                            >
-                              Ver comprobante de ingreso
-                            </a>
-
-                            {payment.comprobanteValidacionUrl ? (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setViewingPaymentId(payment.id);
-                                  closeOptionsMenu();
-                                }}
-                                className="
-              block
-              w-full
-              border-t
-              border-slate-100
-              px-4
-              py-3
-              text-left
-              text-sm
-              font-medium
-              text-slate-700
-              transition
-              hover:bg-slate-50
-            "
-                              >
-                                Ver comprobante de validación
-                              </button>
-                            ) : null}
-                          </div>,
-                          document.body,
-                        )}
                     </td>
 
                     <td className="px-4 py-4">
                       <div className="flex flex-wrap gap-2">
-                        {canValidate && (
-                          <button
-                            type="button"
-                            disabled={isProcessing}
-                            onClick={() => openReviewDrawer(payment.id)}
-                            className="
-  flex-1
-  inline-flex
-  h-9
-  items-center
-  justify-center
-  rounded-lg
-  bg-blue-600
-  px-4
-  text-sm
-  font-medium
-  text-white
-  shadow-sm
-  transition-all
-  hover:-translate-y-0.5
-  hover:bg-blue-700
-  disabled:cursor-not-allowed
-  disabled:opacity-50
-"
-                          >
-                            {isProcessing ? 'Procesando...' : 'Revisar'}
-                          </button>
-                        )}
-
-                        {canEdit && (
-                          <button
-                            type="button"
-                            onClick={() => onEditPayment(payment.id)}
-                            className="
-  flex-1
-  inline-flex
-  h-9
-  items-center
-  justify-center
-  rounded-lg
-  border
-  border-slate-300
-  bg-white
-  px-4
-  text-xs
-  font-medium
-  shadow-sm
-  transition-all
-  hover:bg-slate-50
-  hover:-translate-y-0.5
-"
-                          >
-                            Editar pago
-                          </button>
-                        )}
-
-                        {canNotify && (
-                          <button
-                            type="button"
-                            onClick={() => handleNotifyPaymentStatus(payment)}
-                            className="
-  flex-1
-  inline-flex
-  items-center
-  justify-center
-  gap-1.5
-  h-9
-  rounded-lg
-  border
-  border-emerald-200
-  bg-emerald-50
-  px-4
-  text-xs
-  font-medium
-  text-emerald-700
-  shadow-sm
-  transition-all
-  hover:bg-emerald-100
-  hover:-translate-y-0.5
-"
-                          >
-                            <MessageCircle className="h-3.5 w-3.5" />
-                            Avisar por WhatsApp
-                          </button>
-                        )}
-
-                        {!hasActions && (
-                          <span className="text-xs text-slate-400">
-                            Sin acciones
-                          </span>
-                        )}
+                        {renderRowActions(payment)}
                       </div>
                     </td>
                   </tr>
@@ -774,6 +646,132 @@ export function PaymentsTable({
               })}
             </tbody>
           </table>
+        </div>
+
+        {/* Móvil: tarjetas apiladas */}
+        <div className="space-y-3 p-4 md:hidden">
+          {visiblePayments.map((payment) => {
+            const { isProcessing, canEdit, canValidate, canNotify, hasActions } =
+              getPaymentActionFlags(payment);
+
+            return (
+              <div
+                key={payment.id}
+                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-950/5"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <span className="inline-flex items-center gap-1.5 text-lg font-bold tabular-nums text-slate-950">
+                      <CircleDollarSign className="h-4 w-4 shrink-0 text-emerald-600" />
+                      {formatCurrency(payment.monto)}
+                    </span>
+                    <p className="mt-1 truncate text-xs font-medium text-slate-500">
+                      {paymentTypeLabels[payment.tipoPago]}
+                    </p>
+                  </div>
+
+                  <div className="flex shrink-0 items-center gap-2">
+                    <PaymentStatusBadge status={payment.estatus} />
+                    <button
+                      type="button"
+                      title="Copiar datos del comprobante"
+                      onClick={() => void handleCopyPaymentData(payment)}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-white"
+                    >
+                      {copiedPaymentId === payment.id ? (
+                        <Check className="h-4 w-4 text-emerald-600" />
+                      ) : (
+                        <ClipboardCopy className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs text-slate-600">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wide text-slate-400">Cuenta destino</p>
+                    <p className="font-medium text-slate-900">{payment.cuentaDestinoBanco ?? '-'}</p>
+                    <p className="text-slate-400">{payment.cuentaDestinoTitular ?? '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wide text-slate-400">Antigüedad</p>
+                    {BANK_PAYMENT_TYPES.includes(payment.tipoPago) ? (
+                      <AgingBadge
+                        effectiveDate={payment.fechaComprobante}
+                        createdAt={payment.createdAt}
+                      />
+                    ) : (
+                      <span className="text-xs text-slate-400">—</span>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wide text-slate-400">Fecha registro</p>
+                    <p>{formatDate(payment.fechaPago)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wide text-slate-400">Fecha comprobante</p>
+                    <p>{formatDate(payment.fechaComprobante)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wide text-slate-400">Validado por</p>
+                    <p>{payment.validadoPorNombre ?? '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wide text-slate-400">Fecha validación</p>
+                    <p>{formatDate(payment.fechaValidacion)}</p>
+                  </div>
+                </div>
+
+                {payment.observaciones ? (
+                  <div className="mt-3">
+                    <p className="text-[10px] uppercase tracking-wide text-slate-400">Observaciones</p>
+                    <p className="text-xs text-slate-600">{payment.observaciones}</p>
+                  </div>
+                ) : null}
+
+                <div className="mt-4 flex items-center gap-2">
+                  {canValidate ? (
+                    <button
+                      type="button"
+                      disabled={isProcessing}
+                      onClick={() => openReviewDrawer(payment.id)}
+                      className="min-h-[44px] flex-1 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {isProcessing ? 'Procesando...' : 'Revisar'}
+                    </button>
+                  ) : canEdit ? (
+                    <button
+                      type="button"
+                      onClick={() => onEditPayment?.(payment.id)}
+                      className="min-h-[44px] flex-1 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                    >
+                      Editar pago
+                    </button>
+                  ) : canNotify ? (
+                    <button
+                      type="button"
+                      onClick={() => handleNotifyPaymentStatus(payment)}
+                      className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      Avisar
+                    </button>
+                  ) : (
+                    <span className="flex-1 text-xs text-slate-400">
+                      {hasActions ? '' : 'Sin acciones'}
+                    </span>
+                  )}
+
+                  <RowActionsMenu triggerLabel="Más" menuClassName="w-64">
+                    {renderViewOptions(payment)}
+                    <div className="flex flex-wrap gap-2 border-t border-slate-100 p-2">
+                      {renderRowActions(payment)}
+                    </div>
+                  </RowActionsMenu>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 

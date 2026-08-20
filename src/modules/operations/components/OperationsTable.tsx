@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import type { ReactNode } from 'react';
 import { OperationStatusBadge } from '@/modules/operations/components/OperationStatusBadge';
 import { StatusBadge } from '@/shared/components/ui/StatusBadge';
 import {
@@ -11,6 +10,7 @@ import { PaymentOperationResponse } from '../types/operations.types.ts';
 import { useMarkOperationAsInvoiced } from '../hooks/use-mark-operations-as-invoiced.js';
 import { useAuth } from '@/modules/auth/store/auth.context.js';
 import { ProgressBar } from '@/shared/components/ui/ProgressBar';
+import { RowActionsMenu } from '@/shared/components/ui/RowActionsMenu';
 
 interface OperationsTableProps {
   operations: PaymentOperationResponse[];
@@ -30,11 +30,7 @@ interface OperationsTableProps {
 
 export function OperationsTable({
   operations,
-  currentPage,
-  totalPages,
-  totalElements,
   isLoading = false,
-  onPageChange,
   onViewDetail,
   onAddPayment,
   onOperationUpdated,
@@ -43,18 +39,9 @@ export function OperationsTable({
   onDeactivateOperation,
   togglingOperationId,
 }: OperationsTableProps) {
-  const [openMenuOperationId, setOpenMenuOperationId] = useState<number | null>(null);
-  const [menuPosition, setMenuPosition] = useState<{
-    top: number;
-    left: number;
-    openUp: boolean;
-  } | null>(null);
-
-  const menuRef = useRef<HTMLDivElement | null>(null);
-  const { processingOperationId, submitMarkAsInvoiced } =
-    useMarkOperationAsInvoiced({
-      onSuccess: onOperationUpdated,
-    });
+  useMarkOperationAsInvoiced({
+    onSuccess: onOperationUpdated,
+  });
 
   const { hasRole } = useAuth();
 
@@ -69,67 +56,71 @@ export function OperationsTable({
   const canToggleOperationStatus = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
   const canReviewCommission = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
 
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        menuRef.current &&
-        !menuRef.current.contains(event.target as Node)
-      ) {
-        setOpenMenuOperationId(null);
-        setMenuPosition(null);
-      }
-    }
+  function renderActions(operation: PaymentOperationResponse): ReactNode {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => onViewDetail(operation.id)}
+          className="block w-full px-4 py-2.5 text-left text-sm font-medium transition hover:bg-slate-50"
+        >
+          Ver detalle
+        </button>
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
+        {canManageOperationFlow &&
+          (operation.estatus === 'PENDIENTE_VALIDACION' ||
+            operation.estatus === 'INGRESO_PARCIAL') && (
+            <button
+              type="button"
+              onClick={() => onViewDetail(operation.id, true)}
+              className="block w-full px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            >
+              Validar pagos de ingreso
+            </button>
+          )}
 
-  useEffect(() => {
-    function handleCloseMenu() {
-      setOpenMenuOperationId(null);
-      setMenuPosition(null);
-    }
+        {canModifyOperations && operation.saldoPendientePorRegistrar > 0 && (
+          <button
+            type="button"
+            onClick={() => onAddPayment(operation.id)}
+            className="block w-full px-4 py-2.5 text-left text-sm font-medium transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Registrar pago de ingreso
+          </button>
+        )}
 
-    window.addEventListener('scroll', handleCloseMenu, true);
-    window.addEventListener('resize', handleCloseMenu);
+        {canModifyOperations && isOperationEditableStatus(operation.estatus) ? (
+          <button
+            type="button"
+            onClick={() => onEditOperation?.(operation.id)}
+            className="block w-full px-4 py-2.5 text-left text-sm font-medium transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Editar
+          </button>
+        ) : null}
 
-    return () => {
-      window.removeEventListener('scroll', handleCloseMenu, true);
-      window.removeEventListener('resize', handleCloseMenu);
-    };
-  }, []);
-
-  function handleToggleMenu(
-    operationId: number,
-    event: React.MouseEvent<HTMLButtonElement>,
-  ) {
-    if (openMenuOperationId === operationId) {
-      setOpenMenuOperationId(null);
-      setMenuPosition(null);
-      return;
-    }
-
-    const rect = event.currentTarget.getBoundingClientRect();
-
-    const menuWidth = 208;
-    const estimatedMenuHeight = 120;
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const openUp = spaceBelow < estimatedMenuHeight;
-
-    setMenuPosition({
-      top: openUp ? rect.top - 8 : rect.bottom + 8,
-      left: Math.max(8, rect.right - menuWidth),
-      openUp,
-    });
-
-    setOpenMenuOperationId(operationId);
-  }
-
-  function closeMenu() {
-    setOpenMenuOperationId(null);
-    setMenuPosition(null);
+        {canToggleOperationStatus &&
+          (operation.activo ? (
+            <button
+              type="button"
+              disabled={togglingOperationId === operation.id}
+              onClick={() => onDeactivateOperation?.(operation.id)}
+              className="block w-full px-4 py-2.5 text-left text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Desactivar
+            </button>
+          ) : (
+            <button
+              type="button"
+              disabled={togglingOperationId === operation.id}
+              onClick={() => onActivateOperation?.(operation.id)}
+              className="block w-full px-4 py-2.5 text-left text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Activar
+            </button>
+          ))}
+      </>
+    );
   }
 
   if (!isLoading && operations.length === 0) {
@@ -140,37 +131,38 @@ export function OperationsTable({
     );
   }
 
-  return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/5">
-      <div className="overflow-x-auto">
-        <table className="min-w-full">
-          <thead className="bg-slate-100">
-            <tr className="text-left text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
-              <th className="px-4 py-3 font-medium text-center">Folio</th>
-              <th className="px-4 py-3 font-medium text-center">Cliente primario</th>
-              <th className="px-4 py-3 font-medium text-center">Socio comercial</th>
-              <th className="px-4 py-3 font-medium text-center">Fecha de creación</th>
-              <th className="px-4 py-3 font-medium text-center">Última actualización</th>
-              <th className="px-4 py-3 font-medium text-center">Monto total</th>
-              <th className="px-4 py-3 font-medium text-center">Monto ingresado</th>
-              {/*  <th className="px-4 py-3 font-medium text-center">Red comercial</th> */}
-              <th className="px-4 py-3 font-medium text-center">Monto retornado</th>
-              <th className="px-4 py-3 font-medium text-center">Estatus</th>
-              <th className="px-4 py-3 font-medium text-center">Activo</th>
-              <th className="px-4 py-3 font-medium text-center">Acciones</th>
-            </tr>
-          </thead>
+  if (isLoading) {
+    return (
+      <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-sm shadow-slate-950/5">
+        Cargando operaciones...
+      </div>
+    );
+  }
 
-          <tbody>
-            {isLoading ? (
-              <tr>
-                <td colSpan={10} className="px-4 py-8 text-center text-sm text-slate-500">
-                  Cargando operaciones...
-                </td>
+  return (
+    <>
+      {/* Desktop / tablet ancho: tabla completa */}
+      <div className="hidden overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/5 md:block">
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead className="bg-slate-100">
+              <tr className="text-left text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+                <th className="px-4 py-3 font-medium text-center">Folio</th>
+                <th className="px-4 py-3 font-medium text-center">Cliente primario</th>
+                <th className="px-4 py-3 font-medium text-center">Socio comercial</th>
+                <th className="px-4 py-3 font-medium text-center">Fecha de creación</th>
+                <th className="px-4 py-3 font-medium text-center">Última actualización</th>
+                <th className="px-4 py-3 font-medium text-center">Monto total</th>
+                <th className="px-4 py-3 font-medium text-center">Monto ingresado</th>
+                <th className="px-4 py-3 font-medium text-center">Monto retornado</th>
+                <th className="px-4 py-3 font-medium text-center">Estatus</th>
+                <th className="px-4 py-3 font-medium text-center">Activo</th>
+                <th className="px-4 py-3 font-medium text-center">Acciones</th>
               </tr>
-            ) : (
-              operations.map((operation) => {
-                const isMenuOpen = openMenuOperationId === operation.id;
+            </thead>
+
+            <tbody>
+              {operations.map((operation) => {
                 const showCommissionReviewMark =
                   canReviewCommission &&
                   operation.nivelesRedComercial >= 2 &&
@@ -231,15 +223,6 @@ export function OperationsTable({
                       />
                     </td>
 
-                    {/*                     <td className="px-4 py-4 text-slate-600">
-                      <div>
-                        {operation.nivelesRedComercial} nivel{operation.nivelesRedComercial > 1 ? 'es' : ''}
-                      </div>
-                      <div className="mt-1 text-xs text-slate-400">
-                        {operation.porcentajeComisionSocio}%
-                      </div>
-                    </td>
- */}
                     <td className="px-4 py-4 text-slate-600">
                       <div className="mt-1 text-xs text-slate-400">
                         {formatCurrency(operation.montoRetornado)}
@@ -259,115 +242,106 @@ export function OperationsTable({
                     </td>
 
                     <td className="px-4 py-4 text-right">
-                      <button
-                        type="button"
-                        onClick={(event) => handleToggleMenu(operation.id, event)}
-                        className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
-                      >
-                        Opciones
-                      </button>
-
-                      {isMenuOpen &&
-                        menuPosition &&
-                        createPortal(
-                          <div
-                            ref={menuRef}
-                            className="fixed z-[9999] w-52 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg"
-                            style={{
-                              top: menuPosition.top,
-                              left: menuPosition.left,
-                              transform: menuPosition.openUp
-                                ? 'translateY(-100%)'
-                                : 'none',
-                            }}
-                          >
-                            <button
-                              type="button"
-                              onClick={() => {
-                                onViewDetail(operation.id);
-                                closeMenu();
-                              }}
-                              className="block w-full px-4 py-2.5 text-left text-sm font-medium transition hover:bg-slate-50"
-                            >
-                              Ver detalle
-                            </button>
-
-                            {canManageOperationFlow &&
-                              (operation.estatus === 'PENDIENTE_VALIDACION' ||
-                                operation.estatus === 'INGRESO_PARCIAL') && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    onViewDetail(operation.id, true);
-                                    closeMenu();
-                                  }}
-                                  className="block w-full px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                                >
-                                  Validar pagos de ingreso
-                                </button>
-                              )}
-
-                            {canModifyOperations && (operation.saldoPendientePorRegistrar > 0) && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  onAddPayment(operation.id);
-                                  closeMenu();
-                                }}
-                                className="block w-full px-4 py-2.5 text-left text-sm font-medium  transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-60"
-                              >
-                                Registrar pago de ingreso
-                              </button>
-                            )}
-
-                            {canModifyOperations && isOperationEditableStatus(operation.estatus) ? (
-                              <button
-                                type="button"
-                                onClick={() => onEditOperation?.(operation.id)}
-                                className="block w-full px-4 py-2.5 text-left text-sm font-medium  transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-60"
-                              >
-                                Editar
-                              </button>
-                            ) : null}
-
-                            {canToggleOperationStatus && (
-                              operation.activo ? (
-                                <button
-                                  type="button"
-                                  disabled={togglingOperationId === operation.id}
-                                  onClick={() => {
-                                    onDeactivateOperation?.(operation.id);
-                                    closeMenu();
-                                  }}
-                                  className="block w-full px-4 py-2.5 text-left text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
-                                >
-                                  Desactivar
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  disabled={togglingOperationId === operation.id}
-                                  onClick={() => {
-                                    onActivateOperation?.(operation.id);
-                                    closeMenu();
-                                  }}
-                                  className="block w-full px-4 py-2.5 text-left text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
-                                >
-                                  Activar
-                                </button>
-                              )
-                            )}
-                          </div>,
-                          document.body,
-                        )}
+                      <RowActionsMenu>{renderActions(operation)}</RowActionsMenu>
                     </td>
                   </tr>
                 );
-              })
-            )}
-          </tbody>
-        </table>
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+
+      {/* Móvil: tarjetas apiladas */}
+      <div className="space-y-3 md:hidden">
+        {operations.map((operation) => {
+          const showCommissionReviewMark =
+            canReviewCommission &&
+            operation.nivelesRedComercial >= 2 &&
+            isOperationEditableStatus(operation.estatus);
+
+          return (
+            <div
+              key={operation.id}
+              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-950/5"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={
+                        showCommissionReviewMark
+                          ? 'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-amber-500 text-xs font-semibold text-amber-800'
+                          : 'text-xs font-normal text-slate-400'
+                      }
+                    >
+                      #{operation.id}
+                    </span>
+                    <StatusBadge active={operation.activo} />
+                  </div>
+                  <p className="mt-1 truncate text-sm font-semibold text-slate-900">
+                    {operation.clienteNombre}
+                  </p>
+                  <p className="truncate text-xs text-slate-500">
+                    {operation.socioComercialNombre}
+                  </p>
+                </div>
+                <OperationStatusBadge status={operation.estatus} />
+              </div>
+
+              <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs text-slate-600">
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-slate-400">Monto total</p>
+                  <p className="font-medium text-slate-900">{formatCurrency(operation.montoTotal)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-slate-400">Monto retornado</p>
+                  <p className="font-medium text-slate-900">{formatCurrency(operation.montoRetornado)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-slate-400">Creación</p>
+                  <p>{formatDate(operation.createdAt)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-slate-400">Última actualización</p>
+                  <p>
+                    {operation.updatedAt &&
+                    operation.createdAt &&
+                    new Date(operation.updatedAt).getTime() !==
+                      new Date(operation.createdAt).getTime()
+                      ? formatDate(operation.updatedAt)
+                      : 'Sin cambios'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-3">
+                <p className="text-[10px] uppercase tracking-wide text-slate-400">
+                  {operation.pagos.length} pago{operation.pagos.length === 1 ? '' : 's'} registrado
+                  {operation.pagos.length === 1 ? '' : 's'}
+                </p>
+                <ProgressBar
+                  className="mt-1"
+                  total={operation.montoTotal}
+                  registered={operation.montoRegistrado}
+                  validated={operation.montoValidado}
+                />
+              </div>
+
+              <div className="mt-4 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => onViewDetail(operation.id)}
+                  className="min-h-[44px] flex-1 rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white transition hover:bg-slate-800"
+                >
+                  Ver detalle
+                </button>
+                <RowActionsMenu triggerLabel="Más">{renderActions(operation)}</RowActionsMenu>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </>
   );
 }
