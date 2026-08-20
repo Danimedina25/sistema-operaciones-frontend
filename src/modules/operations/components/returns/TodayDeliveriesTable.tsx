@@ -66,7 +66,9 @@ export function TodayDeliveriesTable({ deliveries, onMarkAsDelivered }: TodayDel
 
           <tbody>
             {deliveries.map((delivery) => {
-              const canAct = delivery.estatus === 'EN_RECOLECCION';
+              // Paso final: el socio ya confirmó la recolección (ENTREGADO)
+              // y falta el cierre de JEFA_CAJAS.
+              const canAct = delivery.estatus === 'ENTREGADO';
 
               return (
                 <tr

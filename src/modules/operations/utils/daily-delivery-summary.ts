@@ -18,9 +18,13 @@ const PENDING_STATUSES = new Set(['SOLICITADO', 'EN_RECOLECCION']);
  * (una sola consulta al backend, sin volver a calcular sobre otra página).
  *
  * "Entregado" / "pendiente" se interpretan desde la perspectiva operativa
- * de JEFA_CAJAS: si ya entregó el efectivo físicamente (ENTREGADO o
- * RETORNADO) o no (SOLICITADO o EN_RECOLECCION) — independiente de si el
- * socio ya confirmó la recepción después.
+ * de JEFA_CAJAS: si el efectivo ya salió de sus manos físicamente
+ * (ENTREGADO o RETORNADO) o no (SOLICITADO o EN_RECOLECCION). Ese momento
+ * físico no cambió con la inversión del orden de confirmación — solo
+ * cambió quién lo registra primero en el sistema (ahora el socio, al
+ * confirmar que lo recogió; antes era la propia JEFA_CAJAS).
+ * `pendingConfirmationCount` cuenta retornos en ENTREGADO, que ahora
+ * significa "el socio ya confirmó, falta que JEFA_CAJAS los cierre".
  */
 export function computeDailyDeliverySummary(
   deliveries: ReturnPaymentResponse[],
@@ -38,7 +42,7 @@ export function computeDailyDeliverySummary(
       totalPending += delivery.monto;
     }
 
-    if (classifyDelivery({ estatus: delivery.estatus, scheduledAt: delivery.fechaHoraRecoleccionEfectivo }, now) === 'PENDING_PARTNER_CONFIRMATION') {
+    if (classifyDelivery({ estatus: delivery.estatus, scheduledAt: delivery.fechaHoraRecoleccionEfectivo }, now) === 'PENDING_STAFF_CONFIRMATION') {
       pendingConfirmationCount += 1;
     }
 

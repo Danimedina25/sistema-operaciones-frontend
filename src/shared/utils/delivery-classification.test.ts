@@ -4,13 +4,13 @@ import { classifyDelivery } from './delivery-classification';
 const now = new Date('2026-01-10T12:00:00.000Z');
 
 describe('classifyDelivery', () => {
-  it('clasifica como entregada cuando el socio confirmó (RETORNADO)', () => {
+  it('clasifica como entregada cuando JEFA_CAJAS cierra el retorno (RETORNADO)', () => {
     expect(classifyDelivery({ estatus: 'RETORNADO' }, now)).toBe('DELIVERED');
   });
 
-  it('clasifica como pendiente de confirmación del socio cuando ya se entregó físicamente (ENTREGADO)', () => {
+  it('clasifica como pendiente de confirmación de JEFA_CAJAS cuando el socio ya confirmó (ENTREGADO)', () => {
     expect(classifyDelivery({ estatus: 'ENTREGADO' }, now)).toBe(
-      'PENDING_PARTNER_CONFIRMATION',
+      'PENDING_STAFF_CONFIRMATION',
     );
   });
 

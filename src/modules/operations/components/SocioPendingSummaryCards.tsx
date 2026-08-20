@@ -61,7 +61,7 @@ export function SocioPendingSummaryCards({
         label="Retornos pendientes de confirmar"
         count={isLoading ? null : summary.returnsPendingConfirmation}
         icon={PackageCheck}
-        onClick={() => navigate(`${paths.returnsRequested}?returnStatuses=ENTREGADO`)}
+        onClick={() => navigate(`${paths.returnsRequested}?returnStatuses=EN_RECOLECCION`)}
       />
       <PendingTaskCard
         label={`Comisiones pendientes (${activeFilterLabel ?? 'esta semana'})`}

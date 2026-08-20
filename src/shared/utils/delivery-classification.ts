@@ -5,7 +5,7 @@ export type DeliveryClassification =
   | 'LATE'
   | 'UPCOMING'
   | 'SCHEDULED'
-  | 'PENDING_PARTNER_CONFIRMATION'
+  | 'PENDING_STAFF_CONFIRMATION'
   | 'UNSCHEDULED';
 
 export interface DeliveryClassificationInput {
@@ -20,8 +20,9 @@ const UPCOMING_WINDOW_HOURS = 2;
  * Clasifica una entrega (retorno en efectivo o retiro sin tarjeta) en un
  * semáforo visual. El flujo real del backend es:
  * SOLICITADO -> EN_RECOLECCION (JEFA_CAJAS programa recolección) ->
- * ENTREGADO (JEFA_CAJAS entrega físicamente, pendiente de que el socio
- * confirme recepción) -> RETORNADO (el socio confirmó, estado final).
+ * ENTREGADO (el socio comercial confirma que recogió el efectivo,
+ * pendiente de que JEFA_CAJAS cierre el retorno) -> RETORNADO (JEFA_CAJAS
+ * confirmó el cierre, estado final).
  */
 export function classifyDelivery(
   input: DeliveryClassificationInput,
@@ -34,7 +35,7 @@ export function classifyDelivery(
   }
 
   if (estatus === 'ENTREGADO') {
-    return 'PENDING_PARTNER_CONFIRMATION';
+    return 'PENDING_STAFF_CONFIRMATION';
   }
 
   if (!scheduledAt) {

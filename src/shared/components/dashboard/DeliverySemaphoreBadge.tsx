@@ -14,10 +14,10 @@ const CLASSIFICATION_STYLES: Record<DeliveryClassification, { bg: string; text: 
     text: 'text-emerald-700',
     label: 'Entregada',
   },
-  PENDING_PARTNER_CONFIRMATION: {
+  PENDING_STAFF_CONFIRMATION: {
     bg: 'border-indigo-200 bg-indigo-50',
     text: 'text-indigo-700',
-    label: 'Pendiente de confirmación',
+    label: 'Pendiente de tu confirmación',
   },
   LATE: {
     bg: 'border-rose-200 bg-rose-50',
@@ -45,7 +45,9 @@ const CLASSIFICATION_STYLES: Record<DeliveryClassification, { bg: string; text: 
  * Semáforo visual de entregas para retornos en efectivo/retiro sin
  * tarjeta. Usa `classifyDelivery` (shared/utils/delivery-classification.ts),
  * que refleja el flujo real de backend: SOLICITADO -> EN_RECOLECCION ->
- * ENTREGADO (pendiente de confirmación del socio) -> RETORNADO.
+ * ENTREGADO (el socio ya confirmó, pendiente de que JEFA_CAJAS cierre) ->
+ * RETORNADO. Solo se usa en la vista de JEFA_CAJAS (Entregas de hoy), por
+ * eso el label de "pendiente" se dirige a ella.
  */
 export function DeliverySemaphoreBadge({ estatus, scheduledAt, className }: DeliverySemaphoreBadgeProps) {
   const classification = classifyDelivery({ estatus, scheduledAt });

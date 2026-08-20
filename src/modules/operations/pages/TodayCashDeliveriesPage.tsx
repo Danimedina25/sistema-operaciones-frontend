@@ -81,7 +81,7 @@ export default function TodayCashDeliveriesPage() {
           variant="blue"
         />
         <MetricCard
-          label="Pendientes de confirmación"
+          label="Pendientes de tu confirmación"
           value={isLoading ? '' : summary.pendingConfirmationCount}
           isLoading={isLoading}
           icon={PackageCheck}

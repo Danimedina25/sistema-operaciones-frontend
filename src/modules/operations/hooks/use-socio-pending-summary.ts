@@ -85,7 +85,7 @@ export function useSocioPendingSummary({
         getMyOperations(0, 1, { ...BASE_FILTERS, ...dateFilters, status: 'PENDIENTE_VALIDACION' }),
         getMyOperations(0, 1, { ...BASE_FILTERS, ...dateFilters, status: 'INGRESO_PARCIAL' }),
         getMyOperations(0, 1, { ...BASE_FILTERS, ...dateFilters, status: 'VALIDADA' }),
-        getOperationsWithRequestedReturns(0, 1, { ...BASE_FILTERS, ...dateFilters, returnStatuses: 'ENTREGADO' }),
+        getOperationsWithRequestedReturns(0, 1, { ...BASE_FILTERS, ...dateFilters, returnStatuses: 'EN_RECOLECCION' }),
         getMyWeeklyCommissions(commissionsRange),
       ]);
 

@@ -188,7 +188,9 @@ export function ReturnPaymentsTable({
   function canConfirmCashReturnPickup(returnPayment: ReturnPaymentResponse) {
     if (!isSocioComercial) return false;
     if (!onConfirmCashReturnPickup) return false;
-    if (returnPayment.estatus !== 'ENTREGADO') return false;
+    // Primer paso tras programar la recolección: el socio confirma que
+    // recogió el efectivo antes de que JEFA_CAJAS lo cierre.
+    if (returnPayment.estatus !== 'EN_RECOLECCION') return false;
 
     return (
       returnPayment.tipoPago === 'EFECTIVO' ||
@@ -199,8 +201,9 @@ export function ReturnPaymentsTable({
   function canMarkCashReturnDelivered(returnPayment: ReturnPaymentResponse) {
     if (!canManageReturnPayments) return false;
     if (!onMarkCashReturnDelivered) return false;
-    // estatus EN_RECOLECCION ya implica que hay fecha de recolección programada
-    if (returnPayment.estatus !== 'EN_RECOLECCION') return false;
+    // Paso final: JEFA_CAJAS cierra el retorno después de que el socio ya
+    // confirmó la recolección (estatus ENTREGADO).
+    if (returnPayment.estatus !== 'ENTREGADO') return false;
 
     return (
       (isJefaCajas || isAdmin) &&

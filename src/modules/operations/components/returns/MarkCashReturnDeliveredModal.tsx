@@ -10,11 +10,13 @@ interface MarkCashReturnDeliveredModalProps {
 }
 
 /**
- * Confirmación reforzada antes de marcar un retorno en efectivo/retiro sin
- * tarjeta como entregado: muestra el resumen completo (monto, operación,
- * receptor autorizado, fecha programada) y previene doble envío
- * deshabilitando los botones mientras `isSubmitting` es true. Reutilizada
- * desde el detalle de operación y desde "Entregas de hoy".
+ * Confirmación reforzada del cierre final de un retorno en efectivo/retiro
+ * sin tarjeta: el socio comercial ya confirmó que lo recogió, esta acción
+ * cierra el retorno como completado (estatus RETORNADO). Muestra el resumen
+ * completo (monto, operación, receptor autorizado, fecha programada) y
+ * previene doble envío deshabilitando los botones mientras `isSubmitting`
+ * es true. Reutilizada desde el detalle de operación y desde "Entregas de
+ * hoy".
  */
 export function MarkCashReturnDeliveredModal({
   returnPayment,
@@ -43,8 +45,8 @@ export function MarkCashReturnDeliveredModal({
       {returnPayment ? (
         <>
           <p className="text-sm text-slate-600">
-            ¿Confirmas que ya entregaste este retorno en efectivo? El socio comercial podrá
-            confirmar la recepción después de esto.
+            El socio comercial ya confirmó que recogió este retorno en efectivo. Esta acción lo
+            cierra como completado.
           </p>
 
           <div className="mt-4 space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
