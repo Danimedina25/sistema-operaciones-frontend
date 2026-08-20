@@ -81,276 +81,377 @@ export function MyCommissionsTable({
         );
 
     return (
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/5">
+        <>
+            {/* Desktop / tablet ancho: tabla completa */}
+            <div className="hidden overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/5 md:block">
 
-            <div className="overflow-x-auto">
+                <div className="overflow-x-auto">
 
-                <table className="min-w-full">
+                    <table className="min-w-full">
 
-                    <thead className="bg-slate-100">
+                        <thead className="bg-slate-100">
 
-                        <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
 
-                            <th className="px-4 py-4">
-                                Folio
-                            </th>
+                                <th className="px-4 py-4">
+                                    Folio
+                                </th>
 
-                            <th className="px-4 py-4">
-                                Cliente
-                            </th>
+                                <th className="px-4 py-4">
+                                    Cliente
+                                </th>
 
-                            <th className="px-4 py-4">
-                                Fecha
-                            </th>
+                                <th className="px-4 py-4">
+                                    Fecha
+                                </th>
 
-                            <th className="px-4 py-4">
-                                Monto operación
-                            </th>
+                                <th className="px-4 py-4">
+                                    Monto operación
+                                </th>
 
-                            <th className="px-4 py-4">
-                                Nivel socios comerciales
-                            </th>
+                                <th className="px-4 py-4">
+                                    Nivel socios comerciales
+                                </th>
 
-                             <th className="px-4 py-4">
-                                Porcentaje de comisión
-                            </th>
+                                <th className="px-4 py-4">
+                                    Porcentaje de comisión
+                                </th>
 
-                            <th className="px-4 py-4">
-                                Nivel 1 (yo)
-                            </th>
+                                <th className="px-4 py-4">
+                                    Nivel 1 (yo)
+                                </th>
 
-                            <th className="px-4 py-4">
-                                Nivel 2
-                            </th>
+                                <th className="px-4 py-4">
+                                    Nivel 2
+                                </th>
 
-                            <th className="px-4 py-4">
-                                Nivel 3
-                            </th>
+                                <th className="px-4 py-4">
+                                    Nivel 3
+                                </th>
 
-                        </tr>
+                            </tr>
 
-                    </thead>
+                        </thead>
 
-                    <tbody>
+                        <tbody>
 
-                        {paginatedOperations.map(
-                            (
-                                operation,
-                            ) => (
+                            {paginatedOperations.map(
+                                (
+                                    operation,
+                                ) => (
 
-                                <tr
-                                    key={
-                                        operation.operationId
-                                    }
-                                    className="border-t border-slate-200 text-sm hover:bg-slate-50"
-                                >
+                                    <tr
+                                        key={
+                                            operation.operationId
+                                        }
+                                        className="border-t border-slate-200 text-sm hover:bg-slate-50"
+                                    >
 
-                                    <td className="px-4 py-4">
+                                        <td className="px-4 py-4">
 
-                                        <div className="font-semibold text-slate-900">
-                                            #
-                                            {
-                                                operation.operationId
-                                            }
-                                        </div>
+                                            <div className="font-semibold text-slate-900">
+                                                #
+                                                {
+                                                    operation.operationId
+                                                }
+                                            </div>
 
-                                    </td>
+                                        </td>
 
-                                    <td className="px-4 py-4">
+                                        <td className="px-4 py-4">
 
-                                        <div className="font-medium text-slate-900">
-                                            {
-                                                operation.cliente
-                                            }
-                                        </div>
+                                            <div className="font-medium text-slate-900">
+                                                {
+                                                    operation.cliente
+                                                }
+                                            </div>
 
-                                    </td>
+                                        </td>
 
-                                    <td className="px-4 py-4 text-slate-600">
+                                        <td className="px-4 py-4 text-slate-600">
 
-                                        {formatDate(
-                                            operation.fechaOperacion,
-                                        )}
-
-                                    </td>
-
-                                    <td className="px-4 py-4">
-
-                                        <div className="font-medium text-slate-900">
-                                            {formatCurrency(
-                                                operation.montoOperacion,
+                                            {formatDate(
+                                                operation.fechaOperacion,
                                             )}
-                                        </div>
 
-                                    </td>
+                                        </td>
 
+                                        <td className="px-4 py-4">
 
-                                    <td className="px-4 py-4">
-
-                                        <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-
-                                            {
-                                                operation.nivelesRedComercial
-                                            } niveles
-
-                                        </span>
-
-                                    </td>
-
-                                      <td className="px-4 py-4">
-
-                                        <div className="font-medium text-slate-900">
-                                            {operation.porcentajeComision}%
-                                        </div>
-
-                                    </td>
-
-                                    {/* MI COMISION */}
-
-                                    <td className="px-3 py-3">
-
-                                        <div className="w-[140px] rounded-lg border border-slate-200 bg-slate-50 p-2.5">
-
-                                            <p className="text-[10px] font-medium uppercase tracking-wide text-emerald-700">
-                                                Mi comisión
-                                            </p>
-
-                                            <p className="mt-1 text-sm font-semibold text-emerald-800">
+                                            <div className="font-medium text-slate-900">
                                                 {formatCurrency(
-                                                    operation.miComision,
+                                                    operation.montoOperacion,
                                                 )}
-                                            </p>
-
-                                            <div className="mt-2">
-                                                <StatusBadge
-                                                    status={
-                                                        operation.myCommissionStatus
-                                                    }
-                                                />
                                             </div>
 
-                                        </div>
+                                        </td>
 
-                                    </td>
 
-                                    {/* NIVEL 2 */}
+                                        <td className="px-4 py-4">
 
-                                    <td className="px-3 py-3">
+                                            <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
 
-                                        {operation.socioNivel2 ? (
+                                                {
+                                                    operation.nivelesRedComercial
+                                                } niveles
+
+                                            </span>
+
+                                        </td>
+
+                                        <td className="px-4 py-4">
+
+                                            <div className="font-medium text-slate-900">
+                                                {operation.porcentajeComision}%
+                                            </div>
+
+                                        </td>
+
+                                        {/* MI COMISION */}
+
+                                        <td className="px-3 py-3">
 
                                             <div className="w-[140px] rounded-lg border border-slate-200 bg-slate-50 p-2.5">
 
-                                                <p className="truncate text-[10px] font-medium text-slate-500">
-                                                    {operation.socioNivel2}
+                                                <p className="text-[10px] font-medium uppercase tracking-wide text-emerald-700">
+                                                    Mi comisión
                                                 </p>
 
-                                                <p className="mt-1 text-sm font-semibold text-slate-900">
+                                                <p className="mt-1 text-sm font-semibold text-emerald-800">
                                                     {formatCurrency(
-                                                        operation.comisionNivel2,
+                                                        operation.miComision,
                                                     )}
                                                 </p>
 
                                                 <div className="mt-2">
                                                     <StatusBadge
                                                         status={
-                                                            operation.statusNivel2
+                                                            operation.myCommissionStatus
                                                         }
                                                     />
                                                 </div>
 
                                             </div>
 
-                                        ) : (
+                                        </td>
 
-                                            <div className="flex h-[72px] w-[140px] items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-[11px] text-slate-400">
-                                                Sin socio
-                                            </div>
+                                        {/* NIVEL 2 */}
 
-                                        )}
+                                        <td className="px-3 py-3">
 
-                                    </td>
-                                    {/* NIVEL 3 */}
+                                            {operation.socioNivel2 ? (
 
-                                    <td className="px-3 py-3">
+                                                <div className="w-[140px] rounded-lg border border-slate-200 bg-slate-50 p-2.5">
 
-                                        {operation.socioNivel3 ? (
+                                                    <p className="truncate text-[10px] font-medium text-slate-500">
+                                                        {operation.socioNivel2}
+                                                    </p>
 
-                                            <div className="w-[140px] rounded-lg border border-slate-200 bg-slate-50 p-2.5">
+                                                    <p className="mt-1 text-sm font-semibold text-slate-900">
+                                                        {formatCurrency(
+                                                            operation.comisionNivel2,
+                                                        )}
+                                                    </p>
 
-                                                <p className="truncate text-[10px] font-medium text-slate-500">
-                                                    {operation.socioNivel3}
-                                                </p>
+                                                    <div className="mt-2">
+                                                        <StatusBadge
+                                                            status={
+                                                                operation.statusNivel2
+                                                            }
+                                                        />
+                                                    </div>
 
-                                                <p className="mt-1 text-sm font-semibold text-slate-900">
-                                                    {formatCurrency(
-                                                        operation.comisionNivel3,
-                                                    )}
-                                                </p>
-
-                                                <div className="mt-2">
-                                                    <StatusBadge
-                                                        status={
-                                                            operation.statusNivel3
-                                                        }
-                                                    />
                                                 </div>
 
-                                            </div>
+                                            ) : (
 
-                                        ) : (
+                                                <div className="flex h-[72px] w-[140px] items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-[11px] text-slate-400">
+                                                    Sin socio
+                                                </div>
 
-                                            <div className="flex h-[72px] w-[140px] items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-[11px] text-slate-400">
-                                                Sin socio
-                                            </div>
+                                            )}
 
-                                        )}
+                                        </td>
+                                        {/* NIVEL 3 */}
 
-                                    </td>
+                                        <td className="px-3 py-3">
 
-                                </tr>
+                                            {operation.socioNivel3 ? (
 
-                            ),
-                        )}
+                                                <div className="w-[140px] rounded-lg border border-slate-200 bg-slate-50 p-2.5">
 
-                    </tbody>
+                                                    <p className="truncate text-[10px] font-medium text-slate-500">
+                                                        {operation.socioNivel3}
+                                                    </p>
 
-                </table>
+                                                    <p className="mt-1 text-sm font-semibold text-slate-900">
+                                                        {formatCurrency(
+                                                            operation.comisionNivel3,
+                                                        )}
+                                                    </p>
 
-                <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3">
+                                                    <div className="mt-2">
+                                                        <StatusBadge
+                                                            status={
+                                                                operation.statusNivel3
+                                                            }
+                                                        />
+                                                    </div>
 
-                    <p className="text-sm text-slate-500">
-                        Página {page} de {totalPages}
-                    </p>
+                                                </div>
 
-                    <div className="flex gap-2">
+                                            ) : (
 
-                        <button
-                            disabled={page === 1}
-                            onClick={() =>
-                                setPage(page - 1)
-                            }
-                            className="rounded-lg border px-3 py-2 text-sm disabled:opacity-50"
-                        >
-                            Anterior
-                        </button>
+                                                <div className="flex h-[72px] w-[140px] items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-[11px] text-slate-400">
+                                                    Sin socio
+                                                </div>
 
-                        <button
-                            disabled={page === totalPages}
-                            onClick={() =>
-                                setPage(page + 1)
-                            }
-                            className="rounded-lg border px-3 py-2 text-sm disabled:opacity-50"
-                        >
-                            Siguiente
-                        </button>
+                                            )}
 
-                    </div>
+                                        </td>
+
+                                    </tr>
+
+                                ),
+                            )}
+
+                        </tbody>
+
+                    </table>
 
                 </div>
 
             </div>
 
-        </div>
+            {/* Móvil: tarjetas apiladas */}
+            <div className="space-y-3 md:hidden">
+
+                {paginatedOperations.map(
+                    (operation) => (
+
+                        <div
+                            key={operation.operationId}
+                            className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-950/5"
+                        >
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                    <p className="text-xs font-normal text-slate-400">
+                                        #{operation.operationId}
+                                    </p>
+                                    <p className="mt-1 truncate text-sm font-semibold text-slate-900">
+                                        {operation.cliente}
+                                    </p>
+                                </div>
+                                <span className="inline-flex shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                                    {operation.nivelesRedComercial} niveles
+                                </span>
+                            </div>
+
+                            <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs text-slate-600">
+                                <div>
+                                    <p className="text-[10px] uppercase tracking-wide text-slate-400">Fecha</p>
+                                    <p className="font-medium text-slate-900">{formatDate(operation.fechaOperacion)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] uppercase tracking-wide text-slate-400">Monto operación</p>
+                                    <p className="font-medium text-slate-900">{formatCurrency(operation.montoOperacion)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] uppercase tracking-wide text-slate-400">% Comisión</p>
+                                    <p className="font-medium text-slate-900">{operation.porcentajeComision}%</p>
+                                </div>
+                            </div>
+
+                            {/* MI COMISION */}
+                            <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-2.5">
+                                <p className="text-[10px] font-medium uppercase tracking-wide text-emerald-700">
+                                    Mi comisión
+                                </p>
+                                <div className="mt-1 flex items-center justify-between">
+                                    <p className="text-sm font-semibold text-emerald-800">
+                                        {formatCurrency(operation.miComision)}
+                                    </p>
+                                    <StatusBadge status={operation.myCommissionStatus} />
+                                </div>
+                            </div>
+
+                            {/* NIVEL 2 / NIVEL 3 */}
+                            <div className="mt-2 grid grid-cols-2 gap-2">
+                                {operation.socioNivel2 ? (
+                                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-2.5">
+                                        <p className="truncate text-[10px] font-medium text-slate-500">
+                                            {operation.socioNivel2}
+                                        </p>
+                                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                                            {formatCurrency(operation.comisionNivel2)}
+                                        </p>
+                                        <div className="mt-1">
+                                            <StatusBadge status={operation.statusNivel2} />
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex min-h-[72px] items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 p-2.5 text-center text-[11px] text-slate-400">
+                                        Sin socio nivel 2
+                                    </div>
+                                )}
+
+                                {operation.socioNivel3 ? (
+                                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-2.5">
+                                        <p className="truncate text-[10px] font-medium text-slate-500">
+                                            {operation.socioNivel3}
+                                        </p>
+                                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                                            {formatCurrency(operation.comisionNivel3)}
+                                        </p>
+                                        <div className="mt-1">
+                                            <StatusBadge status={operation.statusNivel3} />
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex min-h-[72px] items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 p-2.5 text-center text-[11px] text-slate-400">
+                                        Sin socio nivel 3
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                    ),
+                )}
+
+            </div>
+
+            {/* Paginación: compartida entre desktop y móvil */}
+            <div className="mt-3 flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm shadow-slate-950/5">
+
+                <p className="text-sm text-slate-500">
+                    Página {page} de {totalPages}
+                </p>
+
+                <div className="flex gap-2">
+
+                    <button
+                        disabled={page === 1}
+                        onClick={() =>
+                            setPage(page - 1)
+                        }
+                        className="rounded-lg border px-3 py-2 text-sm disabled:opacity-50"
+                    >
+                        Anterior
+                    </button>
+
+                    <button
+                        disabled={page === totalPages}
+                        onClick={() =>
+                            setPage(page + 1)
+                        }
+                        className="rounded-lg border px-3 py-2 text-sm disabled:opacity-50"
+                    >
+                        Siguiente
+                    </button>
+
+                </div>
+
+            </div>
+        </>
     );
 }
