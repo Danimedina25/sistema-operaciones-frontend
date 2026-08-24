@@ -367,8 +367,8 @@ export function CreateOperationForm({
 
   return (
     <form className="space-y-4 pb-0" onSubmit={handleSubmit(onSubmit, onInvalid)}>
-      <div className="sticky top-0 z-50 -mx-5 -mt-5 rounded-b-2xl border-b border-slate-200 bg-white px-5 py-4 shadow-lg before:absolute before:inset-x-0 before:-top-10 before:h-10 before:bg-white">
-        <div className="relative grid items-center gap-6 text-sm md:grid-cols-4">
+      <div className="sticky top-0 z-50 -mx-4 -mt-4 rounded-b-2xl border-b border-slate-200 bg-white px-4 py-3 shadow-lg before:absolute before:inset-x-0 before:-top-10 before:h-10 before:bg-white sm:-mx-7 sm:-mt-7 sm:px-5 sm:py-4">
+        <div className="relative grid grid-cols-3 items-start gap-2 text-xs sm:gap-4 sm:text-sm md:grid-cols-4 md:items-center">
           <div className="text-center">
             <span className="block text-slate-500">Monto total requerido</span>
             <span className="text-base font-semibold text-slate-900">
@@ -392,7 +392,7 @@ export function CreateOperationForm({
             </span>
           </div>
 
-          <div className="flex justify-end">
+          <div className="col-span-3 mt-1 flex md:col-span-1 md:mt-0 md:justify-end">
             <Button
               type="submit"
               isLoading={isSubmitting}
@@ -400,6 +400,7 @@ export function CreateOperationForm({
                 excedeMontoTotal ||
                 !!errors.pagos?.message
               }
+              className="w-full md:w-auto"
             >
               Registrar
             </Button>
@@ -413,7 +414,7 @@ export function CreateOperationForm({
           </div>
         ) : null}
       </div>
-      <div className="mt-6 rounded-2xl border border-slate-200 p-5">
+      <div className="mt-6 rounded-2xl border border-slate-200 p-4 sm:p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h3 className="text-base font-semibold text-slate-900">
             Datos generales de la operación
@@ -807,7 +808,7 @@ export function CreateOperationForm({
           a una cuenta distinta.
         </p>
       </div>
-      <div className="rounded-2xl border border-slate-200 p-5">
+      <div className="rounded-2xl border border-slate-200 p-4 sm:p-5">
         <div className="space-y-4">
           {fields.map((field, index) => {
             const pagoErrors = errors.pagos?.[index];
@@ -834,7 +835,7 @@ export function CreateOperationForm({
             return (
               <div
                 key={field.id}
-                className="rounded-2xl border border-slate-200 p-4"
+                className="rounded-2xl border border-slate-200 p-3 sm:p-4"
               >
                 <div className="mb-4 flex items-center justify-between">
                   <h4 className="text-sm font-semibold text-slate-800">
@@ -1080,7 +1081,7 @@ export function CreateOperationForm({
                             </div>
                           )}
 
-                          <div className="flex items-center justify-between gap-4">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                             <div className="min-w-0 flex-1">
                               <p
                                 className="truncate text-sm font-medium text-slate-900"
@@ -1282,7 +1283,7 @@ export function CreateOperationForm({
         ) : null}
       </div>
 
-      <div className="sticky bottom-0 z-30 -mx-5 border-t border-slate-200 bg-white/95 px-5 py-3 shadow-[0_-8px_20px_rgba(15,23,42,0.08)] backdrop-blur">
+      <div className="sticky bottom-0 z-30 -mx-4 border-t border-slate-200 bg-white/95 px-4 py-3 shadow-[0_-8px_20px_rgba(15,23,42,0.08)] backdrop-blur sm:-mx-7 sm:px-7">
         <Button
           type="button"
           onClick={() => {

@@ -276,7 +276,7 @@ export function UpdateOperationForm({
 
   return (
     <form className="space-y-5" onSubmit={handleSubmit(onSubmit, onInvalid)}>
-      <div className="rounded-2xl border border-slate-200 p-5">
+      <div className="rounded-2xl border border-slate-200 p-4 sm:p-5">
         <h3 className="mb-4 text-base font-semibold text-slate-900">
           Datos generales de la operación
         </h3>
@@ -646,7 +646,7 @@ export function UpdateOperationForm({
         </div>
       </div>
 
-      <div className="sticky bottom-0 z-30 -mx-5 border-t border-slate-200 bg-white/95 px-5 py-3 shadow-[0_-8px_20px_rgba(15,23,42,0.08)] backdrop-blur">
+      <div className="sticky bottom-0 z-30 -mx-4 border-t border-slate-200 bg-white/95 px-4 py-3 shadow-[0_-8px_20px_rgba(15,23,42,0.08)] backdrop-blur sm:-mx-7 sm:px-7">
         <Button
           type="submit"
           isLoading={isSubmitting}

@@ -348,7 +348,7 @@ export function ReturnPaymentsTable({
     shadow-slate-950/[0.06]
   "
     >
-      <div className="bg-gradient-to-r from-slate-950 to-slate-800 px-6 py-5 text-white">
+      <div className="bg-gradient-to-r from-slate-950 to-slate-800 px-4 py-5 text-white sm:px-6">
         <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
           <div className="text-left">
             <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300"><BanknoteArrowDown className="h-4 w-4" /> Egresos</p>
@@ -356,7 +356,7 @@ export function ReturnPaymentsTable({
             <p className="mt-1 text-sm text-slate-400">Seguimiento de solicitudes y liquidaciones.</p>
           </div>
 
-          <div className="grid w-full grid-cols-1 items-start gap-10 md:w-auto md:grid-cols-[1fr_1fr]">
+          <div className="grid w-full grid-cols-1 items-start gap-3 md:w-auto md:grid-cols-[1fr_1fr] md:gap-10">
             <div className="rounded-xl border border-white/10 bg-white/5 px-5 py-3">
               <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
                 Pendiente por solicitar
@@ -369,7 +369,7 @@ export function ReturnPaymentsTable({
                 {formatCurrency(montoPendientePorSolicitar ?? 0)}
               </p>
 
-              <div className="mt-1 flex h-[28px] items-center">
+              <div className="mt-2 flex min-h-11 items-center md:mt-1 md:min-h-[28px]">
                 {canRequestReturns ? (
                   <button
                     type="button"
@@ -385,7 +385,7 @@ export function ReturnPaymentsTable({
                     gap-1.5 rounded-lg
                     bg-blue-600
                     px-4
-                    py-2
+                    py-3
                     text-xs
                     font-semibold
                     text-white
@@ -417,7 +417,7 @@ export function ReturnPaymentsTable({
                 {formatCurrency(montoPendientePorRetornar ?? 0)}
               </p>
 
-              <div className="mt-1 flex h-[28px] items-center">
+              <div className="mt-1 flex min-h-[28px] items-center">
                 <p className="text-xs font-medium text-slate-400">
                   {paymentStatusMessage}
                 </p>
@@ -581,7 +581,7 @@ export function ReturnPaymentsTable({
           </div>
 
           {/* Móvil: tarjetas apiladas */}
-          <div className="space-y-3 px-4 pb-4 md:hidden">
+          <div className="space-y-3 px-3 pb-3 min-[375px]:px-4 min-[375px]:pb-4 md:hidden">
             {visibleReturns.map((returnPayment) => {
               const flags = getStatusActionFlags(returnPayment);
               const hasActions = hasAnyStatusAction(flags);
@@ -589,10 +589,10 @@ export function ReturnPaymentsTable({
               return (
                 <div
                   key={returnPayment.id}
-                  className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                  className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm min-[375px]:p-4"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
                       <p className="text-lg font-bold tabular-nums text-slate-950">
                         {formatCurrency(returnPayment.monto)}
                       </p>
@@ -606,7 +606,7 @@ export function ReturnPaymentsTable({
                   <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs text-slate-600">
                     <div className="col-span-2">
                       <p className="text-[10px] uppercase tracking-wide text-slate-400">Cuenta destino</p>
-                      <p className="font-medium text-slate-900">
+                      <p className="break-all font-medium text-slate-900">
                         {returnPayment.cuentaClabeCliente ?? '-'}
                       </p>
                       <p className="text-slate-500">
@@ -614,41 +614,43 @@ export function ReturnPaymentsTable({
                       </p>
                     </div>
 
-                    <div>
+                    <div className="col-span-2 min-[360px]:col-span-1">
                       <p className="text-[10px] uppercase tracking-wide text-slate-400">Fecha solicitud</p>
                       <p>{returnPayment.fechaSolicitud ? formatDate(returnPayment.fechaSolicitud) : '-'}</p>
                     </div>
+                  </div>
 
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wide text-slate-400">Pagado por</p>
-                      <p>{returnPayment.pagadoPorNombre ?? '-'}</p>
-                    </div>
-
-                    {(returnPayment.tipoPago === 'EFECTIVO' ||
-                      returnPayment.tipoPago === 'RETIRO_SIN_TARJETA') &&
-                      returnPayment.fechaHoraRecoleccionEfectivo && (
-                        <div className="col-span-2">
+                  <details className="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                    <summary className="min-h-8 cursor-pointer select-none py-1 font-semibold text-slate-700 marker:text-slate-400">
+                      Ver más detalles
+                    </summary>
+                    <div className="grid grid-cols-1 gap-3 border-t border-slate-200 pt-3 min-[360px]:grid-cols-2">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wide text-slate-400">Pagado por</p>
+                        <p className="break-words">{returnPayment.pagadoPorNombre ?? '-'}</p>
+                      </div>
+                      {(returnPayment.tipoPago === 'EFECTIVO' || returnPayment.tipoPago === 'RETIRO_SIN_TARJETA') && returnPayment.fechaHoraRecoleccionEfectivo ? (
+                        <div className="min-[360px]:col-span-2">
                           <p className="text-[10px] uppercase tracking-wide text-slate-400">Recolección programada</p>
-                          <span className="animate-return-pickup-highlight mt-0.5 inline-flex items-center rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                          <span className="animate-return-pickup-highlight mt-0.5 inline-flex max-w-full items-center rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
                             {formatDateTime(returnPayment.fechaHoraRecoleccionEfectivo)}
                           </span>
                         </div>
-                      )}
-
-                    {returnPayment.estatus === 'RETORNADO' && returnPayment.fechaPago && (
-                      <div>
-                        <p className="text-[10px] uppercase tracking-wide text-slate-400">Fecha retorno</p>
-                        <p>{formatDateTime(returnPayment.fechaPago)}</p>
-                      </div>
-                    )}
-
-                    {returnPayment.observaciones && (
-                      <div className="col-span-2">
-                        <p className="text-[10px] uppercase tracking-wide text-slate-400">Observaciones</p>
-                        <p>{returnPayment.observaciones}</p>
-                      </div>
-                    )}
-                  </div>
+                      ) : null}
+                      {returnPayment.estatus === 'RETORNADO' && returnPayment.fechaPago ? (
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wide text-slate-400">Fecha retorno</p>
+                          <p>{formatDateTime(returnPayment.fechaPago)}</p>
+                        </div>
+                      ) : null}
+                      {returnPayment.observaciones ? (
+                        <div className="min-[360px]:col-span-2">
+                          <p className="text-[10px] uppercase tracking-wide text-slate-400">Observaciones</p>
+                          <p className="break-words">{returnPayment.observaciones}</p>
+                        </div>
+                      ) : null}
+                    </div>
+                  </details>
 
                   <div className="mt-4 flex flex-col gap-2">
                     {hasActions && renderStatusActionButtons(returnPayment, flags, 'mobile')}
@@ -663,7 +665,7 @@ export function ReturnPaymentsTable({
                         </span>
                       ) : null}
 
-                      <RowActionsMenu triggerLabel="Ver opciones" triggerClassName="flex-1 justify-center" menuClassName="w-64">
+                      <RowActionsMenu triggerLabel="Ver opciones" triggerClassName="min-h-[44px] flex-1 justify-center" menuClassName="w-64 max-w-[calc(100vw-1rem)]">
                         {renderOptionsMenu(returnPayment)}
                       </RowActionsMenu>
                     </div>

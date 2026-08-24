@@ -235,7 +235,7 @@ export function UpdateOperationPaymentForm({
 
   return (
     <form className="space-y-6" onSubmit={handleSubmit(handleSubmitForm)}>
-      <div className="grid gap-3 rounded-xl bg-slate-50 p-4 text-sm md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-3 text-sm sm:p-4 md:grid-cols-4">
         <div>
           <span className="block text-slate-500">Monto total requerido</span>
           <span className="font-semibold text-slate-900">
@@ -464,7 +464,7 @@ export function UpdateOperationPaymentForm({
               render={({ field }) => (
                 <>
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="flex items-start gap-4">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
                       <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
                         {selectedPreviewUrl ? (
                           <img
@@ -585,7 +585,7 @@ export function UpdateOperationPaymentForm({
         </div>
       </div>
 
-      <div className="w-full">
+      <div className="sticky bottom-0 z-20 -mx-4 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0">
         <Button
           type="submit"
           isLoading={isSubmitting}
