@@ -318,6 +318,7 @@ export function UpdateOperationPaymentForm({
             </label>
 
             <select
+              className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
               {...register('tipoPago', {
                 required: 'El tipo de comprobante es obligatorio',
                 onChange: (event) => {
