@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
-import { FileSpreadsheet, Download } from 'lucide-react';
+import { ClipboardList, Download, FileSpreadsheet, UserRound } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
 import { paymentTypeLabels } from '@/modules/operations/constants/operations.constants';
 import { ReturnPaymentResponse } from '../../types/operations.types.ts';
 import { getDestinationAccountLabel } from '../../utils/return-destination-account';
+import { formatDate } from '../../utils/operation-formatters';
 
 interface SelectOption {
     id: number;
@@ -163,9 +164,23 @@ export function RealizeReturnPaymentForm({
     const requiereComprobante = !esRetornoEnEfectivo;
 
     const requiereFechaHoraRecoleccion = esRetornoEnEfectivo;
+    const personasAutorizadas = [
+        returnPayment.autorizadoParaRecibirEfectivo1,
+        returnPayment.autorizadoParaRecibirEfectivo2,
+        returnPayment.autorizadoParaRecibirEfectivo3,
+    ].filter((nombre): nombre is string => Boolean(nombre?.trim()));
+
     return (
         <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-            <div className="grid gap-3 rounded-xl bg-slate-50 p-4 text-sm md:grid-cols-3">
+            <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="mb-4 flex items-center gap-2">
+                    <ClipboardList className="h-5 w-5 text-slate-500" />
+                    <h3 className="text-sm font-semibold text-slate-900">
+                        Datos de la solicitud del retorno
+                    </h3>
+                </div>
+
+                <div className="grid gap-3 text-sm sm:grid-cols-2 md:grid-cols-3">
                 <div>
                     <span className="block text-slate-500">Monto a pagar</span>
                     <span className="font-semibold text-slate-900">
@@ -179,6 +194,33 @@ export function RealizeReturnPaymentForm({
                         {paymentTypeLabels[returnPayment.tipoPago]}
                     </span>
                 </div>
+
+                {esRetornoEnEfectivo ? (
+                    <>
+                        <div>
+                            <span className="block text-slate-500">Solicitado por</span>
+                            <span className="font-semibold text-slate-900">
+                                {returnPayment.solicitadoPorNombre ?? 'Socio comercial'}
+                            </span>
+                        </div>
+
+                        <div>
+                            <span className="block text-slate-500">Fecha de solicitud</span>
+                            <span className="font-semibold text-slate-900">
+                                {formatDate(returnPayment.fechaSolicitud)}
+                            </span>
+                        </div>
+
+                        {returnPayment.clienteNombre ? (
+                            <div>
+                                <span className="block text-slate-500">Cliente</span>
+                                <span className="font-semibold text-slate-900">
+                                    {returnPayment.clienteNombre}
+                                </span>
+                            </div>
+                        ) : null}
+                    </>
+                ) : null}
 
                 {!esRetornoEnEfectivo ? (
                     <>
@@ -213,7 +255,45 @@ export function RealizeReturnPaymentForm({
                         </div>
                     </>
                 ) : null}
-            </div>
+                </div>
+            </section>
+
+            {esRetornoEnEfectivo ? (
+                <section className="rounded-2xl border border-blue-200 bg-blue-50/70 p-4">
+                    <div className="mb-3 flex items-center gap-2">
+                        <UserRound className="h-5 w-5 text-blue-700" />
+                        <h3 className="text-sm font-semibold text-blue-950">
+                            Personas autorizadas para recibir
+                        </h3>
+                    </div>
+
+                    {personasAutorizadas.length > 0 ? (
+                        <div className="grid gap-2 sm:grid-cols-2">
+                            {personasAutorizadas.map((nombre, index) => (
+                                <div
+                                    key={`${nombre}-${index}`}
+                                    className="flex min-w-0 items-center gap-3 rounded-xl border border-blue-200 bg-white px-3 py-2.5"
+                                >
+                                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-800">
+                                        {index + 1}
+                                    </span>
+                                    <span className="min-w-0 break-words text-sm font-semibold text-slate-900">
+                                        {nombre}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-sm text-blue-800">
+                            La solicitud no tiene personas autorizadas registradas.
+                        </p>
+                    )}
+
+                    <p className="mt-3 text-xs text-blue-800">
+                        La persona que reciba deberá presentar una identificación oficial vigente.
+                    </p>
+                </section>
+            ) : null}
 
             {returnPayment.archivoNominaUrl && (
                 <div className="flex flex-col gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
