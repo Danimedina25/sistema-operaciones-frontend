@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Pagination } from '@/shared/components/ui/Pagination';
+import { CollapsibleFilterSection } from '@/shared/components/ui/CollapsibleFilterSection';
 import { OperationsFilters } from '@/modules/operations/components/OperationsFilters';
 import { useOperationsWithRequestedReturns } from '../hooks/returns/use-operation-returns';
 import {
@@ -59,13 +60,7 @@ export default function ReturnsRequestedPage() {
         </div>
       </div>
 
-      <section className="rounded-2xl bg-white p-4 shadow-sm">
-        <div className="mb-5">
-          <h2 className="text-lg font-semibold text-slate-900">
-            Filtros de búsqueda
-          </h2>
-        </div>
-
+      <CollapsibleFilterSection>
         <OperationsFilters
           filters={filters}
           onChange={(newFilters) => {
@@ -74,7 +69,7 @@ export default function ReturnsRequestedPage() {
           }}
           showEstatusFilter={false}
         />
-      </section>
+      </CollapsibleFilterSection>
 
       <section className="rounded-2xl bg-white p-4 shadow-sm">
         <div className="mb-5">

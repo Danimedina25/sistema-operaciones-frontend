@@ -3,6 +3,7 @@ import { CanAccess } from '@/shared/components/CanAccess';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { DeleteConfirmationModal } from '@/shared/components/ui/DeleteConfirmationModal';
+import { CollapsibleFilterSection } from '@/shared/components/ui/CollapsibleFilterSection';
 import { useClientes } from '@/modules/clientes/hooks/use-clientes';
 import { useCreateCliente } from '@/modules/clientes/hooks/use-create-cliente';
 import { useUpdateCliente } from '@/modules/clientes/hooks/use-update-cliente';
@@ -120,7 +121,9 @@ export default function ClientesPage() {
         </CanAccess>
       </div>
 
-      <ClientesFilters filters={filters} onChange={setFilters} />
+      <CollapsibleFilterSection>
+        <ClientesFilters filters={filters} onChange={setFilters} />
+      </CollapsibleFilterSection>
 
       {isLoading ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">

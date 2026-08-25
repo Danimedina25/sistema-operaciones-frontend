@@ -4,6 +4,7 @@ import { DashboardSection } from '@/shared/components/layout/DashboardSection';
 import { MetricCard } from '@/shared/components/dashboard/MetricCard';
 import { QuickFilters } from '@/shared/components/dashboard/QuickFilters';
 import { QueryState } from '@/shared/components/ui/QueryState';
+import { CollapsibleFilterSection } from '@/shared/components/ui/CollapsibleFilterSection';
 import { useUrlFilters } from '@/shared/hooks/use-url-filters';
 import { useTodayCashDeliveries } from '@/modules/operations/hooks/returns/use-today-cash-deliveries';
 import { useMarkCashReturnDelivered } from '@/modules/operations/hooks/returns/use-mark-cash-return-delivered';
@@ -91,9 +92,7 @@ export default function TodayCashDeliveriesPage() {
 
       <section className="rounded-2xl bg-white p-4 shadow-sm">
         <div className="mb-4">
-          <label className="mb-1 block text-xs font-medium text-slate-600">
-            Filtro por tipo de retorno
-          </label>
+          <CollapsibleFilterSection title="Filtro por tipo de retorno">
           <QuickFilters
             options={QUICK_TIPO_RETORNO_FILTERS.map((option) => ({
               value: option.value,
@@ -102,6 +101,7 @@ export default function TodayCashDeliveriesPage() {
             value={filters.tipoPago}
             onChange={(tipoPago) => setFilters({ tipoPago })}
           />
+          </CollapsibleFilterSection>
         </div>
 
         <QueryState

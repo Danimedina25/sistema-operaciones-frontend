@@ -26,7 +26,7 @@ import { useAuth } from '@/modules/auth/store/auth.context.js';
 import { useCommercialPartners } from '@/modules/socioscomerciales/hooks/use-commercial-partners.js';
 import { useConfiguracionGeneral } from '@/modules/configuraciones/hooks/use-configuracion-general';
 import { useCommercialLevelOneUsers } from '@/modules/users/hooks/use-commercial-level-one-users';
-import { ChevronDown } from 'lucide-react';
+import { CollapsibleFilterSection } from '@/shared/components/ui/CollapsibleFilterSection';
 
 const initialFilters: OperationsFiltersType = {
   operationId: 0,
@@ -56,10 +56,6 @@ export default function OperationsPage() {
     useState<PaymentOperationResponse | null>(null);
 
   const { hasRole, user } = useAuth();
-  const isSocioComercial = hasRole(['SOCIO_COMERCIAL']);
-  const [areFiltersExpanded, setAreFiltersExpanded] = useState(
-    !isSocioComercial,
-  );
   const canCreateOperation = hasRole(['SOCIO_COMERCIAL', 'ADMIN']);
   const canReadConfiguracionGeneral = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
   const showPaymentTypeFilter = !hasRole(['SOCIO_COMERCIAL']);
@@ -273,41 +269,16 @@ export default function OperationsPage() {
         </div>
       </div>
 
-      <section className="rounded-2xl bg-white p-4 shadow-sm">
-        <div className={`flex items-center justify-between gap-3 ${areFiltersExpanded ? 'mb-5' : ''}`}>
-          <h2 className="text-lg font-semibold text-slate-900">
-            Filtros de búsqueda
-          </h2>
-
-          {isSocioComercial ? (
-            <button
-              type="button"
-              onClick={() => setAreFiltersExpanded((current) => !current)}
-              aria-expanded={areFiltersExpanded}
-              aria-controls="operations-filters-content"
-              className="flex min-h-9 items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-            >
-              {areFiltersExpanded ? 'Ocultar' : 'Mostrar'}
-              <ChevronDown
-                className={`h-4 w-4 transition-transform ${areFiltersExpanded ? 'rotate-180' : ''}`}
-              />
-            </button>
-          ) : null}
-        </div>
-
-        {areFiltersExpanded ? (
-          <div id="operations-filters-content">
-            <OperationsFilters
-              filters={filters}
-              onChange={setFilters}
-              showPaymentTypeFilter={showPaymentTypeFilter}
-              bankAccounts={bankAccountsCatalog}
-              showSocioFilter={showSocioFilter}
-              socios={commercialLevelOneUsers}
-            />
-          </div>
-        ) : null}
-      </section>
+      <CollapsibleFilterSection>
+        <OperationsFilters
+          filters={filters}
+          onChange={setFilters}
+          showPaymentTypeFilter={showPaymentTypeFilter}
+          bankAccounts={bankAccountsCatalog}
+          showSocioFilter={showSocioFilter}
+          socios={commercialLevelOneUsers}
+        />
+      </CollapsibleFilterSection>
 
       <section className="rounded-2xl bg-white p-4 shadow-sm">
         <div className="mb-5">

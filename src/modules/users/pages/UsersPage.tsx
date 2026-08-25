@@ -3,6 +3,7 @@ import { CanAccess } from '@/shared/components/CanAccess';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { DeleteConfirmationModal } from '@/shared/components/ui/DeleteConfirmationModal';
+import { CollapsibleFilterSection } from '@/shared/components/ui/CollapsibleFilterSection';
 import { UserForm } from '@/modules/users/components/UserForm';
 import { UpdateUserEmailForm } from '@/modules/users/components/UpdateUserEmailForm';
 import { UsersFilters } from '@/modules/users/components/UsersFilters';
@@ -111,7 +112,9 @@ export default function UsersPage() {
         </CanAccess>
       </div>
 
-      <UsersFilters filters={filters} onChange={setFilters} />
+      <CollapsibleFilterSection>
+        <UsersFilters filters={filters} onChange={setFilters} />
+      </CollapsibleFilterSection>
 
       {isLoading ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">

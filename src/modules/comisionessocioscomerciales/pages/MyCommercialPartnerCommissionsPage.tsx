@@ -6,6 +6,7 @@ import {
 import {
     CommissionFilters,
 } from '../components/CommissionFilters';
+import { CollapsibleFilterSection } from '@/shared/components/ui/CollapsibleFilterSection';
 
 import {
     CommissionSummaryCardsSkeleton,
@@ -133,16 +134,7 @@ export default function MyCommercialPartnerCommissionsPage() {
 
             {/* FILTROS */}
 
-            <section className="rounded-2xl bg-white p-4 shadow-sm">
-
-                <div className="mb-5">
-
-                    <h2 className="text-lg font-semibold text-slate-900">
-                        Semana de comisiones
-                    </h2>
-
-                </div>
-
+            <CollapsibleFilterSection title="Semana de comisiones">
                 <CommissionFilters
                     filters={
                         filters
@@ -157,8 +149,7 @@ export default function MyCommercialPartnerCommissionsPage() {
                         isLoading
                     }
                 />
-
-            </section>
+            </CollapsibleFilterSection>
 
             {/* RESUMEN */}
 

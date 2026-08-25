@@ -4,6 +4,7 @@ import { BankAccountFormModal } from '@/modules/bank-accounts/components/BankAcc
 import { BankAccountsFilters } from '@/modules/bank-accounts/components/BankAccountsFilters';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { DeleteConfirmationModal } from '@/shared/components/ui/DeleteConfirmationModal';
+import { CollapsibleFilterSection } from '@/shared/components/ui/CollapsibleFilterSection';
 import { useAuth } from '@/modules/auth/store/auth.context';
 
 import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts';
@@ -167,7 +168,9 @@ export default function BankAccountsPage() {
         </div>
       </div>
 
-      <BankAccountsFilters filters={filters} onChange={setFilters} />
+      <CollapsibleFilterSection>
+        <BankAccountsFilters filters={filters} onChange={setFilters} />
+      </CollapsibleFilterSection>
 
       {isLoading ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm">

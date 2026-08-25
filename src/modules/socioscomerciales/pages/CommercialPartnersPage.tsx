@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { DeleteConfirmationModal } from '@/shared/components/ui/DeleteConfirmationModal';
+import { CollapsibleFilterSection } from '@/shared/components/ui/CollapsibleFilterSection';
 
 import { CommercialPartnersFilters } from '@/modules/socioscomerciales/components/CommercialPartnersFilters';
 import { CommercialPartnersTable } from '@/modules/socioscomerciales/components/CommercialPartnersTable';
@@ -122,10 +123,12 @@ export default function CommercialPartnersPage() {
         </button>
       </div>
 
-      <CommercialPartnersFilters
-        filters={filters}
-        onChange={setFilters}
-      />
+      <CollapsibleFilterSection>
+        <CommercialPartnersFilters
+          filters={filters}
+          onChange={setFilters}
+        />
+      </CollapsibleFilterSection>
 
       {isLoading ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
