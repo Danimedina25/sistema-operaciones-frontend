@@ -3,6 +3,7 @@ import { OperationStatus } from "../types/operations.types.ts";
 interface OperationStatusBadgeProps {
   status: OperationStatus;
   isReturn?: boolean;
+  className?: string;
 }
 
 const statusStyles: Record<OperationStatus, string> = {
@@ -40,6 +41,7 @@ const statusLabels: Record<OperationStatus, string> = {
 export function OperationStatusBadge({
   status,
   isReturn,
+  className = '',
 }: OperationStatusBadgeProps) {
   const isPendingReturnRequest =
     isReturn && status === 'VALIDADA';
@@ -54,7 +56,7 @@ export function OperationStatusBadge({
 
   return (
     <span
-      className={`inline-flex min-w-[140px] items-center justify-center rounded-lg border border-current/15 px-3 py-1.5 text-center text-xs font-bold ${style}`}
+      className={`inline-flex min-w-[140px] items-center justify-center rounded-lg border border-current/15 px-3 py-1.5 text-center text-xs font-bold ${style} ${className}`}
     >
       {label}
     </span>

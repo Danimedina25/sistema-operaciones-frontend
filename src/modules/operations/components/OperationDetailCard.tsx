@@ -62,12 +62,12 @@ function SummaryItem({
   const styles = variants[variant];
 
   return (
-    <div className={`rounded-2xl border p-4 ${styles.container}`}>
+    <div className={`min-w-0 rounded-xl border p-3 sm:rounded-2xl sm:p-4 ${styles.container}`}>
       <p className={`text-[11px] font-semibold uppercase tracking-[0.12em] ${styles.label}`}>
         {label}
       </p>
 
-      <div className={`mt-2 text-base font-semibold tabular-nums ${styles.value}`}>
+      <div className={`mt-1.5 break-words text-sm font-semibold tabular-nums sm:mt-2 sm:text-base ${styles.value}`}>
         {value}
       </div>
     </div>
@@ -125,11 +125,11 @@ export function OperationDetailCard({
   }
 
   return (
-    <div className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-xl shadow-slate-950/[0.06]">
-      <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 px-6 py-6 text-white md:px-8 md:py-7">
-        <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+    <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-950/[0.06] sm:rounded-[1.75rem]">
+      <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 px-4 py-5 text-white sm:px-6 sm:py-6 md:px-8 md:py-7">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-5">
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 sm:justify-start sm:gap-3">
               <span className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-semibold tracking-wide text-slate-300">
                 <ReceiptText className="h-3.5 w-3.5" />
                 FOLIO #{operation.id}
@@ -139,20 +139,26 @@ export function OperationDetailCard({
                 {formatDate(operation.createdAt)}
               </span>
             </div>
-            <h2 className="mt-4 truncate text-2xl font-bold tracking-tight md:text-3xl">
+            <h2 className="mt-4 break-words text-xl font-bold tracking-tight sm:text-2xl md:text-3xl">
               {operation.clienteNombre}
             </h2>
-            <p className="mt-1.5 flex items-center gap-2 text-sm text-slate-400">
-              <BriefcaseBusiness className="h-4 w-4" />
-              Socio comercial: <span className="font-medium text-slate-200">{operation.socioComercialNombre}</span>
-            </p>
+            <div className="mt-3 grid grid-cols-[auto_1fr] items-start gap-2 text-sm">
+              <BriefcaseBusiness className="mt-0.5 h-4 w-4 text-slate-400" />
+              <div className="min-w-0">
+                <p className="text-xs text-slate-400">Socio comercial</p>
+                <p className="mt-0.5 break-words font-medium leading-5 text-slate-200">
+                  {operation.socioComercialNombre}
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div className="flex flex-col items-start gap-2 md:items-end">
-            <div className="self-start rounded-xl bg-white p-1 shadow-lg md:self-end">
+          <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 md:w-auto md:grid-cols-1 md:justify-items-end">
+            <div className="w-full rounded-xl bg-white p-1 shadow-lg sm:w-auto">
               <OperationStatusBadge
                 status={operation.estatus}
                 isReturn={isReturnRequestDetail}
+                className="w-full sm:w-auto"
               />
             </div>
 
@@ -160,7 +166,7 @@ export function OperationDetailCard({
               <button
                 type="button"
                 onClick={handleShareViaWhatsApp}
-                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/10"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-white/10 sm:w-auto"
               >
                 <MessageCircle className="h-4 w-4 text-emerald-400" />
                 Compartir por WhatsApp
@@ -169,14 +175,14 @@ export function OperationDetailCard({
           </div>
         </div>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-5 grid grid-cols-2 gap-2 sm:mt-6 sm:gap-3 xl:grid-cols-4">
           <SummaryItem label="Monto de la operación" value={formatCurrency(operation.montoTotal)} variant="dark" />
           <SummaryItem label="Ingreso validado" value={formatCurrency(operation.montoValidado)} variant="dark" />
           <SummaryItem label="Pendiente por validar" value={formatCurrency(operation.saldoPendientePorValidar)} variant="dark" />
           <SummaryItem label="Retorno al cliente" value={formatCurrency(operation.montoTotalDevolverCliente)} variant="dark" />
         </div>
 
-        <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
+        <div className="mt-5 rounded-xl border border-white/10 bg-white/5 p-3 sm:mt-6 sm:rounded-2xl sm:p-4">
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
             Avance de la operación
           </p>
@@ -189,7 +195,7 @@ export function OperationDetailCard({
         </div>
       </div>
 
-      <div className="p-6 md:p-8">
+      <div className="p-4 sm:p-6 md:p-8">
 
       {canReviewCommission &&
         operation.nivelesRedComercial >= 2 &&
