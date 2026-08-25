@@ -59,7 +59,7 @@ export function CommissionWeekSelector({
         );
 
     return (
-        <div className="flex flex-col gap-2">
+        <div className="flex w-full min-w-0 max-w-full flex-col gap-2">
 
             <select
                 value={selectedYear}
@@ -163,7 +163,7 @@ export function CommissionWeekSelector({
 
             </select>
 
-            <div className="relative">
+            <div className="relative w-full min-w-0 max-w-full">
 
                 <CalendarDays
                     size={16}
@@ -199,7 +199,10 @@ export function CommissionWeekSelector({
 
                     }}
                     className="
-            w-[480px]
+            block
+            w-full
+            min-w-0
+            max-w-full
             rounded-xl
             border
             border-slate-300
