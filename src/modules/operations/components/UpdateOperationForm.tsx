@@ -53,6 +53,12 @@ function formatCurrencyDisplay(value: number) {
   });
 }
 
+const selectClassName =
+  'flex h-11 w-full rounded-xl border border-slate-300 bg-white px-3.5 text-sm text-slate-900 shadow-sm outline-none transition hover:border-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:bg-slate-100';
+
+const numberInputClassName =
+  '[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none';
+
 export function UpdateOperationForm({
   operation,
   isSubmitting,
@@ -365,7 +371,7 @@ export function UpdateOperationForm({
             </label>
 
             <select
-              className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
+              className={selectClassName}
               {...register('nivelesRedComercial', {
                 onChange: (event) => {
                   const value = Number(event.target.value);
@@ -418,6 +424,7 @@ export function UpdateOperationForm({
                   step="0.01"
                   min="0"
                   max="100"
+                  className={numberInputClassName}
                   {...register('porcentajeComisionOficina')}
                 />
 
@@ -438,6 +445,7 @@ export function UpdateOperationForm({
                   step="0.01"
                   min="0"
                   max="100"
+                  className={numberInputClassName}
                   {...register('porcentajeComisionSocio')}
                 />
 
@@ -483,13 +491,14 @@ export function UpdateOperationForm({
           )}
 
           {nivelesRedComercial >= 2 && (
-              <div className="md:col-span-2">
+            <>
+              <div className={canEditCommission ? undefined : 'md:col-span-2'}>
                 <label className="mb-2 block text-sm font-medium text-slate-700">
                   Socio comercial nivel 2
                 </label>
 
                 <select
-                  className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
+                  className={selectClassName}
                   {...register('socioComercialNivel2Id', {
                     onChange: (e) => {
                       const partner = commercialPartners.find(
@@ -521,39 +530,42 @@ export function UpdateOperationForm({
                     </option>
                   ))}
                 </select>
-
-                {canEditCommission && (
-                  <div className="mt-3">
-                    <label className="mb-2 block text-sm font-medium text-slate-700">
-                      Porcentaje de comisión socio comercial nivel 2
-                    </label>
-
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max="100"
-                      {...register('porcentajeComisionSocioNivel2')}
-                    />
-
-                    {errors.porcentajeComisionSocioNivel2 && (
-                      <p className="mt-1 text-xs text-red-600">
-                        {errors.porcentajeComisionSocioNivel2.message}
-                      </p>
-                    )}
-                  </div>
-                )}
               </div>
-            )}
+
+              {canEditCommission && (
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                    Porcentaje de comisión socio comercial nivel 2
+                  </label>
+
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    className={numberInputClassName}
+                    {...register('porcentajeComisionSocioNivel2')}
+                  />
+
+                  {errors.porcentajeComisionSocioNivel2 && (
+                    <p className="mt-1 text-xs text-red-600">
+                      {errors.porcentajeComisionSocioNivel2.message}
+                    </p>
+                  )}
+                </div>
+              )}
+            </>
+          )}
 
           {nivelesRedComercial >= 3 && (
-              <div className="md:col-span-2">
+            <>
+              <div className={canEditCommission ? undefined : 'md:col-span-2'}>
                 <label className="mb-2 block text-sm font-medium text-slate-700">
                   Socio comercial nivel 3
                 </label>
 
                 <select
-                  className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
+                  className={selectClassName}
                   {...register('socioComercialNivel3Id', {
                     onChange: (e) => {
                       const partner = commercialPartners.find(
@@ -585,32 +597,34 @@ export function UpdateOperationForm({
                     </option>
                   ))}
                 </select>
-
-                {canEditCommission && (
-                  <div className="mt-3">
-                    <label className="mb-2 block text-sm font-medium text-slate-700">
-                      Porcentaje de comisión socio comercial nivel 3
-                    </label>
-
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max="100"
-                      {...register('porcentajeComisionSocioNivel3')}
-                    />
-
-                    {errors.porcentajeComisionSocioNivel3 && (
-                      <p className="mt-1 text-xs text-red-600">
-                        {errors.porcentajeComisionSocioNivel3.message}
-                      </p>
-                    )}
-                  </div>
-                )}
               </div>
-            )}
 
-          <div>
+              {canEditCommission && (
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                    Porcentaje de comisión socio comercial nivel 3
+                  </label>
+
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    className={numberInputClassName}
+                    {...register('porcentajeComisionSocioNivel3')}
+                  />
+
+                  {errors.porcentajeComisionSocioNivel3 && (
+                    <p className="mt-1 text-xs text-red-600">
+                      {errors.porcentajeComisionSocioNivel3.message}
+                    </p>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+
+          <div className="md:col-span-2">
             <label className="mb-2 block text-sm font-medium text-slate-700">
               Monto total
             </label>
@@ -634,7 +648,7 @@ export function UpdateOperationForm({
           <textarea
             rows={4}
             placeholder="Opcional"
-            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-900"
+            className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition hover:border-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
             {...register('observaciones')}
           />
 
