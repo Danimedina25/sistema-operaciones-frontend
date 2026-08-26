@@ -10,7 +10,7 @@ import { useDailyCashCut } from '../hooks/use-daily-cash-cut';
 import { formatDate } from '@/modules/operations/utils/operation-formatters';
 import { formatDate as toISODate } from '@/shared/utils/weeks';
 import { DateRangeCalendarField } from '@/shared/components/ui/DateRangeCalendarField';
-import { ArrowDownToLine, ArrowUpFromLine, Building2, CalendarDays, Landmark, LoaderCircle, Scale } from 'lucide-react';
+import { ArrowDownToLine, ArrowUpFromLine, Building2, CalendarDays, Landmark, LoaderCircle, Scale, Search } from 'lucide-react';
 
 function todayISO() {
     return toISODate(new Date());
@@ -33,6 +33,7 @@ export default function DailyCashCutPage() {
     const [fecha, setFecha] = useState(todayISO());
     const [startDate, setStartDate] = useState(todayISO());
     const [endDate, setEndDate] = useState(todayISO());
+    const [bankSearch, setBankSearch] = useState('');
 
     const {
         dailyCut,
@@ -272,6 +273,8 @@ export default function DailyCashCutPage() {
                             groups={bankBalancesGrouped}
                             isLoading={isLoadingBankBalances}
                             title={bankBalanceTitle}
+                            search={bankSearch}
+                            onSearchChange={setBankSearch}
                         />
                     ) : null}
                     {isCashCutsView && isLoading && !currentData ? (
@@ -633,12 +636,16 @@ interface BankBalancesSectionProps {
     groups: BankGroupBalanceResponse[];
     isLoading: boolean;
     title: string;
+    search: string;
+    onSearchChange: (value: string) => void;
 }
 
 function BankBalancesSection({
     groups = [],
     isLoading,
-    title
+    title,
+    search,
+    onSearchChange,
 }: BankBalancesSectionProps) {
     const safeGroups = Array.isArray(groups) ? groups : [];
 
@@ -646,6 +653,21 @@ function BankBalancesSection({
         (total, group) => total + (group.saldoTotalBanco ?? 0),
         0,
     );
+
+    const normalizedSearch = search.trim().toLowerCase();
+    const isSearching = normalizedSearch.length > 0;
+
+    const filteredGroups = isSearching
+        ? safeGroups
+            .map((group) => ({
+                ...group,
+                cuentas: group.cuentas.filter((account) =>
+                    account.titular?.toLowerCase().includes(normalizedSearch)
+                    || group.banco?.toLowerCase().includes(normalizedSearch),
+                ),
+            }))
+            .filter((group) => group.cuentas.length > 0)
+        : safeGroups;
 
     return (
         <section className="mt-6 overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-xl shadow-slate-950/[0.06]">
@@ -670,18 +692,34 @@ function BankBalancesSection({
                 </div>
             </div>
 
-            {!isLoading && safeGroups.length === 0 ? (
+            <div className="border-b border-slate-100 p-5">
+                <div className="relative max-w-sm">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={(event) => onSearchChange(event.target.value)}
+                        placeholder="Buscar por nombre de cuenta o banco..."
+                        className="h-11 w-full rounded-xl border border-slate-300 bg-white pl-9 pr-3 text-sm text-slate-800 shadow-sm outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                    />
+                </div>
+            </div>
+
+            {!isLoading && filteredGroups.length === 0 ? (
                 <div className="mt-5 rounded-xl border border-slate-100 bg-slate-50 p-5 text-sm text-slate-500">
-                    No hay saldos bancarios disponibles para esta fecha.
+                    {isSearching
+                        ? 'No se encontraron cuentas que coincidan con la búsqueda.'
+                        : 'No hay saldos bancarios disponibles para esta fecha.'}
                 </div>
             ) : null}
 
-            {!isLoading && safeGroups.length > 0 ? (
+            {!isLoading && filteredGroups.length > 0 ? (
                 <div className="space-y-3 p-5">
-                    {safeGroups.map((group) => (
+                    {filteredGroups.map((group) => (
                         <BankGroupAccordion
                             key={group.banco}
                             group={group}
+                            defaultOpen={isSearching}
                         />
                     ))}
                 </div>
@@ -692,12 +730,20 @@ function BankBalancesSection({
 
 interface BankGroupAccordionProps {
     group: BankGroupBalanceResponse;
+    defaultOpen?: boolean;
 }
 
 function BankGroupAccordion({
     group,
+    defaultOpen = false,
 }: BankGroupAccordionProps) {
-    const [isOpen, setIsOpen] = useState(false);
+    const [isOpen, setIsOpen] = useState(defaultOpen);
+
+    useEffect(() => {
+        if (defaultOpen) {
+            setIsOpen(true);
+        }
+    }, [defaultOpen]);
 
     return (
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
