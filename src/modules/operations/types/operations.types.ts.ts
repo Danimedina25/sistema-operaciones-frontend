@@ -270,6 +270,10 @@ export interface ScheduleCashReturnPickupRequest {
   observaciones?: string | null;
 }
 
+export interface MarkCashReturnDeliveredRequest {
+  comprobanteEntregaEfectivoUrl: string;
+}
+
 export interface ReturnPaymentResponse {
   id: number;
   operationId: number;
@@ -290,6 +294,7 @@ export interface ReturnPaymentResponse {
   cuentaDestinoTitular?: string | null;
   cuentaDestinoBanco?: string | null;
   comprobanteUrl?: string | null;
+  comprobanteEntregaEfectivoUrl?: string | null;
   archivoNominaUrl?: string | null;
   observaciones?: string | null;
 

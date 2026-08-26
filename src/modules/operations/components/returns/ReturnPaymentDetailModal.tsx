@@ -75,6 +75,26 @@ export function ReturnPaymentDetailModal({
                         </div>
                     ) : null}
 
+                    {returnPayment.comprobanteEntregaEfectivoUrl ? (
+                        <div className="rounded-2xl border border-indigo-200 bg-indigo-50 p-4">
+                            <p className="text-sm font-semibold text-indigo-950">
+                                Evidencia de entrega del efectivo
+                            </p>
+                            <a
+                                href={returnPayment.comprobanteEntregaEfectivoUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="mt-3 block overflow-hidden rounded-xl border border-indigo-200 bg-white"
+                            >
+                                <img
+                                    src={returnPayment.comprobanteEntregaEfectivoUrl}
+                                    alt="Comprobante de entrega del efectivo"
+                                    className="max-h-80 w-full object-contain"
+                                />
+                            </a>
+                        </div>
+                    ) : null}
+
                     <div className="grid gap-4 md:grid-cols-2">
                         <DetailItem
                             label="Tipo de retorno"

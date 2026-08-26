@@ -4,6 +4,8 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 
 import { markCashReturnAsDelivered } from '@/modules/operations/api/operations.api';
+import { uploadOperationProof } from '@/modules/operations/api/operations-storage.api';
+import { useAuth } from '@/modules/auth/store/auth.context';
 import { getApiErrorMessage } from '@/shared/utils/errors';
 
 interface UseMarkCashReturnDeliveredOptions {
@@ -14,12 +16,34 @@ export function useMarkCashReturnDelivered(
   options?: UseMarkCashReturnDeliveredOptions,
 ) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
 
-  const submitMarkCashReturnDelivered = async (returnPaymentId: number) => {
+  const submitMarkCashReturnDelivered = async (
+    returnPaymentId: number,
+    operationId: number,
+    comprobanteEntrega: File,
+  ) => {
     try {
+      if (!user?.userId) {
+        throw new Error('No se pudo identificar el usuario autenticado');
+      }
+
+      if (!comprobanteEntrega.type.startsWith('image/')) {
+        throw new Error('El comprobante de entrega debe ser una imagen');
+      }
+
       setIsSubmitting(true);
 
-      await markCashReturnAsDelivered(returnPaymentId);
+      const uploadResult = await uploadOperationProof({
+        file: comprobanteEntrega,
+        userId: user.userId,
+        operationId,
+        folder: 'comprobantes-entrega-efectivo',
+      });
+
+      await markCashReturnAsDelivered(returnPaymentId, {
+        comprobanteEntregaEfectivoUrl: uploadResult.downloadUrl,
+      });
 
       toast.success('Efectivo marcado como entregado');
 

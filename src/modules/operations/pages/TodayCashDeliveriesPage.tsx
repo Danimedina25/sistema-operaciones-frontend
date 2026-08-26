@@ -121,7 +121,9 @@ export default function TodayCashDeliveriesPage() {
       <MarkCashReturnDeliveredModal
         returnPayment={selectedDelivery}
         isSubmitting={isSubmitting}
-        onConfirm={(returnPaymentId) => void submitMarkCashReturnDelivered(returnPaymentId)}
+        onConfirm={(returnPaymentId, operationId, comprobante) =>
+          void submitMarkCashReturnDelivered(returnPaymentId, operationId, comprobante)
+        }
         onClose={() => setSelectedDelivery(null)}
       />
     </div>

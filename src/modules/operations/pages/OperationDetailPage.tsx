@@ -433,7 +433,9 @@ export default function OperationDetailPage() {
       <MarkCashReturnDeliveredModal
         returnPayment={isMarkCashDeliveredModalOpen ? selectedReturnPayment : null}
         isSubmitting={isSubmittingMarkCashDelivered}
-        onConfirm={(returnPaymentId) => void submitMarkCashReturnDelivered(returnPaymentId)}
+        onConfirm={(returnPaymentId, operationId, comprobante) =>
+          void submitMarkCashReturnDelivered(returnPaymentId, operationId, comprobante)
+        }
         onClose={() => {
           setIsMarkCashDeliveredModalOpen(false);
           setSelectedReturnPayment(null);
