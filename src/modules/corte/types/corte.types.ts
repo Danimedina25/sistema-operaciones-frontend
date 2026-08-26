@@ -11,11 +11,13 @@ export interface DailyCashCutResponse {
   entradasTransferencia: number;
   entradasDeposito: number;
   entradasEfectivo: number;
+  entradasCheque: number;
   totalEntradas: number;
 
   retornosTransferencia: number;
   retornosDeposito: number;
   retornosEfectivo: number;
+  retornosCheque: number;
   totalRetornos: number;
 
   totalComisionesSocios: number;
@@ -44,11 +46,13 @@ export interface CashCutRangeResponse {
   entradasTransferencia: number;
   entradasDeposito: number;
   entradasEfectivo: number;
+  entradasCheque: number;
   totalEntradas: number;
 
   retornosTransferencia: number;
   retornosDeposito: number;
   retornosEfectivo: number;
+  retornosCheque: number;
   totalRetornos: number;
 
   totalComisionesSocios: number;

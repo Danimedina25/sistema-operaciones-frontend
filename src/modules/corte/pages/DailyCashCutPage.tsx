@@ -375,6 +375,10 @@ export default function DailyCashCutPage() {
                                             label: 'Efectivo',
                                             value: currentData.entradasEfectivo,
                                         },
+                                        {
+                                            label: 'Cheque',
+                                            value: currentData.entradasCheque,
+                                        },
                                     ]}
                                 />
 
@@ -396,6 +400,10 @@ export default function DailyCashCutPage() {
                                         {
                                             label: 'Retornos a clientes en efectivo',
                                             value: currentData.retornosEfectivo,
+                                        },
+                                        {
+                                            label: 'Retornos a clientes por cheque',
+                                            value: currentData.retornosCheque,
                                         },
                                         {
                                             label: 'Pago de comisiones a socios comerciales',
