@@ -75,6 +75,17 @@ export function ReturnPaymentDetailModal({
                         </div>
                     ) : null}
 
+                    {returnPayment.tipoPago === 'RETIRO_SIN_TARJETA' && returnPayment.codigoRetiroSinTarjeta ? (
+                        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                            <p className="text-sm font-semibold text-amber-950">
+                                Código de retiro sin tarjeta
+                            </p>
+                            <p className="mt-2 break-all font-mono text-lg font-bold tracking-wide text-amber-900">
+                                {returnPayment.codigoRetiroSinTarjeta}
+                            </p>
+                        </div>
+                    ) : null}
+
                     {returnPayment.comprobanteEntregaEfectivoUrl ? (
                         <div className="rounded-2xl border border-indigo-200 bg-indigo-50 p-4">
                             <p className="text-sm font-semibold text-indigo-950">

@@ -268,6 +268,7 @@ export interface ScheduleCashReturnPickupRequest {
   fechaHoraRecoleccionEfectivo: string;
   cuentaOrigenId?: number | null;
   observaciones?: string | null;
+  codigoRetiroSinTarjeta?: string | null;
 }
 
 export interface MarkCashReturnDeliveredRequest {
@@ -316,6 +317,7 @@ export interface ReturnPaymentResponse {
   autorizadoParaRecibirEfectivo2?: string;
   autorizadoParaRecibirEfectivo3?: string;
   fechaHoraRecoleccionEfectivo?: string | null;
+  codigoRetiroSinTarjeta?: string | null;
 
   createdAt: string;
 }

@@ -373,6 +373,7 @@ export default function OperationDetailPage() {
               horaRecoleccionEfectivo: values.horaRecoleccionEfectivo ?? '',
               cuentaOrigenId: values.cuentaOrigenId,
               observaciones: values.observaciones,
+              codigoRetiroSinTarjeta: values.codigoRetiroSinTarjeta,
             });
 
             return;

@@ -18,6 +18,7 @@ export interface RealizeReturnPaymentFormValues {
     observaciones?: string;
     fechaRecoleccionEfectivo?: string;
     horaRecoleccionEfectivo?: string;
+    codigoRetiroSinTarjeta?: string;
 }
 
 interface RealizeReturnPaymentFormProps {
@@ -77,6 +78,7 @@ export function RealizeReturnPaymentForm({
             observaciones: returnPayment.observaciones ?? '',
             fechaRecoleccionEfectivo: pickupDateTime.date,
             horaRecoleccionEfectivo: pickupDateTime.time,
+            codigoRetiroSinTarjeta: returnPayment.codigoRetiroSinTarjeta ?? '',
         },
         mode: 'onChange',
     });
@@ -151,6 +153,8 @@ export function RealizeReturnPaymentForm({
     }
 
     const esRetornoEnEfectivo = returnPayment.tipoPago === 'EFECTIVO' || returnPayment.tipoPago === 'RETIRO_SIN_TARJETA';
+
+    const esRetiroSinTarjeta = returnPayment.tipoPago === 'RETIRO_SIN_TARJETA';
 
     const isEditingCashPickup =
         esRetornoEnEfectivo &&
@@ -471,6 +475,38 @@ export function RealizeReturnPaymentForm({
                             </p>
                         ) : null}
                     </div>
+                </div>
+            ) : null}
+
+            {esRetiroSinTarjeta ? (
+                <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">
+                        Código de retiro sin tarjeta
+                    </label>
+
+                    <input
+                        type="text"
+                        placeholder="Código generado por el banco"
+                        className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
+                        {...register('codigoRetiroSinTarjeta', {
+                            validate: (value) => {
+                                if (!esRetiroSinTarjeta) return true;
+                                return value?.trim()
+                                    ? true
+                                    : 'El código de retiro sin tarjeta es obligatorio';
+                            },
+                        })}
+                    />
+
+                    {errors.codigoRetiroSinTarjeta ? (
+                        <p className="mt-1 text-xs text-red-600">
+                            {errors.codigoRetiroSinTarjeta.message}
+                        </p>
+                    ) : (
+                        <p className="mt-1 text-xs text-slate-500">
+                            Captúralo una vez que el banco lo genere para esta cuenta.
+                        </p>
+                    )}
                 </div>
             ) : null}
 

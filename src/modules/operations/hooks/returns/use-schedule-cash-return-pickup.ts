@@ -12,6 +12,7 @@ export interface ScheduleCashReturnPickupValues {
   fechaRecoleccionEfectivo: string;
   horaRecoleccionEfectivo: string;
   observaciones?: string;
+  codigoRetiroSinTarjeta?: string;
 }
 
 interface UseScheduleCashReturnPickupOptions {
@@ -43,6 +44,7 @@ export function useScheduleCashReturnPickup(
           ? Number(values.cuentaOrigenId)
           : undefined,
         observaciones: values.observaciones?.trim() || undefined,
+        codigoRetiroSinTarjeta: values.codigoRetiroSinTarjeta?.trim() || undefined,
       });
 
       toast.success('Fecha y hora de recolección registrada correctamente');
