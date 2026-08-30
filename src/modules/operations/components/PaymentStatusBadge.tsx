@@ -49,6 +49,13 @@ export function PaymentStatusBadge({
           bg-amber-50
           text-amber-700
           `,
+
+        status === 'EN_PROCESO' &&
+          `
+          border-blue-200
+          bg-blue-50
+          text-blue-700
+          `,
       )}
     >
       {paymentStatusLabels[status]}

@@ -3,6 +3,7 @@ import { useOperationDetail } from '@/modules/operations/hooks/use-operation-det
 import { useValidatePayment } from '../hooks/use-validate-payment';
 import { useRejectPayment } from '../hooks/use-reject-payment';
 import { useUpdateValidationReceipt } from '../hooks/use-update-validation-receipt';
+import { useMarkPaymentInProgress } from '../hooks/use-mark-payment-in-progress';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { PaymentOperationResponse, ReturnPaymentResponse } from '../types/operations.types.ts';
 import { useReturnsByOperationId } from '../hooks/returns/use-operation-returns';
@@ -85,10 +86,21 @@ export function OperationDetailContainer({
     },
   });
 
+  const {
+    processingPaymentId: markingInProgressPaymentId,
+    submitMarkInProgress,
+    submitRelease,
+  } = useMarkPaymentInProgress({
+    onSuccess: async () => {
+      await fetchOperation();
+    },
+  });
+
   const activeProcessingPaymentId =
     validatingPaymentId ??
     rejectingPaymentId ??
     editingValidationReceiptPaymentId ??
+    markingInProgressPaymentId ??
     null;
 
   if (isLoading || isLoadingReturns) {
@@ -157,6 +169,8 @@ export function OperationDetailContainer({
       onValidatePayment={submitValidatePayment}
       onRejectPayment={submitRejectPayment}
       onEditValidationReceipt={submitUpdateValidationReceipt}
+      onMarkPaymentInProgress={submitMarkInProgress}
+      onReleasePayment={submitRelease}
       processingPaymentId={activeProcessingPaymentId}
       canViewFinancialDetails={canViewFinancialDetails}
       canViewOperationExtras={canViewOperationExtras}

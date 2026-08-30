@@ -13,6 +13,7 @@ export type OperationStatus =
 
 export type PaymentStatus =
   | 'PENDIENTE_VALIDACION'
+  | 'EN_PROCESO'
   | 'VALIDADA'
   | 'RECHAZADA';
 
@@ -163,6 +164,9 @@ export interface OperationPaymentResponse {
   registradoPorNombre: string;
   validadoPorId?: number | null;
   validadoPorNombre?: string | null;
+  enProcesoPorId?: number | null;
+  enProcesoPorNombre?: string | null;
+  fechaEnProceso?: string | null;
   fechaPago: string;
   fechaValidacion?: string | null;
   fechaComprobante?: string | null;

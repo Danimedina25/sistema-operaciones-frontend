@@ -192,6 +192,26 @@ export async function rejectPayment(
   return response.data.data;
 }
 
+export async function markPaymentInProgress(
+  paymentId: number,
+  payload?: { observaciones?: string },
+): Promise<OperationPaymentResponse> {
+  const response = await api.patch<PaymentApiResponse>(
+    `${OPERATIONS_BASE_PATH}/payments/${paymentId}/in-progress`,
+    payload ?? {},
+  );
+  return response.data.data;
+}
+
+export async function releasePaymentInProgress(
+  paymentId: number,
+): Promise<OperationPaymentResponse> {
+  const response = await api.patch<PaymentApiResponse>(
+    `${OPERATIONS_BASE_PATH}/payments/${paymentId}/release`,
+  );
+  return response.data.data;
+}
+
 export async function updateValidationReceipt(
   paymentId: number,
   payload: UpdatePaymentStatusRequest,

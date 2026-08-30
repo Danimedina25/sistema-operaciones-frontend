@@ -10,6 +10,7 @@ export const paymentTypeLabels: Record<PaymentType, string> = {
 
 export const paymentStatusLabels: Record<PaymentStatus, string> = {
   PENDIENTE_VALIDACION: 'Pendiente',
+  EN_PROCESO: 'En proceso',
   VALIDADA: 'Validado',
   RECHAZADA: 'Rechazado',
 };
