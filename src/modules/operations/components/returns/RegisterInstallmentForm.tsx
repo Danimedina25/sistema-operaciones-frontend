@@ -30,6 +30,8 @@ interface RegisterInstallmentFormProps {
   bankAccounts: SelectOption[];
   isSubmitting: boolean;
   onSubmit: (values: RegisterInstallmentFormValues) => Promise<void>;
+  /** Oculta el panel "Solicitud seleccionada" (lo muestra ReturnRequestSummarySection). */
+  hideSummary?: boolean;
 }
 
 function parseMonto(value: string): number {
@@ -43,6 +45,7 @@ export function RegisterInstallmentForm({
   bankAccounts,
   isSubmitting,
   onSubmit,
+  hideSummary = false,
 }: RegisterInstallmentFormProps) {
   const totals = resolveReturnRequestTotals(returnRequest);
   const esEfectivo = isCashReturnMethod(returnRequest.tipoPago);
@@ -87,49 +90,51 @@ export function RegisterInstallmentForm({
 
   return (
     <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-      <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-        <h3 className="mb-3 text-sm font-semibold text-slate-900">Solicitud seleccionada</h3>
-        <dl className="grid gap-3 text-sm sm:grid-cols-2">
-          <div>
-            <dt className="text-slate-500">Folio</dt>
-            <dd className="font-semibold text-slate-900">#{returnRequest.id}</dd>
-          </div>
-          <div>
-            <dt className="text-slate-500">Método</dt>
-            <dd className="font-semibold text-slate-900">
-              {paymentTypeLabels[returnRequest.tipoPago]}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-slate-500">Monto solicitado</dt>
-            <dd className="font-semibold text-slate-900">
-              {formatCurrency(totals.montoSolicitado)}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-slate-500">Ya retornado</dt>
-            <dd className="font-semibold text-emerald-700">
-              {formatCurrency(totals.montoRetornado)}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-slate-500">Pendiente actual</dt>
-            <dd className="font-semibold text-amber-700">
-              {formatCurrency(totals.montoPendiente)}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-slate-500">Disponible por registrar</dt>
-            <dd className="font-semibold text-slate-900">
-              {formatCurrency(totals.montoDisponible)}
-            </dd>
-          </div>
-        </dl>
-      </section>
+      {!hideSummary ? (
+        <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <h3 className="mb-3 text-sm font-semibold text-slate-900">Solicitud seleccionada</h3>
+          <dl className="grid gap-3 text-sm sm:grid-cols-2">
+            <div>
+              <dt className="text-slate-500">Folio</dt>
+              <dd className="font-semibold text-slate-900">#{returnRequest.id}</dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">Método</dt>
+              <dd className="font-semibold text-slate-900">
+                {paymentTypeLabels[returnRequest.tipoPago]}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">Monto solicitado</dt>
+              <dd className="font-semibold text-slate-900">
+                {formatCurrency(totals.montoSolicitado)}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">Ya retornado</dt>
+              <dd className="font-semibold text-emerald-700">
+                {formatCurrency(totals.montoRetornado)}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">Pendiente actual</dt>
+              <dd className="font-semibold text-amber-700">
+                {formatCurrency(totals.montoPendiente)}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">Disponible por registrar</dt>
+              <dd className="font-semibold text-slate-900">
+                {formatCurrency(totals.montoDisponible)}
+              </dd>
+            </div>
+          </dl>
+        </section>
+      ) : null}
 
       <div>
         <label className="mb-2 block text-sm font-medium text-slate-700">
-          Importe de la nueva parcialidad
+          Importe del retorno parcial
         </label>
         <input
           type="text"
@@ -307,7 +312,7 @@ export function RegisterInstallmentForm({
       </div>
 
       <Button type="submit" isLoading={isSubmitting} className="w-full justify-center">
-        {esEfectivo ? 'Programar recolección de la parcialidad' : 'Registrar parcialidad'}
+        {esEfectivo ? 'Programar recolección del retorno' : 'Registrar retorno'}
       </Button>
     </form>
   );

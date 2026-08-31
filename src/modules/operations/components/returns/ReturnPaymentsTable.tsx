@@ -1,6 +1,6 @@
 // components/returns/ReturnPaymentsTable.tsx
 
-import { useState, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { BanknoteArrowDown, Paperclip, Plus } from 'lucide-react';
 import { paymentTypeLabels } from '@/modules/operations/constants/operations.constants';
 import {
@@ -17,9 +17,7 @@ import {
   ReturnPaymentResponse,
 } from '../../types/operations.types.ts';
 import { ReturnStatusBadge } from './ReturnStatusBadge.js';
-import { ReturnPaymentDetailModal } from './ReturnPaymentDetailModal.js';
 import { useAuth } from '@/modules/auth/store/auth.context.js';
-import { RowActionsMenu } from '@/shared/components/ui/RowActionsMenu';
 
 interface ReturnPaymentsTableProps {
   returns: ReturnPaymentResponse[];
@@ -28,8 +26,7 @@ interface ReturnPaymentsTableProps {
   onAddRequestReturnPayment?: (montoPendientePorSolicitar: number) => void;
   canManageReturnPayments?: boolean;
   canEditRequestReturnPayments?: boolean;
-  onRegisterInstallment?: (returnRequest: ReturnPaymentResponse) => void;
-  onViewHistory?: (returnRequest: ReturnPaymentResponse) => void;
+  onOpenReturn?: (returnRequest: ReturnPaymentResponse) => void;
   onEditReturn?: (returnPayment: ReturnPaymentResponse) => void;
   operationStatus?: OperationStatus;
 }
@@ -41,8 +38,7 @@ export function ReturnPaymentsTable({
   onAddRequestReturnPayment,
   canManageReturnPayments = false,
   canEditRequestReturnPayments = false,
-  onRegisterInstallment,
-  onViewHistory,
+  onOpenReturn,
   onEditReturn,
   operationStatus,
 }: ReturnPaymentsTableProps) {
@@ -54,9 +50,6 @@ export function ReturnPaymentsTable({
   const isJefaCuentas = roles.includes('JEFA_CUENTAS');
   const isAuxiliarCuentas = roles.includes('AUXILIAR_CUENTAS');
   const isSocioComercial = roles.includes('SOCIO_COMERCIAL');
-
-  const [selectedReturnDetail, setSelectedReturnDetail] =
-    useState<ReturnPaymentResponse | null>(null);
 
   const visibleReturns = returns.filter((returnPayment) => {
     if (isJefaCajas) {
@@ -109,40 +102,11 @@ export function ReturnPaymentsTable({
     });
   }
 
-  function renderOptionsMenu(returnPayment: ReturnPaymentResponse): ReactNode {
-    return (
-      <>
-        <button
-          type="button"
-          onClick={() => setSelectedReturnDetail(returnPayment)}
-          className="block w-full px-4 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-        >
-          Ver datos de la solicitud
-        </button>
-        <button
-          type="button"
-          onClick={() => onViewHistory?.(returnPayment)}
-          className="block w-full border-t border-slate-100 px-4 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-        >
-          Ver historial de parcialidades
-        </button>
-        {returnPayment.archivoNominaUrl ? (
-          <a
-            href={returnPayment.archivoNominaUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="block border-t border-slate-100 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-          >
-            Descargar archivo de nóminas
-          </a>
-        ) : null}
-      </>
-    );
-  }
-
   function renderRowActions(returnPayment: ReturnPaymentResponse): ReactNode {
     const totals = resolveReturnRequestTotals(returnPayment);
     const availability = registerAvailability(returnPayment);
+    const puedeGestionar =
+      canManageReturnPayments && roleCanHandleMethod(returnPayment);
     const canEdit =
       canEditRequestReturnPayments &&
       returnPayment.estatus === 'SOLICITADO' &&
@@ -150,16 +114,26 @@ export function ReturnPaymentsTable({
 
     return (
       <div className="flex flex-col items-stretch gap-2">
-        {availability.canRegister ? (
-          <button
-            type="button"
-            onClick={() => onRegisterInstallment?.(returnPayment)}
-            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700"
-          >
-            <Plus className="h-3.5 w-3.5" /> Registrar parcialidad
-          </button>
-        ) : canManageReturnPayments && roleCanHandleMethod(returnPayment) ? (
-          <span className="text-xs text-slate-400">{availability.reason}</span>
+        <button
+          type="button"
+          onClick={() => onOpenReturn?.(returnPayment)}
+          className={
+            availability.canRegister
+              ? 'inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700'
+              : 'inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50'
+          }
+        >
+          {availability.canRegister ? (
+            <>
+              <Plus className="h-3.5 w-3.5" /> Retornar
+            </>
+          ) : (
+            'Ver retorno'
+          )}
+        </button>
+
+        {puedeGestionar && !availability.canRegister && availability.reason ? (
+          <span className="text-center text-xs text-slate-400">{availability.reason}</span>
         ) : null}
 
         {canEdit && (
@@ -171,14 +145,6 @@ export function ReturnPaymentsTable({
             Editar solicitud
           </button>
         )}
-
-        <button
-          type="button"
-          onClick={() => onViewHistory?.(returnPayment)}
-          className="h-10 rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-100"
-        >
-          Ver historial
-        </button>
       </div>
     );
   }
@@ -289,7 +255,7 @@ export function ReturnPaymentsTable({
                   <th className="px-4 py-3 font-medium">Avance</th>
                   <th className="px-4 py-3 font-medium">Estatus</th>
                   <th className="px-4 py-3 font-medium">Fecha solicitud</th>
-                  <th className="px-4 py-3 font-medium">Opciones</th>
+                  <th className="px-4 py-3 font-medium">Nómina</th>
                   <th className="px-4 py-3 font-medium">Acciones</th>
                 </tr>
               </thead>
@@ -326,19 +292,19 @@ export function ReturnPaymentsTable({
                           : '-'}
                       </td>
                       <td className="px-4 py-4">
-                        <div className="flex items-center gap-2">
-                          {returnPayment.archivoNominaUrl ? (
-                            <span
-                              title="Tiene archivo de nóminas adjunto"
-                              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600"
-                            >
-                              <Paperclip className="h-4 w-4" />
-                            </span>
-                          ) : null}
-                          <RowActionsMenu triggerLabel="Ver opciones" menuClassName="w-64">
-                            {renderOptionsMenu(returnPayment)}
-                          </RowActionsMenu>
-                        </div>
+                        {returnPayment.archivoNominaUrl ? (
+                          <a
+                            href={returnPayment.archivoNominaUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            title="Descargar archivo de nóminas"
+                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 transition hover:bg-emerald-100"
+                          >
+                            <Paperclip className="h-4 w-4" />
+                          </a>
+                        ) : (
+                          <span className="text-xs text-slate-400">-</span>
+                        )}
                       </td>
                       <td className="px-4 py-4">{renderRowActions(returnPayment)}</td>
                     </tr>
@@ -386,29 +352,24 @@ export function ReturnPaymentsTable({
 
                   <div className="mt-3">{renderProgress(returnPayment)}</div>
 
-                  <div className="mt-4">{renderRowActions(returnPayment)}</div>
-
-                  <div className="mt-3">
-                    <RowActionsMenu
-                      triggerLabel="Ver opciones"
-                      triggerClassName="min-h-[44px] w-full justify-center"
-                      menuClassName="w-64 max-w-[calc(100vw-1rem)]"
+                  {returnPayment.archivoNominaUrl ? (
+                    <a
+                      href={returnPayment.archivoNominaUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700"
                     >
-                      {renderOptionsMenu(returnPayment)}
-                    </RowActionsMenu>
-                  </div>
+                      <Paperclip className="h-3.5 w-3.5" /> Descargar archivo de nóminas
+                    </a>
+                  ) : null}
+
+                  <div className="mt-4">{renderRowActions(returnPayment)}</div>
                 </div>
               );
             })}
           </div>
         </>
       )}
-
-      <ReturnPaymentDetailModal
-        open={!!selectedReturnDetail}
-        onClose={() => setSelectedReturnDetail(null)}
-        returnPayment={selectedReturnDetail}
-      />
     </div>
   );
 }

@@ -33,8 +33,7 @@ interface OperationDetailViewProps {
   processingPaymentId?: number | null;
   onAddPayment: (operationId: number) => void;
   onAddRequestReturnPayment?: (operation: PaymentOperationResponse, montoPendientePorSolicitar: number) => void;
-  onRegisterInstallment?: (returnRequest: ReturnPaymentResponse) => void;
-  onViewInstallmentHistory?: (returnRequest: ReturnPaymentResponse) => void;
+  onOpenReturn?: (returnRequest: ReturnPaymentResponse) => void;
   canRequestReturn?: boolean;
   canViewFinancialDetails: boolean;
   canViewOperationExtras: boolean;
@@ -60,8 +59,7 @@ export function OperationDetailView({
   processingPaymentId = null,
   onAddPayment,
   onAddRequestReturnPayment,
-  onRegisterInstallment,
-  onViewInstallmentHistory,
+  onOpenReturn,
   canViewFinancialDetails,
   canViewOperationExtras,
   onOperationUpdated,
@@ -201,8 +199,7 @@ export function OperationDetailView({
             user?.roles?.includes('SOCIO_COMERCIAL') ||
             user?.roles?.includes('ADMIN')
           }
-          onRegisterInstallment={onRegisterInstallment}
-          onViewHistory={onViewInstallmentHistory}
+          onOpenReturn={onOpenReturn}
           onEditReturn={onEditReturn}
           operationStatus={operation.estatus}
         />

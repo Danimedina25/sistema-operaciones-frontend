@@ -20,8 +20,7 @@ import { useRequestReturnPayment } from '../hooks/returns/use-request-return-pay
 import { RequestReturnModal } from '../components/returns/RequestReturnModal';
 import { EditReturnPaymentForm } from '../components/returns/EditReturnPaymentForm';
 import { useUpdateRequestReturnPayment } from '../hooks/returns/use-update-request-return-payment';
-import { RegisterInstallmentModal } from '../components/returns/RegisterInstallmentModal';
-import { InstallmentHistoryModal } from '../components/returns/InstallmentHistoryModal';
+import { ReturnPaymentModal } from '../components/returns/ReturnPaymentModal';
 import { MarkCashReturnDeliveredModal } from '../components/returns/MarkCashReturnDeliveredModal';
 import { useCreateReturnInstallment } from '../hooks/returns/use-create-return-installment';
 import { useConfirmReturnInstallment } from '../hooks/returns/use-confirm-return-installment';
@@ -77,9 +76,7 @@ export default function OperationDetailPage() {
   const [selectedReturnToEdit, setSelectedReturnToEdit] =
     useState<ReturnPaymentResponse | null>(null);
 
-  const [installmentRequest, setInstallmentRequest] =
-    useState<ReturnPaymentResponse | null>(null);
-  const [historyRequest, setHistoryRequest] =
+  const [selectedReturnRequest, setSelectedReturnRequest] =
     useState<ReturnPaymentResponse | null>(null);
   const [deliverTarget, setDeliverTarget] = useState<ReturnInstallment | null>(null);
   const [confirmTarget, setConfirmTarget] = useState<ReturnInstallment | null>(null);
@@ -108,9 +105,10 @@ export default function OperationDetailPage() {
     [bankAccountsCatalog],
   );
 
-  const historySummaryQuery = useReturnRequestSummary(historyRequest?.id);
-  const historyInstallments = historySummaryQuery.data?.parcialidades ?? [];
-  const historyRequestFresh = historySummaryQuery.data?.solicitud ?? historyRequest;
+  const returnSummaryQuery = useReturnRequestSummary(selectedReturnRequest?.id);
+  const returnInstallments = returnSummaryQuery.data?.parcialidades ?? [];
+  const returnRequestFresh =
+    returnSummaryQuery.data?.solicitud ?? selectedReturnRequest;
 
   async function refreshAll() {
     await queryClient.invalidateQueries({ queryKey: ['operation-returns', parsedOperationId] });
@@ -163,7 +161,8 @@ export default function OperationDetailPage() {
   const { isSubmitting: isSubmittingInstallment, submitCreateReturnInstallment } =
     useCreateReturnInstallment({
       onSuccess: async () => {
-        setInstallmentRequest(null);
+        // El modal permanece abierto: el historial y los totales se refrescan
+        // y el formulario se limpia (via key en ReturnPaymentModal).
         await refreshAll();
       },
     });
@@ -251,8 +250,7 @@ export default function OperationDetailPage() {
               }
             : undefined
         }
-        onRegisterInstallment={(returnRequest) => setInstallmentRequest(returnRequest)}
-        onViewInstallmentHistory={(returnRequest) => setHistoryRequest(returnRequest)}
+        onOpenReturn={(returnRequest) => setSelectedReturnRequest(returnRequest)}
         onEditReturn={(returnPayment) => {
           setSelectedReturnToEdit(returnPayment);
           setIsEditReturnModalOpen(true);
@@ -341,21 +339,16 @@ export default function OperationDetailPage() {
         )}
       </Modal>
 
-      <RegisterInstallmentModal
-        open={!!installmentRequest}
-        returnRequest={installmentRequest}
-        isSubmitting={isSubmittingInstallment}
-        onClose={() => setInstallmentRequest(null)}
-        onSubmit={(returnRequestId, values) =>
+      <ReturnPaymentModal
+        open={!!selectedReturnRequest}
+        returnRequest={returnRequestFresh}
+        installments={returnInstallments}
+        isLoadingHistory={returnSummaryQuery.isLoading}
+        canManageReturnPayments={isJefaCajas || roles.includes('JEFA_CUENTAS') || roles.includes('AUXILIAR_CUENTAS') || isAdmin}
+        isSubmittingInstallment={isSubmittingInstallment}
+        onSubmitInstallment={(returnRequestId, values) =>
           submitCreateReturnInstallment(returnRequestId, values)
         }
-      />
-
-      <InstallmentHistoryModal
-        open={!!historyRequest}
-        returnRequest={historyRequestFresh}
-        installments={historyInstallments}
-        isLoading={historySummaryQuery.isLoading}
         canConfirm={canConfirmInstallment}
         canDeliver={canDeliverInstallment}
         canCancel={canCancelInstallment}
@@ -365,7 +358,7 @@ export default function OperationDetailPage() {
           setCancelTarget(i);
           setCancelReason('');
         }}
-        onClose={() => setHistoryRequest(null)}
+        onClose={() => setSelectedReturnRequest(null)}
       />
 
       <MarkCashReturnDeliveredModal
