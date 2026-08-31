@@ -29,6 +29,15 @@ import {
   ConfirmCashReturnPickupApiResponse,
   MarkCashReturnDeliveredApiResponse,
   MarkCashReturnDeliveredRequest,
+  ReturnInstallment,
+  ReturnInstallmentApiResponse,
+  ReturnInstallmentsListApiResponse,
+  ReturnInstallmentsPageApiResponse,
+  ReturnRequestSummary,
+  ReturnRequestSummaryApiResponse,
+  CreateReturnInstallmentRequest,
+  DeliverReturnInstallmentRequest,
+  CancelReturnInstallmentRequest,
 } from '../types/operations.types.ts';
 
 const OPERATIONS_BASE_PATH = '/api/operations';
@@ -458,6 +467,117 @@ export async function getReturnDestinationAccountSuggestions(
     await api.get<ReturnDestinationAccountSuggestionsApiResponse>(
       `${RETURNS_BASE_PATH}/clients/${clientId}/destination-accounts`,
     );
+
+  return response.data.data;
+}
+
+// --------------------------------------------------------------------------
+// Parcialidades de retorno
+// --------------------------------------------------------------------------
+
+export async function createReturnInstallment(
+  returnRequestId: number,
+  payload: CreateReturnInstallmentRequest,
+): Promise<ReturnInstallment> {
+  const response = await api.post<ReturnInstallmentApiResponse>(
+    `${RETURNS_BASE_PATH}/requests/${returnRequestId}/installments`,
+    payload,
+  );
+
+  return response.data.data;
+}
+
+export async function getReturnRequestSummary(
+  returnRequestId: number,
+): Promise<ReturnRequestSummary> {
+  const response = await api.get<ReturnRequestSummaryApiResponse>(
+    `${RETURNS_BASE_PATH}/requests/${returnRequestId}`,
+  );
+
+  return response.data.data;
+}
+
+export async function getReturnInstallments(
+  returnRequestId: number,
+): Promise<ReturnInstallment[]> {
+  const response = await api.get<ReturnInstallmentsListApiResponse>(
+    `${RETURNS_BASE_PATH}/requests/${returnRequestId}/installments`,
+  );
+
+  return response.data.data;
+}
+
+export async function confirmReturnInstallment(
+  installmentId: number,
+): Promise<ReturnInstallment> {
+  const response = await api.patch<ReturnInstallmentApiResponse>(
+    `${RETURNS_BASE_PATH}/installments/${installmentId}/confirm`,
+  );
+
+  return response.data.data;
+}
+
+export async function deliverReturnInstallment(
+  installmentId: number,
+  payload: DeliverReturnInstallmentRequest,
+): Promise<ReturnInstallment> {
+  const response = await api.patch<ReturnInstallmentApiResponse>(
+    `${RETURNS_BASE_PATH}/installments/${installmentId}/deliver`,
+    payload,
+  );
+
+  return response.data.data;
+}
+
+export async function cancelReturnInstallment(
+  installmentId: number,
+  payload: CancelReturnInstallmentRequest,
+): Promise<ReturnInstallment> {
+  const response = await api.patch<ReturnInstallmentApiResponse>(
+    `${RETURNS_BASE_PATH}/installments/${installmentId}/cancel`,
+    payload,
+  );
+
+  return response.data.data;
+}
+
+export async function getTodayInstallmentPickups(
+  page: number,
+  pageSize: number,
+  filters: TodayCashDeliveriesFilters = {},
+): Promise<PageResponse<ReturnInstallment>> {
+  const params = new URLSearchParams();
+
+  params.append('page', String(page));
+  params.append('size', String(pageSize));
+
+  if (filters.fecha) {
+    params.append('fecha', filters.fecha);
+  }
+
+  if (filters.tipoPago) {
+    params.append('tipoPago', filters.tipoPago);
+  }
+
+  const response = await api.get<ReturnInstallmentsPageApiResponse>(
+    `${RETURNS_BASE_PATH}/installments/today-deliveries?${params.toString()}`,
+  );
+
+  return response.data.data;
+}
+
+export async function getLateInstallmentPickups(
+  page: number,
+  pageSize: number,
+): Promise<PageResponse<ReturnInstallment>> {
+  const params = new URLSearchParams();
+
+  params.append('page', String(page));
+  params.append('size', String(pageSize));
+
+  const response = await api.get<ReturnInstallmentsPageApiResponse>(
+    `${RETURNS_BASE_PATH}/installments/late?${params.toString()}`,
+  );
 
   return response.data.data;
 }

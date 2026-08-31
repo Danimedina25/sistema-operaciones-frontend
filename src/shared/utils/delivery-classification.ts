@@ -1,4 +1,7 @@
-import type { ReturnPaymentStatus } from '@/modules/operations/types/operations.types.ts';
+import type {
+  ReturnInstallmentStatus,
+  ReturnPaymentStatus,
+} from '@/modules/operations/types/operations.types.ts';
 
 export type DeliveryClassification =
   | 'DELIVERED'
@@ -9,8 +12,12 @@ export type DeliveryClassification =
   | 'UNSCHEDULED';
 
 export interface DeliveryClassificationInput {
-  estatus: ReturnPaymentStatus;
-  /** Fecha/hora programada de recolección (fechaHoraRecoleccionEfectivo). */
+  /**
+   * Estatus de la solicitud (flujo legacy) o de la parcialidad (flujo por
+   * parcialidades). Ambos se mapean al mismo semáforo.
+   */
+  estatus: ReturnPaymentStatus | ReturnInstallmentStatus;
+  /** Fecha/hora programada de recolección. */
   scheduledAt?: string | null;
 }
 
@@ -30,12 +37,16 @@ export function classifyDelivery(
 ): DeliveryClassification {
   const { estatus, scheduledAt } = input;
 
-  if (estatus === 'RETORNADO') {
+  if (estatus === 'RETORNADO' || estatus === 'COMPLETADA') {
     return 'DELIVERED';
   }
 
-  if (estatus === 'ENTREGADO') {
+  if (estatus === 'ENTREGADO' || estatus === 'ENTREGADA') {
     return 'PENDING_STAFF_CONFIRMATION';
+  }
+
+  if (estatus === 'CANCELADA') {
+    return 'UNSCHEDULED';
   }
 
   if (!scheduledAt) {

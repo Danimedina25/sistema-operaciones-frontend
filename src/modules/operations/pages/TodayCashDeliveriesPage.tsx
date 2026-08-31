@@ -7,12 +7,16 @@ import { QueryState } from '@/shared/components/ui/QueryState';
 import { CollapsibleFilterSection } from '@/shared/components/ui/CollapsibleFilterSection';
 import { useUrlFilters } from '@/shared/hooks/use-url-filters';
 import { useTodayCashDeliveries } from '@/modules/operations/hooks/returns/use-today-cash-deliveries';
-import { useMarkCashReturnDelivered } from '@/modules/operations/hooks/returns/use-mark-cash-return-delivered';
+import { useDeliverReturnInstallment } from '@/modules/operations/hooks/returns/use-deliver-return-installment';
 import { TodayDeliveriesTable } from '@/modules/operations/components/returns/TodayDeliveriesTable';
 import { MarkCashReturnDeliveredModal } from '@/modules/operations/components/returns/MarkCashReturnDeliveredModal';
-import { computeDailyDeliverySummary } from '@/modules/operations/utils/daily-delivery-summary';
+import { installmentToCashDeliveryTarget } from '@/modules/operations/utils/return-installment';
+import {
+  computeDailyDeliverySummary,
+  installmentToDeliveryLike,
+} from '@/modules/operations/utils/daily-delivery-summary';
 import { formatCurrency, formatDateTime } from '@/modules/operations/utils/operation-formatters';
-import type { ReturnPaymentResponse } from '@/modules/operations/types/operations.types.ts';
+import type { ReturnInstallment } from '@/modules/operations/types/operations.types.ts';
 
 const QUICK_TIPO_RETORNO_FILTERS = [
   { value: '', label: 'Todos' },
@@ -24,13 +28,13 @@ const initialFilters = { tipoPago: '' };
 
 export default function TodayCashDeliveriesPage() {
   const { filters, setFilters } = useUrlFilters(initialFilters);
-  const [selectedDelivery, setSelectedDelivery] = useState<ReturnPaymentResponse | null>(null);
+  const [selectedDelivery, setSelectedDelivery] = useState<ReturnInstallment | null>(null);
 
   const { data, isLoading, error, refetch } = useTodayCashDeliveries({
     tipoPago: filters.tipoPago || undefined,
   });
 
-  const { isSubmitting, submitMarkCashReturnDelivered } = useMarkCashReturnDelivered({
+  const { isSubmitting, submitDeliverReturnInstallment } = useDeliverReturnInstallment({
     onSuccess: async () => {
       setSelectedDelivery(null);
       await refetch();
@@ -39,7 +43,10 @@ export default function TodayCashDeliveriesPage() {
 
   const deliveries = useMemo(() => data?.content ?? [], [data]);
 
-  const summary = useMemo(() => computeDailyDeliverySummary(deliveries), [deliveries]);
+  const summary = useMemo(
+    () => computeDailyDeliverySummary(deliveries.map(installmentToDeliveryLike)),
+    [deliveries],
+  );
 
   return (
     <div className="space-y-3">
@@ -119,10 +126,12 @@ export default function TodayCashDeliveriesPage() {
       </section>
 
       <MarkCashReturnDeliveredModal
-        returnPayment={selectedDelivery}
+        target={
+          selectedDelivery ? installmentToCashDeliveryTarget(selectedDelivery) : null
+        }
         isSubmitting={isSubmitting}
-        onConfirm={(returnPaymentId, operationId, comprobante) =>
-          void submitMarkCashReturnDelivered(returnPaymentId, operationId, comprobante)
+        onConfirm={(installmentId, operationId, comprobante) =>
+          void submitDeliverReturnInstallment(installmentId, operationId, comprobante)
         }
         onClose={() => setSelectedDelivery(null)}
       />

@@ -1,9 +1,12 @@
 import { classifyDelivery, type DeliveryClassification } from '@/shared/utils/delivery-classification';
-import type { ReturnPaymentStatus } from '@/modules/operations/types/operations.types.ts';
+import type {
+  ReturnInstallmentStatus,
+  ReturnPaymentStatus,
+} from '@/modules/operations/types/operations.types.ts';
 import { cn } from '@/shared/lib/cn';
 
 interface DeliverySemaphoreBadgeProps {
-  estatus: ReturnPaymentStatus;
+  estatus: ReturnPaymentStatus | ReturnInstallmentStatus;
   scheduledAt?: string | null;
   className?: string;
 }

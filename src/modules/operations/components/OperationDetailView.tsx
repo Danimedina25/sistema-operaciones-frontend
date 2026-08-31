@@ -33,7 +33,8 @@ interface OperationDetailViewProps {
   processingPaymentId?: number | null;
   onAddPayment: (operationId: number) => void;
   onAddRequestReturnPayment?: (operation: PaymentOperationResponse, montoPendientePorSolicitar: number) => void;
-  onPayReturn?: (returnPayment: ReturnPaymentResponse) => void;
+  onRegisterInstallment?: (returnRequest: ReturnPaymentResponse) => void;
+  onViewInstallmentHistory?: (returnRequest: ReturnPaymentResponse) => void;
   canRequestReturn?: boolean;
   canViewFinancialDetails: boolean;
   canViewOperationExtras: boolean;
@@ -44,9 +45,6 @@ interface OperationDetailViewProps {
   onEditReturn?: (
     returnPayment: ReturnPaymentResponse,
   ) => void;
-  onDefineCashReturnTime?: (returnPayment: ReturnPaymentResponse) => void;
-  onConfirmCashReturnPickup?: (returnPayment: ReturnPaymentResponse) => void;
-  onMarkCashReturnDelivered?: (returnPayment: ReturnPaymentResponse) => void;
 }
 
 export function OperationDetailView({
@@ -62,7 +60,8 @@ export function OperationDetailView({
   processingPaymentId = null,
   onAddPayment,
   onAddRequestReturnPayment,
-  onPayReturn,
+  onRegisterInstallment,
+  onViewInstallmentHistory,
   canViewFinancialDetails,
   canViewOperationExtras,
   onOperationUpdated,
@@ -70,10 +69,6 @@ export function OperationDetailView({
   scrollToReturns = false,
   onEditPayment,
   onEditReturn,
-  canRequestReturn = false,
-  onDefineCashReturnTime,
-  onConfirmCashReturnPickup,
-  onMarkCashReturnDelivered
 }: OperationDetailViewProps) {
   const paymentsSectionRef = useRef<HTMLDivElement | null>(null);
   const returnsSectionRef = useRef<HTMLDivElement | null>(null);
@@ -126,13 +121,6 @@ export function OperationDetailView({
 
     return () => window.clearTimeout(timeoutId);
   }, [scrollToReturns, operation.id]);
-
-  function scrollToTables() {
-    returnsSectionRef.current?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start',
-    });
-  }
 
   const montoPendientePorSolicitar = Math.max(
     operation.montoTotalDevolverCliente - operation.montoSolicitadoRetorno,
@@ -213,11 +201,9 @@ export function OperationDetailView({
             user?.roles?.includes('SOCIO_COMERCIAL') ||
             user?.roles?.includes('ADMIN')
           }
-          onPayReturn={onPayReturn}
-          onDefineCashReturnTime={onDefineCashReturnTime}
+          onRegisterInstallment={onRegisterInstallment}
+          onViewHistory={onViewInstallmentHistory}
           onEditReturn={onEditReturn}
-          onConfirmCashReturnPickup={onConfirmCashReturnPickup}
-          onMarkCashReturnDelivered={onMarkCashReturnDelivered}
           operationStatus={operation.estatus}
         />
       </div>

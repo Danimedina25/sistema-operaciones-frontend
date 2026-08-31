@@ -13,21 +13,15 @@ interface OperationDetailContainerProps {
   onBack: () => void;
   backLabel?: string;
   onAddPayment: (operation: PaymentOperationResponse) => void;
-  onAddReturnPayment?: (
-    operation: PaymentOperationResponse,
-    montoPendienteARetornar: number,
-  ) => void;
   onAddRequestReturnPayment?: (operation: PaymentOperationResponse, montoPendientePorSolicitar: number) => void;
-  onDefineCashReturnTime?: (returnPayment: ReturnPaymentResponse) => void;
-  onPayReturn?: (returnPayment: ReturnPaymentResponse) => void;
+  onRegisterInstallment?: (returnRequest: ReturnPaymentResponse) => void;
+  onViewInstallmentHistory?: (returnRequest: ReturnPaymentResponse) => void;
   scrollToPayments?: boolean;
   scrollToReturns?: boolean;
   onEditPayment: (operation: PaymentOperationResponse, paymentId: number) => void;
   onEditReturn?: (
     returnPayment: ReturnPaymentResponse,
   ) => void;
-  onConfirmCashReturnPickup?: (returnPayment: ReturnPaymentResponse) => void;
-  onMarkCashReturnDelivered?: (returnPayment: ReturnPaymentResponse) => void;
 }
 
 export function OperationDetailContainer({
@@ -35,24 +29,19 @@ export function OperationDetailContainer({
   onBack,
   backLabel = 'Operaciones',
   onAddPayment,
-  onAddReturnPayment,
   onAddRequestReturnPayment,
-  onDefineCashReturnTime,
-  onPayReturn,
+  onRegisterInstallment,
+  onViewInstallmentHistory,
   scrollToPayments = false,
   scrollToReturns = false,
   onEditPayment,
   onEditReturn,
-  onConfirmCashReturnPickup,
-  onMarkCashReturnDelivered
 }: OperationDetailContainerProps) {
   const { hasRole } = useAuth();
 
   const canViewFinancialDetails = !hasRole(['SOCIO_COMERCIAL', 'JEFA_CUENTAS', 'AUXILIAR_CUENTAS', 'JEFA_CAJAS']);
   const canViewOperationExtras = !hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS', 'JEFA_CAJAS']);
   const canRequestReturn = hasRole(['SOCIO_COMERCIAL']) || hasRole(['ADMIN']);
-  const canPayReturn = hasRole(['ADMIN']) || hasRole(['JEFA_CAJAS']) || hasRole(['JEFA_CUENTAS']) || hasRole(['AUXILIAR_CUENTAS']);
-  const isSocioComercial = hasRole(['SOCIO_COMERCIAL']);
 
   const { operation, isLoading, error, fetchOperation } =
     useOperationDetail(operationId);
@@ -149,22 +138,8 @@ export function OperationDetailContainer({
             onAddRequestReturnPayment(operation, montoPendientePorSolicitar)
           : undefined
       }
-      onDefineCashReturnTime={
-        canPayReturn && onDefineCashReturnTime
-          ? (returnPayment) => onDefineCashReturnTime(returnPayment)
-          : undefined
-      }
-      onPayReturn={canPayReturn && onPayReturn ? (returnPayment) => onPayReturn(returnPayment) : undefined}
-      onConfirmCashReturnPickup={
-        isSocioComercial && onConfirmCashReturnPickup
-          ? (returnPayment) => onConfirmCashReturnPickup(returnPayment)
-          : undefined
-      }
-      onMarkCashReturnDelivered={
-        canPayReturn && onMarkCashReturnDelivered
-          ? (returnPayment) => onMarkCashReturnDelivered(returnPayment)
-          : undefined
-      }
+      onRegisterInstallment={onRegisterInstallment}
+      onViewInstallmentHistory={onViewInstallmentHistory}
       backLabel={backLabel}
       onValidatePayment={submitValidatePayment}
       onRejectPayment={submitRejectPayment}

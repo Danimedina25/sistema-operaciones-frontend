@@ -21,7 +21,19 @@ export type ReturnPaymentStatus =
   | 'SOLICITADO'
   | 'EN_RECOLECCION'
   | 'ENTREGADO'
+  | 'PARCIALMENTE_RETORNADO'
   | 'RETORNADO';
+
+/**
+ * Estatus de una parcialidad (movimiento individual con el que se cubre parte
+ * o todo de una solicitud de retorno). Solo `COMPLETADA` cuenta como monto
+ * efectivamente retornado.
+ */
+export type ReturnInstallmentStatus =
+  | 'PROGRAMADA'
+  | 'ENTREGADA'
+  | 'COMPLETADA'
+  | 'CANCELADA';
 
 export type PaymentType =
   | 'TRANSFERENCIA'
@@ -255,6 +267,75 @@ export interface CreateReturnPaymentItemRequest {
   archivoNominaUrl?: string | null;
 }
 
+// --------------------------------------------------------------------------
+// Parcialidades de retorno
+// --------------------------------------------------------------------------
+
+export interface CreateReturnInstallmentRequest {
+  monto: number;
+  cuentaOrigenId?: number | null;
+  comprobanteUrl?: string | null;
+  fechaHoraRecoleccion?: string | null;
+  codigoRetiroSinTarjeta?: string | null;
+  observaciones?: string | null;
+}
+
+export interface DeliverReturnInstallmentRequest {
+  comprobanteEntregaUrl: string;
+}
+
+export interface CancelReturnInstallmentRequest {
+  motivo: string;
+}
+
+export interface ReturnInstallment {
+  id: number;
+  returnRequestId: number;
+  operationId: number;
+  monto: number;
+  tipoPago: PaymentType;
+  estatus: ReturnInstallmentStatus;
+
+  returnRequestMonto?: number | null;
+  returnRequestEstatus?: ReturnPaymentStatus | null;
+  clienteNombre?: string | null;
+  socioComercialNombre?: string | null;
+  socioComercialTelefono?: string | null;
+  autorizadoParaRecibir1?: string | null;
+  autorizadoParaRecibir2?: string | null;
+  autorizadoParaRecibir3?: string | null;
+
+  cuentaOrigenId?: number | null;
+  cuentaOrigenNombre?: string | null;
+  comprobanteUrl?: string | null;
+  comprobanteEntregaUrl?: string | null;
+  codigoRetiroSinTarjeta?: string | null;
+
+  fechaHoraRecoleccion?: string | null;
+  fechaRealizacion?: string | null;
+  fechaEntrega?: string | null;
+  fechaConfirmacion?: string | null;
+  fechaCancelacion?: string | null;
+  observaciones?: string | null;
+
+  creadoPorId?: number | null;
+  creadoPorNombre?: string | null;
+  realizadoPorId?: number | null;
+  realizadoPorNombre?: string | null;
+  entregadoPorId?: number | null;
+  entregadoPorNombre?: string | null;
+  canceladoPorId?: number | null;
+  canceladoPorNombre?: string | null;
+
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
+export interface ReturnRequestSummary {
+  solicitud: ReturnPaymentResponse;
+  parcialidades: ReturnInstallment[];
+}
+
 export interface CreateReturnPaymentRequest {
   pagos: CreateReturnPaymentItemRequest[];
 }
@@ -289,6 +370,17 @@ export interface ReturnPaymentResponse {
   monto: number;
   tipoPago: PaymentType;
   estatus: ReturnPaymentStatus;
+
+  /** Totales calculados en el servidor a partir de las parcialidades. */
+  montoSolicitado?: number | null;
+  montoRetornado?: number | null;
+  montoEnProceso?: number | null;
+  montoPendiente?: number | null;
+  /** Tope de una nueva parcialidad: solicitado - retornado - enProceso. */
+  montoDisponible?: number | null;
+  porcentajeAvance?: number | null;
+  numeroParcialidades?: number | null;
+  parcialidades?: ReturnInstallment[] | null;
 
   cuentaOrigenId?: number | null;
   cuentaOrigenNombre?: string | null;
@@ -339,6 +431,10 @@ export type OperationApiResponse = ApiResponse<PaymentOperationResponse>;
 export type OperationsPageApiResponse = ApiResponse<PageResponse<PaymentOperationResponse>>;
 export type PaymentApiResponse = ApiResponse<OperationPaymentResponse>;
 export type ReturnRequestPaymentApiResponse = ApiResponse<ReturnPaymentResponse[]>;
+export type ReturnInstallmentApiResponse = ApiResponse<ReturnInstallment>;
+export type ReturnInstallmentsListApiResponse = ApiResponse<ReturnInstallment[]>;
+export type ReturnInstallmentsPageApiResponse = ApiResponse<PageResponse<ReturnInstallment>>;
+export type ReturnRequestSummaryApiResponse = ApiResponse<ReturnRequestSummary>;
 export type ReturnUpdateRequestPaymentApiResponse = ApiResponse<ReturnPaymentResponse>;
 export type ReturnRealizePaymentApiResponse = ApiResponse<ReturnPaymentResponse>;
 export type ScheduleCashReturnPickupApiResponse =

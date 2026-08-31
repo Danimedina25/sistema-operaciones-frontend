@@ -1,23 +1,24 @@
-// components/ReturnPaymentsTable.tsx
+// components/returns/ReturnPaymentsTable.tsx
 
+import { useState, type ReactNode } from 'react';
+import { BanknoteArrowDown, Paperclip, Plus } from 'lucide-react';
 import { paymentTypeLabels } from '@/modules/operations/constants/operations.constants';
 import {
   formatCurrency,
   formatDate,
-  formatDateTime,
 } from '@/modules/operations/utils/operation-formatters';
+import {
+  isCashReturnMethod,
+  resolveRegisterInstallmentAvailability,
+  resolveReturnRequestTotals,
+} from '@/modules/operations/utils/return-installment';
 import {
   OperationStatus,
   ReturnPaymentResponse,
 } from '../../types/operations.types.ts';
 import { ReturnStatusBadge } from './ReturnStatusBadge.js';
-import { useState, type ReactNode } from 'react';
 import { ReturnPaymentDetailModal } from './ReturnPaymentDetailModal.js';
 import { useAuth } from '@/modules/auth/store/auth.context.js';
-import { useWhatsAppLink } from '@/shared/hooks/use-whatsapp-link';
-import { buildReturnPaidMessage } from '@/shared/utils/whatsapp-message';
-import { buildOperationDetailPath } from '@/routes/paths';
-import { ArrowUpRight, BanknoteArrowDown, MessageCircle, Paperclip, Plus } from 'lucide-react';
 import { RowActionsMenu } from '@/shared/components/ui/RowActionsMenu';
 
 interface ReturnPaymentsTableProps {
@@ -27,13 +28,9 @@ interface ReturnPaymentsTableProps {
   onAddRequestReturnPayment?: (montoPendientePorSolicitar: number) => void;
   canManageReturnPayments?: boolean;
   canEditRequestReturnPayments?: boolean;
-  onDefineCashReturnTime?: (returnPayment: ReturnPaymentResponse) => void;
-  onPayReturn?: (returnPayment: ReturnPaymentResponse) => void;
-  onEditReturn?: (
-    returnPayment: ReturnPaymentResponse,
-  ) => void;
-  onConfirmCashReturnPickup?: (returnPayment: ReturnPaymentResponse) => void;
-  onMarkCashReturnDelivered?: (returnPayment: ReturnPaymentResponse) => void;
+  onRegisterInstallment?: (returnRequest: ReturnPaymentResponse) => void;
+  onViewHistory?: (returnRequest: ReturnPaymentResponse) => void;
+  onEditReturn?: (returnPayment: ReturnPaymentResponse) => void;
   operationStatus?: OperationStatus;
 }
 
@@ -44,55 +41,73 @@ export function ReturnPaymentsTable({
   onAddRequestReturnPayment,
   canManageReturnPayments = false,
   canEditRequestReturnPayments = false,
-  onDefineCashReturnTime,
-  onPayReturn,
+  onRegisterInstallment,
+  onViewHistory,
   onEditReturn,
-  onConfirmCashReturnPickup,
-  onMarkCashReturnDelivered,
   operationStatus,
 }: ReturnPaymentsTableProps) {
   const { user } = useAuth();
-  const { openWhatsApp } = useWhatsAppLink();
-
-  function handleNotifyReturnPaid(returnPayment: ReturnPaymentResponse) {
-    const publicUrl = `${window.location.origin}${buildOperationDetailPath(returnPayment.operationId)}`;
-
-    const message = buildReturnPaidMessage({
-      operationId: returnPayment.operationId,
-      monto: returnPayment.monto,
-      publicUrl,
-    });
-
-    openWhatsApp(message, returnPayment.socioComercialTelefono);
-  }
-
   const roles = user?.roles ?? [];
 
   const isAdmin = roles.includes('ADMIN');
   const isJefaCajas = roles.includes('JEFA_CAJAS');
   const isJefaCuentas = roles.includes('JEFA_CUENTAS');
   const isAuxiliarCuentas = roles.includes('AUXILIAR_CUENTAS');
-  const isSocioComercial = roles.includes('SOCIO_COMERCIAL')
+  const isSocioComercial = roles.includes('SOCIO_COMERCIAL');
+
+  const [selectedReturnDetail, setSelectedReturnDetail] =
+    useState<ReturnPaymentResponse | null>(null);
 
   const visibleReturns = returns.filter((returnPayment) => {
     if (isJefaCajas) {
-      return (
-        returnPayment.tipoPago === 'EFECTIVO' ||
-        returnPayment.tipoPago === 'RETIRO_SIN_TARJETA'
-      );
+      return isCashReturnMethod(returnPayment.tipoPago);
     }
-
     if (isJefaCuentas || isAuxiliarCuentas) {
-      return returnPayment.tipoPago === 'TRANSFERENCIA';
+      return !isCashReturnMethod(returnPayment.tipoPago);
     }
-
     return true; // ADMIN, GERENTE, DIRECCION, SOCIO_COMERCIAL ven todo
   });
 
   const hasPendingAmountToRequest = (montoPendientePorSolicitar ?? 0) > 0;
   const hasPendingAmountToPay = (montoPendientePorRetornar ?? 0) > 0;
-  const [selectedReturnDetail, setSelectedReturnDetail] =
-    useState<ReturnPaymentResponse | null>(null);
+
+  const canOperationRequestReturns =
+    operationStatus === 'VALIDADA' ||
+    operationStatus === 'RETORNO_PARCIAL_SOLICITADO' ||
+    operationStatus === 'RETORNO_TOTAL_SOLICITADO' ||
+    operationStatus === 'RETORNO_PARCIAL_ENTREGADO';
+
+  const canRequestReturns =
+    canOperationRequestReturns &&
+    hasPendingAmountToRequest &&
+    !!onAddRequestReturnPayment &&
+    isSocioComercial;
+
+  let requestStatusMessage: string | null = null;
+  if (!canOperationRequestReturns) {
+    requestStatusMessage = 'No se pueden solicitar retornos todavía';
+  } else if (!hasPendingAmountToRequest) {
+    requestStatusMessage = 'Se ha solicitado el retorno completo';
+  }
+
+  const paymentStatusMessage = !hasPendingAmountToPay
+    ? 'Retornos liquidados'
+    : 'Pendiente de pago';
+
+  function roleCanHandleMethod(returnPayment: ReturnPaymentResponse): boolean {
+    if (isAdmin) return true;
+    if (isCashReturnMethod(returnPayment.tipoPago)) return isJefaCajas;
+    return isJefaCuentas || isAuxiliarCuentas;
+  }
+
+  function registerAvailability(returnPayment: ReturnPaymentResponse) {
+    return resolveRegisterInstallmentAvailability({
+      totals: resolveReturnRequestTotals(returnPayment),
+      estatus: returnPayment.estatus,
+      hasPermission:
+        canManageReturnPayments && roleCanHandleMethod(returnPayment) && hasPendingAmountToPay,
+    });
+  }
 
   function renderOptionsMenu(returnPayment: ReturnPaymentResponse): ReactNode {
     return (
@@ -102,24 +117,15 @@ export function ReturnPaymentsTable({
           onClick={() => setSelectedReturnDetail(returnPayment)}
           className="block w-full px-4 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
         >
-          Ver detalles de retorno
+          Ver datos de la solicitud
         </button>
-
-        {returnPayment.comprobanteUrl ? (
-          <a
-            href={returnPayment.comprobanteUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="block border-t border-slate-100 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-          >
-            Ver comprobante de retorno
-          </a>
-        ) : (
-          <div className="border-t border-slate-100 px-4 py-3 text-sm text-slate-400">
-            Sin comprobante
-          </div>
-        )}
-
+        <button
+          type="button"
+          onClick={() => onViewHistory?.(returnPayment)}
+          className="block w-full border-t border-slate-100 px-4 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+        >
+          Ver historial de parcialidades
+        </button>
         {returnPayment.archivoNominaUrl ? (
           <a
             href={returnPayment.archivoNominaUrl}
@@ -134,226 +140,79 @@ export function ReturnPaymentsTable({
     );
   }
 
-  const hasRequestedReturns = returns.some(
-    (returnPayment) =>
-      returnPayment.estatus === 'SOLICITADO' ||
-      returnPayment.estatus === 'EN_RECOLECCION' ||
-      returnPayment.estatus === 'RETORNADO',
-  );
-  function canDefineCashReturnTime(returnPayment: ReturnPaymentResponse) {
-    if (!hasPendingAmountToPay) return false;
-    if (!canManageReturnPayments) return false;
-    if (!onDefineCashReturnTime) return false;
-    if (
-      returnPayment.estatus !== 'SOLICITADO' &&
-      returnPayment.estatus !== 'EN_RECOLECCION'
-    ) return false;
+  function renderRowActions(returnPayment: ReturnPaymentResponse): ReactNode {
+    const totals = resolveReturnRequestTotals(returnPayment);
+    const availability = registerAvailability(returnPayment);
+    const canEdit =
+      canEditRequestReturnPayments &&
+      returnPayment.estatus === 'SOLICITADO' &&
+      totals.numeroParcialidades === 0;
 
     return (
-      (isJefaCajas || isAdmin) &&
-      (returnPayment.tipoPago === 'EFECTIVO' || returnPayment.tipoPago === 'RETIRO_SIN_TARJETA')
-    );
-  }
-
-  function canConfirmCashReturnPickup(returnPayment: ReturnPaymentResponse) {
-    if (!isSocioComercial) return false;
-    if (!onConfirmCashReturnPickup) return false;
-    // Primer paso tras programar la recolección: el socio confirma que
-    // recogió el efectivo antes de que JEFA_CAJAS lo cierre.
-    if (returnPayment.estatus !== 'EN_RECOLECCION') return false;
-
-    return (
-      returnPayment.tipoPago === 'EFECTIVO' ||
-      returnPayment.tipoPago === 'RETIRO_SIN_TARJETA'
-    );
-  }
-
-  function canMarkCashReturnDelivered(returnPayment: ReturnPaymentResponse) {
-    if (!canManageReturnPayments) return false;
-    if (!onMarkCashReturnDelivered) return false;
-    // Paso final: JEFA_CAJAS cierra el retorno después de que el socio ya
-    // confirmó la recolección (estatus ENTREGADO).
-    if (returnPayment.estatus !== 'ENTREGADO') return false;
-
-    return (
-      (isJefaCajas || isAdmin) &&
-      (returnPayment.tipoPago === 'EFECTIVO' || returnPayment.tipoPago === 'RETIRO_SIN_TARJETA')
-    );
-  }
-
-  function canPayThisReturn(returnPayment: ReturnPaymentResponse) {
-    if (!hasPendingAmountToPay) return false;
-    if (!canManageReturnPayments) return false;
-    if (!onPayReturn) return false;
-    if (returnPayment.estatus !== 'SOLICITADO') return false;
-
-    return (
-      (isJefaCuentas || isAuxiliarCuentas || isAdmin) &&
-      returnPayment.tipoPago === 'TRANSFERENCIA'
-    );
-  }
-
-  const canOperationRequestReturns =
-    operationStatus === 'VALIDADA' ||
-    operationStatus === 'RETORNO_PARCIAL_SOLICITADO' ||
-    operationStatus === 'RETORNO_TOTAL_SOLICITADO' ||
-    operationStatus === 'RETORNO_PARCIAL_ENTREGADO';
-
-  const canRequestReturns =
-    canOperationRequestReturns &&
-    hasPendingAmountToRequest &&
-    !!onAddRequestReturnPayment && isSocioComercial;
-
-  let requestStatusMessage: string | null = null;
-
-  if (!canOperationRequestReturns) {
-    requestStatusMessage = 'No se pueden solicitar retornos todavía';
-  } else if (!hasPendingAmountToRequest) {
-    requestStatusMessage = 'Se ha solicitado el retorno completo';
-  }
-
-  const paymentStatusMessage =
-    !hasPendingAmountToPay
-      ? 'Retornos liquidados'
-      : !hasRequestedReturns
-        ? 'Esperando solicitud de retorno'
-        : 'Pendiente de pago';
-
-  interface StatusActionFlags {
-    canPayReturn: boolean;
-    canCreatePickupTime: boolean;
-    canEditPickupTime: boolean;
-    canMarkDelivered: boolean;
-    canNotify: boolean;
-    canEditReturn: boolean;
-    canConfirmPickup: boolean;
-  }
-
-  function getStatusActionFlags(returnPayment: ReturnPaymentResponse): StatusActionFlags {
-    const hasPickupScheduled = !!returnPayment.fechaHoraRecoleccionEfectivo;
-    const canDefineTime = canDefineCashReturnTime(returnPayment);
-
-    return {
-      canPayReturn: canPayThisReturn(returnPayment),
-      canCreatePickupTime: canDefineTime && !hasPickupScheduled,
-      canEditPickupTime: canDefineTime && hasPickupScheduled,
-      canMarkDelivered: canMarkCashReturnDelivered(returnPayment),
-      canNotify:
-        canManageReturnPayments &&
-        returnPayment.estatus === 'RETORNADO' &&
-        !!returnPayment.socioComercialTelefono,
-      canEditReturn:
-        canEditRequestReturnPayments &&
-        returnPayment.estatus === 'SOLICITADO' &&
-        !hasPickupScheduled,
-      canConfirmPickup: canConfirmCashReturnPickup(returnPayment),
-    };
-  }
-
-  function hasAnyStatusAction(flags: StatusActionFlags): boolean {
-    return (
-      flags.canPayReturn ||
-      flags.canCreatePickupTime ||
-      flags.canEditPickupTime ||
-      flags.canEditReturn ||
-      flags.canConfirmPickup ||
-      flags.canMarkDelivered ||
-      flags.canNotify
-    );
-  }
-
-  function renderStatusActionButtons(
-    returnPayment: ReturnPaymentResponse,
-    flags: StatusActionFlags,
-    variant: 'desktop' | 'mobile',
-  ): ReactNode {
-    const fixedWidth = variant === 'mobile' ? 'w-full' : 'w-44';
-    const autoWidth = variant === 'mobile' ? 'w-full' : '';
-
-    return (
-      <>
-        {(flags.canCreatePickupTime || flags.canEditPickupTime) && (
+      <div className="flex flex-col items-stretch gap-2">
+        {availability.canRegister ? (
           <button
             type="button"
-            onClick={() => onDefineCashReturnTime?.(returnPayment)}
-            className={`inline-flex h-10 ${fixedWidth} items-center justify-center rounded-lg bg-amber-600 px-3 text-center text-xs font-medium text-white shadow-sm transition hover:bg-amber-700`}
+            onClick={() => onRegisterInstallment?.(returnPayment)}
+            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700"
           >
-            {flags.canEditPickupTime ? 'Editar recolección' : 'Programar recolección'}
+            <Plus className="h-3.5 w-3.5" /> Registrar parcialidad
           </button>
-        )}
+        ) : canManageReturnPayments && roleCanHandleMethod(returnPayment) ? (
+          <span className="text-xs text-slate-400">{availability.reason}</span>
+        ) : null}
 
-        {flags.canMarkDelivered && (
-          <button
-            type="button"
-            onClick={() => onMarkCashReturnDelivered?.(returnPayment)}
-            className={`inline-flex h-10 ${fixedWidth} items-center justify-center rounded-lg bg-indigo-600 px-3 text-center text-xs font-medium text-white shadow-sm transition hover:bg-indigo-700`}
-          >
-            Marcar como entregado
-          </button>
-        )}
-
-        {flags.canPayReturn && (
-          <button
-            type="button"
-            onClick={() => onPayReturn?.(returnPayment)}
-            className={`h-10 ${autoWidth} rounded-lg bg-emerald-600 px-3 text-xs font-medium text-white shadow-sm transition hover:bg-emerald-700`}
-          >
-            Retornar
-          </button>
-        )}
-
-        {flags.canNotify && (
-          <button
-            type="button"
-            onClick={() => handleNotifyReturnPaid(returnPayment)}
-            className={`inline-flex h-10 ${fixedWidth} items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-medium text-emerald-700 shadow-sm transition hover:bg-emerald-100`}
-          >
-            <MessageCircle className="h-3.5 w-3.5" />
-            Avisar por WhatsApp
-          </button>
-        )}
-
-        {flags.canEditReturn && (
+        {canEdit && (
           <button
             type="button"
             onClick={() => onEditReturn?.(returnPayment)}
-            className={`h-10 ${autoWidth} rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-700 shadow-sm transition hover:bg-slate-50`}
+            className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
           >
-            Editar
+            Editar solicitud
           </button>
         )}
 
-        {flags.canConfirmPickup && (
-          <button
-            type="button"
-            onClick={() => onConfirmCashReturnPickup?.(returnPayment)}
-            className={`h-10 ${autoWidth} rounded-lg bg-blue-600 px-3 text-xs font-medium text-white shadow-sm transition hover:bg-blue-700`}
-          >
-            Confirmar recepción
-          </button>
-        )}
-      </>
+        <button
+          type="button"
+          onClick={() => onViewHistory?.(returnPayment)}
+          className="h-10 rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-100"
+        >
+          Ver historial
+        </button>
+      </div>
+    );
+  }
+
+  function renderProgress(returnPayment: ReturnPaymentResponse): ReactNode {
+    const totals = resolveReturnRequestTotals(returnPayment);
+    const pct = Math.min(Math.max(totals.porcentajeAvance, 0), 100);
+    return (
+      <div className="min-w-[160px]">
+        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
+          <div
+            className="h-full rounded-full bg-emerald-500 transition-all"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        <p className="mt-1 text-xs text-slate-500">
+          {pct.toFixed(1)}% · {totals.numeroParcialidades} parcialidad(es)
+        </p>
+      </div>
     );
   }
 
   return (
-    <div
-      className="
-    overflow-hidden
-    rounded-[1.75rem]
-    border
-    border-slate-200/80
-    bg-white
-    shadow-xl
-    shadow-slate-950/[0.06]
-  "
-    >
+    <div className="overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white shadow-xl shadow-slate-950/[0.06]">
       <div className="bg-gradient-to-r from-slate-950 to-slate-800 px-4 py-5 text-white sm:px-6">
         <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
           <div className="text-left">
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300"><BanknoteArrowDown className="h-4 w-4" /> Egresos</p>
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">
+              <BanknoteArrowDown className="h-4 w-4" /> Egresos
+            </p>
             <h3 className="mt-1 text-xl font-bold tracking-tight text-white">Retornos al cliente</h3>
-            <p className="mt-1 text-sm text-slate-400">Seguimiento de solicitudes y liquidaciones.</p>
+            <p className="mt-1 text-sm text-slate-400">
+              Seguimiento de solicitudes y sus parcialidades.
+            </p>
           </div>
 
           <div className="grid w-full grid-cols-1 items-start gap-3 md:w-auto md:grid-cols-[1fr_1fr] md:gap-10">
@@ -361,46 +220,24 @@ export function ReturnPaymentsTable({
               <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
                 Pendiente por solicitar
               </p>
-
               <p
-                className={`mt-1 text-lg font-bold tabular-nums ${hasPendingAmountToRequest ? 'text-cyan-300' : 'text-slate-500'
-                  }`}
+                className={`mt-1 text-lg font-bold tabular-nums ${
+                  hasPendingAmountToRequest ? 'text-cyan-300' : 'text-slate-500'
+                }`}
               >
                 {formatCurrency(montoPendientePorSolicitar ?? 0)}
               </p>
-
               <div className="mt-2 flex min-h-11 items-center md:mt-1 md:min-h-[28px]">
                 {canRequestReturns ? (
                   <button
                     type="button"
-                    onClick={() =>
-                      onAddRequestReturnPayment?.(
-                        montoPendientePorSolicitar ?? 0,
-                      )
-                    }
-                    className="
-                    inline-flex
-                    items-center
-                    justify-center
-                    gap-1.5 rounded-lg
-                    bg-blue-600
-                    px-4
-                    py-3
-                    text-xs
-                    font-semibold
-                    text-white
-                    shadow-sm
-                    transition
-                    hover:bg-blue-500
-                    hover:-translate-y-0.5
-                    "
+                    onClick={() => onAddRequestReturnPayment?.(montoPendientePorSolicitar ?? 0)}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-4 py-3 text-xs font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-500"
                   >
                     <Plus className="h-3.5 w-3.5" /> Solicitar retorno
                   </button>
                 ) : requestStatusMessage ? (
-                  <p className="text-xs font-medium text-slate-400">
-                    {requestStatusMessage}
-                  </p>
+                  <p className="text-xs font-medium text-slate-400">{requestStatusMessage}</p>
                 ) : null}
               </div>
             </div>
@@ -409,143 +246,85 @@ export function ReturnPaymentsTable({
               <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
                 Pendiente por retornar
               </p>
-
               <p
-                className={`mt-1 text-lg font-bold tabular-nums ${hasPendingAmountToPay ? 'text-amber-300' : 'text-slate-500'
-                  }`}
+                className={`mt-1 text-lg font-bold tabular-nums ${
+                  hasPendingAmountToPay ? 'text-amber-300' : 'text-slate-500'
+                }`}
               >
                 {formatCurrency(montoPendientePorRetornar ?? 0)}
               </p>
-
               <div className="mt-1 flex min-h-[28px] items-center">
-                <p className="text-xs font-medium text-slate-400">
-                  {paymentStatusMessage}
-                </p>
+                <p className="text-xs font-medium text-slate-400">{paymentStatusMessage}</p>
               </div>
             </div>
           </div>
         </div>
-
       </div>
 
       {visibleReturns.length === 0 ? (
-        <div className="px-6 pb-6">
+        <div className="px-6 pb-6 pt-6">
           <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
-            <ArrowUpRight className="mx-auto h-8 w-8 text-slate-300" />
-            <p className="mt-3 text-sm font-semibold text-slate-700">
-              {returns.length > 0 ? 'Sin retornos de tu tipo' : 'Sin retornos registrados'}
+            <p className="text-sm font-semibold text-slate-700">
+              {returns.length > 0 ? 'Sin solicitudes de tu tipo' : 'Sin solicitudes de retorno'}
             </p>
             <p className="mt-1 text-xs text-slate-500">
               {returns.length > 0
-                ? 'Esta operación no tiene retornos del tipo que te corresponde.'
-                : 'Las solicitudes y pagos de retorno aparecerán aquí.'}
+                ? 'Esta operación no tiene solicitudes del tipo que te corresponde.'
+                : 'Las solicitudes y sus parcialidades aparecerán aquí.'}
             </p>
           </div>
         </div>
       ) : (
         <>
-          {/* Desktop / tablet ancho: tabla completa */}
+          {/* Desktop */}
           <div className="hidden overflow-x-auto md:block">
             <table className="min-w-full border-separate border-spacing-0">
-              <thead className="sticky top-0 z-[1] bg-slate-100">
+              <thead className="bg-slate-100">
                 <tr className="text-left text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
-                  <th className="px-4 py-3 font-medium">Monto</th>
+                  <th className="px-4 py-3 font-medium">Folio</th>
+                  <th className="px-4 py-3 font-medium">Método</th>
+                  <th className="px-4 py-3 font-medium">Solicitado</th>
+                  <th className="px-4 py-3 font-medium">Retornado</th>
+                  <th className="px-4 py-3 font-medium">Pendiente</th>
+                  <th className="px-4 py-3 font-medium">Avance</th>
                   <th className="px-4 py-3 font-medium">Estatus</th>
-                  <th className="px-4 py-3 font-medium">Tipo</th>
-                  <th className="px-4 py-3 font-medium">Cuenta destino</th>
                   <th className="px-4 py-3 font-medium">Fecha solicitud</th>
-                  <th className="px-4 py-3 font-medium">Pagado por</th>
-                  <th className="px-4 py-3 font-medium">Fecha de recolección</th>
-                  <th className="px-4 py-3 font-medium">Fecha retorno</th>
-                  <th className="px-4 py-3 font-medium">Observaciones</th>
                   <th className="px-4 py-3 font-medium">Opciones</th>
-                  {(canManageReturnPayments || canEditRequestReturnPayments) && (
-                    <th className="px-4 py-3 font-medium">Acciones</th>
-                  )}
+                  <th className="px-4 py-3 font-medium">Acciones</th>
                 </tr>
               </thead>
-
               <tbody>
                 {visibleReturns.map((returnPayment) => {
-                  const flags = getStatusActionFlags(returnPayment);
-                  const hasActions = hasAnyStatusAction(flags);
-
+                  const totals = resolveReturnRequestTotals(returnPayment);
                   return (
                     <tr
                       key={returnPayment.id}
-                      className="
-          border-t
-          border-slate-100
-          text-sm
-          transition
-          hover:bg-cyan-50/40
-        "
+                      className="border-t border-slate-100 text-sm transition hover:bg-cyan-50/40"
                     >
-                      <td className="whitespace-nowrap px-4 py-4 font-bold tabular-nums text-slate-950">
-                        {formatCurrency(returnPayment.monto)}
-                      </td>
-
-                      <td className="px-4 py-4">
-                        <div className="flex justify-center md:justify-start">
-                          <ReturnStatusBadge status={returnPayment.estatus} />
-                        </div>
+                      <td className="px-4 py-4 font-semibold text-slate-900">
+                        #{returnPayment.id}
                       </td>
                       <td className="px-4 py-4 text-slate-600">
                         {paymentTypeLabels[returnPayment.tipoPago]}
                       </td>
-
-                      <td className="px-4 py-4">
-                        <div className="max-w-[240px]">
-                          <p className="text-sm font-semibold tracking-tight text-slate-900">
-                            {returnPayment.cuentaClabeCliente ?? '-'}
-                          </p>
-
-                          <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
-                            <span>
-                              {returnPayment.cuentaDestinoBanco ?? 'Sin banco'}
-                            </span>
-
-                            <span className="h-1 w-1 rounded-full bg-slate-300" />
-
-                            <span className="truncate">
-                              {returnPayment.cuentaDestinoTitular ?? '-'}
-                            </span>
-                          </div>
-                        </div>
+                      <td className="px-4 py-4 font-semibold tabular-nums text-slate-950">
+                        {formatCurrency(totals.montoSolicitado)}
                       </td>
-
+                      <td className="px-4 py-4 tabular-nums text-emerald-700">
+                        {formatCurrency(totals.montoRetornado)}
+                      </td>
+                      <td className="px-4 py-4 tabular-nums text-amber-700">
+                        {formatCurrency(totals.montoPendiente)}
+                      </td>
+                      <td className="px-4 py-4">{renderProgress(returnPayment)}</td>
+                      <td className="px-4 py-4">
+                        <ReturnStatusBadge status={returnPayment.estatus} />
+                      </td>
                       <td className="px-4 py-4 text-slate-600">
                         {returnPayment.fechaSolicitud
                           ? formatDate(returnPayment.fechaSolicitud)
                           : '-'}
                       </td>
-
-                      <td className="px-4 py-4 text-slate-600">
-                        {returnPayment.pagadoPorNombre ?? '-'}
-                      </td>
-
-                      <td className="px-4 py-4">
-                        {(returnPayment.tipoPago === 'EFECTIVO' ||
-                          returnPayment.tipoPago === 'RETIRO_SIN_TARJETA') &&
-                        returnPayment.fechaHoraRecoleccionEfectivo ? (
-                          <span className="animate-return-pickup-highlight inline-flex items-center rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
-                            {formatDateTime(returnPayment.fechaHoraRecoleccionEfectivo)}
-                          </span>
-                        ) : (
-                          <span className="text-slate-600">-</span>
-                        )}
-                      </td>
-
-                      <td className="px-4 py-4 text-slate-600">
-                        {returnPayment.estatus === 'RETORNADO' && returnPayment.fechaPago
-                          ? formatDateTime(returnPayment.fechaPago)
-                          : '-'}
-                      </td>
-
-                      <td className="px-4 py-4 text-slate-600">
-                        {returnPayment.observaciones ?? '-'}
-                      </td>
-
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-2">
                           {returnPayment.archivoNominaUrl ? (
@@ -556,23 +335,12 @@ export function ReturnPaymentsTable({
                               <Paperclip className="h-4 w-4" />
                             </span>
                           ) : null}
-
                           <RowActionsMenu triggerLabel="Ver opciones" menuClassName="w-64">
                             {renderOptionsMenu(returnPayment)}
                           </RowActionsMenu>
                         </div>
                       </td>
-                      <td className="px-4 py-4">
-                        <div className="flex flex-col items-stretch gap-2">
-                          {hasActions ? (
-                            renderStatusActionButtons(returnPayment, flags, 'desktop')
-                          ) : (
-                            <span className="text-xs text-slate-400">
-                              Sin acciones
-                            </span>
-                          )}
-                        </div>
-                      </td>
+                      <td className="px-4 py-4">{renderRowActions(returnPayment)}</td>
                     </tr>
                   );
                 })}
@@ -580,95 +348,54 @@ export function ReturnPaymentsTable({
             </table>
           </div>
 
-          {/* Móvil: tarjetas apiladas */}
-          <div className="space-y-3 px-3 pb-3 min-[375px]:px-4 min-[375px]:pb-4 md:hidden">
+          {/* Móvil */}
+          <div className="space-y-3 px-3 pb-4 pt-3 md:hidden">
             {visibleReturns.map((returnPayment) => {
-              const flags = getStatusActionFlags(returnPayment);
-              const hasActions = hasAnyStatusAction(flags);
-
+              const totals = resolveReturnRequestTotals(returnPayment);
               return (
                 <div
                   key={returnPayment.id}
-                  className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm min-[375px]:p-4"
+                  className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-lg font-bold tabular-nums text-slate-950">
-                        {formatCurrency(returnPayment.monto)}
+                      <p className="text-sm font-semibold text-slate-900">
+                        #{returnPayment.id} · {paymentTypeLabels[returnPayment.tipoPago]}
                       </p>
-                      <p className="mt-0.5 text-xs text-slate-500">
-                        {paymentTypeLabels[returnPayment.tipoPago]}
+                      <p className="mt-0.5 text-lg font-bold tabular-nums text-slate-950">
+                        {formatCurrency(totals.montoSolicitado)}
                       </p>
                     </div>
                     <ReturnStatusBadge status={returnPayment.estatus} />
                   </div>
 
-                  <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs text-slate-600">
-                    <div className="col-span-2">
-                      <p className="text-[10px] uppercase tracking-wide text-slate-400">Cuenta destino</p>
-                      <p className="break-all font-medium text-slate-900">
-                        {returnPayment.cuentaClabeCliente ?? '-'}
-                      </p>
-                      <p className="text-slate-500">
-                        {returnPayment.cuentaDestinoBanco ?? 'Sin banco'} · {returnPayment.cuentaDestinoTitular ?? '-'}
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-600">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wide text-slate-400">Retornado</p>
+                      <p className="font-semibold text-emerald-700">
+                        {formatCurrency(totals.montoRetornado)}
                       </p>
                     </div>
-
-                    <div className="col-span-2 min-[360px]:col-span-1">
-                      <p className="text-[10px] uppercase tracking-wide text-slate-400">Fecha solicitud</p>
-                      <p>{returnPayment.fechaSolicitud ? formatDate(returnPayment.fechaSolicitud) : '-'}</p>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wide text-slate-400">Pendiente</p>
+                      <p className="font-semibold text-amber-700">
+                        {formatCurrency(totals.montoPendiente)}
+                      </p>
                     </div>
                   </div>
 
-                  <details className="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600">
-                    <summary className="min-h-8 cursor-pointer select-none py-1 font-semibold text-slate-700 marker:text-slate-400">
-                      Ver más detalles
-                    </summary>
-                    <div className="grid grid-cols-1 gap-3 border-t border-slate-200 pt-3 min-[360px]:grid-cols-2">
-                      <div>
-                        <p className="text-[10px] uppercase tracking-wide text-slate-400">Pagado por</p>
-                        <p className="break-words">{returnPayment.pagadoPorNombre ?? '-'}</p>
-                      </div>
-                      {(returnPayment.tipoPago === 'EFECTIVO' || returnPayment.tipoPago === 'RETIRO_SIN_TARJETA') && returnPayment.fechaHoraRecoleccionEfectivo ? (
-                        <div className="min-[360px]:col-span-2">
-                          <p className="text-[10px] uppercase tracking-wide text-slate-400">Recolección programada</p>
-                          <span className="animate-return-pickup-highlight mt-0.5 inline-flex max-w-full items-center rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
-                            {formatDateTime(returnPayment.fechaHoraRecoleccionEfectivo)}
-                          </span>
-                        </div>
-                      ) : null}
-                      {returnPayment.estatus === 'RETORNADO' && returnPayment.fechaPago ? (
-                        <div>
-                          <p className="text-[10px] uppercase tracking-wide text-slate-400">Fecha retorno</p>
-                          <p>{formatDateTime(returnPayment.fechaPago)}</p>
-                        </div>
-                      ) : null}
-                      {returnPayment.observaciones ? (
-                        <div className="min-[360px]:col-span-2">
-                          <p className="text-[10px] uppercase tracking-wide text-slate-400">Observaciones</p>
-                          <p className="break-words">{returnPayment.observaciones}</p>
-                        </div>
-                      ) : null}
-                    </div>
-                  </details>
+                  <div className="mt-3">{renderProgress(returnPayment)}</div>
 
-                  <div className="mt-4 flex flex-col gap-2">
-                    {hasActions && renderStatusActionButtons(returnPayment, flags, 'mobile')}
+                  <div className="mt-4">{renderRowActions(returnPayment)}</div>
 
-                    <div className="flex items-center gap-2">
-                      {returnPayment.archivoNominaUrl ? (
-                        <span
-                          title="Tiene archivo de nóminas adjunto"
-                          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600"
-                        >
-                          <Paperclip className="h-4 w-4" />
-                        </span>
-                      ) : null}
-
-                      <RowActionsMenu triggerLabel="Ver opciones" triggerClassName="min-h-[44px] flex-1 justify-center" menuClassName="w-64 max-w-[calc(100vw-1rem)]">
-                        {renderOptionsMenu(returnPayment)}
-                      </RowActionsMenu>
-                    </div>
+                  <div className="mt-3">
+                    <RowActionsMenu
+                      triggerLabel="Ver opciones"
+                      triggerClassName="min-h-[44px] w-full justify-center"
+                      menuClassName="w-64 max-w-[calc(100vw-1rem)]"
+                    >
+                      {renderOptionsMenu(returnPayment)}
+                    </RowActionsMenu>
                   </div>
                 </div>
               );

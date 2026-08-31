@@ -1,18 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { computeDailyDeliverySummary } from './daily-delivery-summary';
-import type { ReturnPaymentResponse } from '@/modules/operations/types/operations.types.ts';
+import {
+  computeDailyDeliverySummary,
+  type DeliveryLike,
+} from './daily-delivery-summary';
 
-function buildDelivery(overrides: Partial<ReturnPaymentResponse>): ReturnPaymentResponse {
+function buildDelivery(
+  overrides: Partial<DeliveryLike> & {
+    id?: number;
+    fechaHoraRecoleccionEfectivo?: string;
+  },
+): DeliveryLike {
+  const { id: _id, fechaHoraRecoleccionEfectivo, ...rest } = overrides;
+  void _id;
   return {
-    id: 1,
-    operationId: 1,
-    clientId: 1,
     monto: 100,
-    tipoPago: 'EFECTIVO',
     estatus: 'EN_RECOLECCION',
-    fechaSolicitud: '2026-01-10T08:00:00.000Z',
-    createdAt: '2026-01-10T08:00:00.000Z',
-    ...overrides,
+    scheduledAt: fechaHoraRecoleccionEfectivo ?? null,
+    ...rest,
   };
 }
 

@@ -5,18 +5,18 @@ import { useWhatsAppLink } from '@/shared/hooks/use-whatsapp-link';
 import { buildDeliveryNoticeMessage } from '@/shared/utils/whatsapp-message';
 import { paymentTypeLabels } from '@/modules/operations/constants/operations.constants';
 import { formatCurrency, formatDateTime } from '@/modules/operations/utils/operation-formatters';
-import type { ReturnPaymentResponse } from '@/modules/operations/types/operations.types.ts';
+import type { ReturnInstallment } from '@/modules/operations/types/operations.types.ts';
 
 interface TodayDeliveriesTableProps {
-  deliveries: ReturnPaymentResponse[];
-  onMarkAsDelivered: (returnPayment: ReturnPaymentResponse) => void;
+  deliveries: ReturnInstallment[];
+  onMarkAsDelivered: (installment: ReturnInstallment) => void;
 }
 
-function getAuthorizedRecipient(delivery: ReturnPaymentResponse): string {
+function getAuthorizedRecipient(delivery: ReturnInstallment): string {
   const names = [
-    delivery.autorizadoParaRecibirEfectivo1,
-    delivery.autorizadoParaRecibirEfectivo2,
-    delivery.autorizadoParaRecibirEfectivo3,
+    delivery.autorizadoParaRecibir1,
+    delivery.autorizadoParaRecibir2,
+    delivery.autorizadoParaRecibir3,
   ].filter(Boolean);
 
   if (names.length > 0) return names.join(', ');
@@ -36,11 +36,11 @@ export function TodayDeliveriesTable({ deliveries, onMarkAsDelivered }: TodayDel
     );
   }
 
-  function handleNotifyViaWhatsApp(delivery: ReturnPaymentResponse) {
+  function handleNotifyViaWhatsApp(delivery: ReturnInstallment) {
     const message = buildDeliveryNoticeMessage({
       operationId: delivery.operationId,
-      scheduledAtLabel: delivery.fechaHoraRecoleccionEfectivo
-        ? formatDateTime(delivery.fechaHoraRecoleccionEfectivo)
+      scheduledAtLabel: delivery.fechaHoraRecoleccion
+        ? formatDateTime(delivery.fechaHoraRecoleccion)
         : '-',
       deliveryTypeLabel: paymentTypeLabels[delivery.tipoPago],
     });
@@ -66,9 +66,9 @@ export function TodayDeliveriesTable({ deliveries, onMarkAsDelivered }: TodayDel
 
           <tbody>
             {deliveries.map((delivery) => {
-              // Paso final: el socio ya confirmó la recolección (ENTREGADO)
+              // Paso final: el socio ya confirmó la recolección (ENTREGADA)
               // y falta el cierre de JEFA_CAJAS.
-              const canAct = delivery.estatus === 'ENTREGADO';
+              const canAct = delivery.estatus === 'ENTREGADA';
 
               return (
                 <tr
@@ -76,8 +76,8 @@ export function TodayDeliveriesTable({ deliveries, onMarkAsDelivered }: TodayDel
                   className="border-t border-slate-100 text-sm transition hover:bg-blue-50/40"
                 >
                   <td className="whitespace-nowrap px-4 py-4 font-semibold text-slate-900">
-                    {delivery.fechaHoraRecoleccionEfectivo
-                      ? formatDateTime(delivery.fechaHoraRecoleccionEfectivo)
+                    {delivery.fechaHoraRecoleccion
+                      ? formatDateTime(delivery.fechaHoraRecoleccion)
                       : '-'}
                   </td>
 
@@ -99,7 +99,7 @@ export function TodayDeliveriesTable({ deliveries, onMarkAsDelivered }: TodayDel
                   <td className="px-4 py-4">
                     <DeliverySemaphoreBadge
                       estatus={delivery.estatus}
-                      scheduledAt={delivery.fechaHoraRecoleccionEfectivo}
+                      scheduledAt={delivery.fechaHoraRecoleccion}
                     />
                   </td>
 

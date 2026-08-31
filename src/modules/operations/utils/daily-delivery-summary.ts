@@ -1,5 +1,9 @@
 import { classifyDelivery } from '@/shared/utils/delivery-classification';
-import type { ReturnPaymentResponse } from '@/modules/operations/types/operations.types.ts';
+import type {
+  ReturnInstallment,
+  ReturnInstallmentStatus,
+  ReturnPaymentStatus,
+} from '@/modules/operations/types/operations.types.ts';
 
 export interface DailyDeliverySummary {
   totalDelivered: number;
@@ -10,24 +14,40 @@ export interface DailyDeliverySummary {
   pendingConfirmationCount: number;
 }
 
-const DELIVERED_STATUSES = new Set(['ENTREGADO', 'RETORNADO']);
-const PENDING_STATUSES = new Set(['SOLICITADO', 'EN_RECOLECCION']);
+/**
+ * Forma mínima que necesita el resumen. La alimentan tanto las parcialidades
+ * (flujo por parcialidades) como los retornos completos (flujo legacy).
+ */
+export interface DeliveryLike {
+  estatus: ReturnPaymentStatus | ReturnInstallmentStatus;
+  monto: number;
+  scheduledAt?: string | null;
+}
+
+const DELIVERED_STATUSES = new Set(['ENTREGADO', 'RETORNADO', 'ENTREGADA', 'COMPLETADA']);
+const PENDING_STATUSES = new Set(['SOLICITADO', 'EN_RECOLECCION', 'PROGRAMADA']);
+const SCHEDULED_STATUSES = new Set(['EN_RECOLECCION', 'PROGRAMADA']);
+
+/** Normaliza una parcialidad a la forma que consume el resumen. */
+export function installmentToDeliveryLike(i: ReturnInstallment): DeliveryLike {
+  return {
+    estatus: i.estatus,
+    monto: i.monto,
+    scheduledAt: i.fechaHoraRecoleccion ?? null,
+  };
+}
 
 /**
  * Calcula el resumen diario de entregas a partir de la lista ya cargada
  * (una sola consulta al backend, sin volver a calcular sobre otra página).
  *
- * "Entregado" / "pendiente" se interpretan desde la perspectiva operativa
- * de JEFA_CAJAS: si el efectivo ya salió de sus manos físicamente
- * (ENTREGADO o RETORNADO) o no (SOLICITADO o EN_RECOLECCION). Ese momento
- * físico no cambió con la inversión del orden de confirmación — solo
- * cambió quién lo registra primero en el sistema (ahora el socio, al
- * confirmar que lo recogió; antes era la propia JEFA_CAJAS).
- * `pendingConfirmationCount` cuenta retornos en ENTREGADO, que ahora
- * significa "el socio ya confirmó, falta que JEFA_CAJAS los cierre".
+ * "Entregado" / "pendiente" se interpretan desde la perspectiva operativa de
+ * JEFA_CAJAS: si el efectivo ya salió físicamente de sus manos o no.
+ * `pendingConfirmationCount` cuenta las entregas donde el socio ya confirmó y
+ * falta que JEFA_CAJAS las cierre (ENTREGADO / ENTREGADA).
  */
 export function computeDailyDeliverySummary(
-  deliveries: ReturnPaymentResponse[],
+  deliveries: DeliveryLike[],
   now: Date = new Date(),
 ): DailyDeliverySummary {
   let totalDelivered = 0;
@@ -42,16 +62,21 @@ export function computeDailyDeliverySummary(
       totalPending += delivery.monto;
     }
 
-    if (classifyDelivery({ estatus: delivery.estatus, scheduledAt: delivery.fechaHoraRecoleccionEfectivo }, now) === 'PENDING_STAFF_CONFIRMATION') {
+    if (
+      classifyDelivery(
+        { estatus: delivery.estatus, scheduledAt: delivery.scheduledAt },
+        now,
+      ) === 'PENDING_STAFF_CONFIRMATION'
+    ) {
       pendingConfirmationCount += 1;
     }
 
     if (
-      delivery.estatus === 'EN_RECOLECCION' &&
-      delivery.fechaHoraRecoleccionEfectivo &&
-      (nextPickup === null || delivery.fechaHoraRecoleccionEfectivo < nextPickup)
+      SCHEDULED_STATUSES.has(delivery.estatus) &&
+      delivery.scheduledAt &&
+      (nextPickup === null || delivery.scheduledAt < nextPickup)
     ) {
-      nextPickup = delivery.fechaHoraRecoleccionEfectivo;
+      nextPickup = delivery.scheduledAt;
     }
   }
 

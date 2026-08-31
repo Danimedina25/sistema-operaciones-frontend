@@ -1,25 +1,23 @@
+import { useEffect, useState } from 'react';
+import { Camera, ImagePlus } from 'lucide-react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { formatCurrency, formatDateTime } from '@/modules/operations/utils/operation-formatters';
-import type { ReturnPaymentResponse } from '@/modules/operations/types/operations.types.ts';
+import type { CashDeliveryTarget } from '@/modules/operations/utils/return-installment';
 
 interface MarkCashReturnDeliveredModalProps {
-  returnPayment: ReturnPaymentResponse | null;
+  target: CashDeliveryTarget | null;
   isSubmitting: boolean;
-  onConfirm: (returnPaymentId: number, operationId: number, comprobante: File) => void;
+  onConfirm: (id: number, operationId: number, comprobante: File) => void;
   onClose: () => void;
 }
 
 /**
- * Confirmación reforzada del cierre final de un retorno en efectivo/retiro
- * sin tarjeta: el socio comercial ya confirmó que lo recogió, esta acción
- * cierra el retorno como completado (estatus RETORNADO). Muestra el resumen
- * completo (monto, operación, receptor autorizado, fecha programada) y
- * previene doble envío deshabilitando los botones mientras `isSubmitting`
- * es true. Reutilizada desde el detalle de operación y desde "Entregas de
- * hoy".
+ * Confirmación reforzada del cierre final de una entrega en efectivo/retiro
+ * sin tarjeta: el socio comercial ya confirmó que la recogió, esta acción la
+ * cierra como completada. Exige foto de entrega y previene doble envío.
  */
 export function MarkCashReturnDeliveredModal({
-  returnPayment,
+  target,
   isSubmitting,
   onConfirm,
   onClose,
@@ -29,7 +27,7 @@ export function MarkCashReturnDeliveredModal({
 
   useEffect(() => {
     setComprobante(null);
-  }, [returnPayment?.id]);
+  }, [target?.id]);
 
   useEffect(() => {
     if (!comprobante) {
@@ -41,38 +39,31 @@ export function MarkCashReturnDeliveredModal({
     setPreviewUrl(objectUrl);
     return () => URL.revokeObjectURL(objectUrl);
   }, [comprobante]);
-  const authorizedRecipients = returnPayment
-    ? [
-        returnPayment.autorizadoParaRecibirEfectivo1,
-        returnPayment.autorizadoParaRecibirEfectivo2,
-        returnPayment.autorizadoParaRecibirEfectivo3,
-      ]
-        .filter(Boolean)
-        .join(', ')
-    : '';
+
+  const authorizedRecipients = target ? target.autorizados.join(', ') : '';
 
   return (
     <Modal
-      open={!!returnPayment}
+      open={!!target}
       title="Marcar efectivo como entregado"
       onClose={() => {
         if (!isSubmitting) onClose();
       }}
     >
-      {returnPayment ? (
+      {target ? (
         <>
           <p className="text-sm text-slate-600">
-            El socio comercial ya confirmó que recogió este retorno en efectivo. Esta acción lo
-            cierra como completado.
+            El socio comercial ya confirmó que recogió esta parcialidad en efectivo. Esta acción
+            la cierra como completada.
           </p>
 
           <div className="mt-4 space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
             <p>
-              <span className="font-medium">Monto:</span> {formatCurrency(returnPayment.monto)}
+              <span className="font-medium">Monto:</span> {formatCurrency(target.monto)}
             </p>
             <p>
-              <span className="font-medium">Operación:</span> #{returnPayment.operationId}
-              {returnPayment.clienteNombre ? ` · ${returnPayment.clienteNombre}` : ''}
+              <span className="font-medium">Operación:</span> #{target.operationId}
+              {target.clienteNombre ? ` · ${target.clienteNombre}` : ''}
             </p>
             <p>
               <span className="font-medium">Receptor autorizado:</span>{' '}
@@ -80,9 +71,7 @@ export function MarkCashReturnDeliveredModal({
             </p>
             <p>
               <span className="font-medium">Fecha programada:</span>{' '}
-              {returnPayment.fechaHoraRecoleccionEfectivo
-                ? formatDateTime(returnPayment.fechaHoraRecoleccionEfectivo)
-                : '-'}
+              {target.scheduledAt ? formatDateTime(target.scheduledAt) : '-'}
             </p>
           </div>
 
@@ -148,7 +137,7 @@ export function MarkCashReturnDeliveredModal({
             <button
               type="button"
               disabled={isSubmitting || !comprobante}
-              onClick={() => comprobante && onConfirm(returnPayment.id, returnPayment.operationId, comprobante)}
+              onClick={() => comprobante && onConfirm(target.id, target.operationId, comprobante)}
               className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <ImagePlus className="mr-2 inline h-4 w-4" />
@@ -160,5 +149,3 @@ export function MarkCashReturnDeliveredModal({
     </Modal>
   );
 }
-import { useEffect, useState } from 'react';
-import { Camera, ImagePlus } from 'lucide-react';
