@@ -105,22 +105,6 @@ export function PaymentsTable({
     openWhatsApp(message, socioComercialTelefono);
   }
 
-  async function handleMarkInProgress(paymentId: number) {
-    try {
-      await onMarkPaymentInProgress?.(paymentId);
-    } catch {
-      // el hook ya muestra el toast de error
-    }
-  }
-
-  async function handleReleasePayment(paymentId: number) {
-    try {
-      await onReleasePayment?.(paymentId);
-    } catch {
-      // el hook ya muestra el toast de error
-    }
-  }
-
   const canModifyPayments = hasRole([
     'ADMIN',
     'GERENTE',
@@ -316,39 +300,20 @@ export function PaymentsTable({
   function getPaymentActionFlags(payment: OperationPaymentResponse) {
     const isPendingValidation = payment.estatus === 'PENDIENTE_VALIDACION';
     const isInProgress = payment.estatus === 'EN_PROCESO';
-    const isTransferOrDeposit =
-      payment.tipoPago === 'TRANSFERENCIA' || payment.tipoPago === 'DEPOSITO';
     const isProcessing = processingPaymentId === payment.id;
     const canEdit = isPendingValidation && !!onEditPayment && canModifyPayments;
+    // "Revisar" abre el panel con Validar / Rechazar / Marcar en proceso /
+    // Liberar; disponible tanto en pendiente como en proceso.
     const canValidate =
       canValidatePaymentType(payment.tipoPago) &&
       (isPendingValidation || isInProgress);
-    const canMarkInProgress =
-      isTransferOrDeposit &&
-      isPendingValidation &&
-      canValidatePaymentType(payment.tipoPago) &&
-      !!onMarkPaymentInProgress;
-    const canRelease =
-      isTransferOrDeposit &&
-      isInProgress &&
-      canValidatePaymentType(payment.tipoPago) &&
-      !!onReleasePayment;
     const canNotify =
       (payment.estatus === 'VALIDADA' || payment.estatus === 'RECHAZADA') &&
       canValidatePaymentType(payment.tipoPago) &&
       !!socioComercialTelefono;
-    const hasActions =
-      canEdit || canValidate || canNotify || canMarkInProgress || canRelease;
+    const hasActions = canEdit || canValidate || canNotify;
 
-    return {
-      isProcessing,
-      canEdit,
-      canValidate,
-      canMarkInProgress,
-      canRelease,
-      canNotify,
-      hasActions,
-    };
+    return { isProcessing, canEdit, canValidate, canNotify, hasActions };
   }
 
   function renderViewOptions(payment: OperationPaymentResponse): ReactNode {
@@ -377,15 +342,8 @@ export function PaymentsTable({
   }
 
   function renderRowActions(payment: OperationPaymentResponse): ReactNode {
-    const {
-      isProcessing,
-      canEdit,
-      canValidate,
-      canMarkInProgress,
-      canRelease,
-      canNotify,
-      hasActions,
-    } = getPaymentActionFlags(payment);
+    const { isProcessing, canEdit, canValidate, canNotify, hasActions } =
+      getPaymentActionFlags(payment);
 
     return (
       <>
@@ -415,28 +373,6 @@ export function PaymentsTable({
 "
           >
             {isProcessing ? 'Procesando...' : 'Revisar'}
-          </button>
-        )}
-
-        {canMarkInProgress && (
-          <button
-            type="button"
-            disabled={isProcessing}
-            onClick={() => void handleMarkInProgress(payment.id)}
-            className="flex-1 inline-flex h-9 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-4 text-xs font-medium text-blue-700 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isProcessing ? 'Procesando...' : 'Marcar en proceso'}
-          </button>
-        )}
-
-        {canRelease && (
-          <button
-            type="button"
-            disabled={isProcessing}
-            onClick={() => void handleReleasePayment(payment.id)}
-            className="flex-1 inline-flex h-9 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 text-xs font-medium text-slate-700 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isProcessing ? 'Procesando...' : 'Liberar'}
           </button>
         )}
 
@@ -728,15 +664,8 @@ export function PaymentsTable({
         {/* Móvil: tarjetas apiladas */}
         <div className="space-y-3 p-3 min-[375px]:p-4 md:hidden">
           {visiblePayments.map((payment) => {
-            const {
-              isProcessing,
-              canEdit,
-              canValidate,
-              canMarkInProgress,
-              canRelease,
-              canNotify,
-              hasActions,
-            } = getPaymentActionFlags(payment);
+            const { isProcessing, canEdit, canValidate, canNotify, hasActions } =
+              getPaymentActionFlags(payment);
 
             return (
               <div
@@ -818,7 +747,7 @@ export function PaymentsTable({
                   </div>
                 </details>
 
-                <div className="mt-4 flex flex-col gap-2 min-[360px]:flex-row min-[360px]:flex-wrap min-[360px]:items-center">
+                <div className="mt-4 flex flex-col gap-2 min-[360px]:flex-row min-[360px]:items-center">
                   {canValidate ? (
                     <button
                       type="button"
@@ -845,32 +774,10 @@ export function PaymentsTable({
                       <MessageCircle className="h-4 w-4" />
                       Avisar
                     </button>
-                  ) : !hasActions ? (
+                  ) : (
                     <span className="flex-1 text-xs text-slate-400">
-                      Sin acciones
+                      {hasActions ? '' : 'Sin acciones'}
                     </span>
-                  ) : null}
-
-                  {canMarkInProgress && (
-                    <button
-                      type="button"
-                      disabled={isProcessing}
-                      onClick={() => void handleMarkInProgress(payment.id)}
-                      className="min-h-[44px] flex-1 rounded-xl border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {isProcessing ? 'Procesando...' : 'Marcar en proceso'}
-                    </button>
-                  )}
-
-                  {canRelease && (
-                    <button
-                      type="button"
-                      disabled={isProcessing}
-                      onClick={() => void handleReleasePayment(payment.id)}
-                      className="min-h-[44px] flex-1 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {isProcessing ? 'Procesando...' : 'Liberar'}
-                    </button>
                   )}
 
                   <RowActionsMenu triggerLabel="Más" triggerClassName="min-h-[44px] justify-center" menuClassName="w-64 max-w-[calc(100vw-1rem)]">
