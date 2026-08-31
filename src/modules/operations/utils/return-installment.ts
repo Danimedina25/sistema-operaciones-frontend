@@ -1,6 +1,7 @@
 import type {
   PaymentType,
   ReturnInstallment,
+  ReturnInstallmentStatus,
   ReturnPaymentResponse,
 } from '@/modules/operations/types/operations.types.ts';
 
@@ -127,4 +128,49 @@ export function resolveRegisterInstallmentAvailability(params: {
     return { canRegister: false, reason: 'No hay saldo disponible por registrar' };
   }
   return { canRegister: true, reason: null };
+}
+
+/**
+ * El historial de retornos parciales solo aporta cuando hubo un desglose real.
+ * Se oculta si no hay ninguna parcialidad, o si el retorno se cubrió completo en
+ * un único movimiento (una sola parcialidad activa == el total solicitado).
+ */
+export function shouldShowInstallmentHistory(
+  totals: Pick<ReturnRequestTotals, 'montoRetornado' | 'montoSolicitado'>,
+  installments: Array<{ estatus: ReturnInstallmentStatus }>,
+): boolean {
+  if (installments.length === 0) return false;
+
+  const activas = installments.filter((i) => i.estatus !== 'CANCELADA');
+  const pagoUnicoCompleto =
+    activas.length === 1 &&
+    totals.montoSolicitado > 0 &&
+    totals.montoRetornado >= totals.montoSolicitado - 0.005;
+
+  return !pagoUnicoCompleto;
+}
+
+/**
+ * Texto del botón para registrar el retorno. El sistema infiere si es un retorno
+ * parcial o total a partir del importe capturado (y de si la solicitud ya tenía
+ * actividad previa, en cuyo caso siempre es parcial).
+ */
+export function resolveInstallmentSubmitLabel(params: {
+  totals: Pick<ReturnRequestTotals, 'montoRetornado' | 'montoEnProceso' | 'montoSolicitado'>;
+  importe: number;
+  esEfectivo: boolean;
+}): string {
+  const { totals, importe, esEfectivo } = params;
+
+  const yaHayActividad = totals.montoRetornado > 0 || totals.montoEnProceso > 0;
+  const cubreTotal =
+    !yaHayActividad &&
+    importe > 0 &&
+    importe >= totals.montoSolicitado - 0.005;
+  const esParcial = !cubreTotal && (yaHayActividad || importe > 0);
+
+  if (esEfectivo) {
+    return esParcial ? 'Programar recolección parcial' : 'Programar recolección del retorno';
+  }
+  return esParcial ? 'Registrar retorno parcial' : 'Registrar retorno';
 }

@@ -6,6 +6,7 @@ import { formatCurrency } from '@/modules/operations/utils/operation-formatters'
 import {
   computeBalanceAfterInstallment,
   isCashReturnMethod,
+  resolveInstallmentSubmitLabel,
   resolveReturnRequestTotals,
 } from '@/modules/operations/utils/return-installment';
 import type { ReturnPaymentResponse } from '../../types/operations.types.ts';
@@ -134,7 +135,7 @@ export function RegisterInstallmentForm({
 
       <div>
         <label className="mb-2 block text-sm font-medium text-slate-700">
-          Importe del retorno parcial
+          Importe del retorno
         </label>
         <input
           type="text"
@@ -312,7 +313,7 @@ export function RegisterInstallmentForm({
       </div>
 
       <Button type="submit" isLoading={isSubmitting} className="w-full justify-center">
-        {esEfectivo ? 'Programar recolección del retorno' : 'Registrar retorno'}
+        {resolveInstallmentSubmitLabel({ totals, importe, esEfectivo })}
       </Button>
     </form>
   );

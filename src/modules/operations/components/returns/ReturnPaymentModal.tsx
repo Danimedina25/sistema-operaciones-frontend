@@ -7,6 +7,7 @@ import {
   isCashReturnMethod,
   resolveRegisterInstallmentAvailability,
   resolveReturnRequestTotals,
+  shouldShowInstallmentHistory,
 } from '../../utils/return-installment';
 import type {
   ReturnInstallment,
@@ -82,13 +83,18 @@ export function ReturnPaymentModal({
     return roles.includes('JEFA_CUENTAS') || roles.includes('AUXILIAR_CUENTAS');
   };
 
-  const availability = returnRequest
-    ? resolveRegisterInstallmentAvailability({
-        totals: resolveReturnRequestTotals(returnRequest),
-        estatus: returnRequest.estatus,
-        hasPermission: canManageReturnPayments && roleCanHandleMethod(returnRequest),
-      })
-    : { canRegister: false, reason: null };
+  const totals = returnRequest ? resolveReturnRequestTotals(returnRequest) : null;
+
+  const availability =
+    returnRequest && totals
+      ? resolveRegisterInstallmentAvailability({
+          totals,
+          estatus: returnRequest.estatus,
+          hasPermission: canManageReturnPayments && roleCanHandleMethod(returnRequest),
+        })
+      : { canRegister: false, reason: null };
+
+  const showHistory = !!totals && shouldShowInstallmentHistory(totals, installments);
 
   const title =
     returnRequest && returnRequest.estatus === 'RETORNADO' ? 'Retorno' : 'Retornar';
@@ -104,7 +110,7 @@ export function ReturnPaymentModal({
           <section className="rounded-2xl border border-slate-200 bg-white p-4">
             <div className="mb-3 flex items-center gap-2">
               <PlusCircle className="h-5 w-5 text-emerald-600" />
-              <h3 className="text-sm font-semibold text-slate-900">Registrar retorno parcial</h3>
+              <h3 className="text-sm font-semibold text-slate-900">Registrar retorno</h3>
             </div>
 
             {availability.canRegister ? (
@@ -131,24 +137,26 @@ export function ReturnPaymentModal({
             )}
           </section>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-4">
-            <div className="mb-3 flex items-center gap-2">
-              <History className="h-5 w-5 text-slate-500" />
-              <h3 className="text-sm font-semibold text-slate-900">
-                Historial de retornos parciales
-              </h3>
-            </div>
-            <InstallmentHistoryTable
-              installments={installments}
-              isLoading={isLoadingHistory}
-              canConfirm={canConfirm}
-              canDeliver={canDeliver}
-              canCancel={canCancel}
-              onConfirm={onConfirm}
-              onDeliver={onDeliver}
-              onCancel={onCancel}
-            />
-          </section>
+          {showHistory ? (
+            <section className="rounded-2xl border border-slate-200 bg-white p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <History className="h-5 w-5 text-slate-500" />
+                <h3 className="text-sm font-semibold text-slate-900">
+                  Historial de retornos parciales
+                </h3>
+              </div>
+              <InstallmentHistoryTable
+                installments={installments}
+                isLoading={isLoadingHistory}
+                canConfirm={canConfirm}
+                canDeliver={canDeliver}
+                canCancel={canCancel}
+                onConfirm={onConfirm}
+                onDeliver={onDeliver}
+                onCancel={onCancel}
+              />
+            </section>
+          ) : null}
         </div>
       )}
     </Modal>
