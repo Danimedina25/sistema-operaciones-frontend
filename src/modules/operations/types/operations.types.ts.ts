@@ -275,6 +275,8 @@ export interface CreateReturnInstallmentRequest {
   monto: number;
   cuentaOrigenId?: number | null;
   comprobanteUrl?: string | null;
+  /** efectivo / retiro sin tarjeta: evidencia del importe ya preparado para la recolección. */
+  evidenciaImportePreparadoUrl?: string | null;
   fechaHoraRecoleccion?: string | null;
   codigoRetiroSinTarjeta?: string | null;
   observaciones?: string | null;
@@ -308,6 +310,7 @@ export interface ReturnInstallment {
   cuentaOrigenId?: number | null;
   cuentaOrigenNombre?: string | null;
   comprobanteUrl?: string | null;
+  evidenciaImportePreparadoUrl?: string | null;
   comprobanteEntregaUrl?: string | null;
   codigoRetiroSinTarjeta?: string | null;
 

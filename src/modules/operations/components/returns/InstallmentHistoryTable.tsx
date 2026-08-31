@@ -85,15 +85,41 @@ export function InstallmentHistoryTable({
                 </td>
                 <td className="px-3 py-2 text-slate-600">{responsable}</td>
                 <td className="px-3 py-2">
-                  {i.comprobanteUrl || i.comprobanteEntregaUrl ? (
-                    <a
-                      href={i.comprobanteUrl ?? i.comprobanteEntregaUrl ?? '#'}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-xs font-medium text-blue-600 hover:underline"
-                    >
-                      Ver
-                    </a>
+                  {i.comprobanteUrl ||
+                  i.evidenciaImportePreparadoUrl ||
+                  i.comprobanteEntregaUrl ? (
+                    <div className="flex flex-col gap-0.5">
+                      {i.comprobanteUrl ? (
+                        <a
+                          href={i.comprobanteUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs font-medium text-blue-600 hover:underline"
+                        >
+                          Comprobante
+                        </a>
+                      ) : null}
+                      {i.evidenciaImportePreparadoUrl ? (
+                        <a
+                          href={i.evidenciaImportePreparadoUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs font-medium text-blue-600 hover:underline"
+                        >
+                          Evidencia importe
+                        </a>
+                      ) : null}
+                      {i.comprobanteEntregaUrl ? (
+                        <a
+                          href={i.comprobanteEntregaUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs font-medium text-blue-600 hover:underline"
+                        >
+                          Entrega
+                        </a>
+                      ) : null}
+                    </div>
                   ) : (
                     <span className="text-xs text-slate-400">-</span>
                   )}

@@ -14,6 +14,8 @@ export interface RegisterInstallmentValues {
   cuentaOrigenId?: string;
   /** transferencia / depósito / cheque */
   comprobante?: FileList;
+  /** efectivo / retiro sin tarjeta: evidencia del importe ya preparado */
+  evidenciaImportePreparado?: FileList;
   /** efectivo / retiro sin tarjeta */
   fechaRecoleccion?: string;
   horaRecoleccion?: string;
@@ -54,6 +56,23 @@ export function useCreateReturnInstallment(options?: Options) {
         comprobanteUrl = uploadResult.downloadUrl;
       }
 
+      let evidenciaImportePreparadoUrl: string | undefined;
+      const evidenciaImportePreparado = values.evidenciaImportePreparado?.item(0);
+
+      if (evidenciaImportePreparado) {
+        if (!user?.userId) {
+          throw new Error('No se pudo identificar el usuario autenticado');
+        }
+
+        const uploadResult = await uploadOperationProof({
+          file: evidenciaImportePreparado,
+          userId: user.userId,
+          operationId: values.operationId,
+        });
+
+        evidenciaImportePreparadoUrl = uploadResult.downloadUrl;
+      }
+
       const fechaHoraRecoleccion =
         values.fechaRecoleccion && values.horaRecoleccion
           ? `${values.fechaRecoleccion}T${values.horaRecoleccion}:00`
@@ -70,6 +89,7 @@ export function useCreateReturnInstallment(options?: Options) {
           ? Number(values.cuentaOrigenId)
           : undefined,
         comprobanteUrl,
+        evidenciaImportePreparadoUrl,
         fechaHoraRecoleccion,
         codigoRetiroSinTarjeta:
           values.codigoRetiroSinTarjeta?.trim() || undefined,

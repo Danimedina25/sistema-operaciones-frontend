@@ -20,6 +20,7 @@ export interface RegisterInstallmentFormValues {
   monto: string;
   cuentaOrigenId?: string;
   comprobante?: FileList;
+  evidenciaImportePreparado?: FileList;
   fechaRecoleccion?: string;
   horaRecoleccion?: string;
   codigoRetiroSinTarjeta?: string;
@@ -272,6 +273,41 @@ export function RegisterInstallmentForm({
           {errors.codigoRetiroSinTarjeta ? (
             <p className="mt-1 text-xs text-red-600">{errors.codigoRetiroSinTarjeta.message}</p>
           ) : null}
+        </div>
+      ) : null}
+
+      {esEfectivo ? (
+        <div>
+          <label className="mb-2 block text-sm font-medium text-slate-700">
+            Evidencia del importe preparado
+          </label>
+          <Controller
+            control={control}
+            name="evidenciaImportePreparado"
+            rules={{
+              validate: (value) =>
+                !esEfectivo ||
+                (value && value.length > 0) ||
+                'La evidencia del importe preparado es obligatoria',
+            }}
+            render={({ field }) => (
+              <input
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png,.webp"
+                className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white"
+                onChange={(event) => field.onChange(event.target.files)}
+              />
+            )}
+          />
+          {errors.evidenciaImportePreparado ? (
+            <p className="mt-1 text-xs text-red-600">
+              {errors.evidenciaImportePreparado.message}
+            </p>
+          ) : (
+            <p className="mt-1 text-xs text-slate-500">
+              Foto o documento del efectivo ya contado y separado para la recolección.
+            </p>
+          )}
         </div>
       ) : null}
 
