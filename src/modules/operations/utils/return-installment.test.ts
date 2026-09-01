@@ -9,7 +9,10 @@ import {
   resolveInstallmentSubmitLabel,
   resolveReceiverHistoryLabel,
   resolveRegisterInstallmentAvailability,
+  resolveReturnHistoryHeading,
+  resolveReturnModalTitle,
   resolveReturnRequestTotals,
+  resolveReturnRowActions,
   shouldShowInstallmentHistory,
 } from './return-installment';
 import type {
@@ -309,5 +312,131 @@ describe('installmentToCashDeliveryTarget', () => {
   it('lista vacía cuando la solicitud no tiene autorizados', () => {
     const target = installmentToCashDeliveryTarget(base);
     expect(target.autorizados).toEqual([]);
+  });
+});
+
+describe('resolveReturnModalTitle', () => {
+  it('efectivo: view → "Historial de recolecciones", manage → "Confirmar recolección"', () => {
+    expect(
+      resolveReturnModalTitle({ variant: 'view', tipoPago: 'EFECTIVO', estatus: 'EN_RECOLECCION' }),
+    ).toBe('Historial de recolecciones');
+    expect(
+      resolveReturnModalTitle({ variant: 'manage', tipoPago: 'RETIRO_SIN_TARJETA', estatus: 'EN_RECOLECCION' }),
+    ).toBe('Confirmar recolección');
+  });
+
+  it('no efectivo: view → "Historial de retornos", manage → "Retornar"/"Retorno"', () => {
+    expect(
+      resolveReturnModalTitle({ variant: 'view', tipoPago: 'TRANSFERENCIA', estatus: 'SOLICITADO' }),
+    ).toBe('Historial de retornos');
+    expect(
+      resolveReturnModalTitle({ variant: 'manage', tipoPago: 'TRANSFERENCIA', estatus: 'SOLICITADO' }),
+    ).toBe('Retornar');
+    expect(
+      resolveReturnModalTitle({ variant: 'manage', tipoPago: 'TRANSFERENCIA', estatus: 'RETORNADO' }),
+    ).toBe('Retorno');
+  });
+});
+
+describe('resolveReturnHistoryHeading', () => {
+  it('nunca dice "Historial de retornos" para efectivo', () => {
+    expect(resolveReturnHistoryHeading({ variant: 'view', tipoPago: 'EFECTIVO' })).toBe(
+      'Historial de recolecciones',
+    );
+    expect(resolveReturnHistoryHeading({ variant: 'manage', tipoPago: 'EFECTIVO' })).toBe(
+      'Recolecciones registradas',
+    );
+  });
+
+  it('conserva la terminología de retornos para otros métodos', () => {
+    expect(resolveReturnHistoryHeading({ variant: 'view', tipoPago: 'DEPOSITO' })).toBe(
+      'Historial de retornos',
+    );
+    expect(resolveReturnHistoryHeading({ variant: 'manage', tipoPago: 'DEPOSITO' })).toBe(
+      'Historial de retornos parciales',
+    );
+  });
+});
+
+describe('resolveReturnRowActions', () => {
+  const efectivo = { tipoPago: 'EFECTIVO' as const };
+  const transferencia = { tipoPago: 'TRANSFERENCIA' as const };
+  const roles = {
+    socio: { isSocioComercial: true, isJefaCajas: false, isAdmin: false },
+    jefaCajas: { isSocioComercial: false, isJefaCajas: true, isAdmin: false },
+    jefaCuentas: { isSocioComercial: false, isJefaCajas: false, isAdmin: false },
+  };
+
+  it('efectivo: el botón principal siempre es "Ver recolección" (consulta)', () => {
+    const r = resolveReturnRowActions({
+      ...efectivo,
+      numeroParcialidades: 2,
+      canRegister: true,
+      ...roles.jefaCajas,
+    });
+    expect(r.primaryLabel).toBe('Ver recolección');
+    expect(r.primaryVariant).toBe('view');
+  });
+
+  it('efectivo: muestra "Confirmar recolección" al socio cuando ya hay recolecciones', () => {
+    const r = resolveReturnRowActions({
+      ...efectivo,
+      numeroParcialidades: 1,
+      canRegister: false,
+      ...roles.socio,
+    });
+    expect(r.showConfirmRecoleccion).toBe(true);
+  });
+
+  it('efectivo: oculta "Confirmar recolección" al socio si no hay recolecciones', () => {
+    const r = resolveReturnRowActions({
+      ...efectivo,
+      numeroParcialidades: 0,
+      canRegister: false,
+      ...roles.socio,
+    });
+    expect(r.showConfirmRecoleccion).toBe(false);
+  });
+
+  it('efectivo: la jefa de cajas ve "Confirmar recolección" para programar la primera', () => {
+    const r = resolveReturnRowActions({
+      ...efectivo,
+      numeroParcialidades: 0,
+      canRegister: true,
+      ...roles.jefaCajas,
+    });
+    expect(r.showConfirmRecoleccion).toBe(true);
+  });
+
+  it('efectivo: un rol que no opera efectivo no ve "Confirmar recolección"', () => {
+    const r = resolveReturnRowActions({
+      ...efectivo,
+      numeroParcialidades: 3,
+      canRegister: false,
+      ...roles.jefaCuentas,
+    });
+    expect(r.showConfirmRecoleccion).toBe(false);
+  });
+
+  it('no efectivo: "Retornar" (manage) si puede registrar, "Ver retorno" (view) si no', () => {
+    const puede = resolveReturnRowActions({
+      ...transferencia,
+      numeroParcialidades: 0,
+      canRegister: true,
+      ...roles.jefaCuentas,
+    });
+    expect(puede).toMatchObject({ primaryLabel: 'Retornar', primaryVariant: 'manage' });
+
+    const noPuede = resolveReturnRowActions({
+      ...transferencia,
+      numeroParcialidades: 1,
+      canRegister: false,
+      ...roles.socio,
+    });
+    expect(noPuede).toMatchObject({
+      primaryLabel: 'Ver retorno',
+      primaryVariant: 'view',
+      showConfirmRecoleccion: false,
+    });
   });
 });

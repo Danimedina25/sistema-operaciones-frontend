@@ -34,6 +34,7 @@ interface OperationDetailViewProps {
   onAddPayment: (operationId: number) => void;
   onAddRequestReturnPayment?: (operation: PaymentOperationResponse, montoPendientePorSolicitar: number) => void;
   onOpenReturn?: (returnRequest: ReturnPaymentResponse) => void;
+  onManageReturn?: (returnRequest: ReturnPaymentResponse) => void;
   canRequestReturn?: boolean;
   canViewFinancialDetails: boolean;
   canViewOperationExtras: boolean;
@@ -60,6 +61,7 @@ export function OperationDetailView({
   onAddPayment,
   onAddRequestReturnPayment,
   onOpenReturn,
+  onManageReturn,
   canViewFinancialDetails,
   canViewOperationExtras,
   onOperationUpdated,
@@ -200,6 +202,7 @@ export function OperationDetailView({
             user?.roles?.includes('ADMIN')
           }
           onOpenReturn={onOpenReturn}
+          onManageReturn={onManageReturn}
           onEditReturn={onEditReturn}
           operationStatus={operation.estatus}
         />

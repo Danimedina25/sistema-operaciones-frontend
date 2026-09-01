@@ -161,6 +161,92 @@ export function isCashReturnMethod(tipoPago: PaymentType): boolean {
   return tipoPago === 'EFECTIVO' || tipoPago === 'RETIRO_SIN_TARJETA';
 }
 
+/**
+ * `view`   → consulta: resumen + historial de solo lectura, sin formulario ni
+ *            botones de acción.
+ * `manage` → operativo: formulario para registrar/programar (si el rol lo
+ *            permite) + historial con acciones (confirmar / entregar / cancelar).
+ */
+export type ReturnModalVariant = 'view' | 'manage';
+
+/** Título del modal según la variante y si la solicitud es en efectivo. */
+export function resolveReturnModalTitle(params: {
+  variant: ReturnModalVariant;
+  tipoPago: PaymentType;
+  estatus: ReturnPaymentResponse['estatus'];
+}): string {
+  const esEfectivo = isCashReturnMethod(params.tipoPago);
+  if (params.variant === 'manage') {
+    if (esEfectivo) return 'Confirmar recolección';
+    return params.estatus === 'RETORNADO' ? 'Retorno' : 'Retornar';
+  }
+  return esEfectivo ? 'Historial de recolecciones' : 'Historial de retornos';
+}
+
+/** Encabezado de la sección de historial dentro del modal. */
+export function resolveReturnHistoryHeading(params: {
+  variant: ReturnModalVariant;
+  tipoPago: PaymentType;
+}): string {
+  const esEfectivo = isCashReturnMethod(params.tipoPago);
+  if (params.variant === 'view') {
+    return esEfectivo ? 'Historial de recolecciones' : 'Historial de retornos';
+  }
+  return esEfectivo ? 'Recolecciones registradas' : 'Historial de retornos parciales';
+}
+
+export interface ReturnRowActionsView {
+  esEfectivo: boolean;
+  /** Texto del botón principal de la fila. */
+  primaryLabel: 'Ver recolección' | 'Ver retorno' | 'Retornar';
+  /** Variante del modal que abre el botón principal. */
+  primaryVariant: ReturnModalVariant;
+  /** Muestra el botón independiente "Confirmar recolección" (solo efectivo). */
+  showConfirmRecoleccion: boolean;
+}
+
+/**
+ * Botones que se muestran en la fila de una solicitud de retorno.
+ *
+ * - Efectivo: siempre `Ver recolección` (consulta) y, si el rol puede operar
+ *   sobre recolecciones y hay algo que hacer, además `Confirmar recolección`.
+ * - Otros métodos: un solo botón — `Retornar` cuando el rol puede registrar,
+ *   `Ver retorno` (consulta) en caso contrario.
+ *
+ * El historial nunca lleva acciones: viven únicamente en la variante `manage`.
+ */
+export function resolveReturnRowActions(params: {
+  tipoPago: PaymentType;
+  numeroParcialidades: number;
+  /** El rol puede registrar/programar para este método y hay saldo disponible. */
+  canRegister: boolean;
+  isSocioComercial: boolean;
+  isJefaCajas: boolean;
+  isAdmin: boolean;
+}): ReturnRowActionsView {
+  const esEfectivo = isCashReturnMethod(params.tipoPago);
+
+  if (esEfectivo) {
+    const rolPuedeOperar =
+      params.isSocioComercial || params.isJefaCajas || params.isAdmin;
+    return {
+      esEfectivo: true,
+      primaryLabel: 'Ver recolección',
+      primaryVariant: 'view',
+      showConfirmRecoleccion:
+        rolPuedeOperar &&
+        (params.numeroParcialidades > 0 || params.canRegister),
+    };
+  }
+
+  return {
+    esEfectivo: false,
+    primaryLabel: params.canRegister ? 'Retornar' : 'Ver retorno',
+    primaryVariant: params.canRegister ? 'manage' : 'view',
+    showConfirmRecoleccion: false,
+  };
+}
+
 export interface InstallmentActionAvailability {
   canRegister: boolean;
   reason: string | null;

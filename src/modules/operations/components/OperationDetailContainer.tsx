@@ -15,6 +15,7 @@ interface OperationDetailContainerProps {
   onAddPayment: (operation: PaymentOperationResponse) => void;
   onAddRequestReturnPayment?: (operation: PaymentOperationResponse, montoPendientePorSolicitar: number) => void;
   onOpenReturn?: (returnRequest: ReturnPaymentResponse) => void;
+  onManageReturn?: (returnRequest: ReturnPaymentResponse) => void;
   scrollToPayments?: boolean;
   scrollToReturns?: boolean;
   onEditPayment: (operation: PaymentOperationResponse, paymentId: number) => void;
@@ -30,6 +31,7 @@ export function OperationDetailContainer({
   onAddPayment,
   onAddRequestReturnPayment,
   onOpenReturn,
+  onManageReturn,
   scrollToPayments = false,
   scrollToReturns = false,
   onEditPayment,
@@ -137,6 +139,7 @@ export function OperationDetailContainer({
           : undefined
       }
       onOpenReturn={onOpenReturn}
+      onManageReturn={onManageReturn}
       backLabel={backLabel}
       onValidatePayment={submitValidatePayment}
       onRejectPayment={submitRejectPayment}

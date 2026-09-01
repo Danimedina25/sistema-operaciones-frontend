@@ -9,6 +9,7 @@ import { InstallmentStatusBadge } from './InstallmentStatusBadge';
 interface InstallmentHistoryTableProps {
   installments: ReturnInstallment[];
   isLoading?: boolean;
+  emptyMessage?: string;
   canConfirm?: (installment: ReturnInstallment) => boolean;
   canDeliver?: (installment: ReturnInstallment) => boolean;
   canCancel?: (installment: ReturnInstallment) => boolean;
@@ -20,6 +21,7 @@ interface InstallmentHistoryTableProps {
 export function InstallmentHistoryTable({
   installments,
   isLoading = false,
+  emptyMessage = 'Esta solicitud aún no tiene parcialidades registradas.',
   canConfirm = () => false,
   canDeliver = () => false,
   canCancel = () => false,
@@ -38,7 +40,7 @@ export function InstallmentHistoryTable({
   if (installments.length === 0) {
     return (
       <p className="rounded-xl border border-dashed border-slate-300 bg-white py-6 text-center text-sm text-slate-500">
-        Esta solicitud aún no tiene parcialidades registradas.
+        {emptyMessage}
       </p>
     );
   }

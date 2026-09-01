@@ -6,8 +6,11 @@ import { useAuth } from '@/modules/auth/store/auth.context';
 import {
   isCashReturnMethod,
   resolveRegisterInstallmentAvailability,
+  resolveReturnHistoryHeading,
+  resolveReturnModalTitle,
   resolveReturnRequestTotals,
   shouldShowInstallmentHistory,
+  type ReturnModalVariant,
 } from '../../utils/return-installment';
 import type {
   ReturnInstallment,
@@ -22,6 +25,11 @@ import { InstallmentHistoryTable } from './InstallmentHistoryTable';
 
 interface ReturnPaymentModalProps {
   open: boolean;
+  /**
+   * `view`   → consulta (historial de retornos / recolecciones), solo lectura.
+   * `manage` → registrar/programar y avanzar el proceso (confirmar recolección).
+   */
+  variant?: ReturnModalVariant;
   returnRequest: ReturnPaymentResponse | null;
   installments: ReturnInstallment[];
   isLoadingHistory?: boolean;
@@ -42,12 +50,19 @@ interface ReturnPaymentModalProps {
 }
 
 /**
- * Vista única de una solicitud de retorno: datos de la solicitud + avance
- * (retornado / pendiente / disponible), formulario para registrar un retorno
- * parcial e historial de parcialidades con sus acciones.
+ * Vista de una solicitud de retorno.
+ *
+ * - `variant="view"`: datos de la solicitud + historial de solo lectura. Sin
+ *   formulario y sin acciones — es la pantalla de "Ver retorno" / "Ver
+ *   recolección".
+ * - `variant="manage"`: además, formulario para registrar/programar (si el rol
+ *   lo permite) e historial con las acciones de la parcialidad (confirmar /
+ *   entregar / cancelar) — es "Retornar" (no efectivo) y "Confirmar recolección"
+ *   (efectivo).
  */
 export function ReturnPaymentModal({
   open,
+  variant = 'view',
   returnRequest,
   installments,
   isLoadingHistory = false,
@@ -65,6 +80,8 @@ export function ReturnPaymentModal({
   const { user } = useAuth();
   const roles = user?.roles ?? [];
   const { accounts } = useBankAccounts();
+
+  const isManage = variant === 'manage';
 
   const bankAccounts = useMemo(
     () =>
@@ -84,27 +101,50 @@ export function ReturnPaymentModal({
   };
 
   const totals = returnRequest ? resolveReturnRequestTotals(returnRequest) : null;
-
-  const availability =
-    returnRequest && totals
-      ? resolveRegisterInstallmentAvailability({
-          totals,
-          estatus: returnRequest.estatus,
-          hasPermission: canManageReturnPayments && roleCanHandleMethod(returnRequest),
-        })
-      : { canRegister: false, reason: null };
-
-  const showHistory = !!totals && shouldShowInstallmentHistory(totals, installments);
-
-  const title =
-    returnRequest && returnRequest.estatus === 'RETORNADO' ? 'Retorno' : 'Retornar';
-
   const esEfectivo = returnRequest
     ? isCashReturnMethod(returnRequest.tipoPago)
     : false;
+
+  // La sección de registro solo aparece en modo "manage" y solo para roles que
+  // gestionan ese método (el Socio Comercial nunca la ve).
+  const userManagesMethod =
+    !!returnRequest && canManageReturnPayments && roleCanHandleMethod(returnRequest);
+  const showRegisterSection = isManage && userManagesMethod;
+
+  const availability =
+    returnRequest && totals && showRegisterSection
+      ? resolveRegisterInstallmentAvailability({
+          totals,
+          estatus: returnRequest.estatus,
+          hasPermission: true,
+        })
+      : { canRegister: false, reason: null };
+
+  const showHistory =
+    !!totals &&
+    (variant === 'view' || esEfectivo
+      ? true
+      : shouldShowInstallmentHistory(totals, installments));
+
+  const title = returnRequest
+    ? resolveReturnModalTitle({
+        variant,
+        tipoPago: returnRequest.tipoPago,
+        estatus: returnRequest.estatus,
+      })
+    : 'Retorno';
+
+  const historyHeading = returnRequest
+    ? resolveReturnHistoryHeading({ variant, tipoPago: returnRequest.tipoPago })
+    : 'Historial';
+
   const registrarSectionTitle = esEfectivo
     ? 'Programar recolección'
     : 'Registrar retorno';
+
+  const emptyHistoryMessage = esEfectivo
+    ? 'Esta solicitud aún no tiene recolecciones registradas.'
+    : 'Esta solicitud aún no tiene retornos registrados.';
 
   return (
     <Modal open={open} title={title} onClose={onClose}>
@@ -114,55 +154,56 @@ export function ReturnPaymentModal({
         <div className="space-y-6">
           <ReturnRequestSummarySection returnRequest={returnRequest} />
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-4">
-            <div className="mb-3 flex items-center gap-2">
-              <PlusCircle className="h-5 w-5 text-emerald-600" />
-              <h3 className="text-sm font-semibold text-slate-900">
-                {registrarSectionTitle}
-              </h3>
-            </div>
+          {showRegisterSection ? (
+            <section className="rounded-2xl border border-slate-200 bg-white p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <PlusCircle className="h-5 w-5 text-emerald-600" />
+                <h3 className="text-sm font-semibold text-slate-900">
+                  {registrarSectionTitle}
+                </h3>
+              </div>
 
-            {availability.canRegister ? (
-              <RegisterInstallmentForm
-                key={`${returnRequest.id}-${returnRequest.montoRetornado ?? 0}-${returnRequest.montoEnProceso ?? 0}`}
-                returnRequest={returnRequest}
-                bankAccounts={bankAccounts}
-                isSubmitting={isSubmittingInstallment}
-                hideSummary
-                onSubmit={(values) =>
-                  onSubmitInstallment(returnRequest.id, {
-                    ...values,
-                    operationId: returnRequest.operationId,
-                  })
-                }
-              />
-            ) : (
-              <p className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
-                {returnRequest.estatus === 'RETORNADO'
-                  ? 'Esta solicitud ya fue retornada por completo.'
-                  : (availability.reason ??
-                    'No hay retornos parciales por registrar para esta solicitud.')}
-              </p>
-            )}
-          </section>
+              {availability.canRegister ? (
+                <RegisterInstallmentForm
+                  key={`${returnRequest.id}-${returnRequest.montoRetornado ?? 0}-${returnRequest.montoEnProceso ?? 0}`}
+                  returnRequest={returnRequest}
+                  bankAccounts={bankAccounts}
+                  isSubmitting={isSubmittingInstallment}
+                  hideSummary
+                  onSubmit={(values) =>
+                    onSubmitInstallment(returnRequest.id, {
+                      ...values,
+                      operationId: returnRequest.operationId,
+                    })
+                  }
+                />
+              ) : (
+                <p className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+                  {returnRequest.estatus === 'RETORNADO'
+                    ? 'Esta solicitud ya fue retornada por completo.'
+                    : (availability.reason ??
+                      'No hay retornos parciales por registrar para esta solicitud.')}
+                </p>
+              )}
+            </section>
+          ) : null}
 
           {showHistory ? (
             <section className="rounded-2xl border border-slate-200 bg-white p-4">
               <div className="mb-3 flex items-center gap-2">
                 <History className="h-5 w-5 text-slate-500" />
-                <h3 className="text-sm font-semibold text-slate-900">
-                  Historial de retornos parciales
-                </h3>
+                <h3 className="text-sm font-semibold text-slate-900">{historyHeading}</h3>
               </div>
               <InstallmentHistoryTable
                 installments={installments}
                 isLoading={isLoadingHistory}
-                canConfirm={canConfirm}
-                canDeliver={canDeliver}
-                canCancel={canCancel}
-                onConfirm={onConfirm}
-                onDeliver={onDeliver}
-                onCancel={onCancel}
+                emptyMessage={emptyHistoryMessage}
+                canConfirm={isManage ? canConfirm : undefined}
+                canDeliver={isManage ? canDeliver : undefined}
+                canCancel={isManage ? canCancel : undefined}
+                onConfirm={isManage ? onConfirm : undefined}
+                onDeliver={isManage ? onDeliver : undefined}
+                onCancel={isManage ? onCancel : undefined}
               />
             </section>
           ) : null}

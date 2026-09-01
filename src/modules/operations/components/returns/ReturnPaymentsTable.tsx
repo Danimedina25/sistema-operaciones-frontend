@@ -11,6 +11,7 @@ import {
   isCashReturnMethod,
   resolveRegisterInstallmentAvailability,
   resolveReturnRequestTotals,
+  resolveReturnRowActions,
 } from '@/modules/operations/utils/return-installment';
 import {
   OperationStatus,
@@ -26,7 +27,10 @@ interface ReturnPaymentsTableProps {
   onAddRequestReturnPayment?: (montoPendientePorSolicitar: number) => void;
   canManageReturnPayments?: boolean;
   canEditRequestReturnPayments?: boolean;
+  /** "Ver retorno" / "Ver recolección" — consulta de solo lectura. */
   onOpenReturn?: (returnRequest: ReturnPaymentResponse) => void;
+  /** "Retornar" (no efectivo) / "Confirmar recolección" (efectivo) — operativo. */
+  onManageReturn?: (returnRequest: ReturnPaymentResponse) => void;
   onEditReturn?: (returnPayment: ReturnPaymentResponse) => void;
   operationStatus?: OperationStatus;
 }
@@ -39,6 +43,7 @@ export function ReturnPaymentsTable({
   canManageReturnPayments = false,
   canEditRequestReturnPayments = false,
   onOpenReturn,
+  onManageReturn,
   onEditReturn,
   operationStatus,
 }: ReturnPaymentsTableProps) {
@@ -112,27 +117,52 @@ export function ReturnPaymentsTable({
       returnPayment.estatus === 'SOLICITADO' &&
       totals.numeroParcialidades === 0;
 
+    const rowActions = resolveReturnRowActions({
+      tipoPago: returnPayment.tipoPago,
+      numeroParcialidades: totals.numeroParcialidades,
+      canRegister: availability.canRegister,
+      isSocioComercial,
+      isJefaCajas,
+      isAdmin,
+    });
+
+    const primaryIsManage = rowActions.primaryVariant === 'manage';
+    const openPrimary = () =>
+      primaryIsManage
+        ? onManageReturn?.(returnPayment)
+        : onOpenReturn?.(returnPayment);
+
     return (
       <div className="flex flex-col items-stretch gap-2">
         <button
           type="button"
-          onClick={() => onOpenReturn?.(returnPayment)}
+          onClick={openPrimary}
           className={
-            availability.canRegister
+            primaryIsManage
               ? 'inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700'
               : 'inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50'
           }
         >
-          {availability.canRegister ? (
+          {primaryIsManage ? (
             <>
-              <Plus className="h-3.5 w-3.5" /> Retornar
+              <Plus className="h-3.5 w-3.5" /> {rowActions.primaryLabel}
             </>
           ) : (
-            'Ver retorno'
+            rowActions.primaryLabel
           )}
         </button>
 
-        {puedeGestionar && !availability.canRegister && availability.reason ? (
+        {rowActions.showConfirmRecoleccion && (
+          <button
+            type="button"
+            onClick={() => onManageReturn?.(returnPayment)}
+            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700"
+          >
+            Confirmar recolección
+          </button>
+        )}
+
+        {puedeGestionar && !rowActions.esEfectivo && !availability.canRegister && availability.reason ? (
           <span className="text-center text-xs text-slate-400">{availability.reason}</span>
         ) : null}
 

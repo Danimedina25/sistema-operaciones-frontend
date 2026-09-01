@@ -30,6 +30,7 @@ import { useReturnRequestSummary } from '../hooks/returns/use-return-request-sum
 import {
   installmentToCashDeliveryTarget,
   isCashReturnMethod,
+  type ReturnModalVariant,
 } from '../utils/return-installment';
 import { formatCurrency } from '../utils/operation-formatters';
 
@@ -78,6 +79,8 @@ export default function OperationDetailPage() {
 
   const [selectedReturnRequest, setSelectedReturnRequest] =
     useState<ReturnPaymentResponse | null>(null);
+  const [returnModalVariant, setReturnModalVariant] =
+    useState<ReturnModalVariant>('view');
   const [deliverTarget, setDeliverTarget] = useState<ReturnInstallment | null>(null);
   const [confirmTarget, setConfirmTarget] = useState<ReturnInstallment | null>(null);
   const [cancelTarget, setCancelTarget] = useState<ReturnInstallment | null>(null);
@@ -250,7 +253,14 @@ export default function OperationDetailPage() {
               }
             : undefined
         }
-        onOpenReturn={(returnRequest) => setSelectedReturnRequest(returnRequest)}
+        onOpenReturn={(returnRequest) => {
+          setReturnModalVariant('view');
+          setSelectedReturnRequest(returnRequest);
+        }}
+        onManageReturn={(returnRequest) => {
+          setReturnModalVariant('manage');
+          setSelectedReturnRequest(returnRequest);
+        }}
         onEditReturn={(returnPayment) => {
           setSelectedReturnToEdit(returnPayment);
           setIsEditReturnModalOpen(true);
@@ -341,6 +351,7 @@ export default function OperationDetailPage() {
 
       <ReturnPaymentModal
         open={!!selectedReturnRequest}
+        variant={returnModalVariant}
         returnRequest={returnRequestFresh}
         installments={returnInstallments}
         isLoadingHistory={returnSummaryQuery.isLoading}
