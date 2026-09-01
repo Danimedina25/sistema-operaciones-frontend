@@ -119,7 +119,7 @@ export function ReturnPaymentsTable({
 
     const rowActions = resolveReturnRowActions({
       tipoPago: returnPayment.tipoPago,
-      numeroParcialidades: totals.numeroParcialidades,
+      parcialidades: returnPayment.parcialidades ?? [],
       canRegister: availability.canRegister,
       isSocioComercial,
       isJefaCajas,

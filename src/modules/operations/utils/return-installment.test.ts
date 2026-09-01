@@ -369,11 +369,20 @@ describe('resolveReturnRowActions', () => {
     jefaCajas: { isSocioComercial: false, isJefaCajas: true, isAdmin: false },
     jefaCuentas: { isSocioComercial: false, isJefaCajas: false, isAdmin: false },
   };
+  const programada = {
+    tipoPago: 'EFECTIVO' as const,
+    estatus: 'PROGRAMADA' as const,
+    confirmadoPorSocio: false,
+    cerradoPorJefa: false,
+  };
+  const soloJefa = { ...programada, estatus: 'ENTREGADA' as const, cerradoPorJefa: true };
+  const soloSocio = { ...programada, estatus: 'ENTREGADA' as const, confirmadoPorSocio: true };
+  const completada = { ...programada, estatus: 'COMPLETADA' as const, confirmadoPorSocio: true, cerradoPorJefa: true };
 
   it('efectivo: el botón principal siempre es "Ver recolección" (consulta)', () => {
     const r = resolveReturnRowActions({
       ...efectivo,
-      numeroParcialidades: 2,
+      parcialidades: [programada],
       canRegister: true,
       ...roles.jefaCajas,
     });
@@ -381,50 +390,60 @@ describe('resolveReturnRowActions', () => {
     expect(r.primaryVariant).toBe('view');
   });
 
-  it('efectivo: muestra "Confirmar recolección" al socio cuando ya hay recolecciones', () => {
-    const r = resolveReturnRowActions({
-      ...efectivo,
-      numeroParcialidades: 1,
-      canRegister: false,
-      ...roles.socio,
-    });
-    expect(r.showConfirmRecoleccion).toBe(true);
+  it('efectivo: "Confirmar recolección" solo para la parte que falta confirmar', () => {
+    // La jefa ya cerró, falta el socio → botón solo para el socio.
+    expect(
+      resolveReturnRowActions({ ...efectivo, parcialidades: [soloJefa], canRegister: false, ...roles.socio })
+        .showConfirmRecoleccion,
+    ).toBe(true);
+    expect(
+      resolveReturnRowActions({ ...efectivo, parcialidades: [soloJefa], canRegister: false, ...roles.jefaCajas })
+        .showConfirmRecoleccion,
+    ).toBe(false);
+
+    // El socio ya confirmó, falta la jefa → botón solo para la jefa.
+    expect(
+      resolveReturnRowActions({ ...efectivo, parcialidades: [soloSocio], canRegister: false, ...roles.jefaCajas })
+        .showConfirmRecoleccion,
+    ).toBe(true);
+    expect(
+      resolveReturnRowActions({ ...efectivo, parcialidades: [soloSocio], canRegister: false, ...roles.socio })
+        .showConfirmRecoleccion,
+    ).toBe(false);
   });
 
-  it('efectivo: oculta "Confirmar recolección" al socio si no hay recolecciones', () => {
-    const r = resolveReturnRowActions({
-      ...efectivo,
-      numeroParcialidades: 0,
-      canRegister: false,
-      ...roles.socio,
-    });
-    expect(r.showConfirmRecoleccion).toBe(false);
+  it('efectivo: ninguna acción sobre una recolección COMPLETADA', () => {
+    for (const r of [roles.socio, roles.jefaCajas]) {
+      expect(
+        resolveReturnRowActions({ ...efectivo, parcialidades: [completada], canRegister: false, ...r })
+          .showConfirmRecoleccion,
+      ).toBe(false);
+    }
   });
 
-  it('efectivo: la jefa de cajas ve "Confirmar recolección" para programar la primera', () => {
-    const r = resolveReturnRowActions({
-      ...efectivo,
-      numeroParcialidades: 0,
-      canRegister: true,
-      ...roles.jefaCajas,
-    });
-    expect(r.showConfirmRecoleccion).toBe(true);
+  it('efectivo: la jefa ve el botón para programar la primera recolección', () => {
+    expect(
+      resolveReturnRowActions({ ...efectivo, parcialidades: [], canRegister: true, ...roles.jefaCajas })
+        .showConfirmRecoleccion,
+    ).toBe(true);
+    // El socio no puede programar → sin recolecciones no ve el botón.
+    expect(
+      resolveReturnRowActions({ ...efectivo, parcialidades: [], canRegister: false, ...roles.socio })
+        .showConfirmRecoleccion,
+    ).toBe(false);
   });
 
-  it('efectivo: un rol que no opera efectivo no ve "Confirmar recolección"', () => {
-    const r = resolveReturnRowActions({
-      ...efectivo,
-      numeroParcialidades: 3,
-      canRegister: false,
-      ...roles.jefaCuentas,
-    });
-    expect(r.showConfirmRecoleccion).toBe(false);
+  it('efectivo: un rol que no opera efectivo nunca ve "Confirmar recolección"', () => {
+    expect(
+      resolveReturnRowActions({ ...efectivo, parcialidades: [soloSocio], canRegister: false, ...roles.jefaCuentas })
+        .showConfirmRecoleccion,
+    ).toBe(false);
   });
 
   it('no efectivo: "Retornar" (manage) si puede registrar, "Ver retorno" (view) si no', () => {
     const puede = resolveReturnRowActions({
       ...transferencia,
-      numeroParcialidades: 0,
+      parcialidades: [],
       canRegister: true,
       ...roles.jefaCuentas,
     });
@@ -432,7 +451,7 @@ describe('resolveReturnRowActions', () => {
 
     const noPuede = resolveReturnRowActions({
       ...transferencia,
-      numeroParcialidades: 1,
+      parcialidades: [],
       canRegister: false,
       ...roles.socio,
     });

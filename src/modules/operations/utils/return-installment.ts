@@ -264,11 +264,19 @@ export interface ReturnRowActionsView {
   showConfirmRecoleccion: boolean;
 }
 
+type InstallmentMarks = Pick<
+  ReturnInstallment,
+  'estatus' | 'tipoPago' | 'confirmadoPorSocio' | 'cerradoPorJefa'
+>;
+
 /**
  * Botones que se muestran en la fila de una solicitud de retorno.
  *
- * - Efectivo: siempre `Ver recolección` (consulta) y, si el rol puede operar
- *   sobre recolecciones y hay algo que hacer, además `Confirmar recolección`.
+ * - Efectivo: siempre `Ver recolección` (consulta). Además `Confirmar
+ *   recolección` **solo si el usuario que mira tiene algo que hacer**: una
+ *   recolección donde falta su confirmación (el socio si no ha confirmado, la
+ *   jefa/admin si no han cerrado), o —jefa/admin— saldo para programar una
+ *   nueva. Si su parte ya está hecha, el botón no aparece.
  * - Otros métodos: un solo botón — `Retornar` cuando el rol puede registrar,
  *   `Ver retorno` (consulta) en caso contrario.
  *
@@ -276,7 +284,7 @@ export interface ReturnRowActionsView {
  */
 export function resolveReturnRowActions(params: {
   tipoPago: PaymentType;
-  numeroParcialidades: number;
+  parcialidades: InstallmentMarks[];
   /** El rol puede registrar/programar para este método y hay saldo disponible. */
   canRegister: boolean;
   isSocioComercial: boolean;
@@ -286,15 +294,24 @@ export function resolveReturnRowActions(params: {
   const esEfectivo = isCashReturnMethod(params.tipoPago);
 
   if (esEfectivo) {
-    const rolPuedeOperar =
-      params.isSocioComercial || params.isJefaCajas || params.isAdmin;
+    const roles = {
+      isSocioComercial: params.isSocioComercial,
+      isJefaCajas: params.isJefaCajas,
+      isAdmin: params.isAdmin,
+    };
+    const tieneAccionPendiente = params.parcialidades.some(
+      (i) =>
+        canSocioConfirmInstallment(i, roles) ||
+        canJefaDeliverInstallment(i, roles),
+    );
+    const puedeProgramarNueva =
+      (params.isJefaCajas || params.isAdmin) && params.canRegister;
+
     return {
       esEfectivo: true,
       primaryLabel: 'Ver recolección',
       primaryVariant: 'view',
-      showConfirmRecoleccion:
-        rolPuedeOperar &&
-        (params.numeroParcialidades > 0 || params.canRegister),
+      showConfirmRecoleccion: tieneAccionPendiente || puedeProgramarNueva,
     };
   }
 
