@@ -99,6 +99,13 @@ export function ReturnPaymentModal({
   const title =
     returnRequest && returnRequest.estatus === 'RETORNADO' ? 'Retorno' : 'Retornar';
 
+  const esEfectivo = returnRequest
+    ? isCashReturnMethod(returnRequest.tipoPago)
+    : false;
+  const registrarSectionTitle = esEfectivo
+    ? 'Programar recolección'
+    : 'Registrar retorno';
+
   return (
     <Modal open={open} title={title} onClose={onClose}>
       {returnRequest === null ? (
@@ -110,7 +117,9 @@ export function ReturnPaymentModal({
           <section className="rounded-2xl border border-slate-200 bg-white p-4">
             <div className="mb-3 flex items-center gap-2">
               <PlusCircle className="h-5 w-5 text-emerald-600" />
-              <h3 className="text-sm font-semibold text-slate-900">Registrar retorno</h3>
+              <h3 className="text-sm font-semibold text-slate-900">
+                {registrarSectionTitle}
+              </h3>
             </div>
 
             {availability.canRegister ? (
