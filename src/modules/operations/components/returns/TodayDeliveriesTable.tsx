@@ -66,9 +66,12 @@ export function TodayDeliveriesTable({ deliveries, onMarkAsDelivered }: TodayDel
 
           <tbody>
             {deliveries.map((delivery) => {
-              // Paso final: el socio ya confirmó la recolección (ENTREGADA)
-              // y falta el cierre de JEFA_CAJAS.
-              const canAct = delivery.estatus === 'ENTREGADA';
+              // La jefa de cajas puede cerrar la entrega en cualquier momento
+              // (PROGRAMADA o ENTREGADA), sin esperar a que el socio confirme
+              // primero — solo si ella todavía no la ha cerrado.
+              const canAct =
+                (delivery.estatus === 'PROGRAMADA' || delivery.estatus === 'ENTREGADA') &&
+                !delivery.cerradoPorJefa;
 
               return (
                 <tr

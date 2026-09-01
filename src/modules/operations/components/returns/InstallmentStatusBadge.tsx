@@ -7,7 +7,9 @@ interface InstallmentStatusBadgeProps {
 
 const LABELS: Record<ReturnInstallmentStatus, string> = {
   PROGRAMADA: 'Programada',
-  ENTREGADA: 'Entregada',
+  // Efectivo/RST: una de las dos confirmaciones (socio o jefa de cajas) ya
+  // está registrada, falta la otra. Ver la columna "Confirmaciones".
+  ENTREGADA: 'Confirmación parcial',
   COMPLETADA: 'Completada',
   CANCELADA: 'Cancelada',
 };

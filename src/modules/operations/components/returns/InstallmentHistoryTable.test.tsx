@@ -83,3 +83,33 @@ describe('InstallmentHistoryTable — solo consulta', () => {
     expect(screen.getByText('Sin recolecciones todavía.')).toBeInTheDocument();
   });
 });
+
+describe('InstallmentHistoryTable — columna de confirmaciones', () => {
+  it('muestra las dos marcas independientes (socio / jefa de cajas)', () => {
+    render(
+      <InstallmentHistoryTable
+        installments={[
+          {
+            ...base,
+            estatus: 'ENTREGADA',
+            confirmadoPorSocio: true,
+            cerradoPorJefa: false,
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByText('Socio')).toBeInTheDocument();
+    expect(screen.getByText('Jefa de cajas')).toBeInTheDocument();
+  });
+
+  it('no muestra confirmaciones para métodos que no son efectivo/RST', () => {
+    render(
+      <InstallmentHistoryTable
+        installments={[{ ...base, tipoPago: 'TRANSFERENCIA' }]}
+      />,
+    );
+
+    expect(screen.queryByText('Socio')).not.toBeInTheDocument();
+  });
+});

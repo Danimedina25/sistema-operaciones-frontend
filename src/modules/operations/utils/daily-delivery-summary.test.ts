@@ -75,4 +75,35 @@ describe('computeDailyDeliverySummary', () => {
 
     expect(summary.nextPickup).toBe('2026-01-10T16:00:00.000Z');
   });
+
+  describe('confirmación parcial de parcialidades (cerradoPorJefa)', () => {
+    it('cuenta como entregado cuando la jefa ya cerró aunque falte el socio', () => {
+      const summary = computeDailyDeliverySummary([
+        buildDelivery({ id: 1, monto: 100, estatus: 'ENTREGADA', cerradoPorJefa: true }),
+      ]);
+
+      expect(summary.totalDelivered).toBe(100);
+      expect(summary.totalPending).toBe(0);
+      expect(summary.pendingConfirmationCount).toBe(0);
+    });
+
+    it('sigue pendiente cuando solo confirmó el socio', () => {
+      const summary = computeDailyDeliverySummary([
+        buildDelivery({ id: 1, monto: 100, estatus: 'ENTREGADA', cerradoPorJefa: false }),
+      ]);
+
+      expect(summary.totalDelivered).toBe(0);
+      expect(summary.totalPending).toBe(100);
+      expect(summary.pendingConfirmationCount).toBe(1);
+    });
+
+    it('el flujo legacy (ENTREGADO sin cerradoPorJefa) mantiene el comportamiento previo', () => {
+      const summary = computeDailyDeliverySummary([
+        buildDelivery({ id: 1, monto: 100, estatus: 'ENTREGADO' }),
+      ]);
+
+      expect(summary.totalDelivered).toBe(100);
+      expect(summary.pendingConfirmationCount).toBe(1);
+    });
+  });
 });

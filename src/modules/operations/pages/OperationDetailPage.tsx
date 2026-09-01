@@ -28,8 +28,10 @@ import { useDeliverReturnInstallment } from '../hooks/returns/use-deliver-return
 import { useCancelReturnInstallment } from '../hooks/returns/use-cancel-return-installment';
 import { useReturnRequestSummary } from '../hooks/returns/use-return-request-summary';
 import {
+  canCancelReturnInstallment,
+  canJefaDeliverInstallment,
+  canSocioConfirmInstallment,
   installmentToCashDeliveryTarget,
-  isCashReturnMethod,
   type ReturnModalVariant,
 } from '../utils/return-installment';
 import { formatCurrency } from '../utils/operation-formatters';
@@ -206,18 +208,22 @@ export default function OperationDetailPage() {
   const isSocioComercial = roles.includes('SOCIO_COMERCIAL');
   const isJefaCajas = roles.includes('JEFA_CAJAS');
   const isAdmin = roles.includes('ADMIN');
+  const isJefaCuentas = roles.includes('JEFA_CUENTAS');
+  const isAuxiliarCuentas = roles.includes('AUXILIAR_CUENTAS');
 
   function canConfirmInstallment(i: ReturnInstallment): boolean {
-    return isSocioComercial && i.estatus === 'PROGRAMADA' && isCashReturnMethod(i.tipoPago);
+    return canSocioConfirmInstallment(i, { isSocioComercial });
   }
   function canDeliverInstallment(i: ReturnInstallment): boolean {
-    return (isJefaCajas || isAdmin) && i.estatus === 'ENTREGADA' && isCashReturnMethod(i.tipoPago);
+    return canJefaDeliverInstallment(i, { isJefaCajas, isAdmin });
   }
   function canCancelInstallment(i: ReturnInstallment): boolean {
-    if (i.estatus !== 'PROGRAMADA' && i.estatus !== 'ENTREGADA') return false;
-    if (isAdmin) return true;
-    if (isCashReturnMethod(i.tipoPago)) return isJefaCajas;
-    return roles.includes('JEFA_CUENTAS') || roles.includes('AUXILIAR_CUENTAS');
+    return canCancelReturnInstallment(i, {
+      isAdmin,
+      isJefaCajas,
+      isJefaCuentas,
+      isAuxiliarCuentas,
+    });
   }
 
   return (

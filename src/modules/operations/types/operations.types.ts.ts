@@ -339,6 +339,15 @@ export interface ReturnInstallment {
   realizadoPorNombre?: string | null;
   entregadoPorId?: number | null;
   entregadoPorNombre?: string | null;
+  confirmadoPorId?: number | null;
+  confirmadoPorNombre?: string | null;
+  /**
+   * Marcas independientes del cierre de una recolección en efectivo / RST. La
+   * parcialidad queda `COMPLETADA` solo cuando ambas son `true`; con una sola,
+   * `estatus` es `ENTREGADA` ("confirmación parcial").
+   */
+  confirmadoPorSocio?: boolean;
+  cerradoPorJefa?: boolean;
   canceladoPorId?: number | null;
   canceladoPorNombre?: string | null;
 

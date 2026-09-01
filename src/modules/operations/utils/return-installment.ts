@@ -162,6 +162,62 @@ export function isCashReturnMethod(tipoPago: PaymentType): boolean {
 }
 
 /**
+ * Las dos confirmaciones del cierre de una recolección en efectivo son
+ * independientes y se registran en cualquier orden. La parcialidad está en un
+ * estado sobre el que aún se puede actuar mientras no esté completada ni
+ * cancelada (`PROGRAMADA` o `ENTREGADA` = confirmación parcial).
+ */
+function installmentAcceptsMarks(
+  i: Pick<ReturnInstallment, 'estatus' | 'tipoPago'>,
+): boolean {
+  return (
+    isCashReturnMethod(i.tipoPago) &&
+    (i.estatus === 'PROGRAMADA' || i.estatus === 'ENTREGADA')
+  );
+}
+
+/** El socio comercial puede confirmar la recepción y aún no lo ha hecho. */
+export function canSocioConfirmInstallment(
+  i: Pick<ReturnInstallment, 'estatus' | 'tipoPago' | 'confirmadoPorSocio'>,
+  roles: { isSocioComercial: boolean },
+): boolean {
+  return (
+    roles.isSocioComercial && installmentAcceptsMarks(i) && !i.confirmadoPorSocio
+  );
+}
+
+/** La jefa de cajas (o admin) puede cerrar la entrega y aún no lo ha hecho. */
+export function canJefaDeliverInstallment(
+  i: Pick<ReturnInstallment, 'estatus' | 'tipoPago' | 'cerradoPorJefa'>,
+  roles: { isJefaCajas: boolean; isAdmin: boolean },
+): boolean {
+  return (
+    (roles.isJefaCajas || roles.isAdmin) &&
+    installmentAcceptsMarks(i) &&
+    !i.cerradoPorJefa
+  );
+}
+
+/**
+ * Cancelar una recolección solo mientras ninguna de las dos partes haya
+ * confirmado (`PROGRAMADA`). En cuanto hay una marca, ya no se puede.
+ */
+export function canCancelReturnInstallment(
+  i: Pick<ReturnInstallment, 'estatus' | 'tipoPago'>,
+  roles: {
+    isAdmin: boolean;
+    isJefaCajas: boolean;
+    isJefaCuentas: boolean;
+    isAuxiliarCuentas: boolean;
+  },
+): boolean {
+  if (i.estatus !== 'PROGRAMADA') return false;
+  if (roles.isAdmin) return true;
+  if (isCashReturnMethod(i.tipoPago)) return roles.isJefaCajas;
+  return roles.isJefaCuentas || roles.isAuxiliarCuentas;
+}
+
+/**
  * `view`   → consulta: resumen + historial de solo lectura, sin formulario ni
  *            botones de acción.
  * `manage` → operativo: formulario para registrar/programar (si el rol lo

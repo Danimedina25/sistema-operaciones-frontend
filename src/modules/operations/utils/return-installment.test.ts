@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  canCancelReturnInstallment,
+  canJefaDeliverInstallment,
+  canSocioConfirmInstallment,
   cleanAuthorizedRecipients,
   computeBalanceAfterInstallment,
   HISTORICAL_RECEIVER_LABEL,
@@ -438,5 +441,105 @@ describe('resolveReturnRowActions', () => {
       primaryVariant: 'view',
       showConfirmRecoleccion: false,
     });
+  });
+});
+
+describe('canSocioConfirmInstallment / canJefaDeliverInstallment (doble firma independiente)', () => {
+  const cash = (
+    estatus: ReturnInstallmentStatus,
+    marks: { confirmadoPorSocio?: boolean; cerradoPorJefa?: boolean } = {},
+  ) => ({ tipoPago: 'EFECTIVO' as const, estatus, ...marks });
+
+  it('en PROGRAMADA (sin ninguna marca) el socio y la jefa pueden actuar los dos', () => {
+    const i = cash('PROGRAMADA');
+    expect(canSocioConfirmInstallment(i, { isSocioComercial: true })).toBe(true);
+    expect(
+      canJefaDeliverInstallment(i, { isJefaCajas: true, isAdmin: false }),
+    ).toBe(true);
+  });
+
+  it('en ENTREGADA solo falta la marca pendiente', () => {
+    const soloSocio = cash('ENTREGADA', { confirmadoPorSocio: true, cerradoPorJefa: false });
+    expect(canSocioConfirmInstallment(soloSocio, { isSocioComercial: true })).toBe(false);
+    expect(
+      canJefaDeliverInstallment(soloSocio, { isJefaCajas: true, isAdmin: false }),
+    ).toBe(true);
+
+    const soloJefa = cash('ENTREGADA', { confirmadoPorSocio: false, cerradoPorJefa: true });
+    expect(canSocioConfirmInstallment(soloJefa, { isSocioComercial: true })).toBe(true);
+    expect(
+      canJefaDeliverInstallment(soloJefa, { isJefaCajas: true, isAdmin: false }),
+    ).toBe(false);
+  });
+
+  it('ninguno puede actuar sobre COMPLETADA o CANCELADA', () => {
+    for (const estatus of ['COMPLETADA', 'CANCELADA'] as const) {
+      const i = cash(estatus);
+      expect(canSocioConfirmInstallment(i, { isSocioComercial: true })).toBe(false);
+      expect(
+        canJefaDeliverInstallment(i, { isJefaCajas: true, isAdmin: false }),
+      ).toBe(false);
+    }
+  });
+
+  it('solo aplica a efectivo/RST', () => {
+    const transferencia = {
+      tipoPago: 'TRANSFERENCIA' as const,
+      estatus: 'PROGRAMADA' as const,
+    };
+    expect(canSocioConfirmInstallment(transferencia, { isSocioComercial: true })).toBe(false);
+    expect(
+      canJefaDeliverInstallment(transferencia, { isJefaCajas: true, isAdmin: false }),
+    ).toBe(false);
+  });
+
+  it('respeta el rol', () => {
+    const i = cash('PROGRAMADA');
+    expect(canSocioConfirmInstallment(i, { isSocioComercial: false })).toBe(false);
+    expect(
+      canJefaDeliverInstallment(i, { isJefaCajas: false, isAdmin: false }),
+    ).toBe(false);
+    expect(canJefaDeliverInstallment(i, { isJefaCajas: false, isAdmin: true })).toBe(true);
+  });
+});
+
+describe('canCancelReturnInstallment', () => {
+  const roles = {
+    jefaCajas: { isAdmin: false, isJefaCajas: true, isJefaCuentas: false, isAuxiliarCuentas: false },
+    jefaCuentas: { isAdmin: false, isJefaCajas: false, isJefaCuentas: true, isAuxiliarCuentas: false },
+    admin: { isAdmin: true, isJefaCajas: false, isJefaCuentas: false, isAuxiliarCuentas: false },
+  };
+
+  it('cancelable en PROGRAMADA por el rol correspondiente al método', () => {
+    expect(
+      canCancelReturnInstallment(
+        { tipoPago: 'EFECTIVO', estatus: 'PROGRAMADA' },
+        roles.jefaCajas,
+      ),
+    ).toBe(true);
+    expect(
+      canCancelReturnInstallment(
+        { tipoPago: 'TRANSFERENCIA', estatus: 'PROGRAMADA' },
+        roles.jefaCuentas,
+      ),
+    ).toBe(true);
+  });
+
+  it('ya no es cancelable en cuanto hay una marca (ENTREGADA)', () => {
+    expect(
+      canCancelReturnInstallment(
+        { tipoPago: 'EFECTIVO', estatus: 'ENTREGADA' },
+        roles.jefaCajas,
+      ),
+    ).toBe(false);
+  });
+
+  it('admin puede cancelar cualquier método en PROGRAMADA', () => {
+    expect(
+      canCancelReturnInstallment(
+        { tipoPago: 'EFECTIVO', estatus: 'PROGRAMADA' },
+        roles.admin,
+      ),
+    ).toBe(true);
   });
 });

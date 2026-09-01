@@ -36,10 +36,20 @@ Aritmética con `BigDecimal`/`DECIMAL(15,2)`, `HALF_UP`. Programadas/entregadas
 - `RETORNADO` — la suma de completadas cubre el monto solicitado.
 
 ### Parcialidad (`ReturnInstallmentStatus`, `VARCHAR`)
-- `PROGRAMADA` — efectivo/RST con recolección agendada. No cuenta.
-- `ENTREGADA` — el socio confirmó la recepción, falta cierre de JEFA_CAJAS. No cuenta.
-- `COMPLETADA` — confirmada/realizada. **Única que cuenta como retornado.**
-- `CANCELADA` — cancelada antes de completarse. Libera el saldo.
+
+Efectivo/RST: el cierre tiene **dos marcas independientes**, en cualquier orden:
+la confirmación del **socio comercial** (`fechaConfirmacion` + `confirmadoPor`) y
+el cierre de la **jefa de cajas** (`fechaEntrega` + `entregadoPor` + foto +
+persona que recibió). `estatus` se recalcula tras cada marca
+(`recomputeInstallmentStatus`) y es una proyección de esas dos:
+
+- `PROGRAMADA` — recolección agendada, ninguna de las dos marcas. No cuenta.
+- `ENTREGADA` — **"confirmación parcial"**: exactamente una de las dos marcas
+  (falta la otra parte). No cuenta.
+- `COMPLETADA` — **ambas** marcas. **Única que cuenta como retornado**;
+  `fechaRealizacion` se fija en este momento (no antes).
+- `CANCELADA` — cancelada **solo desde `PROGRAMADA`** (ninguna marca aún).
+  Libera el saldo.
 
 Transferencia/depósito/cheque: la parcialidad nace `COMPLETADA` (movimiento ya hecho).
 
@@ -56,9 +66,9 @@ Transferencia/depósito/cheque: la parcialidad nace `COMPLETADA` (movimiento ya 
 | `POST /requests/{returnRequestId}/installments` | ADMIN, GERENTE, DIRECCION, JEFA_CAJAS, JEFA_CUENTAS, AUXILIAR_CUENTAS (el servicio valida que el rol corresponda al método) | `{ monto, cuentaOrigenId?, comprobanteUrl?, fechaHoraRecoleccion?, codigoRetiroSinTarjeta?, observaciones? }` | transf → parcialidad `COMPLETADA` (exige cuentaOrigen + comprobante); efectivo/RST → `PROGRAMADA` (exige fechaHoraRecoleccion; RST además cuentaOrigen + código) |
 | `GET /requests/{returnRequestId}` | 7 roles (incl. socio) | — | `{ solicitud: ReturnPaymentResponse, parcialidades: ReturnInstallment[] }` |
 | `GET /requests/{returnRequestId}/installments` | 7 roles | — | `ReturnInstallment[]` |
-| `PATCH /installments/{installmentId}/confirm` | SOCIO_COMERCIAL (dueño) | — | `PROGRAMADA → ENTREGADA` |
-| `PATCH /installments/{installmentId}/deliver` | ADMIN, GERENTE, DIRECCION, JEFA_CAJAS | `{ comprobanteEntregaUrl, personaQueRecibioEfectivo }` | `ENTREGADA → COMPLETADA` + evidencia + persona autorizada que recibió (misma transacción) |
-| `PATCH /installments/{installmentId}/cancel` | ADMIN, GERENTE, DIRECCION, JEFA_CAJAS, JEFA_CUENTAS, AUXILIAR_CUENTAS | `{ motivo }` | `PROGRAMADA/ENTREGADA → CANCELADA` |
+| `PATCH /installments/{installmentId}/confirm` | SOCIO_COMERCIAL (dueño) | — | Marca "socio confirmó" (independiente de la jefa). `PROGRAMADA\|ENTREGADA → ENTREGADA\|COMPLETADA` según falte o no la otra marca |
+| `PATCH /installments/{installmentId}/deliver` | ADMIN, GERENTE, DIRECCION, JEFA_CAJAS | `{ comprobanteEntregaUrl, personaQueRecibioEfectivo }` | Marca "jefa cerró" (independiente del socio) + evidencia + persona autorizada. `PROGRAMADA\|ENTREGADA → ENTREGADA\|COMPLETADA` según falte o no la otra marca |
+| `PATCH /installments/{installmentId}/cancel` | ADMIN, GERENTE, DIRECCION, JEFA_CAJAS, JEFA_CUENTAS, AUXILIAR_CUENTAS | `{ motivo }` | `PROGRAMADA → CANCELADA` (solo sin ninguna marca) |
 | `GET /installments/today-deliveries?fecha&tipoPago` | ADMIN, GERENTE, DIRECCION, JEFA_CAJAS | — | `Page<ReturnInstallment>` (PROGRAMADA/ENTREGADA por `fechaHoraRecoleccion`) |
 | `GET /installments/late` | ADMIN, GERENTE, DIRECCION, JEFA_CAJAS | — | `Page<ReturnInstallment>` (PROGRAMADA con recolección vencida) |
 
@@ -74,6 +84,11 @@ muestra "No registrado (entrega histórica)". Es **distinta** de
 `entregadoPorNombre` (usuario interno del sistema que cerró la entrega).
 Etiquetas de UI: "Persona que recibió" (efectivo) / "Persona que realizó el
 retiro" (retiro sin tarjeta).
+
+`confirmadoPorSocio` / `cerradoPorJefa` (boolean): las dos marcas independientes
+del cierre — ver sección 2. `confirmadoPorId` / `confirmadoPorNombre`: socio que
+confirmó (contraparte de `entregadoPorId` / `entregadoPorNombre`, el usuario del
+sistema que cerró).
 
 ### Endpoints legacy (a nivel solicitud) — `@Deprecated`, siguen respondiendo
 `PATCH /payments/{id}/realize`, `/cash-pickup-time`, `/confirm-cash-pickup`,
@@ -92,10 +107,21 @@ cuerpo (delega en la misma ruta transaccional que `/installments/{id}/deliver`).
 6. Concurrencia: dos peticiones que individualmente caben pero juntas superan el
    saldo → solo una se confirma; la otra falla con 400
    `ReturnInstallmentAmountExceedsAvailableException`.
-7. Cancelar solo aplica a parcialidades no completadas; recalcula solicitud y
-   operación. Cancelar la última activa devuelve la solicitud a `SOLICITADO`.
-8. **Cierre de entrega (`/deliver`)** — efectivo / retiro sin tarjeta,
-   `ENTREGADA → COMPLETADA`. Se valida todo antes de mutar nada:
+7. Cancelar solo aplica a parcialidades `PROGRAMADA` (ninguna marca); recalcula
+   solicitud y operación. Cancelar la última activa devuelve la solicitud a
+   `SOLICITADO`.
+8. **Doble confirmación independiente (efectivo / retiro sin tarjeta)** —
+   `/confirm` (socio) y `/deliver` (jefa) ya no son secuenciales: cada uno se
+   puede llamar mientras la parcialidad no esté `COMPLETADA` ni `CANCELADA`, sin
+   importar si la otra parte ya actuó. `recomputeInstallmentStatus` recalcula el
+   estatus tras cada marca; llega a `COMPLETADA` (y fija `fechaRealizacion`) solo
+   cuando están **ambas**. Idempotencia por marca: `/confirm` rechaza si
+   `fechaConfirmacion` ya está puesta; `/deliver` rechaza si `fechaEntrega` ya
+   está puesta (ambos con `ReturnInstallmentInvalidStatusException`, 400, sin
+   mutar). Cuando una parte cierra su marca antes que la otra, se notifica a la
+   contraparte para que complete la suya.
+9. **Cierre de la jefa (`/deliver`)** — exige, en cualquier estatus admitido, y
+   se valida todo antes de mutar nada:
    - `comprobanteEntregaUrl` presente y no vacío
      (`ReturnInstallmentReceiptRequiredException`, 400).
    - `personaQueRecibioEfectivo` presente y no vacía
@@ -109,18 +135,17 @@ cuerpo (delega en la misma ruta transaccional que `/installments/{id}/deliver`).
      `ReturnInstallmentReceiverNotAuthorizedException`, 400 —
      "La persona seleccionada no está autorizada para recibir esta entrega."
    - Se persiste el **nombre canónico** de la solicitud, no el texto recibido.
-   - Método distinto de efectivo/RST o estatus distinto de `ENTREGADA` →
+   - Método distinto de efectivo/RST, o estatus `COMPLETADA`/`CANCELADA` →
      `ReturnInstallmentInvalidStatusException`, 400 (sin cambiar estado).
-   - La transición es transaccional e idempotente: un segundo `/deliver` sobre
-     una parcialidad ya `COMPLETADA` falla por el chequeo de estatus y no
-     modifica datos.
    - Cualquier validación fallida deja intactos estatus y totales.
 
 ## 5. Notificaciones (`NotificationType`, módulo `PAGOS`, `referenceType` `RETURN_INSTALLMENT` o `PAYMENT_OPERATION`)
 
 - `RETURN_INSTALLMENT_SCHEDULED` / `RETURN_INSTALLMENT_CODE_AVAILABLE` — recolección
   programada (efectivo/RST) → socio.
-- `RETURN_INSTALLMENT_DELIVERED` — el socio confirmó, cerrar → JEFA_CAJAS/ADMIN.
+- `RETURN_INSTALLMENT_DELIVERED` — se reutiliza para ambos sentidos de la doble
+  confirmación: si el socio confirma primero → JEFA_CAJAS/ADMIN ("ciérrala
+  cuando puedas"); si la jefa cierra primero → el socio ("confírmala").
 - `RETURN_INSTALLMENT_COMPLETED` — parcialidad realizada → socio, con monto de la
   parcialidad, solicitado, acumulado retornado, pendiente.
 - `RETURN_REQUEST_COMPLETED` — solicitud completada → socio.
@@ -146,3 +171,6 @@ hace que los totales históricos y los snapshots ya registrados no cambien.
 5. `2026-09-02_add_evidencia_importe_preparado_installment.sql` (columna nullable)
 6. `2026-09-03_add_persona_que_recibio_efectivo_installment.sql` (columna nullable,
    `VARCHAR(200)`; compatible con parcialidades históricas — no toca datos ni estados)
+7. `2026-09-04_add_confirmado_por_installment.sql` (columna nullable `BIGINT` +
+   FK a `users`; parcialidades históricas `COMPLETADA` no se recalculan — sin
+   backfill)

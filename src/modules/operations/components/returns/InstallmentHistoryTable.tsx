@@ -1,10 +1,39 @@
+import { Check } from 'lucide-react';
 import {
   formatCurrency,
   formatDateTime,
 } from '@/modules/operations/utils/operation-formatters';
-import { resolveInstallmentReceiverDisplay } from '@/modules/operations/utils/return-installment';
+import {
+  isCashReturnMethod,
+  resolveInstallmentReceiverDisplay,
+} from '@/modules/operations/utils/return-installment';
 import type { ReturnInstallment } from '../../types/operations.types.ts';
 import { InstallmentStatusBadge } from './InstallmentStatusBadge';
+
+/** Una de las dos marcas independientes del cierre (socio / jefa de cajas). */
+function ConfirmationMark({
+  label,
+  done,
+  fecha,
+}: {
+  label: string;
+  done: boolean;
+  fecha?: string | null;
+}) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1 ${done ? 'text-emerald-700' : 'text-slate-400'}`}
+      title={done && fecha ? formatDateTime(fecha) : undefined}
+    >
+      {done ? (
+        <Check className="h-3 w-3 shrink-0" aria-hidden="true" />
+      ) : (
+        <span className="h-3 w-3 shrink-0 rounded-full border border-current" aria-hidden="true" />
+      )}
+      {label}
+    </span>
+  );
+}
 
 interface InstallmentHistoryTableProps {
   installments: ReturnInstallment[];
@@ -56,6 +85,7 @@ export function InstallmentHistoryTable({
             <th className="px-3 py-2">Fecha</th>
             <th className="px-3 py-2">Responsable</th>
             <th className="px-3 py-2">Persona que recibió</th>
+            <th className="px-3 py-2">Confirmaciones</th>
             <th className="px-3 py-2">Comprobante</th>
             <th className="px-3 py-2">Origen / Código</th>
             <th className="px-3 py-2">Observaciones</th>
@@ -100,6 +130,24 @@ export function InstallmentHistoryTable({
                     >
                       {receptor}
                     </span>
+                  ) : (
+                    <span className="text-slate-400">-</span>
+                  )}
+                </td>
+                <td className="px-3 py-2 text-xs">
+                  {isCashReturnMethod(i.tipoPago) ? (
+                    <div className="flex flex-col gap-0.5">
+                      <ConfirmationMark
+                        label="Socio"
+                        done={!!i.confirmadoPorSocio}
+                        fecha={i.fechaConfirmacion}
+                      />
+                      <ConfirmationMark
+                        label="Jefa de cajas"
+                        done={!!i.cerradoPorJefa}
+                        fecha={i.fechaEntrega}
+                      />
+                    </div>
                   ) : (
                     <span className="text-slate-400">-</span>
                   )}
