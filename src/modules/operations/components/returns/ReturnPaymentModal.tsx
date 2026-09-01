@@ -82,6 +82,8 @@ export function ReturnPaymentModal({
   const { accounts } = useBankAccounts();
 
   const isManage = variant === 'manage';
+  const isCashManage =
+    isManage && !!returnRequest && isCashReturnMethod(returnRequest.tipoPago);
 
   const bankAccounts = useMemo(
     () =>
@@ -146,47 +148,78 @@ export function ReturnPaymentModal({
     ? 'Esta solicitud aún no tiene recolecciones registradas.'
     : 'Esta solicitud aún no tiene retornos registrados.';
 
+  const registerFormSection =
+    showRegisterSection && returnRequest ? (
+      <section className="rounded-2xl border border-slate-200 bg-white p-4">
+        <div className="mb-3 flex items-center gap-2">
+          <PlusCircle className="h-5 w-5 text-emerald-600" />
+          <h3 className="text-sm font-semibold text-slate-900">
+            {registrarSectionTitle}
+          </h3>
+        </div>
+
+        {availability.canRegister ? (
+          <RegisterInstallmentForm
+            key={`${returnRequest.id}-${returnRequest.montoRetornado ?? 0}-${returnRequest.montoEnProceso ?? 0}`}
+            returnRequest={returnRequest}
+            bankAccounts={bankAccounts}
+            isSubmitting={isSubmittingInstallment}
+            hideSummary
+            onSubmit={(values) =>
+              onSubmitInstallment(returnRequest.id, {
+                ...values,
+                operationId: returnRequest.operationId,
+              })
+            }
+          />
+        ) : (
+          <p className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+            {returnRequest.estatus === 'RETORNADO'
+              ? 'Esta solicitud ya fue retornada por completo.'
+              : (availability.reason ??
+                'No hay retornos parciales por registrar para esta solicitud.')}
+          </p>
+        )}
+      </section>
+    ) : null;
+
+  const historyTable = (
+    <InstallmentHistoryTable
+      installments={installments}
+      isLoading={isLoadingHistory}
+      emptyMessage={emptyHistoryMessage}
+      canConfirm={isManage ? canConfirm : undefined}
+      canDeliver={isManage ? canDeliver : undefined}
+      canCancel={isManage ? canCancel : undefined}
+      onConfirm={isManage ? onConfirm : undefined}
+      onDeliver={isManage ? onDeliver : undefined}
+      onCancel={isManage ? onCancel : undefined}
+    />
+  );
+
   return (
     <Modal open={open} title={title} onClose={onClose}>
       {returnRequest === null ? (
         <div className="py-8 text-center text-sm text-slate-500">Cargando...</div>
+      ) : isCashManage ? (
+        // "Confirmar recolección": solo la tabla de recolecciones (primero) y,
+        // si aplica, el formulario para programar una nueva. Sin secciones
+        // informativas.
+        <div className="space-y-6">
+          <section className="rounded-2xl border border-slate-200 bg-white p-4">
+            <h3 className="mb-3 text-sm font-semibold text-slate-900">
+              Recolecciones registradas
+            </h3>
+            {historyTable}
+          </section>
+
+          {showRegisterSection && availability.canRegister ? registerFormSection : null}
+        </div>
       ) : (
         <div className="space-y-6">
           <ReturnRequestSummarySection returnRequest={returnRequest} />
 
-          {showRegisterSection ? (
-            <section className="rounded-2xl border border-slate-200 bg-white p-4">
-              <div className="mb-3 flex items-center gap-2">
-                <PlusCircle className="h-5 w-5 text-emerald-600" />
-                <h3 className="text-sm font-semibold text-slate-900">
-                  {registrarSectionTitle}
-                </h3>
-              </div>
-
-              {availability.canRegister ? (
-                <RegisterInstallmentForm
-                  key={`${returnRequest.id}-${returnRequest.montoRetornado ?? 0}-${returnRequest.montoEnProceso ?? 0}`}
-                  returnRequest={returnRequest}
-                  bankAccounts={bankAccounts}
-                  isSubmitting={isSubmittingInstallment}
-                  hideSummary
-                  onSubmit={(values) =>
-                    onSubmitInstallment(returnRequest.id, {
-                      ...values,
-                      operationId: returnRequest.operationId,
-                    })
-                  }
-                />
-              ) : (
-                <p className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
-                  {returnRequest.estatus === 'RETORNADO'
-                    ? 'Esta solicitud ya fue retornada por completo.'
-                    : (availability.reason ??
-                      'No hay retornos parciales por registrar para esta solicitud.')}
-                </p>
-              )}
-            </section>
-          ) : null}
+          {registerFormSection}
 
           {showHistory ? (
             <section className="rounded-2xl border border-slate-200 bg-white p-4">
@@ -194,17 +227,7 @@ export function ReturnPaymentModal({
                 <History className="h-5 w-5 text-slate-500" />
                 <h3 className="text-sm font-semibold text-slate-900">{historyHeading}</h3>
               </div>
-              <InstallmentHistoryTable
-                installments={installments}
-                isLoading={isLoadingHistory}
-                emptyMessage={emptyHistoryMessage}
-                canConfirm={isManage ? canConfirm : undefined}
-                canDeliver={isManage ? canDeliver : undefined}
-                canCancel={isManage ? canCancel : undefined}
-                onConfirm={isManage ? onConfirm : undefined}
-                onDeliver={isManage ? onDeliver : undefined}
-                onCancel={isManage ? onCancel : undefined}
-              />
+              {historyTable}
             </section>
           ) : null}
         </div>
