@@ -1,4 +1,5 @@
-import { Check } from 'lucide-react';
+import { Banknote, Camera, Check, FileText } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import {
   formatCurrency,
   formatDateTime,
@@ -9,6 +10,29 @@ import {
 } from '@/modules/operations/utils/return-installment';
 import type { ReturnInstallment } from '../../types/operations.types.ts';
 import { InstallmentStatusBadge } from './InstallmentStatusBadge';
+
+/** Enlace a un archivo adjunto de la parcialidad, como botón compacto. */
+function ProofButton({
+  href,
+  label,
+  icon: Icon,
+}: {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+}) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1 text-[11px] font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+    >
+      <Icon className="h-3 w-3 shrink-0" aria-hidden="true" />
+      {label}
+    </a>
+  );
+}
 
 /** Una de las dos marcas independientes del cierre (socio / jefa de cajas). */
 function ConfirmationMark({
@@ -163,36 +187,27 @@ export function InstallmentHistoryTable({
                   {i.comprobanteUrl ||
                   i.evidenciaImportePreparadoUrl ||
                   i.comprobanteEntregaUrl ? (
-                    <div className="flex flex-col gap-0.5">
+                    <div className="flex flex-wrap gap-1">
                       {i.comprobanteUrl ? (
-                        <a
+                        <ProofButton
                           href={i.comprobanteUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-xs font-medium text-blue-600 hover:underline"
-                        >
-                          Comprobante
-                        </a>
+                          label="Comprobante"
+                          icon={FileText}
+                        />
                       ) : null}
                       {i.evidenciaImportePreparadoUrl ? (
-                        <a
+                        <ProofButton
                           href={i.evidenciaImportePreparadoUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-xs font-medium text-blue-600 hover:underline"
-                        >
-                          Evidencia importe
-                        </a>
+                          label="Evidencia importe"
+                          icon={Banknote}
+                        />
                       ) : null}
                       {i.comprobanteEntregaUrl ? (
-                        <a
+                        <ProofButton
                           href={i.comprobanteEntregaUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-xs font-medium text-blue-600 hover:underline"
-                        >
-                          Entrega
-                        </a>
+                          label="Entrega"
+                          icon={Camera}
+                        />
                       ) : null}
                     </div>
                   ) : (
