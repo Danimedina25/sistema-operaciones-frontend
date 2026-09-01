@@ -20,16 +20,16 @@ interface MarkCashReturnDeliveredModalProps {
   onClose: () => void;
 }
 
-const SELECT_PLACEHOLDER = 'Selecciona una persona autorizada';
-const NO_AUTHORIZED_MESSAGE =
-  'Esta solicitud no tiene personas autorizadas para recibir. Actualiza la solicitud antes de cerrar la entrega.';
+/** Valor del <select> para capturar una persona ajena a la lista de autorizados. */
+const OTRA_PERSONA = '__OTRA_PERSONA__';
+const SELECT_PLACEHOLDER = 'Selecciona una persona';
 
 /**
- * Confirmación reforzada del cierre final de una entrega en efectivo/retiro
- * sin tarjeta: el socio comercial ya confirmó que la recogió, esta acción la
- * cierra como completada. En la misma transacción se registran la persona
- * autorizada que recibió realmente los fondos y la foto de entrega — no se
- * puede guardar una sin la otra. Previene doble envío.
+ * Cierre de una entrega en efectivo / retiro sin tarjeta: registra quién recibió
+ * realmente los fondos + la foto de entrega en la misma transacción (no se puede
+ * una sin la otra). La persona puede ser un autorizado de la solicitud o —como
+ * excepción— alguien ajeno a la lista, que se captura por nombre y queda marcado.
+ * Previene doble envío.
  */
 export function MarkCashReturnDeliveredModal({
   target,
@@ -39,10 +39,13 @@ export function MarkCashReturnDeliveredModal({
 }: MarkCashReturnDeliveredModalProps) {
   const [comprobante, setComprobante] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [personaQueRecibio, setPersonaQueRecibio] = useState('');
+  const [selectValue, setSelectValue] = useState('');
+  const [otraNombre, setOtraNombre] = useState('');
 
   const selectId = useId();
   const selectErrorId = useId();
+  const otraId = useId();
+  const otraErrorId = useId();
 
   // Lista permitida, ya limpia y sin duplicados (defensa extra sobre el target).
   const autorizados = useMemo(
@@ -54,10 +57,14 @@ export function MarkCashReturnDeliveredModal({
     ? resolveDeliveryReceiverLabel(target.tipoPago)
     : SELECT_PLACEHOLDER;
 
+  // Sin autorizados registrados: la única vía es capturar el nombre.
+  const modoOtra = selectValue === OTRA_PERSONA || !hasAutorizados;
+
   // Reinicia selección y foto al cambiar o cerrar la parcialidad.
   useEffect(() => {
     setComprobante(null);
-    setPersonaQueRecibio('');
+    setSelectValue('');
+    setOtraNombre('');
   }, [target?.id]);
 
   useEffect(() => {
@@ -71,9 +78,14 @@ export function MarkCashReturnDeliveredModal({
     return () => URL.revokeObjectURL(objectUrl);
   }, [comprobante]);
 
-  const receptorValido = personaQueRecibio !== '' && autorizados.includes(personaQueRecibio);
+  const personaQueRecibio = modoOtra
+    ? otraNombre.trim().replace(/\s+/g, ' ')
+    : selectValue;
+  const receptorValido = modoOtra
+    ? personaQueRecibio.length > 0
+    : selectValue !== '' && autorizados.includes(selectValue);
   const fotoValida = !!comprobante && comprobante.type.startsWith('image/');
-  const canConfirm = hasAutorizados && receptorValido && fotoValida && !isSubmitting;
+  const canConfirm = receptorValido && fotoValida && !isSubmitting;
 
   const handleConfirm = () => {
     if (!target || !comprobante || !canConfirm) return;
@@ -91,8 +103,9 @@ export function MarkCashReturnDeliveredModal({
       {target ? (
         <>
           <p className="text-sm text-slate-600">
-            El socio comercial ya confirmó que recogió esta parcialidad en efectivo. Esta acción
-            la cierra como completada.
+            {target.confirmadoPorSocio
+              ? 'El socio comercial ya confirmó que recogió esta parcialidad. Al registrar la entrega quedará completada.'
+              : 'Registra la entrega del efectivo. La parcialidad quedará en confirmación parcial hasta que el socio comercial confirme la recepción.'}
           </p>
 
           <div className="mt-4 space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
@@ -105,7 +118,7 @@ export function MarkCashReturnDeliveredModal({
             </p>
             <p>
               <span className="font-medium">Personas autorizadas:</span>{' '}
-              {hasAutorizados ? autorizados.join(', ') : 'No especificado'}
+              {hasAutorizados ? autorizados.join(', ') : 'Ninguna registrada'}
             </p>
             <p>
               <span className="font-medium">Fecha programada:</span>{' '}
@@ -113,29 +126,23 @@ export function MarkCashReturnDeliveredModal({
             </p>
           </div>
 
-          {!hasAutorizados ? (
-            <div
-              role="alert"
-              className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700"
+          <div className="mt-4">
+            <label
+              htmlFor={hasAutorizados ? selectId : otraId}
+              className="mb-2 block text-sm font-semibold text-slate-800"
             >
-              {NO_AUTHORIZED_MESSAGE}
-            </div>
-          ) : (
-            <div className="mt-4">
-              <label
-                htmlFor={selectId}
-                className="mb-2 block text-sm font-semibold text-slate-800"
-              >
-                {receiverLabel} <span className="text-red-600">*</span>
-              </label>
+              {receiverLabel} <span className="text-red-600">*</span>
+            </label>
+
+            {hasAutorizados ? (
               <select
                 id={selectId}
-                value={personaQueRecibio}
+                value={selectValue}
                 disabled={isSubmitting}
                 aria-required="true"
-                aria-invalid={personaQueRecibio === ''}
-                aria-describedby={personaQueRecibio === '' ? selectErrorId : undefined}
-                onChange={(event) => setPersonaQueRecibio(event.target.value)}
+                aria-invalid={selectValue === ''}
+                aria-describedby={selectValue === '' ? selectErrorId : undefined}
+                onChange={(event) => setSelectValue(event.target.value)}
                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <option value="">{SELECT_PLACEHOLDER}</option>
@@ -144,14 +151,59 @@ export function MarkCashReturnDeliveredModal({
                     {nombre}
                   </option>
                 ))}
+                <option value={OTRA_PERSONA}>Otra persona (no autorizada)</option>
               </select>
-              {personaQueRecibio === '' ? (
-                <p id={selectErrorId} className="mt-1 text-xs text-red-600">
-                  Selecciona la persona autorizada que recibió los fondos.
-                </p>
-              ) : null}
-            </div>
-          )}
+            ) : (
+              <p className="mb-2 text-xs text-amber-700">
+                Esta solicitud no tiene personas autorizadas registradas. Escribe el
+                nombre de quien recibió el efectivo.
+              </p>
+            )}
+
+            {hasAutorizados && selectValue === '' ? (
+              <p id={selectErrorId} className="mt-1 text-xs text-red-600">
+                Selecciona quién recibió los fondos.
+              </p>
+            ) : null}
+
+            {modoOtra ? (
+              <div className="mt-3">
+                {hasAutorizados ? (
+                  <label
+                    htmlFor={otraId}
+                    className="mb-1 block text-xs font-medium text-slate-600"
+                  >
+                    Nombre de la persona que recibió
+                  </label>
+                ) : null}
+                <input
+                  id={otraId}
+                  type="text"
+                  value={otraNombre}
+                  disabled={isSubmitting}
+                  autoComplete="off"
+                  aria-required="true"
+                  aria-invalid={personaQueRecibio.length === 0}
+                  aria-describedby={
+                    personaQueRecibio.length === 0 ? otraErrorId : undefined
+                  }
+                  onChange={(event) => setOtraNombre(event.target.value)}
+                  placeholder="Nombre completo"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+                />
+                {personaQueRecibio.length === 0 ? (
+                  <p id={otraErrorId} className="mt-1 text-xs text-red-600">
+                    Escribe el nombre de la persona que recibió los fondos.
+                  </p>
+                ) : hasAutorizados ? (
+                  <p className="mt-1 text-xs text-amber-700">
+                    Esta persona no está en la lista de autorizados; se registrará como
+                    excepción.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
 
           <div className="mt-4">
             <label className="mb-2 block text-sm font-semibold text-slate-800">

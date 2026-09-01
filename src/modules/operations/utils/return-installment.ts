@@ -71,6 +71,8 @@ export interface CashDeliveryTarget {
   clienteNombre?: string | null;
   autorizados: string[];
   scheduledAt?: string | null;
+  /** El socio comercial ya confirmó la recepción (marca independiente). */
+  confirmadoPorSocio: boolean;
 }
 
 export function installmentToCashDeliveryTarget(i: ReturnInstallment): CashDeliveryTarget {
@@ -86,6 +88,7 @@ export function installmentToCashDeliveryTarget(i: ReturnInstallment): CashDeliv
       i.autorizadoParaRecibir3,
     ]),
     scheduledAt: i.fechaHoraRecoleccion ?? null,
+    confirmadoPorSocio: !!i.confirmadoPorSocio,
   };
 }
 

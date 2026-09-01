@@ -35,6 +35,39 @@ describe('InstallmentHistoryTable — persona que recibió', () => {
     expect(screen.getByText('No registrado (entrega histórica)')).toBeInTheDocument();
   });
 
+  it('marca "No autorizada" cuando quien recibió es ajeno a la lista', () => {
+    render(
+      <InstallmentHistoryTable
+        installments={[
+          {
+            ...base,
+            personaQueRecibioEfectivo: 'Pedro Ramírez',
+            recibioPersonaAutorizada: false,
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByText('Pedro Ramírez')).toBeInTheDocument();
+    expect(screen.getByText('No autorizada')).toBeInTheDocument();
+  });
+
+  it('no marca "No autorizada" cuando recibió un autorizado', () => {
+    render(
+      <InstallmentHistoryTable
+        installments={[
+          {
+            ...base,
+            personaQueRecibioEfectivo: 'María Gómez Díaz',
+            recibioPersonaAutorizada: true,
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.queryByText('No autorizada')).not.toBeInTheDocument();
+  });
+
   it('no muestra receptor para métodos que no son efectivo/RST', () => {
     render(
       <InstallmentHistoryTable

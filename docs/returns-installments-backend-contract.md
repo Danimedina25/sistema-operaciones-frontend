@@ -76,19 +76,25 @@ Transferencia/depósito/cheque: la parcialidad nace `COMPLETADA` (movimiento ya 
 `returnRequestMonto`, `returnRequestEstatus`, `clienteNombre`,
 `socioComercialNombre`, `socioComercialTelefono`, `autorizadoParaRecibir1..3`.
 
-`personaQueRecibioEfectivo` (string | null): persona autorizada que recibió
-físicamente el efectivo / realizó el retiro sin tarjeta. Se guarda el nombre
-canónico registrado en la solicitud (no el texto del cliente). `null` en
-parcialidades históricas cerradas antes de esta funcionalidad → el frontend
-muestra "No registrado (entrega histórica)". Es **distinta** de
-`entregadoPorNombre` (usuario interno del sistema que cerró la entrega).
-Etiquetas de UI: "Persona que recibió" (efectivo) / "Persona que realizó el
-retiro" (retiro sin tarjeta).
+`personaQueRecibioEfectivo` (string | null): persona que recibió físicamente el
+efectivo / realizó el retiro sin tarjeta. Si coincide con un autorizado se guarda
+el nombre canónico de la solicitud; si es alguien ajeno a la lista se guarda el
+nombre normalizado tal cual se capturó (ver `recibioPersonaAutorizada`). `null`
+en parcialidades históricas → el frontend muestra "No registrado (entrega
+histórica)". Es **distinta** de `entregadoPorNombre` (usuario interno del sistema
+que cerró la entrega). Etiquetas de UI: "Persona que recibió" (efectivo) /
+"Persona que realizó el retiro" (retiro sin tarjeta).
 
 `confirmadoPorSocio` / `cerradoPorJefa` (boolean): las dos marcas independientes
 del cierre — ver sección 2. `confirmadoPorId` / `confirmadoPorNombre`: socio que
 confirmó (contraparte de `entregadoPorId` / `entregadoPorNombre`, el usuario del
 sistema que cerró).
+
+`recibioPersonaAutorizada` (boolean | null): `true` si `personaQueRecibioEfectivo`
+coincide con un autorizado de la solicitud; `false` si recibió alguien **ajeno a
+la lista** (se acepta a propósito y se deja marcado para auditoría); `null` en
+históricas. El frontend permite capturar el nombre de una persona no autorizada
+("Otra persona") y lo muestra con una etiqueta "No autorizada" en el historial.
 
 ### Endpoints legacy (a nivel solicitud) — `@Deprecated`, siguen respondiendo
 `PATCH /payments/{id}/realize`, `/cash-pickup-time`, `/confirm-cash-pickup`,
@@ -120,21 +126,18 @@ cuerpo (delega en la misma ruta transaccional que `/installments/{id}/deliver`).
    está puesta (ambos con `ReturnInstallmentInvalidStatusException`, 400, sin
    mutar). Cuando una parte cierra su marca antes que la otra, se notifica a la
    contraparte para que complete la suya.
-9. **Cierre de la jefa (`/deliver`)** — exige, en cualquier estatus admitido, y
-   se valida todo antes de mutar nada:
+9. **Cierre de la jefa (`/deliver`)** — se valida todo antes de mutar nada:
    - `comprobanteEntregaUrl` presente y no vacío
      (`ReturnInstallmentReceiptRequiredException`, 400).
    - `personaQueRecibioEfectivo` presente y no vacía
      (`ReturnInstallmentReceiverRequiredException`, 400).
-   - La solicitud tiene al menos un autorizado
-     (`autorizadoParaRecibirEfectivo1..3`); si no,
-     `ReturnInstallmentNoAuthorizedRecipientsException`, 400 —
-     "Esta solicitud no tiene personas autorizadas para recibir."
-   - La persona enviada coincide con un autorizado comparando sin distinguir
-     mayúsculas, espacios repetidos ni acentos; si no,
-     `ReturnInstallmentReceiverNotAuthorizedException`, 400 —
-     "La persona seleccionada no está autorizada para recibir esta entrega."
-   - Se persiste el **nombre canónico** de la solicitud, no el texto recibido.
+   - Si el nombre coincide con un autorizado de la solicitud (comparando sin
+     distinguir mayúsculas, espacios repetidos ni acentos) se persiste el
+     **nombre canónico** de la solicitud y `recibioPersonaAutorizada = true`.
+   - Si **no** coincide con ninguno (o la solicitud no tiene autorizados) se
+     acepta igual: se persiste el nombre normalizado (trim + colapsa espacios) y
+     `recibioPersonaAutorizada = false`. **Ya no se lanza excepción por persona
+     no autorizada** — es una excepción registrada a propósito.
    - Método distinto de efectivo/RST, o estatus `COMPLETADA`/`CANCELADA` →
      `ReturnInstallmentInvalidStatusException`, 400 (sin cambiar estado).
    - Cualquier validación fallida deja intactos estatus y totales.
@@ -174,3 +177,5 @@ hace que los totales históricos y los snapshots ya registrados no cambien.
 7. `2026-09-04_add_confirmado_por_installment.sql` (columna nullable `BIGINT` +
    FK a `users`; parcialidades históricas `COMPLETADA` no se recalculan — sin
    backfill)
+8. `2026-09-05_add_recibio_persona_autorizada_installment.sql` (columna nullable
+   `BIT`; sin backfill)

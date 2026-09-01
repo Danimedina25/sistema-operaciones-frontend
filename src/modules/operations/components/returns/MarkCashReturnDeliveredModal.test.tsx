@@ -12,6 +12,7 @@ const baseTarget: CashDeliveryTarget = {
   clienteNombre: 'ACME',
   autorizados: ['María Gómez Díaz', 'Juan Pérez'],
   scheduledAt: null,
+  confirmadoPorSocio: true,
 };
 
 function imageFile(name = 'entrega.png') {
@@ -22,6 +23,14 @@ function fileInput(): HTMLInputElement {
   const input = document.querySelector('input[type="file"]');
   if (!input) throw new Error('no file input');
   return input as HTMLInputElement;
+}
+
+function selectEl() {
+  return screen.getByRole('combobox', { name: /persona que (recibió|realizó)/i });
+}
+
+function confirmButton() {
+  return screen.getByRole('button', { name: /sí, marcar como entregado/i });
 }
 
 function renderModal(overrides: Partial<Parameters<typeof MarkCashReturnDeliveredModal>[0]> = {}) {
@@ -40,18 +49,16 @@ function renderModal(overrides: Partial<Parameters<typeof MarkCashReturnDelivere
 }
 
 describe('MarkCashReturnDeliveredModal', () => {
-  it('muestra las personas autorizadas en el selector, sin texto libre ni "Otra persona"', () => {
+  it('lista los autorizados + la opción "Otra persona (no autorizada)"', () => {
     renderModal();
 
-    const select = screen.getByRole('combobox', { name: /persona que recibió/i });
-    const options = within(select).getAllByRole('option').map((o) => o.textContent);
-
+    const options = within(selectEl()).getAllByRole('option').map((o) => o.textContent);
     expect(options).toEqual([
-      'Selecciona una persona autorizada',
+      'Selecciona una persona',
       'María Gómez Díaz',
       'Juan Pérez',
+      'Otra persona (no autorizada)',
     ]);
-    expect(options).not.toContain('Otra persona');
   });
 
   it('limpia valores vacíos y duplicados de la lista permitida', () => {
@@ -62,13 +69,12 @@ describe('MarkCashReturnDeliveredModal', () => {
       },
     });
 
-    const select = screen.getByRole('combobox', { name: /persona que recibió/i });
-    const options = within(select).getAllByRole('option').map((o) => o.textContent);
-
+    const options = within(selectEl()).getAllByRole('option').map((o) => o.textContent);
     expect(options).toEqual([
-      'Selecciona una persona autorizada',
+      'Selecciona una persona',
       'María Gómez Díaz',
       'Juan Pérez',
+      'Otra persona (no autorizada)',
     ]);
   });
 
@@ -91,21 +97,13 @@ describe('MarkCashReturnDeliveredModal', () => {
     ).toBeInTheDocument();
   });
 
-  it('mantiene el botón deshabilitado sin receptor y sin foto', () => {
-    renderModal();
-    expect(screen.getByRole('button', { name: /sí, marcar como entregado/i })).toBeDisabled();
-  });
-
-  it('sigue deshabilitado con receptor pero sin foto', async () => {
+  it('el botón está deshabilitado sin receptor / sin foto', async () => {
     const user = userEvent.setup();
     renderModal();
+    expect(confirmButton()).toBeDisabled();
 
-    await user.selectOptions(
-      screen.getByRole('combobox', { name: /persona que recibió/i }),
-      'María Gómez Díaz',
-    );
-
-    expect(screen.getByRole('button', { name: /sí, marcar como entregado/i })).toBeDisabled();
+    await user.selectOptions(selectEl(), 'María Gómez Díaz');
+    expect(confirmButton()).toBeDisabled();
   });
 
   it('sigue deshabilitado con foto pero sin receptor', async () => {
@@ -113,37 +111,71 @@ describe('MarkCashReturnDeliveredModal', () => {
     renderModal();
 
     await user.upload(fileInput(), imageFile());
-
-    expect(screen.getByRole('button', { name: /sí, marcar como entregado/i })).toBeDisabled();
+    expect(confirmButton()).toBeDisabled();
   });
 
-  it('habilita el botón con receptor y foto válidos y envía el receptor seleccionado', async () => {
+  it('habilita y envía el autorizado seleccionado', async () => {
     const user = userEvent.setup();
     const { onConfirm } = renderModal();
 
-    await user.selectOptions(
-      screen.getByRole('combobox', { name: /persona que recibió/i }),
-      'Juan Pérez',
-    );
+    await user.selectOptions(selectEl(), 'Juan Pérez');
     await user.upload(fileInput(), imageFile());
 
-    const button = screen.getByRole('button', { name: /sí, marcar como entregado/i });
-    expect(button).toBeEnabled();
-
-    await user.click(button);
+    expect(confirmButton()).toBeEnabled();
+    await user.click(confirmButton());
     expect(onConfirm).toHaveBeenCalledWith(42, 1500, expect.any(File), 'Juan Pérez');
   });
 
-  it('bloquea el cierre y avisa cuando no hay personas autorizadas', () => {
-    renderModal({ target: { ...baseTarget, autorizados: [] } });
+  it('permite capturar una persona ajena a la lista con "Otra persona"', async () => {
+    const user = userEvent.setup();
+    const { onConfirm } = renderModal();
 
+    // Sin elegir "Otra persona" no hay input de texto.
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+
+    await user.selectOptions(selectEl(), 'Otra persona (no autorizada)');
+    const input = screen.getByRole('textbox');
+    await user.type(input, '  Pedro   Ramírez  ');
+    await user.upload(fileInput(), imageFile());
+
+    expect(screen.getByText(/se registrará como excepción/i)).toBeInTheDocument();
+    expect(confirmButton()).toBeEnabled();
+
+    await user.click(confirmButton());
+    // El nombre va normalizado (trim + espacios colapsados).
+    expect(onConfirm).toHaveBeenCalledWith(42, 1500, expect.any(File), 'Pedro Ramírez');
+  });
+
+  it('sin autorizados: muestra directamente el campo de texto (sin bloqueo)', async () => {
+    const user = userEvent.setup();
+    const { onConfirm } = renderModal({ target: { ...baseTarget, autorizados: [] } });
+
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
     expect(
-      screen.getByText(/no tiene personas autorizadas para recibir/i),
+      screen.getByText(/no tiene personas autorizadas registradas/i),
     ).toBeInTheDocument();
-    expect(
-      screen.queryByRole('combobox', { name: /persona que recibió/i }),
-    ).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /sí, marcar como entregado/i })).toBeDisabled();
+
+    await user.type(screen.getByRole('textbox'), 'Alguien Externo');
+    await user.upload(fileInput(), imageFile());
+
+    expect(confirmButton()).toBeEnabled();
+    await user.click(confirmButton());
+    expect(onConfirm).toHaveBeenCalledWith(42, 1500, expect.any(File), 'Alguien Externo');
+  });
+
+  it('mensaje según confirmación del socio', () => {
+    const { rerender } = renderModal();
+    expect(screen.getByText(/el socio comercial ya confirmó/i)).toBeInTheDocument();
+
+    rerender(
+      <MarkCashReturnDeliveredModal
+        target={{ ...baseTarget, confirmadoPorSocio: false }}
+        isSubmitting={false}
+        onConfirm={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/quedará en confirmación parcial/i)).toBeInTheDocument();
   });
 
   it('previene el doble envío mientras isSubmitting', () => {
@@ -155,12 +187,9 @@ describe('MarkCashReturnDeliveredModal', () => {
     const user = userEvent.setup();
     const { rerender } = renderModal();
 
-    await user.selectOptions(
-      screen.getByRole('combobox', { name: /persona que recibió/i }),
-      'María Gómez Díaz',
-    );
+    await user.selectOptions(selectEl(), 'María Gómez Díaz');
     await user.upload(fileInput(), imageFile());
-    expect(screen.getByRole('button', { name: /sí, marcar como entregado/i })).toBeEnabled();
+    expect(confirmButton()).toBeEnabled();
 
     rerender(
       <MarkCashReturnDeliveredModal
@@ -171,7 +200,7 @@ describe('MarkCashReturnDeliveredModal', () => {
       />,
     );
 
-    expect(screen.getByRole('combobox', { name: /persona que recibió/i })).toHaveValue('');
-    expect(screen.getByRole('button', { name: /sí, marcar como entregado/i })).toBeDisabled();
+    expect(selectEl()).toHaveValue('');
+    expect(confirmButton()).toBeDisabled();
   });
 });

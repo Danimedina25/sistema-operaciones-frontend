@@ -319,11 +319,16 @@ export interface ReturnInstallment {
   evidenciaImportePreparadoUrl?: string | null;
   comprobanteEntregaUrl?: string | null;
   /**
-   * Persona autorizada que recibió físicamente el efectivo / realizó el retiro
-   * sin tarjeta. `null` en parcialidades históricas cerradas antes de esta
+   * Persona que recibió físicamente el efectivo / realizó el retiro sin
+   * tarjeta. `null` en parcialidades históricas cerradas antes de esta
    * funcionalidad. Distinta de `entregadoPorNombre` (usuario del sistema).
    */
   personaQueRecibioEfectivo?: string | null;
+  /**
+   * `true` si la persona que recibió es un autorizado de la solicitud;
+   * `false` si recibió alguien ajeno a la lista; `null` en históricas.
+   */
+  recibioPersonaAutorizada?: boolean | null;
   codigoRetiroSinTarjeta?: string | null;
 
   fechaHoraRecoleccion?: string | null;

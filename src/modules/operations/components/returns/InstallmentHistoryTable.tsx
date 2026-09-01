@@ -121,14 +121,21 @@ export function InstallmentHistoryTable({
                 <td className="px-3 py-2 text-slate-600">{responsable}</td>
                 <td className="px-3 py-2 text-xs text-slate-600">
                   {receptor ? (
-                    <span
-                      className={
-                        i.personaQueRecibioEfectivo
-                          ? 'font-medium text-slate-800'
-                          : 'italic text-slate-400'
-                      }
-                    >
-                      {receptor}
+                    <span className="flex flex-col gap-0.5">
+                      <span
+                        className={
+                          i.personaQueRecibioEfectivo
+                            ? 'font-medium text-slate-800'
+                            : 'italic text-slate-400'
+                        }
+                      >
+                        {receptor}
+                      </span>
+                      {i.recibioPersonaAutorizada === false ? (
+                        <span className="w-fit rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
+                          No autorizada
+                        </span>
+                      ) : null}
                     </span>
                   ) : (
                     <span className="text-slate-400">-</span>
