@@ -33,7 +33,7 @@ export const OPERATIONS_QUICK_STATUS_FILTERS = [
   { value: 'PENDIENTE_VALIDACION', label: 'Pendientes' },
   { value: 'RECHAZADA', label: 'Rechazadas' },
   { value: 'VALIDADA', label: 'Listas para solicitar retorno' },
-  { value: 'COMPLETADA', label: 'Completadas' },
+  { value: 'COMPLETADA', label: 'Finalizadas' },
 ] as const;
 
 /**
@@ -71,7 +71,7 @@ export const operationStatusLabels: Record<OperationStatus, string> = {
 
   RETORNO_PARCIAL_ENTREGADO: 'Retorno parcial entregado',
 
-  RETORNADA: 'Retornada',
+  RETORNADA: 'Finalizado',
 
-  COMPLETADA: 'Completada',
+  COMPLETADA: 'Finalizado',
 };

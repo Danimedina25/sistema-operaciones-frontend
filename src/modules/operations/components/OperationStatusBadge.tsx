@@ -33,9 +33,9 @@ const statusLabels: Record<OperationStatus, string> = {
 
   RETORNO_PARCIAL_ENTREGADO: 'Retorno parcial entregado',
 
-  RETORNADA: 'Retornada',
+  RETORNADA: 'Finalizado',
 
-  COMPLETADA: 'Completada',
+  COMPLETADA: 'Finalizado',
 };
 
 export function OperationStatusBadge({
