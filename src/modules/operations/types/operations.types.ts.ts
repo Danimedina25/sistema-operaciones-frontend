@@ -284,6 +284,12 @@ export interface CreateReturnInstallmentRequest {
 
 export interface DeliverReturnInstallmentRequest {
   comprobanteEntregaUrl: string;
+  /**
+   * Persona autorizada de la solicitud que recibió físicamente el efectivo
+   * (o realizó el retiro sin tarjeta). El backend la normaliza, valida contra
+   * los autorizados de la solicitud y guarda el nombre canónico.
+   */
+  personaQueRecibioEfectivo: string;
 }
 
 export interface CancelReturnInstallmentRequest {
@@ -312,6 +318,12 @@ export interface ReturnInstallment {
   comprobanteUrl?: string | null;
   evidenciaImportePreparadoUrl?: string | null;
   comprobanteEntregaUrl?: string | null;
+  /**
+   * Persona autorizada que recibió físicamente el efectivo / realizó el retiro
+   * sin tarjeta. `null` en parcialidades históricas cerradas antes de esta
+   * funcionalidad. Distinta de `entregadoPorNombre` (usuario del sistema).
+   */
+  personaQueRecibioEfectivo?: string | null;
   codigoRetiroSinTarjeta?: string | null;
 
   fechaHoraRecoleccion?: string | null;
@@ -359,8 +371,14 @@ export interface ScheduleCashReturnPickupRequest {
   codigoRetiroSinTarjeta?: string | null;
 }
 
+/**
+ * Endpoint legacy `/payments/{id}/mark-cash-delivered` (deprecado, sin
+ * consumidores activos: el flujo vigente cierra por parcialidad). El backend
+ * también exige aquí la persona autorizada que recibió.
+ */
 export interface MarkCashReturnDeliveredRequest {
   comprobanteEntregaEfectivoUrl: string;
+  personaQueRecibioEfectivo: string;
 }
 
 export interface ReturnPaymentResponse {

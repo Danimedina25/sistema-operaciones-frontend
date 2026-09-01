@@ -1,4 +1,8 @@
 // hooks/returns/use-mark-cash-return-delivered.ts
+//
+// Endpoint legacy (deprecado). El flujo vigente cierra la entrega por
+// parcialidad — ver use-deliver-return-installment.ts. Se conserva alineado con
+// el contrato del backend (que ahora exige la persona autorizada que recibió).
 
 import { useState } from 'react';
 import toast from 'react-hot-toast';
@@ -22,6 +26,7 @@ export function useMarkCashReturnDelivered(
     returnPaymentId: number,
     operationId: number,
     comprobanteEntrega: File,
+    personaQueRecibioEfectivo: string,
   ) => {
     try {
       if (!user?.userId) {
@@ -30,6 +35,11 @@ export function useMarkCashReturnDelivered(
 
       if (!comprobanteEntrega.type.startsWith('image/')) {
         throw new Error('El comprobante de entrega debe ser una imagen');
+      }
+
+      const persona = personaQueRecibioEfectivo.trim();
+      if (!persona) {
+        throw new Error('Selecciona la persona autorizada que recibió los fondos');
       }
 
       setIsSubmitting(true);
@@ -43,6 +53,7 @@ export function useMarkCashReturnDelivered(
 
       await markCashReturnAsDelivered(returnPaymentId, {
         comprobanteEntregaEfectivoUrl: uploadResult.downloadUrl,
+        personaQueRecibioEfectivo: persona,
       });
 
       toast.success('Efectivo marcado como entregado');

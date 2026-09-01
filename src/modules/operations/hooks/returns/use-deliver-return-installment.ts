@@ -18,6 +18,7 @@ export function useDeliverReturnInstallment(options?: Options) {
     installmentId: number,
     operationId: number,
     comprobanteEntrega: File,
+    personaQueRecibioEfectivo: string,
   ) => {
     try {
       if (!user?.userId) {
@@ -25,6 +26,12 @@ export function useDeliverReturnInstallment(options?: Options) {
       }
       if (!comprobanteEntrega.type.startsWith('image/')) {
         throw new Error('El comprobante de entrega debe ser una imagen');
+      }
+      // El receptor debe ser válido antes de subir la foto: no se sube nada si
+      // no hay persona autorizada seleccionada.
+      const persona = personaQueRecibioEfectivo.trim();
+      if (!persona) {
+        throw new Error('Selecciona la persona autorizada que recibió los fondos');
       }
 
       setIsSubmitting(true);
@@ -38,6 +45,7 @@ export function useDeliverReturnInstallment(options?: Options) {
 
       await deliverReturnInstallment(installmentId, {
         comprobanteEntregaUrl: uploadResult.downloadUrl,
+        personaQueRecibioEfectivo: persona,
       });
 
       toast.success('Parcialidad cerrada correctamente');

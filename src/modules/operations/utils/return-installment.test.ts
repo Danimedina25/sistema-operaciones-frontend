@@ -1,12 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import {
+  cleanAuthorizedRecipients,
   computeBalanceAfterInstallment,
+  HISTORICAL_RECEIVER_LABEL,
+  installmentToCashDeliveryTarget,
+  resolveDeliveryReceiverLabel,
+  resolveInstallmentReceiverDisplay,
   resolveInstallmentSubmitLabel,
+  resolveReceiverHistoryLabel,
   resolveRegisterInstallmentAvailability,
   resolveReturnRequestTotals,
   shouldShowInstallmentHistory,
 } from './return-installment';
-import type { ReturnInstallmentStatus } from '@/modules/operations/types/operations.types.ts';
+import type {
+  ReturnInstallment,
+  ReturnInstallmentStatus,
+} from '@/modules/operations/types/operations.types.ts';
 
 const inst = (estatus: ReturnInstallmentStatus) => ({ estatus });
 
@@ -190,5 +199,115 @@ describe('resolveInstallmentSubmitLabel', () => {
     expect(
       resolveInstallmentSubmitLabel({ totals: base, importe: 40000, esEfectivo: true }),
     ).toBe('Programar recolección del retorno');
+  });
+});
+
+describe('cleanAuthorizedRecipients', () => {
+  it('elimina nulos, vacíos y espacios sobrantes', () => {
+    expect(
+      cleanAuthorizedRecipients([
+        'María Gómez',
+        null,
+        undefined,
+        '   ',
+        '  Juan   Pérez  ',
+      ]),
+    ).toEqual(['María Gómez', 'Juan Pérez']);
+  });
+
+  it('quita duplicados sin distinguir mayúsculas ni espacios internos', () => {
+    expect(
+      cleanAuthorizedRecipients(['María Gómez', 'maría  gómez', 'MARÍA GÓMEZ']),
+    ).toEqual(['María Gómez']);
+  });
+
+  it('lista vacía cuando no hay nombres válidos', () => {
+    expect(cleanAuthorizedRecipients([null, '', '  '])).toEqual([]);
+  });
+});
+
+describe('resolveDeliveryReceiverLabel / resolveReceiverHistoryLabel', () => {
+  it('efectivo usa "recibió el efectivo"', () => {
+    expect(resolveDeliveryReceiverLabel('EFECTIVO')).toBe('Persona que recibió el efectivo');
+    expect(resolveReceiverHistoryLabel('EFECTIVO')).toBe('Persona que recibió');
+  });
+
+  it('retiro sin tarjeta usa "realizó el retiro"', () => {
+    expect(resolveDeliveryReceiverLabel('RETIRO_SIN_TARJETA')).toBe(
+      'Persona que realizó el retiro',
+    );
+    expect(resolveReceiverHistoryLabel('RETIRO_SIN_TARJETA')).toBe(
+      'Persona que realizó el retiro',
+    );
+  });
+});
+
+describe('resolveInstallmentReceiverDisplay', () => {
+  it('devuelve el nombre cuando está registrado', () => {
+    expect(
+      resolveInstallmentReceiverDisplay({
+        tipoPago: 'EFECTIVO',
+        estatus: 'COMPLETADA',
+        personaQueRecibioEfectivo: 'María Gómez Díaz',
+      }),
+    ).toBe('María Gómez Díaz');
+  });
+
+  it('devuelve el texto histórico cuando la parcialidad está completada sin dato', () => {
+    expect(
+      resolveInstallmentReceiverDisplay({
+        tipoPago: 'RETIRO_SIN_TARJETA',
+        estatus: 'COMPLETADA',
+        personaQueRecibioEfectivo: null,
+      }),
+    ).toBe(HISTORICAL_RECEIVER_LABEL);
+  });
+
+  it('devuelve null para métodos que no son efectivo/RST', () => {
+    expect(
+      resolveInstallmentReceiverDisplay({
+        tipoPago: 'TRANSFERENCIA',
+        estatus: 'COMPLETADA',
+        personaQueRecibioEfectivo: null,
+      }),
+    ).toBeNull();
+  });
+
+  it('devuelve null si aún no se completa y no hay dato', () => {
+    expect(
+      resolveInstallmentReceiverDisplay({
+        tipoPago: 'EFECTIVO',
+        estatus: 'ENTREGADA',
+        personaQueRecibioEfectivo: null,
+      }),
+    ).toBeNull();
+  });
+});
+
+describe('installmentToCashDeliveryTarget', () => {
+  const base: ReturnInstallment = {
+    id: 7,
+    returnRequestId: 3,
+    operationId: 55,
+    monto: 10000,
+    tipoPago: 'EFECTIVO',
+    estatus: 'ENTREGADA',
+  };
+
+  it('construye una lista de autorizados limpia y sin duplicados', () => {
+    const target = installmentToCashDeliveryTarget({
+      ...base,
+      autorizadoParaRecibir1: 'María Gómez',
+      autorizadoParaRecibir2: '  maría   gómez ',
+      autorizadoParaRecibir3: 'Juan Pérez',
+    });
+
+    expect(target.autorizados).toEqual(['María Gómez', 'Juan Pérez']);
+    expect(target.tipoPago).toBe('EFECTIVO');
+  });
+
+  it('lista vacía cuando la solicitud no tiene autorizados', () => {
+    const target = installmentToCashDeliveryTarget(base);
+    expect(target.autorizados).toEqual([]);
   });
 });

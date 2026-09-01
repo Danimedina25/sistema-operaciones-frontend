@@ -57,7 +57,7 @@ Transferencia/depósito/cheque: la parcialidad nace `COMPLETADA` (movimiento ya 
 | `GET /requests/{returnRequestId}` | 7 roles (incl. socio) | — | `{ solicitud: ReturnPaymentResponse, parcialidades: ReturnInstallment[] }` |
 | `GET /requests/{returnRequestId}/installments` | 7 roles | — | `ReturnInstallment[]` |
 | `PATCH /installments/{installmentId}/confirm` | SOCIO_COMERCIAL (dueño) | — | `PROGRAMADA → ENTREGADA` |
-| `PATCH /installments/{installmentId}/deliver` | ADMIN, GERENTE, DIRECCION, JEFA_CAJAS | `{ comprobanteEntregaUrl }` | `ENTREGADA → COMPLETADA` + evidencia |
+| `PATCH /installments/{installmentId}/deliver` | ADMIN, GERENTE, DIRECCION, JEFA_CAJAS | `{ comprobanteEntregaUrl, personaQueRecibioEfectivo }` | `ENTREGADA → COMPLETADA` + evidencia + persona autorizada que recibió (misma transacción) |
 | `PATCH /installments/{installmentId}/cancel` | ADMIN, GERENTE, DIRECCION, JEFA_CAJAS, JEFA_CUENTAS, AUXILIAR_CUENTAS | `{ motivo }` | `PROGRAMADA/ENTREGADA → CANCELADA` |
 | `GET /installments/today-deliveries?fecha&tipoPago` | ADMIN, GERENTE, DIRECCION, JEFA_CAJAS | — | `Page<ReturnInstallment>` (PROGRAMADA/ENTREGADA por `fechaHoraRecoleccion`) |
 | `GET /installments/late` | ADMIN, GERENTE, DIRECCION, JEFA_CAJAS | — | `Page<ReturnInstallment>` (PROGRAMADA con recolección vencida) |
@@ -66,10 +66,21 @@ Transferencia/depósito/cheque: la parcialidad nace `COMPLETADA` (movimiento ya 
 `returnRequestMonto`, `returnRequestEstatus`, `clienteNombre`,
 `socioComercialNombre`, `socioComercialTelefono`, `autorizadoParaRecibir1..3`.
 
+`personaQueRecibioEfectivo` (string | null): persona autorizada que recibió
+físicamente el efectivo / realizó el retiro sin tarjeta. Se guarda el nombre
+canónico registrado en la solicitud (no el texto del cliente). `null` en
+parcialidades históricas cerradas antes de esta funcionalidad → el frontend
+muestra "No registrado (entrega histórica)". Es **distinta** de
+`entregadoPorNombre` (usuario interno del sistema que cerró la entrega).
+Etiquetas de UI: "Persona que recibió" (efectivo) / "Persona que realizó el
+retiro" (retiro sin tarjeta).
+
 ### Endpoints legacy (a nivel solicitud) — `@Deprecated`, siguen respondiendo
 `PATCH /payments/{id}/realize`, `/cash-pickup-time`, `/confirm-cash-pickup`,
 `/mark-cash-delivered` delegan creando/transicionando una parcialidad por el
 saldo pendiente completo. El frontend nuevo ya no los usa.
+`/mark-cash-delivered` ahora también exige `personaQueRecibioEfectivo` en el
+cuerpo (delega en la misma ruta transaccional que `/installments/{id}/deliver`).
 
 ## 4. Reglas de negocio (backend, transaccionales con lock pesimista operación→solicitud)
 
@@ -83,6 +94,27 @@ saldo pendiente completo. El frontend nuevo ya no los usa.
    `ReturnInstallmentAmountExceedsAvailableException`.
 7. Cancelar solo aplica a parcialidades no completadas; recalcula solicitud y
    operación. Cancelar la última activa devuelve la solicitud a `SOLICITADO`.
+8. **Cierre de entrega (`/deliver`)** — efectivo / retiro sin tarjeta,
+   `ENTREGADA → COMPLETADA`. Se valida todo antes de mutar nada:
+   - `comprobanteEntregaUrl` presente y no vacío
+     (`ReturnInstallmentReceiptRequiredException`, 400).
+   - `personaQueRecibioEfectivo` presente y no vacía
+     (`ReturnInstallmentReceiverRequiredException`, 400).
+   - La solicitud tiene al menos un autorizado
+     (`autorizadoParaRecibirEfectivo1..3`); si no,
+     `ReturnInstallmentNoAuthorizedRecipientsException`, 400 —
+     "Esta solicitud no tiene personas autorizadas para recibir."
+   - La persona enviada coincide con un autorizado comparando sin distinguir
+     mayúsculas, espacios repetidos ni acentos; si no,
+     `ReturnInstallmentReceiverNotAuthorizedException`, 400 —
+     "La persona seleccionada no está autorizada para recibir esta entrega."
+   - Se persiste el **nombre canónico** de la solicitud, no el texto recibido.
+   - Método distinto de efectivo/RST o estatus distinto de `ENTREGADA` →
+     `ReturnInstallmentInvalidStatusException`, 400 (sin cambiar estado).
+   - La transición es transaccional e idempotente: un segundo `/deliver` sobre
+     una parcialidad ya `COMPLETADA` falla por el chequeo de estatus y no
+     modifica datos.
+   - Cualquier validación fallida deja intactos estatus y totales.
 
 ## 5. Notificaciones (`NotificationType`, módulo `PAGOS`, `referenceType` `RETURN_INSTALLMENT` o `PAYMENT_OPERATION`)
 
@@ -111,3 +143,6 @@ hace que los totales históricos y los snapshots ya registrados no cambien.
 2. `2026-09-01_add_parcialmente_retornado_return_status.sql` (ENUM)
 3. `2026-09-01_extend_notification_enums_installments.sql` (ENUM)
 4. `2026-09-01_backfill_return_installments.sql` (datos, idempotente)
+5. `2026-09-02_add_evidencia_importe_preparado_installment.sql` (columna nullable)
+6. `2026-09-03_add_persona_que_recibio_efectivo_installment.sql` (columna nullable,
+   `VARCHAR(200)`; compatible con parcialidades históricas — no toca datos ni estados)

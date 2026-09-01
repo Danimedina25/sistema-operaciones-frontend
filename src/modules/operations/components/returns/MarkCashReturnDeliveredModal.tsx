@@ -1,20 +1,35 @@
-import { useEffect, useState } from 'react';
-import { Camera, ImagePlus } from 'lucide-react';
+import { useEffect, useId, useMemo, useState } from 'react';
+import { Camera } from 'lucide-react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { formatCurrency, formatDateTime } from '@/modules/operations/utils/operation-formatters';
-import type { CashDeliveryTarget } from '@/modules/operations/utils/return-installment';
+import {
+  cleanAuthorizedRecipients,
+  resolveDeliveryReceiverLabel,
+  type CashDeliveryTarget,
+} from '@/modules/operations/utils/return-installment';
 
 interface MarkCashReturnDeliveredModalProps {
   target: CashDeliveryTarget | null;
   isSubmitting: boolean;
-  onConfirm: (id: number, operationId: number, comprobante: File) => void;
+  onConfirm: (
+    id: number,
+    operationId: number,
+    comprobante: File,
+    personaQueRecibioEfectivo: string,
+  ) => void;
   onClose: () => void;
 }
+
+const SELECT_PLACEHOLDER = 'Selecciona una persona autorizada';
+const NO_AUTHORIZED_MESSAGE =
+  'Esta solicitud no tiene personas autorizadas para recibir. Actualiza la solicitud antes de cerrar la entrega.';
 
 /**
  * Confirmación reforzada del cierre final de una entrega en efectivo/retiro
  * sin tarjeta: el socio comercial ya confirmó que la recogió, esta acción la
- * cierra como completada. Exige foto de entrega y previene doble envío.
+ * cierra como completada. En la misma transacción se registran la persona
+ * autorizada que recibió realmente los fondos y la foto de entrega — no se
+ * puede guardar una sin la otra. Previene doble envío.
  */
 export function MarkCashReturnDeliveredModal({
   target,
@@ -24,9 +39,25 @@ export function MarkCashReturnDeliveredModal({
 }: MarkCashReturnDeliveredModalProps) {
   const [comprobante, setComprobante] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [personaQueRecibio, setPersonaQueRecibio] = useState('');
 
+  const selectId = useId();
+  const selectErrorId = useId();
+
+  // Lista permitida, ya limpia y sin duplicados (defensa extra sobre el target).
+  const autorizados = useMemo(
+    () => (target ? cleanAuthorizedRecipients(target.autorizados) : []),
+    [target],
+  );
+  const hasAutorizados = autorizados.length > 0;
+  const receiverLabel = target
+    ? resolveDeliveryReceiverLabel(target.tipoPago)
+    : SELECT_PLACEHOLDER;
+
+  // Reinicia selección y foto al cambiar o cerrar la parcialidad.
   useEffect(() => {
     setComprobante(null);
+    setPersonaQueRecibio('');
   }, [target?.id]);
 
   useEffect(() => {
@@ -40,7 +71,14 @@ export function MarkCashReturnDeliveredModal({
     return () => URL.revokeObjectURL(objectUrl);
   }, [comprobante]);
 
-  const authorizedRecipients = target ? target.autorizados.join(', ') : '';
+  const receptorValido = personaQueRecibio !== '' && autorizados.includes(personaQueRecibio);
+  const fotoValida = !!comprobante && comprobante.type.startsWith('image/');
+  const canConfirm = hasAutorizados && receptorValido && fotoValida && !isSubmitting;
+
+  const handleConfirm = () => {
+    if (!target || !comprobante || !canConfirm) return;
+    onConfirm(target.id, target.operationId, comprobante, personaQueRecibio);
+  };
 
   return (
     <Modal
@@ -66,14 +104,54 @@ export function MarkCashReturnDeliveredModal({
               {target.clienteNombre ? ` · ${target.clienteNombre}` : ''}
             </p>
             <p>
-              <span className="font-medium">Receptor autorizado:</span>{' '}
-              {authorizedRecipients || 'No especificado'}
+              <span className="font-medium">Personas autorizadas:</span>{' '}
+              {hasAutorizados ? autorizados.join(', ') : 'No especificado'}
             </p>
             <p>
               <span className="font-medium">Fecha programada:</span>{' '}
               {target.scheduledAt ? formatDateTime(target.scheduledAt) : '-'}
             </p>
           </div>
+
+          {!hasAutorizados ? (
+            <div
+              role="alert"
+              className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700"
+            >
+              {NO_AUTHORIZED_MESSAGE}
+            </div>
+          ) : (
+            <div className="mt-4">
+              <label
+                htmlFor={selectId}
+                className="mb-2 block text-sm font-semibold text-slate-800"
+              >
+                {receiverLabel} <span className="text-red-600">*</span>
+              </label>
+              <select
+                id={selectId}
+                value={personaQueRecibio}
+                disabled={isSubmitting}
+                aria-required="true"
+                aria-invalid={personaQueRecibio === ''}
+                aria-describedby={personaQueRecibio === '' ? selectErrorId : undefined}
+                onChange={(event) => setPersonaQueRecibio(event.target.value)}
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <option value="">{SELECT_PLACEHOLDER}</option>
+                {autorizados.map((nombre) => (
+                  <option key={nombre} value={nombre}>
+                    {nombre}
+                  </option>
+                ))}
+              </select>
+              {personaQueRecibio === '' ? (
+                <p id={selectErrorId} className="mt-1 text-xs text-red-600">
+                  Selecciona la persona autorizada que recibió los fondos.
+                </p>
+              ) : null}
+            </div>
+          )}
 
           <div className="mt-4">
             <label className="mb-2 block text-sm font-semibold text-slate-800">
@@ -123,6 +201,11 @@ export function MarkCashReturnDeliveredModal({
                 />
               </label>
             )}
+            {comprobante && !fotoValida ? (
+              <p role="alert" className="mt-1 text-xs text-red-600">
+                El archivo debe ser una imagen.
+              </p>
+            ) : null}
           </div>
 
           <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
@@ -136,11 +219,10 @@ export function MarkCashReturnDeliveredModal({
             </button>
             <button
               type="button"
-              disabled={isSubmitting || !comprobante}
-              onClick={() => comprobante && onConfirm(target.id, target.operationId, comprobante)}
+              disabled={!canConfirm}
+              onClick={handleConfirm}
               className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <ImagePlus className="mr-2 inline h-4 w-4" />
               {isSubmitting ? 'Subiendo evidencia...' : 'Sí, marcar como entregado'}
             </button>
           </div>

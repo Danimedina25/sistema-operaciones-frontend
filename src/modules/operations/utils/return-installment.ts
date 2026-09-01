@@ -5,11 +5,69 @@ import type {
   ReturnPaymentResponse,
 } from '@/modules/operations/types/operations.types.ts';
 
+/** Texto para parcialidades históricas cerradas sin registrar la persona receptora. */
+export const HISTORICAL_RECEIVER_LABEL = 'No registrado (entrega histórica)';
+
+/**
+ * Lista limpia de personas autorizadas para recibir: sin nulos, sin vacíos, sin
+ * espacios sobrantes y sin duplicados (comparación sin distinguir mayúsculas ni
+ * espacios internos). Conserva el primer nombre canónico visto.
+ */
+export function cleanAuthorizedRecipients(
+  names: Array<string | null | undefined>,
+): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  for (const raw of names) {
+    if (!raw) continue;
+    const canonical = raw.trim().replace(/\s+/g, ' ');
+    if (!canonical) continue;
+    const key = canonical.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(canonical);
+  }
+
+  return result;
+}
+
+/** Etiqueta del selector de receptor según el método de la parcialidad. */
+export function resolveDeliveryReceiverLabel(tipoPago: PaymentType): string {
+  return tipoPago === 'RETIRO_SIN_TARJETA'
+    ? 'Persona que realizó el retiro'
+    : 'Persona que recibió el efectivo';
+}
+
+/** Etiqueta corta para el historial/detalle. */
+export function resolveReceiverHistoryLabel(tipoPago: PaymentType): string {
+  return tipoPago === 'RETIRO_SIN_TARJETA'
+    ? 'Persona que realizó el retiro'
+    : 'Persona que recibió';
+}
+
+/**
+ * Valor a mostrar como persona receptora de una parcialidad. `null` cuando no
+ * aplica (no es un cierre de efectivo/RST). Para cierres completados sin dato
+ * devuelve el texto de entrega histórica.
+ */
+export function resolveInstallmentReceiverDisplay(
+  i: Pick<ReturnInstallment, 'tipoPago' | 'estatus' | 'personaQueRecibioEfectivo'>,
+): string | null {
+  if (!isCashReturnMethod(i.tipoPago)) return null;
+  if (i.personaQueRecibioEfectivo && i.personaQueRecibioEfectivo.trim()) {
+    return i.personaQueRecibioEfectivo.trim();
+  }
+  if (i.estatus === 'COMPLETADA') return HISTORICAL_RECEIVER_LABEL;
+  return null;
+}
+
 /** Objetivo normalizado del cierre de una entrega en efectivo/retiro sin tarjeta. */
 export interface CashDeliveryTarget {
   id: number;
   operationId: number;
   monto: number;
+  tipoPago: PaymentType;
   clienteNombre?: string | null;
   autorizados: string[];
   scheduledAt?: string | null;
@@ -20,12 +78,13 @@ export function installmentToCashDeliveryTarget(i: ReturnInstallment): CashDeliv
     id: i.id,
     operationId: i.operationId,
     monto: i.monto,
+    tipoPago: i.tipoPago,
     clienteNombre: i.clienteNombre,
-    autorizados: [
+    autorizados: cleanAuthorizedRecipients([
       i.autorizadoParaRecibir1,
       i.autorizadoParaRecibir2,
       i.autorizadoParaRecibir3,
-    ].filter((v): v is string => Boolean(v && v.trim())),
+    ]),
     scheduledAt: i.fechaHoraRecoleccion ?? null,
   };
 }

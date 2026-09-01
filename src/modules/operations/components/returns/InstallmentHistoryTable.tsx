@@ -2,6 +2,7 @@ import {
   formatCurrency,
   formatDateTime,
 } from '@/modules/operations/utils/operation-formatters';
+import { resolveInstallmentReceiverDisplay } from '@/modules/operations/utils/return-installment';
 import type { ReturnInstallment } from '../../types/operations.types.ts';
 import { InstallmentStatusBadge } from './InstallmentStatusBadge';
 
@@ -52,6 +53,7 @@ export function InstallmentHistoryTable({
             <th className="px-3 py-2">Estatus</th>
             <th className="px-3 py-2">Fecha</th>
             <th className="px-3 py-2">Responsable</th>
+            <th className="px-3 py-2">Persona que recibió</th>
             <th className="px-3 py-2">Comprobante</th>
             <th className="px-3 py-2">Origen / Código</th>
             <th className="px-3 py-2">Observaciones</th>
@@ -71,6 +73,7 @@ export function InstallmentHistoryTable({
               i.entregadoPorNombre ??
               i.creadoPorNombre ??
               '-';
+            const receptor = resolveInstallmentReceiverDisplay(i);
             return (
               <tr key={i.id} className="border-t border-slate-100">
                 <td className="px-3 py-2 text-slate-500">{index + 1}</td>
@@ -84,6 +87,21 @@ export function InstallmentHistoryTable({
                   {fecha ? formatDateTime(fecha) : '-'}
                 </td>
                 <td className="px-3 py-2 text-slate-600">{responsable}</td>
+                <td className="px-3 py-2 text-xs text-slate-600">
+                  {receptor ? (
+                    <span
+                      className={
+                        i.personaQueRecibioEfectivo
+                          ? 'font-medium text-slate-800'
+                          : 'italic text-slate-400'
+                      }
+                    >
+                      {receptor}
+                    </span>
+                  ) : (
+                    <span className="text-slate-400">-</span>
+                  )}
+                </td>
                 <td className="px-3 py-2">
                   {i.comprobanteUrl ||
                   i.evidenciaImportePreparadoUrl ||

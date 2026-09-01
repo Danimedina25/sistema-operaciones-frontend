@@ -364,8 +364,13 @@ export default function OperationDetailPage() {
       <MarkCashReturnDeliveredModal
         target={deliverTarget ? installmentToCashDeliveryTarget(deliverTarget) : null}
         isSubmitting={isSubmittingDeliver}
-        onConfirm={(installmentId, operationId, comprobante) =>
-          void submitDeliverReturnInstallment(installmentId, operationId, comprobante)
+        onConfirm={(installmentId, operationId, comprobante, personaQueRecibioEfectivo) =>
+          void submitDeliverReturnInstallment(
+            installmentId,
+            operationId,
+            comprobante,
+            personaQueRecibioEfectivo,
+          )
         }
         onClose={() => setDeliverTarget(null)}
       />

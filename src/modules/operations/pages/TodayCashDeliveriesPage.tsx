@@ -130,8 +130,13 @@ export default function TodayCashDeliveriesPage() {
           selectedDelivery ? installmentToCashDeliveryTarget(selectedDelivery) : null
         }
         isSubmitting={isSubmitting}
-        onConfirm={(installmentId, operationId, comprobante) =>
-          void submitDeliverReturnInstallment(installmentId, operationId, comprobante)
+        onConfirm={(installmentId, operationId, comprobante, personaQueRecibioEfectivo) =>
+          void submitDeliverReturnInstallment(
+            installmentId,
+            operationId,
+            comprobante,
+            personaQueRecibioEfectivo,
+          )
         }
         onClose={() => setSelectedDelivery(null)}
       />
