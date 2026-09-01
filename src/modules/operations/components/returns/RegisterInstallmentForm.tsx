@@ -10,6 +10,7 @@ import {
   resolveReturnRequestTotals,
 } from '@/modules/operations/utils/return-installment';
 import type { ReturnPaymentResponse } from '../../types/operations.types.ts';
+import { FileUploadField } from './FileUploadField';
 
 interface SelectOption {
   id: number;
@@ -291,11 +292,12 @@ export function RegisterInstallmentForm({
                 'La evidencia del importe preparado es obligatoria',
             }}
             render={({ field }) => (
-              <input
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png,.webp"
-                className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white"
-                onChange={(event) => field.onChange(event.target.files)}
+              <FileUploadField
+                inputId="evidencia-importe-preparado"
+                value={field.value}
+                onChange={field.onChange}
+                selectedLabel="Evidencia seleccionada"
+                dropHint="Arrastra y suelta la evidencia aquí"
               />
             )}
           />
@@ -324,11 +326,12 @@ export function RegisterInstallmentForm({
                 'El comprobante es obligatorio',
             }}
             render={({ field }) => (
-              <input
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png,.webp"
-                className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white"
-                onChange={(event) => field.onChange(event.target.files)}
+              <FileUploadField
+                inputId="comprobante-parcialidad"
+                value={field.value}
+                onChange={field.onChange}
+                selectedLabel="Comprobante seleccionado"
+                dropHint="Arrastra y suelta el comprobante aquí"
               />
             )}
           />
