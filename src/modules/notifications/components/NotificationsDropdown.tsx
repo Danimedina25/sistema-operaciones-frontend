@@ -1,15 +1,22 @@
-import type { NotificationResponse } from '@/modules/notifications/types/notifications.types';
+import type {
+  NotificationResponse,
+  NotificationType,
+} from '@/modules/notifications/types/notifications.types';
 import {
   AlertTriangle,
   BadgeDollarSign,
+  Bell,
   BellOff,
   Banknote,
+  CalendarClock,
   Check,
   CheckCheck,
   ChevronRight,
   CircleDollarSign,
   FilePlus2,
+  KeyRound,
   LoaderCircle,
+  PackageCheck,
   RefreshCw,
   XCircle,
 } from 'lucide-react';
@@ -55,7 +62,17 @@ function formatRelativeDate(value: string) {
   });
 }
 
-const notificationPresentation = {
+type NotificationPresentation = {
+  icon: typeof FilePlus2;
+  iconClassName: string;
+};
+
+const DEFAULT_PRESENTATION: NotificationPresentation = {
+  icon: Bell,
+  iconClassName: 'bg-slate-100 text-slate-500',
+};
+
+const notificationPresentation: Record<NotificationType, NotificationPresentation> = {
   OPERATION_CREATED: {
     icon: FilePlus2,
     iconClassName: 'bg-blue-50 text-blue-600',
@@ -84,18 +101,42 @@ const notificationPresentation = {
     icon: Banknote,
     iconClassName: 'bg-amber-50 text-amber-600',
   },
+  RETURN_INSTALLMENT_SCHEDULED: {
+    icon: CalendarClock,
+    iconClassName: 'bg-blue-50 text-blue-600',
+  },
+  RETURN_INSTALLMENT_CODE_AVAILABLE: {
+    icon: KeyRound,
+    iconClassName: 'bg-violet-50 text-violet-600',
+  },
+  RETURN_INSTALLMENT_DELIVERED: {
+    icon: PackageCheck,
+    iconClassName: 'bg-amber-50 text-amber-600',
+  },
+  RETURN_INSTALLMENT_COMPLETED: {
+    icon: BadgeDollarSign,
+    iconClassName: 'bg-emerald-50 text-emerald-600',
+  },
+  RETURN_INSTALLMENT_CANCELLED: {
+    icon: XCircle,
+    iconClassName: 'bg-red-50 text-red-600',
+  },
+  RETURN_REQUEST_COMPLETED: {
+    icon: CheckCheck,
+    iconClassName: 'bg-emerald-50 text-emerald-600',
+  },
   SYSTEM_ALERT: {
     icon: AlertTriangle,
     iconClassName: 'bg-orange-50 text-orange-600',
   },
-} as const;
+};
 
-const moduleLabels = {
+const moduleLabels: Record<string, string> = {
   OPERACIONES: 'Operaciones',
   PAGOS: 'Pagos',
   COMISIONES: 'Comisiones',
   SISTEMA: 'Sistema',
-} as const;
+};
 
 export function NotificationsDropdown({
   notifications,
@@ -150,7 +191,8 @@ export function NotificationsDropdown({
         ) : (
           notifications.map((notification) => {
             const isProcessing = processingNotificationId === notification.id;
-            const presentation = notificationPresentation[notification.tipo];
+            const presentation =
+              notificationPresentation[notification.tipo] ?? DEFAULT_PRESENTATION;
             const NotificationIcon = presentation.icon;
 
             return (
@@ -189,7 +231,7 @@ export function NotificationsDropdown({
                     <div className="mt-2 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                          {moduleLabels[notification.modulo]}
+                          {moduleLabels[notification.modulo] ?? notification.modulo}
                         </span>
                         {notification.prioridad === 'HIGH' ? (
                           <span className="text-[10px] font-bold uppercase tracking-wide text-red-600">Prioridad alta</span>

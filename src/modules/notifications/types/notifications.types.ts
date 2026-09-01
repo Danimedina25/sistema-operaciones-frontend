@@ -8,6 +8,13 @@ export type NotificationType =
   | 'OPERATION_STATUS_CHANGED'
   | 'COMMISSION_PAID'
   | 'CASH_RETURN_REQUESTED'
+  // Parcialidades de retorno
+  | 'RETURN_INSTALLMENT_SCHEDULED'
+  | 'RETURN_INSTALLMENT_CODE_AVAILABLE'
+  | 'RETURN_INSTALLMENT_DELIVERED'
+  | 'RETURN_INSTALLMENT_COMPLETED'
+  | 'RETURN_INSTALLMENT_CANCELLED'
+  | 'RETURN_REQUEST_COMPLETED'
   | 'SYSTEM_ALERT';
 
 export type NotificationModule =
@@ -21,6 +28,7 @@ export type NotificationReferenceType =
   | 'OPERATION_PAYMENT'
   | 'COMMISSION'
   | 'RETURN_PAYMENT'
+  | 'RETURN_INSTALLMENT'
   | 'NONE';
 
 export type NotificationPriority =
