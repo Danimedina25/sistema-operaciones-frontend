@@ -12,7 +12,10 @@ import {
 
 import { useReturnDestinationAccountSuggestions } from '../../hooks/returns/use-operation-returns.js';
 import { NominaFileField } from './NominaFileField';
-import { detectDestinationAccountKind } from '../../utils/return-destination-account';
+import {
+    detectDestinationAccountKind,
+    validateDestinationAccountIdentifiers,
+} from '../../utils/return-destination-account';
 
 
 export interface EditReturnPaymentFormValues {
@@ -233,21 +236,10 @@ export function EditReturnPaymentForm({
                 newErrors.titular = 'El titular es obligatorio';
             }
 
-            const cuenta = form.cuenta.trim();
-            const clabe = form.clabe.trim();
-
-            if (!cuenta) {
-                newErrors.cuenta = 'El número de cuenta o tarjeta es obligatorio';
-            } else if (!/^\d{10,18}$/.test(cuenta)) {
-                newErrors.cuenta =
-                    'El número de cuenta o tarjeta debe tener entre 10 y 18 dígitos';
-            }
-
-            if (!clabe) {
-                newErrors.clabe = 'La CLABE interbancaria es obligatoria';
-            } else if (!/^\d{18}$/.test(clabe)) {
-                newErrors.clabe = 'La CLABE debe tener exactamente 18 dígitos';
-            }
+            Object.assign(
+                newErrors,
+                validateDestinationAccountIdentifiers(form.cuenta, form.clabe),
+            );
         }
 
         if (form.tipoPago === 'EFECTIVO') {
@@ -366,7 +358,7 @@ export function EditReturnPaymentForm({
                     <>
                         <div>
                             <label className="mb-2 block text-sm font-medium text-slate-700">
-                                Número de cuenta o tarjeta
+                                Número de cuenta o tarjeta (opcional con CLABE)
                             </label>
 
                             <div className="relative">
@@ -439,7 +431,7 @@ export function EditReturnPaymentForm({
                         </div>
                         <div>
                             <label className="mb-2 block text-sm font-medium text-slate-700">
-                                Cuenta CLABE interbancaria
+                                CLABE interbancaria (opcional con cuenta/tarjeta)
                             </label>
 
                             <Input
