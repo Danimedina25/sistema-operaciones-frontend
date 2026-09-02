@@ -20,6 +20,7 @@ import { ClientesTable } from '../components/ClientesTable';
 import { CreateClienteForm } from '../components/CreateClienteForm';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { useCommercialLevelOneUsers } from '@/modules/users/hooks/use-commercial-level-one-users';
+import { usePersistedFilters } from '@/shared/hooks/use-persisted-filters';
 
 const initialFilters: ClientesFiltersType = {
   search: '',
@@ -27,7 +28,7 @@ const initialFilters: ClientesFiltersType = {
 };
 
 export default function ClientesPage() {
-  const [filters, setFilters] = useState<ClientesFiltersType>(initialFilters);
+  const { filters, setFilters } = usePersistedFilters('table-filters:clients', initialFilters);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingCliente, setEditingCliente] = useState<ClienteResponse | null>(
     null,

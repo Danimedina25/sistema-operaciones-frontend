@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { act, render, renderHook, screen } from '@testing-library/react';
 import { MemoryRouter, useSearchParams } from 'react-router-dom';
 import { useUrlFilters } from './use-url-filters';
@@ -15,6 +15,8 @@ function wrapper({ children }: { children: ReactNode }) {
 }
 
 describe('useUrlFilters', () => {
+  beforeEach(() => window.sessionStorage.clear());
+
   it('devuelve los valores por defecto cuando la URL no tiene query params', () => {
     const { result } = renderHook(() => useUrlFilters(DEFAULTS), { wrapper });
 
@@ -79,5 +81,16 @@ describe('useUrlFilters', () => {
       screen.getByRole('button', { name: 'Reset' }).click();
     });
     expect(screen.getByTestId('params').textContent).toBe('');
+  });
+
+  it('restaura el caché cuando la URL no contiene filtros', () => {
+    window.sessionStorage.setItem(
+      'table-filters:/operaciones',
+      JSON.stringify({ search: 'guardado', status: 'DONE', page: 2 }),
+    );
+
+    const { result } = renderHook(() => useUrlFilters(DEFAULTS), { wrapper });
+
+    expect(result.current.filters).toEqual({ search: 'guardado', status: 'DONE', page: 2 });
   });
 });

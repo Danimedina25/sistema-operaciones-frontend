@@ -23,6 +23,7 @@ import {
 } from '@/modules/bank-accounts/utils/bank-accounts-filters';
 
 import { getTotalPages, paginateItems } from '@/shared/utils/pagination';
+import { usePersistedFilters } from '@/shared/hooks/use-persisted-filters';
 
 const initialFilters: BankAccountsFiltersType = {
   search: '',
@@ -30,8 +31,7 @@ const initialFilters: BankAccountsFiltersType = {
 };
 
 export default function BankAccountsPage() {
-  const [filters, setFilters] =
-    useState<BankAccountsFiltersType>(initialFilters);
+  const { filters, setFilters } = usePersistedFilters('table-filters:bank-accounts', initialFilters);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [isFormOpen, setIsFormOpen] = useState(false);

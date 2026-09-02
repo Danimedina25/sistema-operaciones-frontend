@@ -14,6 +14,7 @@ import {
 import type {
   CommissionPartnerSummaryResponse,
 } from '../types/commercial-partner-commissions.types';
+import { usePersistedFilters } from '@/shared/hooks/use-persisted-filters';
 
 export interface CommissionFiltersValues {
   startDate: string;
@@ -70,13 +71,10 @@ export function useCommercialPartnerCommissionPaymentsPage() {
   const defaultDates =
     getDefaultDates();
 
-  const [
-    filters,
-    setFilters,
-  ] =
-    useState<CommissionFiltersValues>(
-      defaultDates,
-    );
+  const { filters, setFilters } = usePersistedFilters<CommissionFiltersValues>(
+    'table-filters:commercial-partner-commission-payments',
+    defaultDates,
+  );
 
   const [
     selectedBeneficiary,

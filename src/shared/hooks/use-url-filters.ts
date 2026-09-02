@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
+import { readPersistedFilters } from './use-persisted-filters';
 
 type FilterPrimitive = string | number;
 
@@ -14,9 +15,13 @@ type FilterPrimitive = string | number;
  */
 export function useUrlFilters<T extends { [K in keyof T]: FilterPrimitive }>(defaults: T) {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { pathname } = useLocation();
+  const storageKey = `table-filters:${pathname}`;
 
   const filters = useMemo(() => {
-    const result = { ...defaults };
+    const result = searchParams.size === 0
+      ? readPersistedFilters(storageKey, defaults)
+      : { ...defaults };
 
     (Object.keys(defaults) as Array<keyof T>).forEach((key) => {
       const raw = searchParams.get(String(key));
@@ -32,11 +37,17 @@ export function useUrlFilters<T extends { [K in keyof T]: FilterPrimitive }>(def
     });
 
     return result;
-  }, [searchParams, defaults]);
+  }, [searchParams, defaults, storageKey]);
 
   const setFilters = useCallback(
     (next: T) => {
       const params = new URLSearchParams();
+
+      try {
+        window.sessionStorage.setItem(storageKey, JSON.stringify(next));
+      } catch {
+        // La URL continúa siendo la fuente de verdad si no hay almacenamiento.
+      }
 
       (Object.keys(next) as Array<keyof T>).forEach((key) => {
         const value = next[key];
@@ -48,12 +59,17 @@ export function useUrlFilters<T extends { [K in keyof T]: FilterPrimitive }>(def
 
       setSearchParams(params, { replace: true });
     },
-    [defaults, setSearchParams],
+    [defaults, setSearchParams, storageKey],
   );
 
   const resetFilters = useCallback(() => {
+    try {
+      window.sessionStorage.removeItem(storageKey);
+    } catch {
+      // La limpieza de la URL sigue funcionando si no hay almacenamiento.
+    }
     setSearchParams(new URLSearchParams(), { replace: true });
-  }, [setSearchParams]);
+  }, [setSearchParams, storageKey]);
 
   return { filters, setFilters, resetFilters };
 }

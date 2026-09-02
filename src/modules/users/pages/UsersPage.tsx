@@ -20,6 +20,7 @@ import {
 } from '@/modules/users/utils/users-filters';
 import { getTotalPages, paginateItems } from '@/shared/utils/pagination';
 import { CreateUserForm } from '../components/CreateUserForm';
+import { usePersistedFilters } from '@/shared/hooks/use-persisted-filters';
 
 const initialFilters: UsersFiltersType = {
   search: '',
@@ -28,7 +29,7 @@ const initialFilters: UsersFiltersType = {
 };
 
 export default function UsersPage() {
-  const [filters, setFilters] = useState<UsersFiltersType>(initialFilters);
+  const { filters, setFilters } = usePersistedFilters('table-filters:users', initialFilters);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
   const [emailUser, setEmailUser] = useState<UserResponse | null>(null);

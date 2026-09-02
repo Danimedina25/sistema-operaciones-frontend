@@ -28,6 +28,7 @@ import {
 import { useCommercialPartners } from '../hooks/use-commercial-partners';
 import { CommercialPartnerForm } from '../components/CommercialPartnerForm';
 import { useUpdateCommercialPartner } from '../hooks/use-update-commercial-partner';
+import { usePersistedFilters } from '@/shared/hooks/use-persisted-filters';
 
 const initialFilters: CommercialPartnersFiltersType = {
   search: '',
@@ -35,8 +36,7 @@ const initialFilters: CommercialPartnersFiltersType = {
 };
 
 export default function CommercialPartnersPage() {
-  const [filters, setFilters] =
-    useState<CommercialPartnersFiltersType>(initialFilters);
+  const { filters, setFilters } = usePersistedFilters('table-filters:commercial-partners', initialFilters);
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 

@@ -11,6 +11,7 @@ import {
 } from '../types/operations.types.ts';
 import { ReturnsForPaymentTable } from '../components/returns/ReturnsForPaymentTable';
 import { buildReturnsForPaymentDetailPath } from '@/routes/paths';
+import { usePersistedFilters } from '@/shared/hooks/use-persisted-filters';
 
 
 const initialFilters: OperationsFiltersType = {
@@ -34,8 +35,7 @@ const PAGE_SIZE = 10;
 export default function ReturnsForPaymentPage() {
   const navigate = useNavigate();
 
-  const [filters, setFilters] =
-    useState<OperationsFiltersType>(initialFilters);
+  const { filters, setFilters } = usePersistedFilters('table-filters:returns-for-payment', initialFilters);
 
   const [currentPage, setCurrentPage] = useState(0);
 

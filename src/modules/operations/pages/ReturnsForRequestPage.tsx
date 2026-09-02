@@ -14,6 +14,7 @@ import { buildReturnRequestDetailPath } from '@/routes/paths';
 import { Modal } from '@/shared/components/ui/Modal';
 import { useRequestReturnPayment } from '../hooks/returns/use-request-return-payment';
 import { RequestReturnModal } from '../components/returns/RequestReturnModal';
+import { usePersistedFilters } from '@/shared/hooks/use-persisted-filters';
 
 
 const initialFilters: OperationsFiltersType = {
@@ -37,8 +38,7 @@ const PAGE_SIZE = 10;
 export default function ReturnsForRequestPage() {
   const navigate = useNavigate();
 
-  const [filters, setFilters] =
-    useState<OperationsFiltersType>(initialFilters);
+  const { filters, setFilters } = usePersistedFilters('table-filters:returns-for-request', initialFilters);
 
   const [currentPage, setCurrentPage] = useState(0);
 
