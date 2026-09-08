@@ -14,7 +14,7 @@ import {
 import type {
   CommissionPartnerSummaryResponse,
 } from '../types/commercial-partner-commissions.types';
-import { usePersistedFilters } from '@/shared/hooks/use-persisted-filters';
+import { useTableFilters } from '@/shared/hooks/use-table-filters';
 
 export interface CommissionFiltersValues {
   startDate: string;
@@ -71,7 +71,7 @@ export function useCommercialPartnerCommissionPaymentsPage() {
   const defaultDates =
     getDefaultDates();
 
-  const { filters, setFilters } = usePersistedFilters<CommissionFiltersValues>(
+  const { filters, setFilters } = useTableFilters<CommissionFiltersValues>(
     'table-filters:commercial-partner-commission-payments',
     defaultDates,
   );
@@ -106,7 +106,7 @@ export function useCommercialPartnerCommissionPaymentsPage() {
   useEffect(() => {
 
     void fetchSummary(
-      defaultDates,
+      filters,
     );
 
   }, []);

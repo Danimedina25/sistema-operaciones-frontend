@@ -3,7 +3,7 @@ import { CanAccess } from '@/shared/components/CanAccess';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { DeleteConfirmationModal } from '@/shared/components/ui/DeleteConfirmationModal';
-import { CollapsibleFilterSection } from '@/shared/components/ui/CollapsibleFilterSection';
+import { TableFilterSection } from '@/shared/components/ui/TableFilterSection';
 import { UserForm } from '@/modules/users/components/UserForm';
 import { UpdateUserEmailForm } from '@/modules/users/components/UpdateUserEmailForm';
 import { UsersFilters } from '@/modules/users/components/UsersFilters';
@@ -20,16 +20,16 @@ import {
 } from '@/modules/users/utils/users-filters';
 import { getTotalPages, paginateItems } from '@/shared/utils/pagination';
 import { CreateUserForm } from '../components/CreateUserForm';
-import { usePersistedFilters } from '@/shared/hooks/use-persisted-filters';
+import { useTableFilters } from '@/shared/hooks/use-table-filters';
 
 const initialFilters: UsersFiltersType = {
   search: '',
   role: 'ALL',
-  status: 'ALL',
+  status: 'ACTIVE',
 };
 
 export default function UsersPage() {
-  const { filters, setFilters } = usePersistedFilters('table-filters:users', initialFilters);
+  const { filters, setFilters } = useTableFilters('table-filters:users', initialFilters);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
   const [emailUser, setEmailUser] = useState<UserResponse | null>(null);
@@ -113,9 +113,9 @@ export default function UsersPage() {
         </CanAccess>
       </div>
 
-      <CollapsibleFilterSection>
+      <TableFilterSection>
         <UsersFilters filters={filters} onChange={setFilters} />
-      </CollapsibleFilterSection>
+      </TableFilterSection>
 
       {isLoading ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">

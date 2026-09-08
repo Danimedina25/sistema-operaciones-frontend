@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { DeleteConfirmationModal } from '@/shared/components/ui/DeleteConfirmationModal';
-import { CollapsibleFilterSection } from '@/shared/components/ui/CollapsibleFilterSection';
+import { TableFilterSection } from '@/shared/components/ui/TableFilterSection';
 
 import { CommercialPartnersFilters } from '@/modules/socioscomerciales/components/CommercialPartnersFilters';
 import { CommercialPartnersTable } from '@/modules/socioscomerciales/components/CommercialPartnersTable';
@@ -28,15 +28,15 @@ import {
 import { useCommercialPartners } from '../hooks/use-commercial-partners';
 import { CommercialPartnerForm } from '../components/CommercialPartnerForm';
 import { useUpdateCommercialPartner } from '../hooks/use-update-commercial-partner';
-import { usePersistedFilters } from '@/shared/hooks/use-persisted-filters';
+import { useTableFilters } from '@/shared/hooks/use-table-filters';
 
 const initialFilters: CommercialPartnersFiltersType = {
   search: '',
-  status: 'ALL',
+  status: 'ACTIVE',
 };
 
 export default function CommercialPartnersPage() {
-  const { filters, setFilters } = usePersistedFilters('table-filters:commercial-partners', initialFilters);
+  const { filters, setFilters } = useTableFilters('table-filters:commercial-partners', initialFilters);
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
@@ -123,12 +123,12 @@ export default function CommercialPartnersPage() {
         </button>
       </div>
 
-      <CollapsibleFilterSection>
+      <TableFilterSection>
         <CommercialPartnersFilters
           filters={filters}
           onChange={setFilters}
         />
-      </CollapsibleFilterSection>
+      </TableFilterSection>
 
       {isLoading ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">

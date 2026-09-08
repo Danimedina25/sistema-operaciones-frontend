@@ -25,13 +25,20 @@ export function readPersistedFilters<T extends object>(storageKey: string, defau
 }
 
 export function usePersistedFilters<T extends object>(storageKey: string, defaults: T) {
-  const [filters, setFiltersState] = useState<T>(() =>
-    readPersistedFilters(storageKey, defaults),
-  );
+  const [state, setState] = useState(() => ({
+    storageKey,
+    filters: readPersistedFilters(storageKey, defaults),
+  }));
+  let filters = state.filters;
+  if (state.storageKey !== storageKey) {
+    filters = readPersistedFilters(storageKey, defaults);
+    setState({ storageKey, filters });
+  }
 
   const setFilters = useCallback(
     (next: SetStateAction<T>) => {
-      setFiltersState((current) => {
+      setState((currentState) => {
+        const current = currentState.filters;
         const resolved = typeof next === 'function'
           ? (next as (previous: T) => T)(current)
           : next;
@@ -42,7 +49,7 @@ export function usePersistedFilters<T extends object>(storageKey: string, defaul
           // El filtro sigue funcionando en memoria si el navegador bloquea el almacenamiento.
         }
 
-        return resolved;
+        return { storageKey, filters: resolved };
       });
     },
     [storageKey],
@@ -54,7 +61,7 @@ export function usePersistedFilters<T extends object>(storageKey: string, defaul
     } catch {
       // Ignora restricciones de almacenamiento y restablece el estado local.
     }
-    setFiltersState(defaults);
+    setState({ storageKey, filters: defaults });
   }, [defaults, storageKey]);
 
   return { filters, setFilters, resetFilters };

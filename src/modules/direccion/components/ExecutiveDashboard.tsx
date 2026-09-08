@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { DateRangeCalendarField } from '@/shared/components/ui/DateRangeCalendarField';
-import { useUrlFilters } from '@/shared/hooks/use-url-filters';
+import { useTableUrlFilters } from '@/shared/hooks/use-table-filters';
 import { useBeneficiarySummary } from '@/modules/comisionessocioscomerciales/hooks/use-beneficiary-summary';
 import { useExecutiveDashboardSummary } from '@/modules/direccion/hooks/use-executive-dashboard-summary';
 import { computePeriodRange, type DashboardPeriod } from '@/modules/gerente/utils/period-range';
@@ -22,7 +22,7 @@ const PERIOD_OPTIONS: Array<{ value: DashboardPeriod; label: string }> = [
 const initialPeriodFilters = { period: 'THIS_MONTH' as DashboardPeriod, customStart: '', customEnd: '' };
 
 export function ExecutiveDashboard() {
-  const { filters, setFilters } = useUrlFilters(initialPeriodFilters);
+  const { filters, setFilters } = useTableUrlFilters(initialPeriodFilters);
 
   const period = useMemo(
     () =>

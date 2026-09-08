@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { DateRangeCalendarField } from '@/shared/components/ui/DateRangeCalendarField';
-import { useUrlFilters } from '@/shared/hooks/use-url-filters';
+import { useTableUrlFilters } from '@/shared/hooks/use-table-filters';
 import { useGerenteDashboardSummary } from '@/modules/gerente/hooks/use-gerente-dashboard-summary';
 import { computePeriodRange, type DashboardPeriod } from '@/modules/gerente/utils/period-range';
 import { GerenteDashboardCards } from '@/modules/gerente/components/GerenteDashboardCards';
@@ -18,7 +18,7 @@ const PERIOD_OPTIONS: Array<{ value: DashboardPeriod; label: string }> = [
 const initialPeriodFilters = { period: 'THIS_MONTH' as DashboardPeriod, customStart: '', customEnd: '' };
 
 export function GerenteDashboard() {
-  const { filters, setFilters } = useUrlFilters(initialPeriodFilters);
+  const { filters, setFilters } = useTableUrlFilters(initialPeriodFilters);
 
   const period = useMemo(
     () =>

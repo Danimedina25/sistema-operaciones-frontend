@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Pagination } from '@/shared/components/ui/Pagination';
-import { CollapsibleFilterSection } from '@/shared/components/ui/CollapsibleFilterSection';
+import { TableFilterSection } from '@/shared/components/ui/TableFilterSection';
 import { OperationsFilters } from '@/modules/operations/components/OperationsFilters';
 import { useOperationsWithRequestedReturns } from '../hooks/returns/use-operation-returns';
 import {
   OperationsFilters as OperationsFiltersType} from '../types/operations.types.ts';
 import { buildReturnsRequestedDetailPath } from '@/routes/paths';
 import { ReturnsRequestedTable } from '../components/returns/ReturnsRequestedTable';
-import { useUrlFilters } from '@/shared/hooks/use-url-filters';
+import { useTableUrlFilters } from '@/shared/hooks/use-table-filters';
 
 
 const initialFilters: OperationsFiltersType = {
@@ -33,7 +33,7 @@ const PAGE_SIZE = 10;
 export default function ReturnsRequestedPage() {
   const navigate = useNavigate();
 
-  const { filters, setFilters } = useUrlFilters<OperationsFiltersType>(initialFilters);
+  const { filters, setFilters } = useTableUrlFilters<OperationsFiltersType>(initialFilters);
 
   const [currentPage, setCurrentPage] = useState(0);
 
@@ -60,7 +60,7 @@ export default function ReturnsRequestedPage() {
         </div>
       </div>
 
-      <CollapsibleFilterSection>
+      <TableFilterSection>
         <OperationsFilters
           filters={filters}
           onChange={(newFilters) => {
@@ -69,7 +69,7 @@ export default function ReturnsRequestedPage() {
           }}
           showEstatusFilter={false}
         />
-      </CollapsibleFilterSection>
+      </TableFilterSection>
 
       <section className="rounded-2xl bg-white p-4 shadow-sm">
         <div className="mb-5">

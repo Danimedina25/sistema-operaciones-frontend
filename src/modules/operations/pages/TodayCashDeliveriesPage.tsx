@@ -4,8 +4,8 @@ import { DashboardSection } from '@/shared/components/layout/DashboardSection';
 import { MetricCard } from '@/shared/components/dashboard/MetricCard';
 import { QuickFilters } from '@/shared/components/dashboard/QuickFilters';
 import { QueryState } from '@/shared/components/ui/QueryState';
-import { CollapsibleFilterSection } from '@/shared/components/ui/CollapsibleFilterSection';
-import { useUrlFilters } from '@/shared/hooks/use-url-filters';
+import { TableFilterSection } from '@/shared/components/ui/TableFilterSection';
+import { useTableUrlFilters } from '@/shared/hooks/use-table-filters';
 import { useTodayCashDeliveries } from '@/modules/operations/hooks/returns/use-today-cash-deliveries';
 import { useDeliverReturnInstallment } from '@/modules/operations/hooks/returns/use-deliver-return-installment';
 import { TodayDeliveriesTable } from '@/modules/operations/components/returns/TodayDeliveriesTable';
@@ -27,7 +27,7 @@ const QUICK_TIPO_RETORNO_FILTERS = [
 const initialFilters = { tipoPago: '' };
 
 export default function TodayCashDeliveriesPage() {
-  const { filters, setFilters } = useUrlFilters(initialFilters);
+  const { filters, setFilters } = useTableUrlFilters(initialFilters);
   const [selectedDelivery, setSelectedDelivery] = useState<ReturnInstallment | null>(null);
 
   const { data, isLoading, error, refetch } = useTodayCashDeliveries({
@@ -99,7 +99,7 @@ export default function TodayCashDeliveriesPage() {
 
       <section className="rounded-2xl bg-white p-4 shadow-sm">
         <div className="mb-4">
-          <CollapsibleFilterSection title="Filtro por tipo de retorno">
+          <TableFilterSection title="Filtro por tipo de retorno">
           <QuickFilters
             options={QUICK_TIPO_RETORNO_FILTERS.map((option) => ({
               value: option.value,
@@ -108,7 +108,7 @@ export default function TodayCashDeliveriesPage() {
             value={filters.tipoPago}
             onChange={(tipoPago) => setFilters({ tipoPago })}
           />
-          </CollapsibleFilterSection>
+          </TableFilterSection>
         </div>
 
         <QueryState

@@ -1,3 +1,4 @@
+import { useTableFilters } from '@/shared/hooks/use-table-filters';
 // src/modules/corte/pages/DailyCashCutPage.tsx
 
 import { useEffect, useMemo, useState } from 'react';
@@ -29,11 +30,17 @@ type DateMode = 'daily' | 'range';
 
 export default function DailyCashCutPage() {
     const [mainView, setMainView] = useState<MainView>('cashCuts');
-    const [dateMode, setDateMode] = useState<DateMode>('daily');
-    const [fecha, setFecha] = useState(todayISO());
-    const [startDate, setStartDate] = useState(todayISO());
-    const [endDate, setEndDate] = useState(todayISO());
-    const [bankSearch, setBankSearch] = useState('');
+    const { filters, setFilters } = useTableFilters('table-filters:daily-cash-cut', {
+        dateMode: 'daily' as DateMode,
+        fecha: todayISO(),
+        startDate: todayISO(),
+        endDate: todayISO(),
+        bankSearch: '',
+    });
+    const { dateMode, fecha, startDate, endDate, bankSearch } = filters;
+    const setDateMode = (dateMode: DateMode) => setFilters((current) => ({ ...current, dateMode }));
+    const setFecha = (fecha: string) => setFilters((current) => ({ ...current, fecha }));
+    const setBankSearch = (bankSearch: string) => setFilters((current) => ({ ...current, bankSearch }));
 
     const {
         dailyCut,
@@ -235,8 +242,7 @@ export default function DailyCashCutPage() {
                                                 return;
                                             }
 
-                                            setStartDate(start);
-                                            setEndDate(end);
+                                            setFilters((current) => ({ ...current, startDate: start, endDate: end }));
 
                                             fetchRangeCut(start, end);
                                         }}

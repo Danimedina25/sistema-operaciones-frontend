@@ -1,12 +1,12 @@
+import { useTableFilters } from '@/shared/hooks/use-table-filters';
 import {
     useEffect,
-    useState,
 } from 'react';
 
 import {
     CommissionFilters,
 } from '../components/CommissionFilters';
-import { CollapsibleFilterSection } from '@/shared/components/ui/CollapsibleFilterSection';
+import { TableFilterSection } from '@/shared/components/ui/TableFilterSection';
 
 import {
     CommissionSummaryCardsSkeleton,
@@ -90,12 +90,7 @@ export default function MyCommercialPartnerCommissionsPage() {
     const defaultDates =
         getDefaultDates();
 
-    const [
-        filters,
-        setFilters,
-    ] = useState(
-        defaultDates,
-    );
+    const { filters, setFilters } = useTableFilters('table-filters:my-commissions', defaultDates);
 
     const {
         commissions,
@@ -134,7 +129,7 @@ export default function MyCommercialPartnerCommissionsPage() {
 
             {/* FILTROS */}
 
-            <CollapsibleFilterSection title="Semana de comisiones">
+            <TableFilterSection title="Semana de comisiones">
                 <CommissionFilters
                     filters={
                         filters
@@ -149,7 +144,7 @@ export default function MyCommercialPartnerCommissionsPage() {
                         isLoading
                     }
                 />
-            </CollapsibleFilterSection>
+            </TableFilterSection>
 
             {/* RESUMEN */}
 

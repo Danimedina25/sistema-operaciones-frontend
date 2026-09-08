@@ -3,7 +3,7 @@ import { CanAccess } from '@/shared/components/CanAccess';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { DeleteConfirmationModal } from '@/shared/components/ui/DeleteConfirmationModal';
-import { CollapsibleFilterSection } from '@/shared/components/ui/CollapsibleFilterSection';
+import { TableFilterSection } from '@/shared/components/ui/TableFilterSection';
 import { useClientes } from '@/modules/clientes/hooks/use-clientes';
 import { useCreateCliente } from '@/modules/clientes/hooks/use-create-cliente';
 import { useUpdateCliente } from '@/modules/clientes/hooks/use-update-cliente';
@@ -20,15 +20,15 @@ import { ClientesTable } from '../components/ClientesTable';
 import { CreateClienteForm } from '../components/CreateClienteForm';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { useCommercialLevelOneUsers } from '@/modules/users/hooks/use-commercial-level-one-users';
-import { usePersistedFilters } from '@/shared/hooks/use-persisted-filters';
+import { useTableFilters } from '@/shared/hooks/use-table-filters';
 
 const initialFilters: ClientesFiltersType = {
   search: '',
-  status: 'ALL',
+  status: 'ACTIVE',
 };
 
 export default function ClientesPage() {
-  const { filters, setFilters } = usePersistedFilters('table-filters:clients', initialFilters);
+  const { filters, setFilters } = useTableFilters('table-filters:clients', initialFilters);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingCliente, setEditingCliente] = useState<ClienteResponse | null>(
     null,
@@ -122,9 +122,9 @@ export default function ClientesPage() {
         </CanAccess>
       </div>
 
-      <CollapsibleFilterSection>
+      <TableFilterSection>
         <ClientesFilters filters={filters} onChange={setFilters} />
-      </CollapsibleFilterSection>
+      </TableFilterSection>
 
       {isLoading ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">

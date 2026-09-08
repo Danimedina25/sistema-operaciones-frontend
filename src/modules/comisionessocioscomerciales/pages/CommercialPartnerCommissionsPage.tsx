@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import {
   CommissionFilters,
 } from '../components/CommissionFilters';
-import { CollapsibleFilterSection } from '@/shared/components/ui/CollapsibleFilterSection';
+import { TableFilterSection } from '@/shared/components/ui/TableFilterSection';
 
 import {
   CommissionSummaryCards,
@@ -208,7 +208,7 @@ export default function CommercialPartnerCommissionsPage() {
       </div>
       {/* FILTROS */}
 
-      <CollapsibleFilterSection title="Semana de comisiones">
+      <TableFilterSection title="Semana de comisiones">
         <CommissionFilters
           filters={filters}
           onChange={setFilters}
@@ -219,7 +219,7 @@ export default function CommercialPartnerCommissionsPage() {
             isLoading
           }
         />
-      </CollapsibleFilterSection>
+      </TableFilterSection>
 
       {/* RESUMEN */}
 

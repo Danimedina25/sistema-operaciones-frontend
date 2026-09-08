@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Pagination } from '@/shared/components/ui/Pagination';
-import { CollapsibleFilterSection } from '@/shared/components/ui/CollapsibleFilterSection';
+import { TableFilterSection } from '@/shared/components/ui/TableFilterSection';
 import { OperationsFilters } from '@/modules/operations/components/OperationsFilters';
 import { useOperationsWithRequestedReturns } from '../hooks/returns/use-operation-returns';
 import {
@@ -11,7 +11,7 @@ import {
 } from '../types/operations.types.ts';
 import { ReturnsForPaymentTable } from '../components/returns/ReturnsForPaymentTable';
 import { buildReturnsForPaymentDetailPath } from '@/routes/paths';
-import { usePersistedFilters } from '@/shared/hooks/use-persisted-filters';
+import { useTableFilters } from '@/shared/hooks/use-table-filters';
 
 
 const initialFilters: OperationsFiltersType = {
@@ -35,7 +35,7 @@ const PAGE_SIZE = 10;
 export default function ReturnsForPaymentPage() {
   const navigate = useNavigate();
 
-  const { filters, setFilters } = usePersistedFilters('table-filters:returns-for-payment', initialFilters);
+  const { filters, setFilters } = useTableFilters('table-filters:returns-for-payment', initialFilters);
 
   const [currentPage, setCurrentPage] = useState(0);
 
@@ -62,7 +62,7 @@ export default function ReturnsForPaymentPage() {
         </div>
       </div>
 
-      <CollapsibleFilterSection>
+      <TableFilterSection>
         <OperationsFilters
           filters={filters}
           onChange={(newFilters) => {
@@ -71,7 +71,7 @@ export default function ReturnsForPaymentPage() {
           }}
           showEstatusFilter={false}
         />
-      </CollapsibleFilterSection>
+      </TableFilterSection>
 
       <section className="rounded-2xl bg-white p-4 shadow-sm">
         <div className="mb-5">

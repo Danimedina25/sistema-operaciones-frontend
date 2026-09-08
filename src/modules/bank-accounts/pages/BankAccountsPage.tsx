@@ -4,7 +4,7 @@ import { BankAccountFormModal } from '@/modules/bank-accounts/components/BankAcc
 import { BankAccountsFilters } from '@/modules/bank-accounts/components/BankAccountsFilters';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { DeleteConfirmationModal } from '@/shared/components/ui/DeleteConfirmationModal';
-import { CollapsibleFilterSection } from '@/shared/components/ui/CollapsibleFilterSection';
+import { TableFilterSection } from '@/shared/components/ui/TableFilterSection';
 import { useAuth } from '@/modules/auth/store/auth.context';
 
 import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts';
@@ -23,15 +23,15 @@ import {
 } from '@/modules/bank-accounts/utils/bank-accounts-filters';
 
 import { getTotalPages, paginateItems } from '@/shared/utils/pagination';
-import { usePersistedFilters } from '@/shared/hooks/use-persisted-filters';
+import { useTableFilters } from '@/shared/hooks/use-table-filters';
 
 const initialFilters: BankAccountsFiltersType = {
   search: '',
-  status: 'ALL',
+  status: 'ACTIVE',
 };
 
 export default function BankAccountsPage() {
-  const { filters, setFilters } = usePersistedFilters('table-filters:bank-accounts', initialFilters);
+  const { filters, setFilters } = useTableFilters('table-filters:bank-accounts', initialFilters);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -168,9 +168,9 @@ export default function BankAccountsPage() {
         </div>
       </div>
 
-      <CollapsibleFilterSection>
+      <TableFilterSection>
         <BankAccountsFilters filters={filters} onChange={setFilters} />
-      </CollapsibleFilterSection>
+      </TableFilterSection>
 
       {isLoading ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm">
