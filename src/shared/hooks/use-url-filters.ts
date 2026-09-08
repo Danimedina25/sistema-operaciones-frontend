@@ -13,10 +13,10 @@ type FilterPrimitive = string | number;
  * en vez de `Record<string, FilterPrimitive>` para aceptar interfaces con
  * propiedades nombradas (sin índice de firma) como `OperationsFilters`.
  */
-export function useUrlFilters<T extends { [K in keyof T]: FilterPrimitive }>(defaults: T) {
+export function useUrlFilters<T extends { [K in keyof T]: FilterPrimitive }>(defaults: T, cacheKey?: string) {
   const [searchParams, setSearchParams] = useSearchParams();
   const { pathname } = useLocation();
-  const storageKey = `table-filters:${pathname}`;
+  const storageKey = cacheKey ?? `table-filters:${pathname}`;
 
   const filters = useMemo(() => {
     const result = searchParams.size === 0
@@ -51,8 +51,7 @@ export function useUrlFilters<T extends { [K in keyof T]: FilterPrimitive }>(def
 
       (Object.keys(next) as Array<keyof T>).forEach((key) => {
         const value = next[key];
-        const isEmpty = value === '' || value === defaults[key];
-        if (isEmpty) return;
+        if (value === defaults[key]) return;
 
         params.set(String(key), String(value));
       });

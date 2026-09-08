@@ -86,7 +86,7 @@ export function OperationsFilters({
       operationId: 0,
       search: '',
       status: 'ALL',
-      dateFilter: '',
+      dateFilter: 'THIS_MONTH',
       startDate: '',
       endDate: '',
       activo: 'ACTIVE',

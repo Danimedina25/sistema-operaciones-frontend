@@ -93,4 +93,34 @@ describe('useUrlFilters', () => {
 
     expect(result.current.filters).toEqual({ search: 'guardado', status: 'DONE', page: 2 });
   });
+  it('no guarda defaults automáticamente ni recupera el caché anterior con una clave nueva', () => {
+    window.sessionStorage.setItem('table-filters:/operaciones', JSON.stringify({ status: 'DONE' }));
+    const { result } = renderHook(() => useUrlFilters(DEFAULTS, 'operations:v2:1'), { wrapper });
+    expect(result.current.filters).toEqual(DEFAULTS);
+    expect(window.sessionStorage.getItem('operations:v2:1')).toBeNull();
+  });
+
+  it('conserva fechas vacías explícitas en la URL al recargar un rango personalizado', () => {
+    const defaults = { ...DEFAULTS, dateFilter: 'THIS_MONTH', startDate: '' };
+    const selected = { ...defaults, dateFilter: '', startDate: '2026-09-02' };
+    const first = renderHook(() => ({
+      ...useUrlFilters(defaults, 'operations:v2:1'),
+      params: useSearchParams()[0],
+    }), { wrapper });
+    act(() => first.result.current.setFilters(selected));
+    expect(first.result.current.filters).toEqual(selected);
+    const url = `/operaciones?${first.result.current.params.toString()}`;
+    expect(first.result.current.params.has('dateFilter')).toBe(true);
+    first.unmount();
+    const reloaded = renderHook(() => useUrlFilters(defaults, 'operations:v2:1'), {
+      wrapper: ({ children }) => <MemoryRouter initialEntries={[url]}>{children}</MemoryRouter>,
+    });
+    expect(reloaded.result.current.filters).toEqual(selected);
+    reloaded.unmount();
+    const reopened = renderHook(() => useUrlFilters(defaults, 'operations:v2:1'), { wrapper });
+    expect(reopened.result.current.filters).toEqual(selected);
+    const otherUser = renderHook(() => useUrlFilters(defaults, 'operations:v2:2'), { wrapper });
+    expect(otherUser.result.current.filters).toEqual(defaults);
+  });
+
 });

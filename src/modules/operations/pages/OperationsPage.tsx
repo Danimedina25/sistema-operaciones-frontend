@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { useUrlFilters } from '@/shared/hooks/use-url-filters';
@@ -17,7 +17,6 @@ import {
   OperationsFilters as OperationsFiltersType,
   PaymentOperationResponse,
 } from '../types/operations.types.ts';
-import { useFrequentClientNames } from '../hooks/use-frequently-client-names.js';
 import { isOperationEditableStatus } from '../utils/operation-formatters';
 import { useClientes } from '@/modules/clientes/hooks/use-clientes.js';
 import { useUpdateOperation } from '../hooks/use-update-operation.js';
@@ -47,7 +46,12 @@ const initialFilters: OperationsFiltersType = {
 export default function OperationsPage() {
   const navigate = useNavigate();
 
-  const { filters, setFilters } = useUrlFilters<OperationsFiltersType>(initialFilters);
+  const { hasRole, user } = useAuth();
+  // Nueva clave: el caché anterior puede contener filtros impuestos por el rol.
+  const { filters, setFilters } = useUrlFilters<OperationsFiltersType>(
+    initialFilters,
+    `table-filters:operations:v2:${user?.userId ?? 'anonymous'}`,
+  );
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isAddPaymentModalOpen, setIsAddPaymentModalOpen] = useState(false);
   const [selectedOperation, setSelectedOperation] = useState<PaymentOperationResponse | null>(null);
@@ -55,34 +59,10 @@ export default function OperationsPage() {
   const [operationToEdit, setOperationToEdit] =
     useState<PaymentOperationResponse | null>(null);
 
-  const { hasRole, user } = useAuth();
   const canCreateOperation = hasRole(['SOCIO_COMERCIAL', 'ADMIN']);
   const canReadConfiguracionGeneral = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
   const showPaymentTypeFilter = !hasRole(['SOCIO_COMERCIAL']);
 
-  const [searchParams] = useSearchParams();
-  const appliedRoleDefaultFilter = useRef(false);
-  const isJefaCajas = hasRole(['JEFA_CAJAS']);
-  const isCuentas = hasRole(['AUXILIAR_CUENTAS', 'JEFA_CUENTAS']);
-
-  useEffect(() => {
-    if (appliedRoleDefaultFilter.current) return;
-    appliedRoleDefaultFilter.current = true;
-
-    // Si ya llegó con filtros en la URL (ej. desde un enlace de un
-    // contador del dashboard), no se sobreescribe con el default de rol.
-    if (searchParams.toString() !== '') return;
-
-    if (isJefaCajas) {
-      setFilters({ ...initialFilters, paymentTypes: 'EFECTIVO', paymentStatus: 'PENDIENTE_VALIDACION' });
-    } else if (isCuentas) {
-      setFilters({
-        ...initialFilters,
-        paymentTypes: 'TRANSFERENCIA,DEPOSITO,CHEQUE',
-        paymentStatus: 'PENDIENTE_VALIDACION',
-      });
-    }
-  }, [searchParams, isJefaCajas, isCuentas, setFilters]);
   const canAssignLevelOne = hasRole(['ADMIN']);
   const showSocioFilter = hasRole(['GERENTE', 'DIRECCION', 'ADMIN']);
   const {
@@ -97,7 +77,6 @@ export default function OperationsPage() {
   ]);
   const needsOperationCatalogs = canCreateOperation || canEditOperations;
 
-  const { clientNames: frequentClientNames } = useFrequentClientNames();
   const {
     clientes: clientesCatalog,
     isLoading: isLoadingClientes,
