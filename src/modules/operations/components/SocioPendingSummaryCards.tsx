@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useTableFilters } from '@/shared/hooks/use-table-filters';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertTriangle,
@@ -30,7 +30,11 @@ export function SocioPendingSummaryCards({
   endDate,
 }: SocioPendingSummaryParams) {
   const navigate = useNavigate();
-  const [isExpanded, setIsExpanded] = useState(false);
+  const { filters: panelState, setFilters: setPanelState } = useTableFilters(
+    'dashboard:socio-pending-panel',
+    { isExpanded: false },
+  );
+  const { isExpanded } = panelState;
   const { summary, isLoading, enabled } = useSocioPendingSummary({
     dateFilter,
     startDate,
@@ -49,7 +53,7 @@ export function SocioPendingSummaryCards({
       action={
         <button
           type="button"
-          onClick={() => setIsExpanded((current) => !current)}
+          onClick={() => setPanelState((current) => ({ isExpanded: !current.isExpanded }))}
           aria-expanded={isExpanded}
           aria-controls="socio-pending-summary-content"
           className="flex min-h-9 items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
