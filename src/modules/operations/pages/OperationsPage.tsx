@@ -248,7 +248,10 @@ export default function OperationsPage() {
         </div>
       </div>
 
-      <CollapsibleFilterSection>
+      <CollapsibleFilterSection
+        key={user?.userId ?? 'anonymous'}
+        storageKey={`table-filters:operations:expanded:${user?.userId ?? 'anonymous'}`}
+      >
         <OperationsFilters
           filters={filters}
           onChange={setFilters}
