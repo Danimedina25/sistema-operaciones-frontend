@@ -102,9 +102,9 @@ export function OperationsFilters({
   return (
     <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-3">
       <fieldset className="min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-3">
-        <legend className="px-1 text-xs font-semibold text-slate-700">Fechas</legend>
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-          <div className="min-w-0 lg:w-80 lg:shrink-0">
+        <legend className="px-1 text-xs font-semibold text-slate-700">{showEstatusFilter ? 'Fechas y estatus' : 'Fechas'}</legend>
+        <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)] xl:items-start">
+          <div className="min-w-0">
             <label className="mb-1 block text-xs font-medium text-slate-600">Rango de fechas</label>
             <DateRangeCalendarField
               startDate={filters.startDate}
@@ -122,22 +122,19 @@ export function OperationsFilters({
               onChange={handleQuickFilterChange}
             />
           </div>
+          {showEstatusFilter && (
+            <fieldset className="min-w-0">
+              <legend className="mb-1 text-xs font-medium text-slate-600">Estatus de la operación</legend>
+              <QuickFilters<OperationStatus>
+                className="grid grid-cols-2 sm:grid-cols-4"
+                options={operationStatuses.map((status) => ({ value: status, label: operationStatusLabels[status] }))}
+                value={filters.status}
+                onChange={(status) => onChange({ ...filters, status: filters.status === status ? 'ALL' : status })}
+              />
+            </fieldset>
+          )}
         </div>
       </fieldset>
-
-      {showEstatusFilter && (
-        <fieldset className="min-w-0">
-          <legend className="mb-2 text-xs font-medium text-slate-600">Estatus de la operación</legend>
-          <QuickFilters<OperationStatus | 'ALL'>
-            options={[
-              { value: 'ALL', label: 'Todos' },
-              ...operationStatuses.map((status) => ({ value: status, label: operationStatusLabels[status] })),
-            ]}
-            value={filters.status}
-            onChange={(status) => onChange({ ...filters, status })}
-          />
-        </fieldset>
-      )}
 
       {showPaymentTypeFilter && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
