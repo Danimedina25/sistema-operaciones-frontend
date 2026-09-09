@@ -24,6 +24,7 @@ const BASE_FILTERS: OperationsFilters = {
 export interface SocioPendingSummary {
   rejectedPayments: number | null;
   pendingToRegister: number | null;
+  partialIncomeToRegister: number | null;
   readyToRequestReturn: number | null;
   returnsPendingConfirmation: number | null;
   pendingCommissions: number | null;
@@ -32,6 +33,7 @@ export interface SocioPendingSummary {
 const EMPTY_SUMMARY: SocioPendingSummary = {
   rejectedPayments: null,
   pendingToRegister: null,
+  partialIncomeToRegister: null,
   readyToRequestReturn: null,
   returnsPendingConfirmation: null,
   pendingCommissions: null,
@@ -94,7 +96,8 @@ export function useSocioPendingSummary({
 
       setSummary({
         rejectedPayments: rejected.totalElements,
-        pendingToRegister: pendingValidation.totalElements + pendingIngresoParcial.totalElements,
+        pendingToRegister: pendingValidation.totalElements,
+        partialIncomeToRegister: pendingIngresoParcial.totalElements,
         readyToRequestReturn: readyForReturn.totalElements,
         returnsPendingConfirmation: returnsAwaitingConfirmation.totalElements,
         pendingCommissions,

@@ -136,9 +136,9 @@ export function OperationsFilters({
         </div>
       </fieldset>
 
-      {showPaymentTypeFilter && (
+      {(showPaymentTypeFilter || filters.paymentStatus !== '') && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-          <div>
+          {showPaymentTypeFilter && <div>
             <label className="mb-1 block text-xs font-medium text-slate-600">
               Filtros rápidos por tipo de ingreso
             </label>
@@ -150,7 +150,7 @@ export function OperationsFilters({
               value={filters.paymentTypes}
               onChange={(paymentTypes) => onChange({ ...filters, paymentTypes })}
             />
-          </div>
+          </div>}
 
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-600">

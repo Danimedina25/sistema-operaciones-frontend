@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import toast from 'react-hot-toast';
 
@@ -31,7 +31,7 @@ export function useMyWeeklyCommissions() {
   const [isLoading, setIsLoading] =
     useState(false);
 
-  const fetchCommissions = async (
+  const fetchCommissions = useCallback(async (
     params: Params,
   ) => {
 
@@ -59,7 +59,7 @@ export function useMyWeeklyCommissions() {
       setIsLoading(false);
 
     }
-  };
+  }, []);
 
   const clearCommissions = () => {
 

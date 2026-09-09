@@ -1,6 +1,7 @@
-import { useTableFilters } from '@/shared/hooks/use-table-filters';
+import { useTableCacheKey } from '@/shared/hooks/use-table-filters';
+import { useUrlFilters } from '@/shared/hooks/use-url-filters';
 import {
-    useEffect,
+    useEffect, useState,
 } from 'react';
 
 import {
@@ -26,18 +27,6 @@ import {
 } from '../hooks/use-my-weekly-commissions';
 import { MyCommissionsTable } from '../components/MyCommissionsTable';
 import { MyCommissionsSummaryCards } from '../components/MyCommissionsSummaryCards';
-
-function formatCurrency(
-    value: number,
-) {
-    return new Intl.NumberFormat(
-        'es-MX',
-        {
-            style: 'currency',
-            currency: 'MXN',
-        },
-    ).format(value);
-}
 
 function getDefaultDates() {
 
@@ -87,10 +76,9 @@ function getDefaultDates() {
 
 export default function MyCommercialPartnerCommissionsPage() {
 
-    const defaultDates =
-        getDefaultDates();
-
-    const { filters, setFilters } = useTableFilters('table-filters:my-commissions', defaultDates);
+    const [defaultDates] = useState(() => ({ ...getDefaultDates(), commissionStatus: 'ALL' }));
+    const cacheKey = useTableCacheKey('table-filters:my-commissions');
+    const { filters, setFilters } = useUrlFilters(defaultDates, cacheKey);
 
     const {
         commissions,
@@ -102,10 +90,10 @@ export default function MyCommercialPartnerCommissionsPage() {
     useEffect(() => {
 
         void fetchCommissions(
-            filters,
+            { startDate: filters.startDate, endDate: filters.endDate },
         );
 
-    }, []);
+    }, [fetchCommissions, filters.startDate, filters.endDate]);
 
     return (
         <div className="space-y-3">
@@ -135,7 +123,7 @@ export default function MyCommercialPartnerCommissionsPage() {
                         filters
                     }
                     onChange={
-                        setFilters
+                        (dates) => setFilters({ ...filters, ...dates })
                     }
                     onSubmit={
                         fetchCommissions
@@ -178,7 +166,18 @@ export default function MyCommercialPartnerCommissionsPage() {
             <section className="rounded-2xl bg-white p-4 shadow-sm">
 
                 <div className="mb-5">
-
+                    <label className="mb-2 block text-sm text-slate-600">
+                        Estatus de comisión
+                        <select
+                            className="ml-2 rounded-lg border border-slate-300 px-3 py-2"
+                            value={filters.commissionStatus}
+                            onChange={(event) => setFilters({ ...filters, commissionStatus: event.target.value })}
+                        >
+                            <option value="ALL">Todas</option>
+                            <option value="GENERADA">Pendientes</option>
+                            <option value="PAGADA">Pagadas</option>
+                        </select>
+                    </label>
                     <h2 className="text-lg font-semibold text-slate-900">
                         Detalle de
                         operaciones
@@ -194,8 +193,9 @@ export default function MyCommercialPartnerCommissionsPage() {
                     ?.length ? (
 
                     <MyCommissionsTable
+                        key={`${filters.startDate}:${filters.endDate}:${filters.commissionStatus}`}
                         operations={
-                            commissions.operaciones
+                            commissions.operaciones.filter((operation) => filters.commissionStatus === 'ALL' || operation.myCommissionStatus === filters.commissionStatus)
                         }
                     />
 

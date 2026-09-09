@@ -15,6 +15,7 @@ import {
   type SocioPendingSummaryParams,
 } from '@/modules/operations/hooks/use-socio-pending-summary';
 import { dateFilterLabels } from '@/modules/operations/constants/operations.constants';
+import { resolveDateFilterRange } from '@/shared/utils/date-filter-range';
 import { paths } from '@/routes/paths';
 
 /** Contadores y accesos directos de la página independiente Mis pendientes. */
@@ -37,13 +38,28 @@ export function SocioPendingSummaryCards({
 
   if (!enabled) return null;
 
-  const activeFilterLabel = dateFilter ? dateFilterLabels[dateFilter] : null;
+  function openOperations(path: string, criteria: Record<string, string>) {
+    const params = new URLSearchParams({ dateFilter, startDate, endDate, activo: 'ACTIVE', ...criteria });
+    navigate(`${path}?${params}`);
+  }
+
+  function openCommissions() {
+    const params = new URLSearchParams({
+      ...resolveDateFilterRange(dateFilter, startDate, endDate),
+      commissionStatus: 'GENERADA',
+    });
+    navigate(`${paths.miscomisiones}?${params}`);
+  }
+
+  const activeFilterLabel = dateFilter
+    ? dateFilterLabels[dateFilter]
+    : startDate && endDate ? `${startDate} al ${endDate}` : null;
 
   return (
     <DashboardSection
       title="Mis pendientes"
       description={`Accesos directos a lo que necesita tu atención${activeFilterLabel ? ` (${activeFilterLabel})` : ''}.`}
-      contentClassName="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
+      contentClassName="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3"
       action={
         <button
           type="button"
@@ -66,31 +82,37 @@ export function SocioPendingSummaryCards({
             count={isLoading ? null : summary.rejectedPayments}
             icon={AlertTriangle}
             urgent
-            onClick={() => navigate(`${paths.operations}?paymentStatus=RECHAZADA`)}
+            onClick={() => openOperations(paths.operations, { paymentStatus: 'RECHAZADA' })}
           />
           <PendingTaskCard
             label="Saldo pendiente por registrar"
             count={isLoading ? null : summary.pendingToRegister}
             icon={Clock}
-            onClick={() => navigate(`${paths.operations}?status=PENDIENTE_VALIDACION`)}
+            onClick={() => openOperations(paths.operations, { status: 'PENDIENTE_VALIDACION' })}
+          />
+          <PendingTaskCard
+            label="Ingresos parciales por completar"
+            count={isLoading ? null : summary.partialIncomeToRegister}
+            icon={Clock}
+            onClick={() => openOperations(paths.operations, { status: 'INGRESO_PARCIAL' })}
           />
           <PendingTaskCard
             label="Listas para solicitar retorno"
             count={isLoading ? null : summary.readyToRequestReturn}
             icon={HandCoins}
-            onClick={() => navigate(`${paths.operations}?status=VALIDADA`)}
+            onClick={() => openOperations(paths.operations, { status: 'VALIDADA' })}
           />
           <PendingTaskCard
             label="Retornos pendientes de confirmar"
             count={isLoading ? null : summary.returnsPendingConfirmation}
             icon={PackageCheck}
-            onClick={() => navigate(`${paths.returnsRequested}?returnStatuses=EN_RECOLECCION`)}
+            onClick={() => openOperations(paths.returnsRequested, { returnStatuses: 'EN_RECOLECCION' })}
           />
           <PendingTaskCard
             label={`Comisiones pendientes (${activeFilterLabel ?? 'esta semana'})`}
             count={isLoading ? null : summary.pendingCommissions}
             icon={BadgeDollarSign}
-            onClick={() => navigate(paths.miscomisiones)}
+            onClick={openCommissions}
           />
         </div>
       ) : null}
