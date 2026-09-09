@@ -31,7 +31,8 @@ interface OperationsFiltersProps {
   socios?: SocioOption[];
 }
 
-const operationStatuses = Object.keys(operationStatusLabels) as OperationStatus[];
+const operationStatuses = (Object.keys(operationStatusLabels) as OperationStatus[])
+  .filter((status) => status !== 'COMPLETADA');
 
 const paymentStatusFilterOptions = Object.keys(
   paymentStatusLabels,
