@@ -12,6 +12,7 @@ import {
   LogOut,
   BanknoteArrowDown,
   ClipboardCheck,
+  ListTodo,
   Settings,
   Clock,
   X
@@ -60,7 +61,7 @@ const navItems: NavItem[] = [
   {
     to: paths.myPending,
     label: 'Mis pendientes',
-    icon: ClipboardCheck,
+    icon: ListTodo,
     allowedRoles: ROUTE_ACCESS.myPending,
   },
   {
