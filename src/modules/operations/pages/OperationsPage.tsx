@@ -5,7 +5,6 @@ import { Pagination } from '@/shared/components/ui/Pagination';
 import { useUrlFilters } from '@/shared/hooks/use-url-filters';
 import { CreateOperationForm } from '@/modules/operations/components/CreateOperationForm';
 import { OperationsFilters } from '@/modules/operations/components/OperationsFilters';
-import { SocioPendingSummaryCards } from '@/modules/operations/components/SocioPendingSummaryCards';
 import { OperationsTable } from '@/modules/operations/components/OperationsTable';
 import { useCreateOperation } from '@/modules/operations/hooks/use-create-operation';
 import { useOperations } from '@/modules/operations/hooks/use-operations';
@@ -255,12 +254,6 @@ export default function OperationsPage() {
           socios={commercialLevelOneUsers}
         />
       </CollapsibleFilterSection>
-
-      <SocioPendingSummaryCards
-        dateFilter={filters.dateFilter}
-        startDate={filters.startDate}
-        endDate={filters.endDate}
-      />
 
       <section className="rounded-2xl bg-white p-4 shadow-sm">
         <div className="mb-5">

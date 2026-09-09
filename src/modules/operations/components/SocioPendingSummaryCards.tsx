@@ -17,13 +17,7 @@ import {
 import { dateFilterLabels } from '@/modules/operations/constants/operations.constants';
 import { paths } from '@/routes/paths';
 
-/**
- * Primer bloque del dashboard de SOCIO_COMERCIAL: contadores reales de
- * pendientes, clicables hacia el listado correspondiente con los filtros
- * ya aplicados en la URL. Vive en OperationsPage (donde el socio ya
- * aterriza hoy) mientras no exista una página de dashboard real por rol.
- * Respeta el mismo filtro de fecha que la tabla principal de operaciones.
- */
+/** Contadores y accesos directos de la página independiente Mis pendientes. */
 export function SocioPendingSummaryCards({
   dateFilter,
   startDate,

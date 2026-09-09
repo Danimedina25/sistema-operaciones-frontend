@@ -48,8 +48,7 @@ export interface SocioPendingSummaryParams {
  * con `totalElements` real del servidor (nunca sobre una sola página).
  * "Comprobantes rechazados" cuenta operaciones con al menos un pago
  * rechazado (el backend no expone conteo a nivel de pago individual).
- * Respeta el mismo filtro de fecha (dateFilter/startDate/endDate) que la
- * tabla principal de operaciones.
+ * Respeta el período independiente seleccionado en Mis pendientes.
  */
 export function useSocioPendingSummary({
   dateFilter,

@@ -8,7 +8,6 @@ import {
   Network,
   ClipboardList,
   HandCoins,
-  WalletCards,
   BadgeDollarSign,
   LogOut,
   BanknoteArrowDown,
@@ -57,6 +56,12 @@ const navItems: NavItem[] = [
     label: 'Cuentas bancarias',
     icon: Landmark,
     allowedRoles: ROUTE_ACCESS.bankAccounts,
+  },
+  {
+    to: paths.myPending,
+    label: 'Mis pendientes',
+    icon: ClipboardCheck,
+    allowedRoles: ROUTE_ACCESS.myPending,
   },
   {
     to: paths.clientes,

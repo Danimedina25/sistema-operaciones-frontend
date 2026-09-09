@@ -1,3 +1,4 @@
+import MyPendingPage from '@/modules/operations/pages/MyPendingPage';
 import { createBrowserRouter } from 'react-router-dom';
 import { paths } from '@/routes/paths';
 import { ROUTE_ACCESS } from '@/shared/constants/access-control';
@@ -79,6 +80,10 @@ export const router = createBrowserRouter([
                 element: <UsersPage />,
               },
             ],
+          },
+          {
+            element: <RoleGuard allowedRoles={ROUTE_ACCESS.myPending} />,
+            children: [{ path: paths.myPending, element: <MyPendingPage /> }],
           },
           {
             element: <RoleGuard allowedRoles={ROUTE_ACCESS.clientes} />,
