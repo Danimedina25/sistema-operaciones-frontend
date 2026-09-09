@@ -103,7 +103,7 @@ export function OperationsFilters({
     <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-3">
       <fieldset className="min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-3">
         <legend className="px-1 text-xs font-semibold text-slate-700">{showEstatusFilter ? 'Fechas y estatus' : 'Fechas'}</legend>
-        <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)] xl:items-start">
+        <div className="grid min-w-0 gap-4 md:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] md:items-end">
           <div className="min-w-0">
             <label className="mb-1 block text-xs font-medium text-slate-600">Rango de fechas</label>
             <DateRangeCalendarField
@@ -123,7 +123,7 @@ export function OperationsFilters({
             />
           </div>
           {showEstatusFilter && (
-            <fieldset className="min-w-0">
+            <fieldset className="min-w-0 md:col-span-2">
               <legend className="mb-1 text-xs font-medium text-slate-600">Estatus de la operación</legend>
               <QuickFilters<OperationStatus>
                 className="grid grid-cols-2 sm:grid-cols-4"
