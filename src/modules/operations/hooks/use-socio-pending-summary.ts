@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/modules/auth/store/auth.context';
-import { getMyOperations, getOperationsWithRequestedReturns } from '@/modules/operations/api/operations.api';
-import { getMyWeeklyCommissions } from '@/modules/comisionessocioscomerciales/api/commercial-partner-commissions.api';
-import { resolveDateFilterRange } from '@/shared/utils/date-filter-range';
+import { getMyOperations, getOperationsAvailableToRequestReturn, getOperationsWithRequestedReturns } from '@/modules/operations/api/operations.api';
 import type { OperationsFilters } from '@/modules/operations/types/operations.types.ts';
 
 const BASE_FILTERS: OperationsFilters = {
@@ -24,19 +22,15 @@ const BASE_FILTERS: OperationsFilters = {
 export interface SocioPendingSummary {
   rejectedPayments: number | null;
   pendingToRegister: number | null;
-  partialIncomeToRegister: number | null;
   readyToRequestReturn: number | null;
   returnsPendingConfirmation: number | null;
-  pendingCommissions: number | null;
 }
 
 const EMPTY_SUMMARY: SocioPendingSummary = {
   rejectedPayments: null,
   pendingToRegister: null,
-  partialIncomeToRegister: null,
   readyToRequestReturn: null,
   returnsPendingConfirmation: null,
-  pendingCommissions: null,
 };
 
 export interface SocioPendingSummaryParams {
@@ -72,35 +66,24 @@ export function useSocioPendingSummary({
 
     try {
       const dateFilters = { dateFilter, startDate, endDate };
-      const commissionsRange = resolveDateFilterRange(dateFilter, startDate, endDate);
 
       const [
         rejected,
-        pendingValidation,
         pendingIngresoParcial,
         readyForReturn,
         returnsAwaitingConfirmation,
-        weeklyCommissions,
       ] = await Promise.all([
         getMyOperations(0, 1, { ...BASE_FILTERS, ...dateFilters, status: 'RECHAZADA' }),
-        getMyOperations(0, 1, { ...BASE_FILTERS, ...dateFilters, status: 'PENDIENTE_VALIDACION' }),
         getMyOperations(0, 1, { ...BASE_FILTERS, ...dateFilters, status: 'INGRESO_PARCIAL' }),
-        getMyOperations(0, 1, { ...BASE_FILTERS, ...dateFilters, status: 'VALIDADA' }),
+        getOperationsAvailableToRequestReturn(0, 1, { ...BASE_FILTERS, ...dateFilters }),
         getOperationsWithRequestedReturns(0, 1, { ...BASE_FILTERS, ...dateFilters, returnStatuses: 'EN_RECOLECCION' }),
-        getMyWeeklyCommissions(commissionsRange),
       ]);
-
-      const pendingCommissions = weeklyCommissions.operaciones.filter(
-        (operacion) => operacion.myCommissionStatus === 'GENERADA',
-      ).length;
 
       setSummary({
         rejectedPayments: rejected.totalElements,
-        pendingToRegister: pendingValidation.totalElements,
-        partialIncomeToRegister: pendingIngresoParcial.totalElements,
+        pendingToRegister: pendingIngresoParcial.totalElements,
         readyToRequestReturn: readyForReturn.totalElements,
         returnsPendingConfirmation: returnsAwaitingConfirmation.totalElements,
-        pendingCommissions,
       });
     } catch (err) {
       setError(err);

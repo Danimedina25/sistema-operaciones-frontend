@@ -11,10 +11,10 @@ import {
 } from '../types/operations.types.ts';
 import { ReturnsForRequestTable } from '../components/returns/ReturnsForRequestTable';
 import { buildReturnRequestDetailPath } from '@/routes/paths';
-import { Modal } from '@/shared/components/ui/Modal';
 import { useRequestReturnPayment } from '../hooks/returns/use-request-return-payment';
 import { RequestReturnModal } from '../components/returns/RequestReturnModal';
-import { useTableFilters } from '@/shared/hooks/use-table-filters';
+import { useTableCacheKey } from '@/shared/hooks/use-table-filters';
+import { useUrlFilters } from '@/shared/hooks/use-url-filters';
 
 
 const initialFilters: OperationsFiltersType = {
@@ -38,7 +38,8 @@ const PAGE_SIZE = 10;
 export default function ReturnsForRequestPage() {
   const navigate = useNavigate();
 
-  const { filters, setFilters } = useTableFilters('table-filters:returns-for-request', initialFilters);
+  const cacheKey = useTableCacheKey('table-filters:returns-for-request');
+  const { filters, setFilters } = useUrlFilters(initialFilters, cacheKey);
 
   const [currentPage, setCurrentPage] = useState(0);
 

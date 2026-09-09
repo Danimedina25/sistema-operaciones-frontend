@@ -1,21 +1,22 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 import { useSocioPendingSummary } from './use-socio-pending-summary';
-const api = vi.hoisted(() => ({ getMyOperations: vi.fn(), getOperationsWithRequestedReturns: vi.fn(), getMyWeeklyCommissions: vi.fn() }));
+const api = vi.hoisted(() => ({ getMyOperations: vi.fn(), getOperationsAvailableToRequestReturn: vi.fn(), getOperationsWithRequestedReturns: vi.fn(), getMyWeeklyCommissions: vi.fn() }));
 vi.mock('@/modules/auth/store/auth.context', () => ({ useAuth: () => ({ hasRole: () => true }) }));
 vi.mock('@/modules/operations/api/operations.api', () => api);
 vi.mock('@/modules/comisionessocioscomerciales/api/commercial-partner-commissions.api', () => api);
-it('separa los contadores por estatus y consulta el mismo rango para todos los pendientes', async () => {
+it('cuenta ingreso parcial y retornos disponibles con las fechas seleccionadas sin consultar comisiones', async () => {
   api.getMyOperations.mockImplementation((_page, _size, filters) => Promise.resolve({ totalElements: filters.status === 'INGRESO_PARCIAL' ? 7 : 2 }));
+  api.getOperationsAvailableToRequestReturn.mockResolvedValue({ totalElements: 5 });
   api.getOperationsWithRequestedReturns.mockResolvedValue({ totalElements: 3 });
-  api.getMyWeeklyCommissions.mockResolvedValue({ operaciones: [{ myCommissionStatus: 'GENERADA' }, { myCommissionStatus: 'PAGADA' }] });
   const period = { dateFilter: '' as const, startDate: '2026-08-01', endDate: '2026-08-31' };
   const { result } = renderHook(() => useSocioPendingSummary(period));
-  await waitFor(() => expect(result.current.summary.pendingToRegister).toBe(2));
-  expect(result.current.summary.partialIncomeToRegister).toBe(7);
+  await waitFor(() => expect(result.current.summary.pendingToRegister).toBe(7));
+  expect(result.current.summary.readyToRequestReturn).toBe(5);
+  expect(api.getMyOperations).toHaveBeenCalledTimes(2);
   expect(api.getMyOperations).toHaveBeenCalledWith(0, 1, expect.objectContaining({ ...period, status: 'RECHAZADA', paymentStatus: '' }));
-  expect(result.current.summary.pendingCommissions).toBe(1);
-  for (const call of api.getMyOperations.mock.calls) expect(call[2]).toMatchObject(period);
+  expect(api.getMyOperations).toHaveBeenCalledWith(0, 1, expect.objectContaining({ ...period, status: 'INGRESO_PARCIAL' }));
+  expect(api.getOperationsAvailableToRequestReturn).toHaveBeenCalledWith(0, 1, expect.objectContaining({ ...period, status: 'ALL' }));
   expect(api.getOperationsWithRequestedReturns).toHaveBeenCalledWith(0, 1, expect.objectContaining({ ...period, returnStatuses: 'EN_RECOLECCION' }));
-  expect(api.getMyWeeklyCommissions).toHaveBeenCalledWith({ startDate: period.startDate, endDate: period.endDate });
+  expect(api.getMyWeeklyCommissions).not.toHaveBeenCalled();
 });
