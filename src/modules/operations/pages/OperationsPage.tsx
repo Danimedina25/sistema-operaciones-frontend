@@ -192,12 +192,6 @@ export default function OperationsPage() {
 
   return (
     <div className="space-y-3">
-      <SocioPendingSummaryCards
-        dateFilter={filters.dateFilter}
-        startDate={filters.startDate}
-        endDate={filters.endDate}
-      />
-
       <div className="rounded-2xl bg-white p-4 shadow-sm">
         {/* Móvil: título arriba, botón de ancho completo debajo */}
         <div className="flex flex-col gap-3 sm:hidden">
@@ -261,6 +255,12 @@ export default function OperationsPage() {
           socios={commercialLevelOneUsers}
         />
       </CollapsibleFilterSection>
+
+      <SocioPendingSummaryCards
+        dateFilter={filters.dateFilter}
+        startDate={filters.startDate}
+        endDate={filters.endDate}
+      />
 
       <section className="rounded-2xl bg-white p-4 shadow-sm">
         <div className="mb-5">

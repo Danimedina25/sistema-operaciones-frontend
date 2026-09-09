@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import {
   OPERATIONS_QUICK_PAYMENT_TYPE_FILTERS,
-  OPERATIONS_QUICK_STATUS_FILTERS,
   operationStatusLabels,
   paymentStatusLabels,
 } from '@/modules/operations/constants/operations.constants';
@@ -101,19 +100,43 @@ export function OperationsFilters({
 
   return (
     <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-3">
-      <div>
-        <label className="mb-1 block text-xs font-medium text-slate-600">
-          Filtros rápidos
-        </label>
-        <QuickFilters
-          options={OPERATIONS_QUICK_STATUS_FILTERS.map((option) => ({
-            value: option.value,
-            label: option.label,
-          }))}
-          value={filters.status}
-          onChange={(status) => onChange({ ...filters, status })}
-        />
-      </div>
+      <fieldset className="min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-3">
+        <legend className="px-1 text-xs font-semibold text-slate-700">Fechas</legend>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+          <div className="min-w-0 lg:w-80 lg:shrink-0">
+            <label className="mb-1 block text-xs font-medium text-slate-600">Rango de fechas</label>
+            <DateRangeCalendarField
+              startDate={filters.startDate}
+              endDate={filters.endDate}
+              onChange={({ startDate, endDate }) =>
+                onChange({ ...filters, startDate, endDate, dateFilter: '' })
+              }
+            />
+          </div>
+          <div className="min-w-0">
+            <p className="mb-1 text-xs font-medium text-slate-600">Filtros rápidos de fecha</p>
+            <QuickFilters
+              options={quickFilters}
+              value={filters.dateFilter}
+              onChange={handleQuickFilterChange}
+            />
+          </div>
+        </div>
+      </fieldset>
+
+      {showEstatusFilter && (
+        <fieldset className="min-w-0">
+          <legend className="mb-2 text-xs font-medium text-slate-600">Estatus de la operación</legend>
+          <QuickFilters<OperationStatus | 'ALL'>
+            options={[
+              { value: 'ALL', label: 'Todos' },
+              ...operationStatuses.map((status) => ({ value: status, label: operationStatusLabels[status] })),
+            ]}
+            value={filters.status}
+            onChange={(status) => onChange({ ...filters, status })}
+          />
+        </fieldset>
+      )}
 
       {showPaymentTypeFilter && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
@@ -226,8 +249,8 @@ export function OperationsFilters({
         </div>
       )}
 
-      <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-12">
-        <div className="md:col-span-4">
+      <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-[1fr_12rem]">
+        <div className="min-w-0">
           <label className="mb-1 block text-xs font-medium text-slate-600">
             Buscar
           </label>
@@ -244,50 +267,7 @@ export function OperationsFilters({
           />
         </div>
 
-        {showEstatusFilter && (
-          <div className="md:col-span-2">
-            <label className="mb-1 block text-xs font-medium text-slate-600">
-              Estatus de la operación
-            </label>
-            <select
-              className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
-              value={filters.status}
-              onChange={(e) =>
-                onChange({
-                  ...filters,
-                  status: e.target.value as OperationStatus | 'ALL',
-                })
-              }
-            >
-              <option value="ALL">Todos</option>
-              {operationStatuses.map((status) => (
-                <option key={status} value={status}>
-                  {operationStatusLabels[status]}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        <div className="md:col-span-4">
-          <label className="mb-1 block text-xs font-medium text-slate-600">
-            Rango de fechas
-          </label>
-          <DateRangeCalendarField
-            startDate={filters.startDate}
-            endDate={filters.endDate}
-            onChange={({ startDate, endDate }) =>
-              onChange({
-                ...filters,
-                startDate,
-                endDate,
-                dateFilter: '',
-              })
-            }
-          />
-        </div>
-
-        <div className="md:col-span-2">
+        <div className="min-w-0">
           <label className="mb-1 block text-xs font-medium text-slate-600">
             Estado
           </label>
@@ -308,33 +288,7 @@ export function OperationsFilters({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600">
-            Filtros rápidos de fecha
-          </label>
-
-          <div className="flex flex-wrap gap-2">
-            {quickFilters.map((item) => {
-              const isActive = filters.dateFilter === item.value;
-
-              return (
-                <button
-                  key={item.value}
-                  type="button"
-                  onClick={() => handleQuickFilterChange(item.value)}
-                  className={`rounded-lg border px-2.5 py-1.5 text-xs font-medium transition ${isActive
-                      ? 'border-slate-900 bg-slate-900 text-white'
-                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                    }`}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
+      <div className="flex justify-end">
         <button
           type="button"
           onClick={handleClearFilters}
