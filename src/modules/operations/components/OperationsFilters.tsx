@@ -2,7 +2,6 @@ import { useMemo } from 'react';
 import {
   OPERATIONS_QUICK_PAYMENT_TYPE_FILTERS,
   operationStatusLabels,
-  paymentStatusLabels,
 } from '@/modules/operations/constants/operations.constants';
 import { Input } from '@/shared/components/ui/Input';
 import { DateRangeCalendarField } from '@/shared/components/ui/DateRangeCalendarField';
@@ -12,7 +11,6 @@ import type { BankAccountResponse } from '@/modules/bank-accounts/types/bank-acc
 import {
   OperationDateFilter,
   OperationStatus,
-  PaymentStatus,
   OperationsFilters as OperationsFiltersType,
 } from '../types/operations.types.ts';
 
@@ -33,10 +31,6 @@ interface OperationsFiltersProps {
 
 const operationStatuses = (Object.keys(operationStatusLabels) as OperationStatus[])
   .filter((status) => status !== 'COMPLETADA');
-
-const paymentStatusFilterOptions = Object.keys(
-  paymentStatusLabels,
-) as PaymentStatus[];
 
 const quickFilters: Array<{ value: OperationDateFilter; label: string }> = [
   { value: 'TODAY', label: 'Hoy' },
@@ -129,16 +123,15 @@ export function OperationsFilters({
                 className="grid grid-cols-2 sm:grid-cols-4"
                 options={operationStatuses.map((status) => ({ value: status, label: operationStatusLabels[status] }))}
                 value={filters.status}
-                onChange={(status) => onChange({ ...filters, status: filters.status === status ? 'ALL' : status })}
+                onChange={(status) => onChange({ ...filters, paymentStatus: '', status: filters.status === status ? 'ALL' : status })}
               />
             </fieldset>
           )}
         </div>
       </fieldset>
 
-      {(showPaymentTypeFilter || filters.paymentStatus !== '') && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-          {showPaymentTypeFilter && <div>
+      {showPaymentTypeFilter && (
+          <div>
             <label className="mb-1 block text-xs font-medium text-slate-600">
               Filtros rápidos por tipo de ingreso
             </label>
@@ -150,31 +143,7 @@ export function OperationsFilters({
               value={filters.paymentTypes}
               onChange={(paymentTypes) => onChange({ ...filters, paymentTypes })}
             />
-          </div>}
-
-          <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600">
-              Estatus del comprobante
-            </label>
-            <select
-              className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900 sm:w-44"
-              value={filters.paymentStatus}
-              onChange={(e) =>
-                onChange({
-                  ...filters,
-                  paymentStatus: e.target.value as PaymentStatus | '',
-                })
-              }
-            >
-              <option value="">Todos</option>
-              {paymentStatusFilterOptions.map((status) => (
-                <option key={status} value={status}>
-                  {paymentStatusLabels[status]}
-                </option>
-              ))}
-            </select>
           </div>
-        </div>
       )}
 
       {showPaymentTypeFilter && bankAccounts.length > 0 && (

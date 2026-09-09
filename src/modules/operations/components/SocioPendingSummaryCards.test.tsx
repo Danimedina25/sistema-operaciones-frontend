@@ -2,6 +2,8 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, expect, it, vi } from 'vitest';
+import { OperationsFilters } from './OperationsFilters';
+import type { OperationsFilters as Filters } from '../types/operations.types.ts';
 import { useUrlFilters } from '@/shared/hooks/use-url-filters';
 import { resolveDateFilterRange } from '@/shared/utils/date-filter-range';
 import type { SocioPendingSummaryParams } from '../hooks/use-socio-pending-summary';
@@ -56,12 +58,13 @@ it('mantiene independiente el estado de cada socio', async () => {
 });
 
 const destinationDefaults = {
+  operationId: 0, paymentTypes: '', cuentaDestinoId: 0, banco: '', socioComercialId: 0,
   dateFilter: 'THIS_MONTH', startDate: '', endDate: '', activo: 'ACTIVE',
   status: 'ALL', paymentStatus: '', returnStatuses: '', search: '', commissionStatus: 'ALL',
 };
 function Destination() {
   const { filters } = useUrlFilters(destinationDefaults, 'destination-cache');
-  return <output>{JSON.stringify(filters)}</output>;
+  return <><OperationsFilters filters={filters as Filters} onChange={() => {}} /><output>{JSON.stringify(filters)}</output></>;
 }
 
 const periods: SocioPendingSummaryParams[] = [
@@ -70,7 +73,7 @@ const periods: SocioPendingSummaryParams[] = [
   { dateFilter: '', startDate: '', endDate: '' },
 ];
 const cards = [
-  ['Comprobantes rechazados', 'paymentStatus', 'RECHAZADA'],
+  ['Comprobantes rechazados', 'status', 'RECHAZADA'],
   ['Saldo pendiente por registrar', 'status', 'PENDIENTE_VALIDACION'],
   ['Ingresos parciales por completar', 'status', 'INGRESO_PARCIAL'],
   ['Listas para solicitar retorno', 'status', 'VALIDADA'],
@@ -99,6 +102,12 @@ it.each(periods.flatMap((period) => cards.map(([label, key, value]) => ({ period
       expect(received).toMatchObject(resolveDateFilterRange(period.dateFilter, period.startDate, period.endDate));
     } else {
       expect(received).toMatchObject(period);
+      expect(received.paymentStatus).toBe('');
+      expect(screen.queryByText('Estatus del comprobante')).not.toBeInTheDocument();
+      if (key === 'status') {
+        const labels: Record<string, string> = { RECHAZADA: 'Rechazada', PENDIENTE_VALIDACION: 'Pendiente validación', INGRESO_PARCIAL: 'Ingreso parcial', VALIDADA: 'Validada' };
+        expect(screen.getByRole('button', { name: labels[value] })).toHaveAttribute('aria-pressed', 'true');
+      }
     }
   },
 );

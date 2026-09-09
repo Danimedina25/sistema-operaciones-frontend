@@ -13,6 +13,7 @@ it('separa los contadores por estatus y consulta el mismo rango para todos los p
   const { result } = renderHook(() => useSocioPendingSummary(period));
   await waitFor(() => expect(result.current.summary.pendingToRegister).toBe(2));
   expect(result.current.summary.partialIncomeToRegister).toBe(7);
+  expect(api.getMyOperations).toHaveBeenCalledWith(0, 1, expect.objectContaining({ ...period, status: 'RECHAZADA', paymentStatus: '' }));
   expect(result.current.summary.pendingCommissions).toBe(1);
   for (const call of api.getMyOperations.mock.calls) expect(call[2]).toMatchObject(period);
   expect(api.getOperationsWithRequestedReturns).toHaveBeenCalledWith(0, 1, expect.objectContaining({ ...period, returnStatuses: 'EN_RECOLECCION' }));

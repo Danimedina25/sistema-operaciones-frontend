@@ -47,10 +47,17 @@ export default function OperationsPage() {
 
   const { hasRole, user } = useAuth();
   // Nueva clave: el caché anterior puede contener filtros impuestos por el rol.
-  const { filters, setFilters } = useUrlFilters<OperationsFiltersType>(
+  const { filters: savedFilters, setFilters } = useUrlFilters<OperationsFiltersType>(
     initialFilters,
     `table-filters:operations:v2:${user?.userId ?? 'anonymous'}`,
   );
+  // Compatibilidad con enlaces y caché del antiguo select de comprobantes.
+  const filters = useMemo<OperationsFiltersType>(() => ({
+    ...savedFilters,
+    status: savedFilters.status === 'ALL' && savedFilters.paymentStatus === 'RECHAZADA'
+      ? 'RECHAZADA' : savedFilters.status,
+    paymentStatus: '',
+  }), [savedFilters]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isAddPaymentModalOpen, setIsAddPaymentModalOpen] = useState(false);
   const [selectedOperation, setSelectedOperation] = useState<PaymentOperationResponse | null>(null);

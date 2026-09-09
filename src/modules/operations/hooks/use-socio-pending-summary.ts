@@ -48,8 +48,8 @@ export interface SocioPendingSummaryParams {
 /**
  * Contadores de pendientes para el SOCIO_COMERCIAL autenticado, calculados
  * con `totalElements` real del servidor (nunca sobre una sola página).
- * "Comprobantes rechazados" cuenta operaciones con al menos un pago
- * rechazado (el backend no expone conteo a nivel de pago individual).
+ * "Comprobantes rechazados" usa el estatus RECHAZADA de la operación,
+ * igual que el botón de estatus del listado de destino.
  * Respeta el período independiente seleccionado en Mis pendientes.
  */
 export function useSocioPendingSummary({
@@ -82,7 +82,7 @@ export function useSocioPendingSummary({
         returnsAwaitingConfirmation,
         weeklyCommissions,
       ] = await Promise.all([
-        getMyOperations(0, 1, { ...BASE_FILTERS, ...dateFilters, paymentStatus: 'RECHAZADA' }),
+        getMyOperations(0, 1, { ...BASE_FILTERS, ...dateFilters, status: 'RECHAZADA' }),
         getMyOperations(0, 1, { ...BASE_FILTERS, ...dateFilters, status: 'PENDIENTE_VALIDACION' }),
         getMyOperations(0, 1, { ...BASE_FILTERS, ...dateFilters, status: 'INGRESO_PARCIAL' }),
         getMyOperations(0, 1, { ...BASE_FILTERS, ...dateFilters, status: 'VALIDADA' }),

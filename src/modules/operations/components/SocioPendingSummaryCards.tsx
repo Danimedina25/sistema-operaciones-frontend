@@ -82,7 +82,7 @@ export function SocioPendingSummaryCards({
             count={isLoading ? null : summary.rejectedPayments}
             icon={AlertTriangle}
             urgent
-            onClick={() => openOperations(paths.operations, { paymentStatus: 'RECHAZADA' })}
+            onClick={() => openOperations(paths.operations, { status: 'RECHAZADA' })}
           />
           <PendingTaskCard
             label="Saldo pendiente por registrar"
