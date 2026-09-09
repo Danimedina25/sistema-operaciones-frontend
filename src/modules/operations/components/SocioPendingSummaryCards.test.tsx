@@ -76,7 +76,7 @@ const periods: SocioPendingSummaryParams[] = [
 ];
 const cards = [
   ['Comprobantes rechazados', 'status', 'RECHAZADA', '/operaciones'],
-  ['Saldo pendiente por registrar', 'status', 'INGRESO_PARCIAL', '/operaciones'],
+  ['Operaciones con saldo pendiente por registrar', 'status', 'INGRESO_PARCIAL', '/operaciones'],
   ['Listas para solicitar retorno', 'status', 'ALL', '/retornos-por-solicitar'],
   ['Retornos pendientes de confirmar', 'returnStatuses', 'EN_RECOLECCION', '/retornos-solicitados'],
 ];

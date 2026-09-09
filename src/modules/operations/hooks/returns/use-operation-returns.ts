@@ -15,8 +15,10 @@ export function useOperationsAvailableToRequestReturn(
   page: number,
   pageSize: number,
   filters: OperationsFilters,
+  enabled = true,
 ) {
   return useQuery({
+    enabled,
     queryKey: ['operations-available-to-request-return', page, pageSize, filters],
     queryFn: () =>
       getOperationsAvailableToRequestReturn(page, pageSize, filters),

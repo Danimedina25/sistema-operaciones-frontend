@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useOperationsAvailableToRequestReturn } from './returns/use-operation-returns';
 import { useAuth } from '@/modules/auth/store/auth.context';
-import { getMyOperations, getOperationsAvailableToRequestReturn, getOperationsWithRequestedReturns } from '@/modules/operations/api/operations.api';
+import { getMyOperations, getOperationsWithRequestedReturns } from '@/modules/operations/api/operations.api';
 import type { OperationsFilters } from '@/modules/operations/types/operations.types.ts';
 
 const BASE_FILTERS: OperationsFilters = {
@@ -26,13 +27,6 @@ export interface SocioPendingSummary {
   returnsPendingConfirmation: number | null;
 }
 
-const EMPTY_SUMMARY: SocioPendingSummary = {
-  rejectedPayments: null,
-  pendingToRegister: null,
-  readyToRequestReturn: null,
-  returnsPendingConfirmation: null,
-};
-
 export interface SocioPendingSummaryParams {
   dateFilter: OperationsFilters['dateFilter'];
   startDate: string;
@@ -54,47 +48,36 @@ export function useSocioPendingSummary({
   const { hasRole } = useAuth();
   const enabled = hasRole(['SOCIO_COMERCIAL']);
 
-  const [summary, setSummary] = useState<SocioPendingSummary>(EMPTY_SUMMARY);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<unknown>(null);
-
-  const fetchSummary = useCallback(async () => {
-    if (!enabled) return;
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const dateFilters = { dateFilter, startDate, endDate };
-
-      const [
-        rejected,
-        pendingIngresoParcial,
-        readyForReturn,
-        returnsAwaitingConfirmation,
-      ] = await Promise.all([
-        getMyOperations(0, 1, { ...BASE_FILTERS, ...dateFilters, status: 'RECHAZADA' }),
-        getMyOperations(0, 1, { ...BASE_FILTERS, ...dateFilters, status: 'INGRESO_PARCIAL' }),
-        getOperationsAvailableToRequestReturn(0, 1, { ...BASE_FILTERS, ...dateFilters }),
-        getOperationsWithRequestedReturns(0, 1, { ...BASE_FILTERS, ...dateFilters, returnStatuses: 'EN_RECOLECCION' }),
-      ]);
-
-      setSummary({
-        rejectedPayments: rejected.totalElements,
-        pendingToRegister: pendingIngresoParcial.totalElements,
-        readyToRequestReturn: readyForReturn.totalElements,
-        returnsPendingConfirmation: returnsAwaitingConfirmation.totalElements,
-      });
-    } catch (err) {
-      setError(err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [enabled, dateFilter, startDate, endDate]);
-
-  useEffect(() => {
-    void fetchSummary();
-  }, [fetchSummary]);
-
-  return { summary, isLoading, error, enabled, refetch: fetchSummary };
+  const filters = { ...BASE_FILTERS, dateFilter, startDate, endDate };
+  // Misma clave, filtros y tamaño que la primera página de Retornos por solicitar.
+  const readyForReturn = useOperationsAvailableToRequestReturn(0, 10, filters, enabled);
+  const rejected = useQuery({
+    queryKey: ['socio-pending-rejected', filters],
+    queryFn: () => getMyOperations(0, 1, { ...filters, status: 'RECHAZADA' }),
+    enabled,
+  });
+  const partialIncome = useQuery({
+    queryKey: ['socio-pending-partial-income', filters],
+    queryFn: () => getMyOperations(0, 1, { ...filters, status: 'INGRESO_PARCIAL' }),
+    enabled,
+  });
+  const awaitingConfirmation = useQuery({
+    queryKey: ['socio-pending-return-confirmation', filters],
+    queryFn: () => getOperationsWithRequestedReturns(0, 1, { ...filters, returnStatuses: 'EN_RECOLECCION' }),
+    enabled,
+  });
+  const summary: SocioPendingSummary = {
+    rejectedPayments: rejected.data?.totalElements ?? null,
+    pendingToRegister: partialIncome.data?.totalElements ?? null,
+    readyToRequestReturn: readyForReturn.data?.totalElements ?? null,
+    returnsPendingConfirmation: awaitingConfirmation.data?.totalElements ?? null,
+  };
+  const queries = [rejected, partialIncome, readyForReturn, awaitingConfirmation];
+  return {
+    summary,
+    isLoading: queries.some((query) => query.isFetching),
+    error: queries.find((query) => query.error)?.error ?? null,
+    enabled,
+    refetch: () => Promise.all(queries.map((query) => query.refetch())),
+  };
 }

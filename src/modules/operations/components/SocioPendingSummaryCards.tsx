@@ -75,7 +75,7 @@ export function SocioPendingSummaryCards({
             onClick={() => openOperations(paths.operations, { status: 'RECHAZADA' })}
           />
           <PendingTaskCard
-            label="Saldo pendiente por registrar"
+            label="Operaciones con saldo pendiente por registrar"
             count={isLoading ? null : summary.pendingToRegister}
             icon={Clock}
             onClick={() => openOperations(paths.operations, { status: 'INGRESO_PARCIAL' })}
