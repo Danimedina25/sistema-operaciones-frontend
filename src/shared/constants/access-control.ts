@@ -7,7 +7,7 @@ import type { RoleName } from '@/modules/auth/types/auth.types';
  * de negocio, solo se deduplica entre router, Sidebar y permissions.ts.
  */
 export const ROUTE_ACCESS = {
-  myPending: ['SOCIO_COMERCIAL'],
+  myPending: ['SOCIO_COMERCIAL', 'JEFA_CAJAS', 'JEFA_CUENTAS', 'AUXILIAR_CUENTAS'],
   corte: ['ADMIN', 'GERENTE', 'DIRECCION'],
   users: ['ADMIN', 'GERENTE', 'DIRECCION'],
   clientes: ['ADMIN', 'GERENTE', 'DIRECCION', 'SOCIO_COMERCIAL'],

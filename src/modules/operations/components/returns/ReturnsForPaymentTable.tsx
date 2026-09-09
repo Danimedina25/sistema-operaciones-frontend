@@ -1,3 +1,4 @@
+import { useAuth } from '@/modules/auth/store/auth.context';
 import { HandCoins } from 'lucide-react';
 import { OperationStatusBadge } from '@/modules/operations/components/OperationStatusBadge';
 import {
@@ -5,7 +6,6 @@ import {
   formatDate,
 } from '@/modules/operations/utils/operation-formatters';
 import { PaymentOperationResponse } from '../../types/operations.types.ts.js';
-import { useAuth } from '@/modules/auth/store/auth.context.js';
 
 interface ReturnsTableProps {
   operations: PaymentOperationResponse[];
@@ -20,27 +20,11 @@ export function ReturnsForPaymentTable({
 }: ReturnsTableProps) {
 
   const { user } = useAuth();
-
   const roles = user?.roles ?? [];
-
   const isJefaCajas = roles.includes('JEFA_CAJAS');
   const isJefaCuentas = roles.includes('JEFA_CUENTAS');
   const isAuxiliarCuentas = roles.includes('AUXILIAR_CUENTAS');
-
-  const visibleOperations = operations.filter((operation) => {
-    if (isJefaCajas) {
-      return (
-        operation.contieneRetornosEnEfectivo ||
-        operation.contieneRetornosRetiroSinTarjeta
-      );
-    }
-
-    if (isJefaCuentas || isAuxiliarCuentas) {
-      return operation.contieneRetornosEnTransferencia;
-    }
-
-    return true; // ADMIN, GERENTE, DIRECCION ven todo
-  });
+  const visibleOperations = operations;
 
   if (!isLoading && visibleOperations.length === 0) {
     return (
@@ -121,10 +105,7 @@ export function ReturnsForPaymentTable({
               </tr>
             ) : (
               visibleOperations.map((operation) => {
-                const canPayReturns =
-                  (isJefaCajas && operation.contieneRetornosEnEfectivo) ||
-                  (isJefaCajas && operation.contieneRetornosRetiroSinTarjeta) ||
-                  ((isJefaCuentas || isAuxiliarCuentas) && operation.contieneRetornosEnTransferencia);
+                const canPayReturns = isJefaCajas || isJefaCuentas || isAuxiliarCuentas;
                 return (
                   <tr
                     key={operation.id}
@@ -193,7 +174,7 @@ export function ReturnsForPaymentTable({
                           }}
                           className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
                         >
-                          {isJefaCajas ? 'Programar recolecciones' : 'Pagar retornos'}
+                          {isJefaCajas && (isJefaCuentas || isAuxiliarCuentas) ? 'Gestionar retornos' : isJefaCajas ? 'Programar recolecciones' : 'Pagar retornos'}
                         </button>
                       ) : (
                         <span className="text-xs text-slate-400">

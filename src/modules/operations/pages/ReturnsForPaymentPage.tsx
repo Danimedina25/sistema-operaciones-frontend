@@ -1,20 +1,23 @@
+import { useUrlFilters } from '@/shared/hooks/use-url-filters';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { TableFilterSection } from '@/shared/components/ui/TableFilterSection';
 import { OperationsFilters } from '@/modules/operations/components/OperationsFilters';
-import { useOperationsWithRequestedReturns } from '../hooks/returns/use-operation-returns';
+import { useWorkOperations } from '../hooks/use-work-operations';
+import { WorkQueueFilters } from '../components/WorkQueueFilters';
+import { QueryState } from '@/shared/components/ui/QueryState';
 import {
   OperationsFilters as OperationsFiltersType,
-  PaymentOperationResponse,
 } from '../types/operations.types.ts';
 import { ReturnsForPaymentTable } from '../components/returns/ReturnsForPaymentTable';
 import { buildReturnsForPaymentDetailPath } from '@/routes/paths';
-import { useTableFilters } from '@/shared/hooks/use-table-filters';
+import { useTableCacheKey } from '@/shared/hooks/use-table-filters';
 
 
 const initialFilters: OperationsFiltersType = {
+  workQueue: '',
   operationId: 0,
   search: '',
   status: 'ALL',
@@ -30,20 +33,20 @@ const initialFilters: OperationsFiltersType = {
   socioComercialId: 0,
 };
 
-const PAGE_SIZE = 10;
 
 export default function ReturnsForPaymentPage() {
   const navigate = useNavigate();
 
-  const { filters, setFilters } = useTableFilters('table-filters:returns-for-payment', initialFilters);
+  const { filters, setFilters } = useUrlFilters(initialFilters, useTableCacheKey('table-filters:returns-for-payment'));
 
   const [currentPage, setCurrentPage] = useState(0);
 
   const {
     data,
-    isLoading,
+    isFetching: isLoading,
+    error,
     refetch,
-  } = useOperationsWithRequestedReturns(currentPage, PAGE_SIZE, filters);
+  } = useWorkOperations(filters, currentPage, true);
 
   const operations = data?.content ?? [];
   const totalPages = data?.totalPages ?? 0;
@@ -57,12 +60,13 @@ export default function ReturnsForPaymentPage() {
             Retornos por pagar
           </h1>
           <p className="text-xs text-slate-500">
-            Operaciones con retornos solicitados pendientes de pagar
+            Operaciones con saldo disponible para registrar otra parcialidad. Fechas por creación de la operación.
           </p>
         </div>
       </div>
 
       <TableFilterSection>
+        <WorkQueueFilters filters={filters} onChange={(next) => { setFilters(next); setCurrentPage(0); }} returns />
         <OperationsFilters
           filters={filters}
           onChange={(newFilters) => {
@@ -83,6 +87,7 @@ export default function ReturnsForPaymentPage() {
           </p>
         </div>
 
+        <QueryState isLoading={isLoading} error={error} onRetry={() => void refetch()}>
         <ReturnsForPaymentTable
           operations={operations}
           isLoading={isLoading}
@@ -95,6 +100,7 @@ export default function ReturnsForPaymentPage() {
           }}
         />
 
+        </QueryState>
         <div className="mt-5">
           <Pagination
             currentPage={currentPage + 1}

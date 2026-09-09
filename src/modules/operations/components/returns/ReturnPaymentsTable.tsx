@@ -57,11 +57,9 @@ export function ReturnPaymentsTable({
   const isSocioComercial = roles.includes('SOCIO_COMERCIAL');
 
   const visibleReturns = returns.filter((returnPayment) => {
-    if (isJefaCajas) {
-      return isCashReturnMethod(returnPayment.tipoPago);
-    }
-    if (isJefaCuentas || isAuxiliarCuentas) {
-      return !isCashReturnMethod(returnPayment.tipoPago);
+    if (isAdmin) return true;
+    if (isJefaCajas || isJefaCuentas || isAuxiliarCuentas) {
+      return isCashReturnMethod(returnPayment.tipoPago) ? isJefaCajas : isJefaCuentas || isAuxiliarCuentas;
     }
     return true; // ADMIN, GERENTE, DIRECCION, SOCIO_COMERCIAL ven todo
   });

@@ -1,3 +1,5 @@
+import { useSearchParams } from 'react-router-dom';
+import PendingDeliveriesPage from './PendingDeliveriesPage';
 import { useMemo, useState } from 'react';
 import { Clock, HandCoins, ListChecks, PackageCheck, Wallet } from 'lucide-react';
 import { DashboardSection } from '@/shared/components/layout/DashboardSection';
@@ -27,6 +29,11 @@ const QUICK_TIPO_RETORNO_FILTERS = [
 const initialFilters = { tipoPago: '' };
 
 export default function TodayCashDeliveriesPage() {
+  const [params] = useSearchParams();
+  return params.has('queue') ? <PendingDeliveriesPage /> : <TodayCashDeliveriesOverview />;
+}
+
+function TodayCashDeliveriesOverview() {
   const { filters, setFilters } = useTableUrlFilters(initialFilters);
   const [selectedDelivery, setSelectedDelivery] = useState<ReturnInstallment | null>(null);
 

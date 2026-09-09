@@ -1,3 +1,4 @@
+import { StaffPendingSummaryCards } from '../components/StaffPendingSummaryCards';
 import { SocioPendingSummaryCards } from '../components/SocioPendingSummaryCards';
 import type { SocioPendingSummaryParams } from '../hooks/use-socio-pending-summary';
 import { useTableFilters } from '@/shared/hooks/use-table-filters';
@@ -47,6 +48,7 @@ export default function MyPendingPage() {
         </div>
       </section>
       <SocioPendingSummaryCards {...filters} />
+      <StaffPendingSummaryCards {...filters} />
     </div>
   );
 }

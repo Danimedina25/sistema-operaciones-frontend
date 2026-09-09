@@ -63,6 +63,7 @@ export interface PageResponse<T> {
 export type OperationActivoFilter = 'ALL' | 'ACTIVE' | 'INACTIVE';
 
 export interface OperationsFilters {
+  workQueue?: string;
   operationId: number;
   search: string;
   status: OperationStatus | 'ALL';

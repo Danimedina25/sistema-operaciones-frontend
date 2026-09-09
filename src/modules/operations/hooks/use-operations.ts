@@ -1,70 +1,37 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import {
   activateOperation,
   deactivateOperation,
-  getMyOperations,
-  getOperations,
 } from '@/modules/operations/api/operations.api';
-import { useAuth } from '@/modules/auth/store/auth.context';
+import { useWorkOperations } from './use-work-operations';
 import { getApiErrorMessage } from '@/shared/utils/errors';
 import {
   OperationsFilters,
-  PaymentOperationResponse,
 } from '../types/operations.types.ts';
 
 export function useOperations(filters: OperationsFilters) {
-  const { hasRole } = useAuth();
-
-  const [operations, setOperations] = useState<PaymentOperationResponse[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize] = useState(10);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
-  const [processingOperationId, setProcessingOperationId] = useState<
-    number | null
-  >(null);
-
-  const isSocioComercial = hasRole(['SOCIO_COMERCIAL']);
-
-  const fetchOperations = useCallback(async (page: number) => {
-    try {
-      setIsLoading(true);
-
-      const result = isSocioComercial
-        ? await getMyOperations(page, pageSize, filters)
-        : await getOperations(page, pageSize, filters);
-
-      setOperations(result.content);
-      setCurrentPage(result.number);
-      setTotalPages(result.totalPages);
-      setTotalElements(result.totalElements);
-    } catch (error) {
-      toast.error(getApiErrorMessage(error));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [isSocioComercial, pageSize, filters]);
-
-  useEffect(() => {
-    setCurrentPage(0);
-  }, [filters]);
-
-  useEffect(() => {
-    void fetchOperations(currentPage);
-  }, [fetchOperations, currentPage]);
+  const [pagination, setPagination] = useState({ filters, page: 0 });
+  const currentPage = pagination.filters === filters ? pagination.page : 0;
+  const setCurrentPage = (page: number) => setPagination({ filters, page });
+  const query = useWorkOperations(filters, currentPage);
+  const operations = query.data?.content ?? [];
+  const isLoading = query.isFetching;
+  const totalPages = query.data?.totalPages ?? 0;
+  const totalElements = query.data?.totalElements ?? 0;
+  const pageSize = 10;
+  const [processingOperationId, setProcessingOperationId] = useState<number | null>(null);
+  async function fetchOperations(page: number) {
+    if (page !== currentPage) setCurrentPage(page);
+    else await query.refetch();
+  }
 
   const handleActivate = async (operationId: number) => {
     try {
       setProcessingOperationId(operationId);
-      const updatedOperation = await activateOperation(operationId);
+      await activateOperation(operationId);
 
-      setOperations((prev) =>
-        prev.map((operation) =>
-          operation.id === operationId ? updatedOperation : operation,
-        ),
-      );
+      await query.refetch();
 
       toast.success('Operación activada correctamente');
     } catch (error) {
@@ -77,13 +44,9 @@ export function useOperations(filters: OperationsFilters) {
   const handleDeactivate = async (operationId: number) => {
     try {
       setProcessingOperationId(operationId);
-      const updatedOperation = await deactivateOperation(operationId);
+      await deactivateOperation(operationId);
 
-      setOperations((prev) =>
-        prev.map((operation) =>
-          operation.id === operationId ? updatedOperation : operation,
-        ),
-      );
+      await query.refetch();
 
       toast.success('Operación desactivada correctamente');
     } catch (error) {
@@ -94,6 +57,7 @@ export function useOperations(filters: OperationsFilters) {
   };
 
   return {
+    error: query.error,
     operations,
     isLoading,
     fetchOperations,

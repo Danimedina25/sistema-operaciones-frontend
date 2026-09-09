@@ -1,3 +1,4 @@
+import { WorkQueueFilters } from '../components/WorkQueueFilters';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Modal } from '@/shared/components/ui/Modal';
@@ -27,6 +28,7 @@ import { useCommercialLevelOneUsers } from '@/modules/users/hooks/use-commercial
 import { CollapsibleFilterSection } from '@/shared/components/ui/CollapsibleFilterSection';
 
 const initialFilters: OperationsFiltersType = {
+  workQueue: '',
   operationId: 0,
   search: '',
   status: 'ALL',
@@ -54,7 +56,7 @@ export default function OperationsPage() {
   // Compatibilidad con enlaces y caché del antiguo select de comprobantes.
   const filters = useMemo<OperationsFiltersType>(() => ({
     ...savedFilters,
-    status: savedFilters.status === 'ALL' && savedFilters.paymentStatus === 'RECHAZADA'
+    status: !savedFilters.workQueue && savedFilters.status === 'ALL' && savedFilters.paymentStatus === 'RECHAZADA'
       ? 'RECHAZADA' : savedFilters.status,
     paymentStatus: '',
   }), [savedFilters]);
@@ -111,6 +113,7 @@ export default function OperationsPage() {
 
   const {
     operations,
+    error: operationsError,
     isLoading,
     fetchOperations,
     currentPage,
@@ -252,10 +255,11 @@ export default function OperationsPage() {
         key={user?.userId ?? 'anonymous'}
         storageKey={`table-filters:operations:expanded:${user?.userId ?? 'anonymous'}`}
       >
+        <WorkQueueFilters filters={filters} onChange={setFilters} />
         <OperationsFilters
           filters={filters}
           onChange={setFilters}
-          showPaymentTypeFilter={showPaymentTypeFilter}
+          showPaymentTypeFilter={showPaymentTypeFilter && !filters.workQueue}
           bankAccounts={bankAccountsCatalog}
           showSocioFilter={showSocioFilter}
           socios={commercialLevelOneUsers}
@@ -277,7 +281,8 @@ export default function OperationsPage() {
           )}
         </div>
 
-        <OperationsTable
+        {operationsError && <p role="alert" className="mb-3 text-sm text-rose-700">No se pudo cargar el listado. <button type="button" className="underline" onClick={() => void fetchOperations(currentPage)}>Reintentar</button></p>}
+        {!operationsError && <OperationsTable
           operations={operations}
           isLoading={isLoading}
           currentPage={currentPage}
@@ -297,7 +302,7 @@ export default function OperationsPage() {
           onActivateOperation={handleActivate}
           onDeactivateOperation={handleDeactivate}
           togglingOperationId={processingOperationId}
-        />
+        />}
 
         <div className="mt-5">
           <Pagination

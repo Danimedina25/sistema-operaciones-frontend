@@ -159,8 +159,8 @@ export function PaymentsTable({
   }
 
   function canSeePayment(tipoPago: PaymentType) {
-    if (isJefaCajas) return tipoPago === 'EFECTIVO';
-    if (isCuentas) return BANK_PAYMENT_TYPES.includes(tipoPago);
+    if (isAdmin) return true;
+    if (isJefaCajas || isCuentas) return (isJefaCajas && tipoPago === 'EFECTIVO') || (isCuentas && BANK_PAYMENT_TYPES.includes(tipoPago));
     return true; // ADMIN, GERENTE, DIRECCION, SOCIO_COMERCIAL ven todo
   }
 

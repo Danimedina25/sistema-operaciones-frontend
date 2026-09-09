@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import { readPersistedFilters } from './use-persisted-filters';
 
@@ -38,6 +38,12 @@ export function useUrlFilters<T extends { [K in keyof T]: FilterPrimitive }>(def
 
     return result;
   }, [searchParams, defaults, storageKey]);
+
+  // Un enlace con filtros también es una selección explícita: conservarla al volver de un detalle.
+  useEffect(() => {
+    if (!Object.keys(defaults).some((key) => searchParams.has(key))) return;
+    try { window.sessionStorage.setItem(storageKey, JSON.stringify(filters)); } catch { /* URL remains usable. */ }
+  }, [defaults, filters, searchParams, storageKey]);
 
   const setFilters = useCallback(
     (next: T) => {
