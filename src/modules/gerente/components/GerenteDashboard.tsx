@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { DateRangeCalendarField } from '@/shared/components/ui/DateRangeCalendarField';
+import { DashboardPeriodFilters } from '@/shared/components/dashboard/DashboardPeriodFilters';
 import { useTableUrlFilters } from '@/shared/hooks/use-table-filters';
 import { useGerenteDashboardSummary } from '@/modules/gerente/hooks/use-gerente-dashboard-summary';
 import { computePeriodRange, type DashboardPeriod } from '@/modules/gerente/utils/period-range';
@@ -7,13 +7,7 @@ import { GerenteDashboardCards } from '@/modules/gerente/components/GerenteDashb
 import { WeeklyCommissionsSummary } from '@/modules/gerente/components/WeeklyCommissionsSummary';
 import { CommercialPartnersRanking } from '@/modules/gerente/components/CommercialPartnersRanking';
 import { StalledOperationsTable } from '@/modules/gerente/components/StalledOperationsTable';
-
-const PERIOD_OPTIONS: Array<{ value: DashboardPeriod; label: string }> = [
-  { value: 'TODAY', label: 'Hoy' },
-  { value: 'THIS_WEEK', label: 'Esta semana' },
-  { value: 'THIS_MONTH', label: 'Este mes' },
-  { value: 'CUSTOM', label: 'Rango personalizado' },
-];
+import { OperationalHealth } from '@/modules/gerente/components/OperationalHealth';
 
 const initialPeriodFilters = { period: 'THIS_MONTH' as DashboardPeriod, customStart: '', customEnd: '' };
 
@@ -45,36 +39,12 @@ export function GerenteDashboard() {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {PERIOD_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setFilters({ ...filters, period: option.value })}
-                className={`min-h-[40px] rounded-lg border px-3 py-2 text-xs font-medium transition ${
-                  filters.period === option.value
-                    ? 'border-slate-900 bg-slate-900 text-white'
-                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
+          <DashboardPeriodFilters value={filters} onChange={setFilters} />
         </div>
-
-        {filters.period === 'CUSTOM' && (
-          <DateRangeCalendarField
-            startDate={filters.customStart}
-            endDate={filters.customEnd}
-            onChange={({ startDate, endDate }) =>
-              setFilters({ ...filters, customStart: startDate, customEnd: endDate })
-            }
-          />
-        )}
       </div>
 
       <GerenteDashboardCards summary={summary} isLoading={isLoading} period={period} />
+      <OperationalHealth period={period} summary={summary} isLoading={isLoading} />
       <WeeklyCommissionsSummary period={period} />
       <CommercialPartnersRanking period={period} />
       <StalledOperationsTable />

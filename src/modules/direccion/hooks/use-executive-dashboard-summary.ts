@@ -28,6 +28,8 @@ export interface ExecutiveDashboardSummary {
   retornosPendientes: number | null;
   comisionesPagadas: number | null;
   operacionesCompletadas: number | null;
+  comisionesGeneradas: number | null;
+  comisionesPendientes: number | null;
 }
 
 const EMPTY_SUMMARY: ExecutiveDashboardSummary = {
@@ -36,6 +38,8 @@ const EMPTY_SUMMARY: ExecutiveDashboardSummary = {
   retornosPendientes: null,
   comisionesPagadas: null,
   operacionesCompletadas: null,
+  comisionesGeneradas: null,
+  comisionesPendientes: null,
 };
 
 export function useExecutiveDashboardSummary(period: PeriodRange) {
@@ -74,6 +78,8 @@ export function useExecutiveDashboardSummary(period: PeriodRange) {
         retornosPendientes: returnsPending.totalElements,
         comisionesPagadas: paidCommissions.totalPagadas,
         operacionesCompletadas: completed.totalElements,
+        comisionesGeneradas: commissionSummary.totalComisiones,
+        comisionesPendientes: commissionSummary.totalPendientes,
       });
     } catch (err) {
       setError(err);

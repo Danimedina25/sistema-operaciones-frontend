@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { DateRangeCalendarField } from '@/shared/components/ui/DateRangeCalendarField';
+import { DashboardPeriodFilters } from '@/shared/components/dashboard/DashboardPeriodFilters';
 import { useTableUrlFilters } from '@/shared/hooks/use-table-filters';
 import { useBeneficiarySummary } from '@/modules/comisionessocioscomerciales/hooks/use-beneficiary-summary';
 import { useExecutiveDashboardSummary } from '@/modules/direccion/hooks/use-executive-dashboard-summary';
@@ -11,13 +11,7 @@ import { BankBalanceDistribution } from '@/modules/direccion/components/BankBala
 import { TopOperationsTable } from '@/modules/direccion/components/TopOperationsTable';
 import { ExceptionsList } from '@/modules/direccion/components/ExceptionsList';
 import { ConcentrationIndicator } from '@/modules/direccion/components/ConcentrationIndicator';
-
-const PERIOD_OPTIONS: Array<{ value: DashboardPeriod; label: string }> = [
-  { value: 'TODAY', label: 'Hoy' },
-  { value: 'THIS_WEEK', label: 'Esta semana' },
-  { value: 'THIS_MONTH', label: 'Este mes' },
-  { value: 'CUSTOM', label: 'Rango personalizado' },
-];
+import { RegisteredProfitability } from '@/modules/direccion/components/RegisteredProfitability';
 
 const initialPeriodFilters = { period: 'THIS_MONTH' as DashboardPeriod, customStart: '', customEnd: '' };
 
@@ -63,37 +57,13 @@ export function ExecutiveDashboard() {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {PERIOD_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setFilters({ ...filters, period: option.value })}
-                className={`min-h-[40px] rounded-lg border px-3 py-2 text-xs font-medium transition ${
-                  filters.period === option.value
-                    ? 'border-slate-900 bg-slate-900 text-white'
-                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
+          <DashboardPeriodFilters value={filters} onChange={setFilters} executive />
         </div>
-
-        {filters.period === 'CUSTOM' && (
-          <DateRangeCalendarField
-            startDate={filters.customStart}
-            endDate={filters.customEnd}
-            onChange={({ startDate, endDate }) =>
-              setFilters({ ...filters, customStart: startDate, customEnd: endDate })
-            }
-          />
-        )}
       </div>
 
       <ExecutiveDashboardCards summary={summary} isLoading={isLoading} period={period} />
-      <PeriodComparativesSection />
+      <RegisteredProfitability summary={summary} isLoading={isLoading} />
+      <PeriodComparativesSection period={period} />
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
         <PartnerVolumeDistribution socios={socios} isLoading={isLoadingBeneficiaries} />

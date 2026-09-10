@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { BadgeDollarSign, ClipboardList, HandCoins, TrendingUp, Wallet } from 'lucide-react';
+import { AlertOctagon, ClipboardCheck, ClipboardList, TrendingUp, Wallet } from 'lucide-react';
 import { DashboardSection } from '@/shared/components/layout/DashboardSection';
 import { MetricCard } from '@/shared/components/dashboard/MetricCard';
 import { paths } from '@/routes/paths';
@@ -39,36 +39,37 @@ export function GerenteDashboardCards({ summary, isLoading, period }: GerenteDas
         }
       />
       <MetricCard
-        label="Monto total operado"
+        label="Monto de operaciones comisionadas"
         value={isLoading ? '' : formatCurrency(summary.montoOperado ?? 0)}
         isLoading={isLoading}
         icon={TrendingUp}
         variant="emerald"
-        helperText="Operaciones validadas del periodo"
+        helperText="Según operaciones incluidas en comisiones"
         onClick={() => navigate(paths.comisionessocios)}
       />
       <MetricCard
-        label="Pagos pendientes"
-        value={isLoading ? '' : summary.pagosPendientes}
+        label="Creadas en el periodo y actualmente completadas"
+        value={isLoading ? '' : summary.operacionesCompletadas}
+        isLoading={isLoading}
+        icon={ClipboardCheck}
+        onClick={() => navigate(`${paths.operations}?status=COMPLETADA&startDate=${period.startDate}&endDate=${period.endDate}`)}
+      />
+      <MetricCard
+        label="Operaciones con ingreso parcial"
+        value={isLoading ? '' : summary.operacionesIngresoParcial}
         isLoading={isLoading}
         icon={Wallet}
         variant="amber"
-        onClick={() => navigate(`${paths.operations}?status=PENDIENTE_VALIDACION`)}
+        onClick={() => navigate(`${paths.operations}?status=INGRESO_PARCIAL&startDate=${period.startDate}&endDate=${period.endDate}`)}
       />
       <MetricCard
-        label="Retornos pendientes"
-        value={isLoading ? '' : summary.retornosPendientes}
+        label="Operaciones detenidas"
+        value={isLoading ? '' : summary.operacionesDetenidas}
         isLoading={isLoading}
-        icon={HandCoins}
-        variant="blue"
-        onClick={() => navigate(paths.returnsRequested)}
-      />
-      <MetricCard
-        label="Comisiones pendientes"
-        value={isLoading ? '' : formatCurrency(summary.comisionesPendientes ?? 0)}
-        isLoading={isLoading}
-        icon={BadgeDollarSign}
-        onClick={() => navigate(paths.comisionessocios)}
+        icon={AlertOctagon}
+        variant="rose"
+        helperText="Más de 48 h sin actualizarse · al día de hoy"
+        onClick={() => document.getElementById('stalled-operations')?.scrollIntoView({ behavior: 'smooth' })}
       />
     </DashboardSection>
   );

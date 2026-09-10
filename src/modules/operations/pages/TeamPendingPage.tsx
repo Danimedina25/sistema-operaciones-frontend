@@ -1,4 +1,4 @@
-import { useTableFilters } from '@/shared/hooks/use-table-filters';
+import { useTableUrlFilters } from '@/shared/hooks/use-table-filters';
 import { PendingDateFilters } from '../components/PendingDateFilters';
 import { StaffPendingSummaryCards } from '../components/StaffPendingSummaryCards';
 import type { SocioPendingSummaryParams } from '../hooks/use-socio-pending-summary';
@@ -13,7 +13,7 @@ const options: Array<{ value: SupervisedRole; label: string }> = [
 ];
 
 export default function TeamPendingPage() {
-  const { filters, setFilters } = useTableFilters('table-filters:team-pending', defaults);
+  const { filters, setFilters } = useTableUrlFilters(defaults);
   const dates = { dateFilter: filters.dateFilter, startDate: filters.startDate, endDate: filters.endDate };
   return <div className="space-y-3">
     <header className="rounded-2xl bg-white p-4 shadow-sm">

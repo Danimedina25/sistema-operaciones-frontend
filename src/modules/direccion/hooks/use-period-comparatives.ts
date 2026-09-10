@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { getOperations } from '@/modules/operations/api/operations.api';
 import { getSummary } from '@/modules/comisionessocioscomerciales/api/commercial-partner-commissions.api';
 import { comparePeriods, type PeriodComparison } from '@/shared/utils/comparatives';
-import { getComparativePeriodPairs } from '@/modules/direccion/utils/period-pairs';
+import { previousEquivalentPeriod } from '@/modules/gerente/utils/period-range';
 import type { OperationsFilters } from '@/modules/operations/types/operations.types.ts';
 import type { PeriodRange } from '@/modules/gerente/utils/period-range';
 
@@ -44,7 +44,7 @@ async function fetchPeriodMetrics(range: PeriodRange) {
   return { volumen, completadas: completed.totalElements };
 }
 
-export function usePeriodComparatives() {
+export function usePeriodComparatives(period: PeriodRange) {
   const [rows, setRows] = useState<PeriodComparativeRow[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<unknown>(null);
@@ -54,7 +54,7 @@ export function usePeriodComparatives() {
     setError(null);
 
     try {
-      const pairs = getComparativePeriodPairs();
+      const pairs = [{ label: 'Periodo seleccionado vs. periodo anterior equivalente', current: period, previous: previousEquivalentPeriod(period) }];
 
       const results = await Promise.all(
         pairs.map(async (pair) => {
@@ -77,7 +77,7 @@ export function usePeriodComparatives() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [period]);
 
   useEffect(() => {
     void fetchComparatives();

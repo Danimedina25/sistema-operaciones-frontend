@@ -30,16 +30,16 @@ export function ExecutiveDashboardCards({ summary, isLoading, period }: Executiv
       contentClassName="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
     >
       <MetricCard
-        label="Volumen operado"
+        label="Monto de operaciones comisionadas"
         value={isLoading ? '' : formatCurrency(summary.volumenOperado ?? 0)}
         isLoading={isLoading}
         icon={TrendingUp}
         variant="emerald"
-        helperText="Operaciones validadas del periodo"
+        helperText="Según operaciones incluidas en comisiones"
         onClick={() => navigate(paths.comisionessocios)}
       />
       <MetricCard
-        label="Saldo bancario"
+        label="Saldo bancario actual"
         value={isLoading ? '' : formatCurrency(summary.saldoBancario ?? 0)}
         isLoading={isLoading}
         icon={Landmark}
@@ -48,7 +48,7 @@ export function ExecutiveDashboardCards({ summary, isLoading, period }: Executiv
         onClick={() => navigate(paths.corte)}
       />
       <MetricCard
-        label="Retornos pendientes"
+        label="Operaciones creadas con retornos pendientes"
         value={isLoading ? '' : summary.retornosPendientes}
         isLoading={isLoading}
         icon={HandCoins}
@@ -63,7 +63,7 @@ export function ExecutiveDashboardCards({ summary, isLoading, period }: Executiv
         onClick={() => navigate(paths.comisionessocios)}
       />
       <MetricCard
-        label="Operaciones completadas"
+        label="Creadas en el periodo y actualmente completadas"
         value={isLoading ? '' : summary.operacionesCompletadas}
         isLoading={isLoading}
         icon={CheckCircle2}

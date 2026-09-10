@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computePeriodRange } from './period-range';
+import { computePeriodRange, previousEquivalentPeriod } from './period-range';
 
 describe('computePeriodRange', () => {
   const now = new Date('2026-01-14T10:00:00.000Z'); // miércoles
@@ -36,5 +36,17 @@ describe('computePeriodRange', () => {
       startDate: '2026-01-14',
       endDate: '2026-01-14',
     });
+  });
+
+  it('calcula mes anterior y periodos ejecutivos', () => {
+    expect(computePeriodRange('LAST_MONTH', now)).toEqual({ startDate: '2025-12-01', endDate: '2025-12-31' });
+    expect(computePeriodRange('LAST_3_MONTHS', now)).toEqual({ startDate: '2025-11-01', endDate: '2026-01-14' });
+    expect(computePeriodRange('THIS_YEAR', now)).toEqual({ startDate: '2026-01-01', endDate: '2026-01-14' });
+    expect(computePeriodRange('LAST_YEAR', now)).toEqual({ startDate: '2025-01-01', endDate: '2025-12-31' });
+  });
+
+  it('obtiene un periodo anterior de la misma duración', () => {
+    expect(previousEquivalentPeriod({ startDate: '2026-01-10', endDate: '2026-01-14' }))
+      .toEqual({ startDate: '2026-01-05', endDate: '2026-01-09' });
   });
 });

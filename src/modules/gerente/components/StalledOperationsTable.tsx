@@ -21,7 +21,7 @@ export function StalledOperationsTable() {
   const now = new Date();
 
   return (
-    <div className="rounded-2xl bg-white p-4 shadow-sm">
+    <div id="stalled-operations" className="rounded-2xl bg-white p-4 shadow-sm">
       <div className="mb-4 flex items-start gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
           <AlertOctagon className="h-4.5 w-4.5" />

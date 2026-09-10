@@ -1,6 +1,7 @@
 import { ArrowDown, ArrowRight, ArrowUp } from 'lucide-react';
 import { usePeriodComparatives } from '@/modules/direccion/hooks/use-period-comparatives';
 import type { PeriodComparison } from '@/shared/utils/comparatives';
+import type { PeriodRange } from '@/modules/gerente/utils/period-range';
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat('es-MX', {
@@ -41,15 +42,15 @@ function ComparisonCell({ label, comparison, isCurrency }: { label: string; comp
   );
 }
 
-export function PeriodComparativesSection() {
-  const { rows, isLoading, error, refetch } = usePeriodComparatives();
+export function PeriodComparativesSection({ period }: { period: PeriodRange }) {
+  const { rows, isLoading, error, refetch } = usePeriodComparatives(period);
 
   return (
     <div className="rounded-2xl bg-white p-4 shadow-sm">
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-slate-900">Comparativos por periodo</h2>
         <p className="text-xs text-slate-500">
-          Volumen operado y operaciones completadas contra el periodo anterior equivalente.
+          Operaciones comisionadas y operaciones creadas actualmente completadas contra un periodo anterior de igual duración.
         </p>
       </div>
 
@@ -72,9 +73,9 @@ export function PeriodComparativesSection() {
             <div key={row.label}>
               <p className="mb-2 text-sm font-semibold text-slate-700">{row.label}</p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <ComparisonCell label="Volumen operado" comparison={row.volumen} isCurrency />
+                <ComparisonCell label="Monto de operaciones comisionadas" comparison={row.volumen} isCurrency />
                 <ComparisonCell
-                  label="Operaciones completadas"
+                  label="Creadas en el periodo y actualmente completadas"
                   comparison={row.completadas}
                   isCurrency={false}
                 />
