@@ -1,4 +1,3 @@
-import { WorkQueueFilters } from '../components/WorkQueueFilters';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Modal } from '@/shared/components/ui/Modal';
@@ -256,7 +255,6 @@ export default function OperationsPage() {
         key={user?.userId ?? 'anonymous'}
         storageKey={`table-filters:operations:expanded:${user?.userId ?? 'anonymous'}`}
       >
-        <WorkQueueFilters filters={filters} onChange={setFilters} />
         <OperationsFilters
           filters={filters}
           onChange={setFilters}
