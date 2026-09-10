@@ -12,6 +12,10 @@ import { useAuth } from '@/modules/auth/store/auth.context.js';
 import { ProgressBar } from '@/shared/components/ui/ProgressBar';
 import { RowActionsMenu } from '@/shared/components/ui/RowActionsMenu';
 
+// Columna "Activo" oculta temporalmente; el toggle activar/desactivar sigue disponible
+// en el menú de acciones. Cambiar a true para volver a mostrarla.
+const SHOW_ACTIVE_COLUMN = false;
+
 interface OperationsTableProps {
   operations: PaymentOperationResponse[];
   currentPage: number;
@@ -156,7 +160,9 @@ export function OperationsTable({
                 <th className="px-4 py-3 font-medium text-center">Monto ingresado</th>
                 <th className="px-4 py-3 font-medium text-center">Monto retornado</th>
                 <th className="px-4 py-3 font-medium text-center">Estatus</th>
-                <th className="px-4 py-3 font-medium text-center">Activo</th>
+                {SHOW_ACTIVE_COLUMN && (
+                  <th className="px-4 py-3 font-medium text-center">Activo</th>
+                )}
                 <th className="px-4 py-3 font-medium text-center">Acciones</th>
               </tr>
             </thead>
@@ -235,11 +241,13 @@ export function OperationsTable({
                       </div>
                     </td>
 
-                    <td className="px-4 py-4">
-                      <div className="flex justify-center">
-                        <StatusBadge active={operation.activo} />
-                      </div>
-                    </td>
+                    {SHOW_ACTIVE_COLUMN && (
+                      <td className="px-4 py-4">
+                        <div className="flex justify-center">
+                          <StatusBadge active={operation.activo} />
+                        </div>
+                      </td>
+                    )}
 
                     <td className="px-4 py-4 text-right">
                       <RowActionsMenu>{renderActions(operation)}</RowActionsMenu>
@@ -277,7 +285,7 @@ export function OperationsTable({
                     >
                       #{operation.id}
                     </span>
-                    <StatusBadge active={operation.activo} />
+                    {SHOW_ACTIVE_COLUMN && <StatusBadge active={operation.activo} />}
                   </div>
                   <p className="mt-1 truncate text-sm font-semibold text-slate-900">
                     {operation.clienteNombre}
