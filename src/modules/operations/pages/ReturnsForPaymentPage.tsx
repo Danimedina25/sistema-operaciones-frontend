@@ -6,7 +6,6 @@ import { Pagination } from '@/shared/components/ui/Pagination';
 import { TableFilterSection } from '@/shared/components/ui/TableFilterSection';
 import { OperationsFilters } from '@/modules/operations/components/OperationsFilters';
 import { useWorkOperations } from '../hooks/use-work-operations';
-import { WorkQueueFilters } from '../components/WorkQueueFilters';
 import { QueryState } from '@/shared/components/ui/QueryState';
 import {
   OperationsFilters as OperationsFiltersType,
@@ -67,7 +66,6 @@ export default function ReturnsForPaymentPage() {
       </div>
 
       <TableFilterSection>
-        <WorkQueueFilters filters={filters} onChange={(next) => { setFilters(next); setCurrentPage(0); }} returns />
         <OperationsFilters
           filters={filters}
           onChange={(newFilters) => {
