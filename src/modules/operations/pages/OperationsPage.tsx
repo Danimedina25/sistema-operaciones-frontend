@@ -25,6 +25,9 @@ import { useCommercialPartners } from '@/modules/socioscomerciales/hooks/use-com
 import { useConfiguracionGeneral } from '@/modules/configuraciones/hooks/use-configuracion-general';
 import { useCommercialLevelOneUsers } from '@/modules/users/hooks/use-commercial-level-one-users';
 import { CollapsibleFilterSection } from '@/shared/components/ui/CollapsibleFilterSection';
+import { DeleteConfirmationModal } from '@/shared/components/ui/DeleteConfirmationModal';
+import { useDeleteOperation } from '../hooks/use-delete-operation';
+import { formatCurrency } from '../utils/operation-formatters';
 
 const initialFilters: OperationsFiltersType = {
   workQueue: '',
@@ -70,6 +73,8 @@ export default function OperationsPage() {
   const [selectedOperation, setSelectedOperation] = useState<PaymentOperationResponse | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [operationToEdit, setOperationToEdit] =
+    useState<PaymentOperationResponse | null>(null);
+  const [operationToDelete, setOperationToDelete] =
     useState<PaymentOperationResponse | null>(null);
 
   const canCreateOperation = hasRole(['SOCIO_COMERCIAL', 'ADMIN']);
@@ -129,6 +134,22 @@ export default function OperationsPage() {
     handleActivate,
     handleDeactivate,
   } = useOperations(filters);
+
+  const { isDeleting, submitDeleteOperation } = useDeleteOperation({
+    onSuccess: async () => {
+      // Si se eliminó el último registro de la página, la actual queda vacía.
+      if (operations.length === 1 && currentPage > 0) {
+        setCurrentPage(currentPage - 1);
+        return;
+      }
+      await fetchOperations(currentPage);
+    },
+    // El rechazo habitual es que el estatus cambió: hay que releer el listado
+    // para que la acción deje de ofrecerse sobre datos viejos.
+    onRejected: async () => {
+      await fetchOperations(currentPage);
+    },
+  });
 
   const canReviewCommission = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
   const hasOperationsNeedingCommissionReview =
@@ -306,6 +327,7 @@ export default function OperationsPage() {
           onOperationUpdated={() => fetchOperations(currentPage)}
           onActivateOperation={handleActivate}
           onDeactivateOperation={handleDeactivate}
+          onDeleteOperation={setOperationToDelete}
           togglingOperationId={processingOperationId}
         />}
 
@@ -405,6 +427,49 @@ export default function OperationsPage() {
           />
         )}
       </Modal>
+
+      <DeleteConfirmationModal
+        open={Boolean(operationToDelete)}
+        heading="Eliminar operación"
+        title={`Estás a punto de eliminar definitivamente la operación #${operationToDelete?.id ?? ''}.`}
+        warning={
+          <>
+            <p className="font-semibold">Esta eliminación es permanente</p>
+            <p className="mt-1">
+              Se borrarán también sus comprobantes pendientes, en proceso o
+              rechazados y las notificaciones relacionadas. No se podrá deshacer.
+            </p>
+          </>
+        }
+        details={
+          operationToDelete ? (
+            <dl className="space-y-1">
+              <div className="flex justify-between gap-4">
+                <dt className="text-slate-500">Folio</dt>
+                <dd className="font-medium">Operación #{operationToDelete.id}</dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-slate-500">Cliente</dt>
+                <dd className="font-medium">{operationToDelete.clienteNombre}</dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-slate-500">Monto total</dt>
+                <dd className="font-medium">
+                  {formatCurrency(operationToDelete.montoTotal)}
+                </dd>
+              </div>
+            </dl>
+          ) : null
+        }
+        isSubmitting={isDeleting}
+        onClose={() => setOperationToDelete(null)}
+        onConfirm={async () => {
+          if (!operationToDelete) return;
+          const ok = await submitDeleteOperation(operationToDelete);
+          // Solo se cierra tras confirmar el borrado en el backend.
+          if (ok) setOperationToDelete(null);
+        }}
+      />
     </div>
   );
 }

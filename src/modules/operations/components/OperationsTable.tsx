@@ -29,6 +29,7 @@ interface OperationsTableProps {
   onEditOperation?: (operationId: number) => void;
   onActivateOperation?: (operationId: number) => void;
   onDeactivateOperation?: (operationId: number) => void;
+  onDeleteOperation?: (operation: PaymentOperationResponse) => void;
   togglingOperationId?: number | null;
 }
 
@@ -41,6 +42,7 @@ export function OperationsTable({
   onEditOperation,
   onActivateOperation,
   onDeactivateOperation,
+  onDeleteOperation,
   togglingOperationId,
 }: OperationsTableProps) {
   useMarkOperationAsInvoiced({
@@ -58,6 +60,9 @@ export function OperationsTable({
     'SOCIO_COMERCIAL',
   ]);
   const canToggleOperationStatus = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
+  // La eliminación física excluye a DIRECCION a propósito: no es lo mismo que
+  // desactivar, y solo aplica mientras la operación siga pendiente de validación.
+  const canDeleteOperation = hasRole(['ADMIN', 'GERENTE']);
   const canReviewCommission = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
 
   function renderActions(operation: PaymentOperationResponse): ReactNode {
@@ -123,6 +128,16 @@ export function OperationsTable({
               Activar
             </button>
           ))}
+
+        {canDeleteOperation && operation.estatus === 'PENDIENTE_VALIDACION' && (
+          <button
+            type="button"
+            onClick={() => onDeleteOperation?.(operation)}
+            className="block w-full border-t border-red-100 bg-red-50/50 px-4 py-2.5 text-left text-sm font-bold text-red-900 transition hover:bg-red-100"
+          >
+            Eliminar definitivamente
+          </button>
+        )}
       </>
     );
   }

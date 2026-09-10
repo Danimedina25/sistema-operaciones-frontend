@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowDown, ArrowLeft, Landmark } from 'lucide-react';
+import { ArrowDown, ArrowLeft, Landmark, Trash2 } from 'lucide-react';
 import { OperationDetailCard } from '@/modules/operations/components/OperationDetailCard';
 import { PaymentsTable } from '@/modules/operations/components/PaymentsTable';
 import {
@@ -45,6 +45,7 @@ interface OperationDetailViewProps {
   onEditReturn?: (
     returnPayment: ReturnPaymentResponse,
   ) => void;
+  onDeleteOperation?: (operation: PaymentOperationResponse) => void;
 }
 
 export function OperationDetailView({
@@ -69,6 +70,7 @@ export function OperationDetailView({
   scrollToReturns = false,
   onEditPayment,
   onEditReturn,
+  onDeleteOperation,
 }: OperationDetailViewProps) {
   const paymentsSectionRef = useRef<HTMLDivElement | null>(null);
   const returnsSectionRef = useRef<HTMLDivElement | null>(null);
@@ -139,9 +141,22 @@ export function OperationDetailView({
           <ArrowLeft className="h-4 w-4" />
           {backLabel}
         </button>
-        <div className="hidden items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 sm:flex">
-          <Landmark className="h-4 w-4" />
-          Vista financiera
+        <div className="flex items-center gap-3">
+          {onDeleteOperation && (
+            <button
+              type="button"
+              onClick={() => onDeleteOperation(operation)}
+              className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 shadow-sm transition hover:border-red-300 hover:bg-red-100"
+            >
+              <Trash2 className="h-4 w-4" />
+              Eliminar operación
+            </button>
+          )}
+
+          <div className="hidden items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 sm:flex">
+            <Landmark className="h-4 w-4" />
+            Vista financiera
+          </div>
         </div>
       </div>
 

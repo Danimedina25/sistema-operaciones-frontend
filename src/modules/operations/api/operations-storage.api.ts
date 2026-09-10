@@ -1,4 +1,4 @@
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { firebaseStorage } from '@/shared/lib/firebase';
 
 function sanitizeFileName(fileName: string) {
@@ -37,4 +37,16 @@ export async function uploadOperationProof(params: {
     fullPath: storageRef.fullPath,
     fileName: file.name,
   };
+}
+
+/**
+ * Los comprobantes viven en Firebase Storage y los sube el navegador: el backend
+ * solo guarda la URL, así que al eliminar una operación la limpieza del archivo
+ * tiene que hacerse desde aquí.
+ *
+ * Borra el archivo concreto al que apunta la URL, nunca la carpeta de la
+ * operación, para no arrastrar archivos que pertenezcan a otro registro.
+ */
+export async function deleteOperationProofByUrl(downloadUrl: string) {
+  await deleteObject(ref(firebaseStorage, downloadUrl));
 }

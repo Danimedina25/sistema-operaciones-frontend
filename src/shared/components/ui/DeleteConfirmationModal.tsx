@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
 
@@ -11,6 +11,12 @@ interface DeleteConfirmationModalProps {
   isSubmitting: boolean;
   onClose: () => void;
   onConfirm: () => void | Promise<void>;
+  /** Encabezado del modal. Por defecto, "Eliminar definitivamente". */
+  heading?: string;
+  /** Reemplaza la advertencia genérica cuando no aplica a la entidad. */
+  warning?: ReactNode;
+  /** Datos identificativos del registro, encima de la caja de confirmación. */
+  details?: ReactNode;
 }
 
 export function DeleteConfirmationModal({
@@ -20,6 +26,9 @@ export function DeleteConfirmationModal({
   isSubmitting,
   onClose,
   onConfirm,
+  heading = 'Eliminar definitivamente',
+  warning,
+  details,
 }: DeleteConfirmationModalProps) {
   const [confirmText, setConfirmText] = useState('');
 
@@ -32,21 +41,31 @@ export function DeleteConfirmationModal({
   const canConfirm = confirmText === CONFIRMATION_WORD && !isSubmitting;
 
   return (
-    <Modal open={open} title="Eliminar definitivamente" onClose={onClose}>
+    <Modal open={open} title={heading} onClose={onClose}>
       <div className="space-y-4">
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          <p className="font-semibold">¿Eliminar definitivamente este registro?</p>
-          <p className="mt-1">
-            Esta acción borrará el registro de manera permanente y no se podrá deshacer.
-            Solo será posible eliminarlo si no tiene operaciones, movimientos ni
-            información relacionada.
-          </p>
+          {warning ?? (
+            <>
+              <p className="font-semibold">¿Eliminar definitivamente este registro?</p>
+              <p className="mt-1">
+                Esta acción borrará el registro de manera permanente y no se podrá deshacer.
+                Solo será posible eliminarlo si no tiene operaciones, movimientos ni
+                información relacionada.
+              </p>
+            </>
+          )}
         </div>
 
         <p className="text-sm text-slate-700">{title}</p>
 
         {description ? (
           <p className="text-sm text-slate-500">{description}</p>
+        ) : null}
+
+        {details ? (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+            {details}
+          </div>
         ) : null}
 
         <div>

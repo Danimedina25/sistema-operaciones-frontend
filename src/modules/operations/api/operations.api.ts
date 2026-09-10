@@ -289,6 +289,14 @@ export async function deactivateOperation(
   return response.data.data;
 }
 
+/**
+ * Eliminación física. El backend solo la permite a ADMIN/GERENTE y mientras la
+ * operación siga en PENDIENTE_VALIDACION; cualquier otro caso responde 403/409.
+ */
+export async function deleteOperation(id: number): Promise<void> {
+  await api.delete(`${OPERATIONS_BASE_PATH}/${id}`);
+}
+
 type FrequentClientsApiResponse = ApiResponse<string[]>;
 
 export async function getFrequentClientNames(): Promise<string[]> {

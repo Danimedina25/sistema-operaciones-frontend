@@ -35,6 +35,8 @@ import {
   type ReturnModalVariant,
 } from '../utils/return-installment';
 import { formatCurrency } from '../utils/operation-formatters';
+import { DeleteConfirmationModal } from '@/shared/components/ui/DeleteConfirmationModal';
+import { useDeleteOperation } from '../hooks/use-delete-operation';
 
 export default function OperationDetailPage() {
   const navigate = useNavigate();
@@ -114,6 +116,18 @@ export default function OperationDetailPage() {
   const returnInstallments = returnSummaryQuery.data?.parcialidades ?? [];
   const returnRequestFresh =
     returnSummaryQuery.data?.solicitud ?? selectedReturnRequest;
+
+  const [operationToDelete, setOperationToDelete] =
+    useState<PaymentOperationResponse | null>(null);
+
+  const { isDeleting, submitDeleteOperation } = useDeleteOperation({
+    // El registro ya no existe: no se puede refrescar el detalle. Se vuelve al
+    // listado, que reconstruye sus filtros desde sessionStorage.
+    onSuccess: () => navigate(paths.operations),
+    // Si el backend rechazó el borrado (por ejemplo, el estatus cambió), se
+    // relee la operación para mostrar el estado real.
+    onRejected: () => setRefreshKey((prev) => prev + 1),
+  });
 
   async function refreshAll() {
     await queryClient.invalidateQueries({ queryKey: ['operation-returns', parsedOperationId] });
@@ -270,6 +284,49 @@ export default function OperationDetailPage() {
         onEditReturn={(returnPayment) => {
           setSelectedReturnToEdit(returnPayment);
           setIsEditReturnModalOpen(true);
+        }}
+        onDeleteOperation={setOperationToDelete}
+      />
+
+      <DeleteConfirmationModal
+        open={Boolean(operationToDelete)}
+        heading="Eliminar operación"
+        title={`Estás a punto de eliminar definitivamente la operación #${operationToDelete?.id ?? ''}.`}
+        warning={
+          <>
+            <p className="font-semibold">Esta eliminación es permanente</p>
+            <p className="mt-1">
+              Se borrarán también sus comprobantes pendientes, en proceso o
+              rechazados y las notificaciones relacionadas. No se podrá deshacer.
+            </p>
+          </>
+        }
+        details={
+          operationToDelete ? (
+            <dl className="space-y-1">
+              <div className="flex justify-between gap-4">
+                <dt className="text-slate-500">Folio</dt>
+                <dd className="font-medium">Operación #{operationToDelete.id}</dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-slate-500">Cliente</dt>
+                <dd className="font-medium">{operationToDelete.clienteNombre}</dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-slate-500">Monto total</dt>
+                <dd className="font-medium">
+                  {formatCurrency(operationToDelete.montoTotal)}
+                </dd>
+              </div>
+            </dl>
+          ) : null
+        }
+        isSubmitting={isDeleting}
+        onClose={() => setOperationToDelete(null)}
+        onConfirm={async () => {
+          if (!operationToDelete) return;
+          const ok = await submitDeleteOperation(operationToDelete);
+          if (ok) setOperationToDelete(null);
         }}
       />
 

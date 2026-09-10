@@ -22,6 +22,7 @@ interface OperationDetailContainerProps {
   onEditReturn?: (
     returnPayment: ReturnPaymentResponse,
   ) => void;
+  onDeleteOperation?: (operation: PaymentOperationResponse) => void;
 }
 
 export function OperationDetailContainer({
@@ -36,12 +37,15 @@ export function OperationDetailContainer({
   scrollToReturns = false,
   onEditPayment,
   onEditReturn,
+  onDeleteOperation,
 }: OperationDetailContainerProps) {
   const { hasRole } = useAuth();
 
   const canViewFinancialDetails = !hasRole(['SOCIO_COMERCIAL', 'JEFA_CUENTAS', 'AUXILIAR_CUENTAS', 'JEFA_CAJAS']);
   const canViewOperationExtras = !hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS', 'JEFA_CAJAS']);
   const canRequestReturn = hasRole(['SOCIO_COMERCIAL']) || hasRole(['ADMIN']);
+  // Misma regla que en el listado: rol ADMIN/GERENTE y operación aún pendiente.
+  const canDeleteOperation = hasRole(['ADMIN', 'GERENTE']);
 
   const { operation, isLoading, error, fetchOperation } =
     useOperationDetail(operationId);
@@ -157,6 +161,13 @@ export function OperationDetailContainer({
       scrollToPayments={scrollToPayments}
       scrollToReturns={scrollToReturns}
       onEditReturn={onEditReturn}
+      onDeleteOperation={
+        canDeleteOperation &&
+        onDeleteOperation &&
+        operation.estatus === 'PENDIENTE_VALIDACION'
+          ? onDeleteOperation
+          : undefined
+      }
     />
   );
 }
