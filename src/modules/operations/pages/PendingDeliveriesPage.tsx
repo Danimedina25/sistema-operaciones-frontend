@@ -11,12 +11,12 @@ import { usePendingDeliveries } from '../hooks/use-pending-deliveries';
 import { installmentToCashDeliveryTarget } from '../utils/return-installment';
 import type { ReturnInstallment } from '../types/operations.types.ts';
 
-const defaults = { queue: '', tipoPago: '' };
+const defaults = { queue: '', tipoPago: '', supervisedRole: '' };
 export default function PendingDeliveriesPage() {
   const { filters, setFilters } = useTableUrlFilters(defaults);
   const [pagination, setPagination] = useState({ filters, page: 0 });
   const page = pagination.filters === filters ? pagination.page : 0;
-  const query = usePendingDeliveries(filters.queue, page, filters.tipoPago);
+  const query = usePendingDeliveries(filters.queue, page, filters.tipoPago, filters.supervisedRole);
   const [selected, setSelected] = useState<ReturnInstallment | null>(null);
   const { isSubmitting, submitDeliverReturnInstallment } = useDeliverReturnInstallment({ onSuccess: async () => { setSelected(null); await query.refetch(); } });
   return <div className="space-y-3">

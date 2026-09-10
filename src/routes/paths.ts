@@ -11,6 +11,7 @@ export const paths = {
   users: '/usuarios',
   clientes: '/clientes',
   myPending: '/mis-pendientes',
+  teamPending: '/pendientes-del-equipo',
   bankAccounts: '/cuentas-bancarias',
   mycomercialpartners: '/socioscomerciales',
 

@@ -64,6 +64,7 @@ export type OperationActivoFilter = 'ALL' | 'ACTIVE' | 'INACTIVE';
 
 export interface OperationsFilters {
   workQueue?: string;
+  supervisedRole?: 'JEFA_CAJAS' | 'JEFA_CUENTAS' | 'AUXILIAR_CUENTAS' | '';
   operationId: number;
   search: string;
   status: OperationStatus | 'ALL';

@@ -7,7 +7,8 @@ export function WorkQueueFilters({ filters, onChange, returns = false }: {
   filters: OperationsFilters; onChange: (filters: OperationsFilters) => void; returns?: boolean;
 }) {
   const { user } = useAuth();
-  const queues = allowedWorkQueues(user?.roles ?? [], returns);
+  const effectiveRoles = filters.supervisedRole ? [filters.supervisedRole] : user?.roles ?? [];
+  const queues = allowedWorkQueues(effectiveRoles, returns);
   if (!queues.length) return null;
   return <fieldset className="rounded-xl border border-slate-200 bg-white p-3">
     <legend className="px-1 text-sm font-medium">{returns ? 'Retornos pendientes de tu área' : 'Ingresos por validar'}</legend>

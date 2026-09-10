@@ -52,6 +52,7 @@ function buildOperationsQuery(
   const params = new URLSearchParams();
 
   if ('workQueue' in filters && filters.workQueue) params.set('workQueue', filters.workQueue);
+  if ('supervisedRole' in filters && filters.supervisedRole) params.set('supervisedRole', filters.supervisedRole);
   params.append('page', String(page));
   params.append('size', String(pageSize));
   params.append('sort', sort);
@@ -583,9 +584,10 @@ export async function getLateInstallmentPickups(
   return response.data.data;
 }
 
-export async function getPendingInstallmentPickups(queue: string, page: number, tipoPago = ''): Promise<PageResponse<ReturnInstallment>> {
+export async function getPendingInstallmentPickups(queue: string, page: number, tipoPago = '', supervisedRole = ''): Promise<PageResponse<ReturnInstallment>> {
   const params = new URLSearchParams({ queue, page: String(page), size: '10' });
   if (tipoPago) params.set('tipoPago', tipoPago);
+  if (supervisedRole) params.set('supervisedRole', supervisedRole);
   const response = await api.get<ReturnInstallmentsPageApiResponse>(`${RETURNS_BASE_PATH}/installments/pending?${params}`);
   return response.data.data;
 }

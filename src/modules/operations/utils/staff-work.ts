@@ -2,6 +2,7 @@ import type { RoleName } from '@/modules/auth/types/auth.types';
 import type { OperationsFilters } from '../types/operations.types.ts';
 
 export type WorkQueue = 'CASH_INCOME' | 'BANK_INCOME' | 'CASH_RETURNS' | 'BANK_RETURNS';
+export type SupervisedRole = Extract<RoleName, 'JEFA_CAJAS' | 'JEFA_CUENTAS' | 'AUXILIAR_CUENTAS'>;
 export const workQueueLabels: Record<WorkQueue, string> = {
   CASH_INCOME: 'Ingresos en efectivo por validar',
   BANK_INCOME: 'Ingresos bancarios por validar',
@@ -16,7 +17,7 @@ export function allowedWorkQueues(roles: readonly RoleName[], returns = false): 
   return [...(cash ? [returns ? 'CASH_RETURNS' as const : 'CASH_INCOME' as const] : []), ...(bank ? [returns ? 'BANK_RETURNS' as const : 'BANK_INCOME' as const] : [])];
 }
 export const emptyOperationFilters: OperationsFilters = {
-  operationId: 0, search: '', status: 'ALL', dateFilter: 'THIS_MONTH', startDate: '', endDate: '',
+  supervisedRole: '', operationId: 0, search: '', status: 'ALL', dateFilter: 'THIS_MONTH', startDate: '', endDate: '',
   activo: 'ACTIVE', paymentTypes: '', paymentStatus: '', returnStatuses: '', cuentaDestinoId: 0, banco: '', socioComercialId: 0,
   workQueue: '',
 };

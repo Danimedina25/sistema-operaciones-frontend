@@ -8,6 +8,7 @@ import type { RoleName } from '@/modules/auth/types/auth.types';
  */
 export const ROUTE_ACCESS = {
   myPending: ['SOCIO_COMERCIAL', 'JEFA_CAJAS', 'JEFA_CUENTAS', 'AUXILIAR_CUENTAS'],
+  teamPending: ['GERENTE'],
   corte: ['ADMIN', 'GERENTE', 'DIRECCION'],
   users: ['ADMIN', 'GERENTE', 'DIRECCION'],
   clientes: ['ADMIN', 'GERENTE', 'DIRECCION', 'SOCIO_COMERCIAL'],

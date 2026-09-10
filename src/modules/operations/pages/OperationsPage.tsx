@@ -29,6 +29,7 @@ import { CollapsibleFilterSection } from '@/shared/components/ui/CollapsibleFilt
 
 const initialFilters: OperationsFiltersType = {
   workQueue: '',
+  supervisedRole: '',
   operationId: 0,
   search: '',
   status: 'ALL',

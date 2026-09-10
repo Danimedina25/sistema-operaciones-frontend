@@ -30,12 +30,23 @@ it.each(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS'] as RoleName[])('muestra la misma co
 it('combina cajas y cuentas sin duplicar tarjetas y separa entregas del período', async () => {
   mocks.roles = ['JEFA_CAJAS', 'JEFA_CUENTAS', 'AUXILIAR_CUENTAS']; mount();
   await userEvent.click(screen.getByRole('button', { name: 'Mostrar' }));
-  await waitFor(() => expect(mocks.deliveries).toHaveBeenCalledWith('CONFIRMATION', 0, ''));
+  await waitFor(() => expect(mocks.deliveries).toHaveBeenCalledWith('CONFIRMATION', 0, '', ''));
   expect(screen.getAllByText('Operaciones con ingresos bancarios por validar')).toHaveLength(1);
   expect(mocks.operations).toHaveBeenCalledWith(0, 10, expect.objectContaining({ workQueue: 'CASH_INCOME', paymentTypes: 'EFECTIVO' }));
   expect(mocks.returns).toHaveBeenCalledWith(0, 10, expect.objectContaining({ workQueue: 'CASH_RETURNS', dateFilter: 'LAST_MONTH' }));
   await userEvent.click(screen.getByRole('button', { name: /Entregas pendientes de tu confirmación/ }));
   expect(screen.getByRole('status').textContent).toBe('/entregas-de-hoy?queue=CONFIRMATION&tipoPago=');
+});
+it('permite a gerencia supervisar cajas sin usar los roles del usuario autenticado', async () => {
+  mocks.roles = ['GERENTE'];
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  render(<QueryClientProvider client={client}><MemoryRouter><StaffPendingSummaryCards
+    dateFilter="THIS_MONTH" startDate="" endDate="" roles={['JEFA_CAJAS']} supervisedRole="JEFA_CAJAS" /><Location /></MemoryRouter></QueryClientProvider>);
+  await userEvent.click(screen.getByRole('button', { name: 'Mostrar' }));
+  await waitFor(() => expect(mocks.operations).toHaveBeenCalledWith(0, 10, expect.objectContaining({ workQueue: 'CASH_INCOME', supervisedRole: 'JEFA_CAJAS' })));
+  expect(mocks.deliveries).toHaveBeenCalledWith('TODAY', 0, '', 'JEFA_CAJAS');
+  await userEvent.click(screen.getByRole('button', { name: /Operaciones con ingresos en efectivo por validar/ }));
+  expect(screen.getByRole('status').textContent).toContain('supervisedRole=JEFA_CAJAS');
 });
 it('un error muestra reintento y nunca cero pendientes', async () => {
   mocks.roles = ['JEFA_CUENTAS']; mocks.operations.mockRejectedValue(new Error('offline')); mocks.returns.mockRejectedValue(new Error('offline'));

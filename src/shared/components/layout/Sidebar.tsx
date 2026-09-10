@@ -13,6 +13,7 @@ import {
   BanknoteArrowDown,
   ClipboardCheck,
   ListTodo,
+  ListChecks,
   Settings,
   Clock,
   X
@@ -45,6 +46,12 @@ const navItems: NavItem[] = [
     label: 'Dashboard',
     icon: Gauge,
     allowedRoles: ['GERENTE', 'DIRECCION', 'ADMIN'],
+  },
+  {
+    to: paths.teamPending,
+    label: 'Pendientes del equipo',
+    icon: ListChecks,
+    allowedRoles: ROUTE_ACCESS.teamPending,
   },
   {
     to: paths.corte,

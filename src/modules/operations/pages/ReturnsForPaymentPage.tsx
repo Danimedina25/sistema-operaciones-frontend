@@ -18,6 +18,7 @@ import { useTableCacheKey } from '@/shared/hooks/use-table-filters';
 
 const initialFilters: OperationsFiltersType = {
   workQueue: '',
+  supervisedRole: '',
   operationId: 0,
   search: '',
   status: 'ALL',
