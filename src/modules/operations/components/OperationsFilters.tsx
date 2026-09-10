@@ -24,6 +24,8 @@ interface OperationsFiltersProps {
   onChange: (next: OperationsFiltersType) => void;
   showEstatusFilter?: boolean;
   showPaymentTypeFilter?: boolean;
+  /** Cuentas (jefa y auxiliares) no valida ingresos en efectivo. */
+  hideCashPaymentType?: boolean;
   bankAccounts?: BankAccountResponse[];
   showSocioFilter?: boolean;
   socios?: SocioOption[];
@@ -44,6 +46,7 @@ export function OperationsFilters({
   onChange,
   showEstatusFilter = true,
   showPaymentTypeFilter = false,
+  hideCashPaymentType = false,
   bankAccounts = [],
   showSocioFilter = false,
   socios = [],
@@ -136,10 +139,12 @@ export function OperationsFilters({
               Filtros rápidos por tipo de ingreso
             </label>
             <QuickFilters
-              options={OPERATIONS_QUICK_PAYMENT_TYPE_FILTERS.map((option) => ({
-                value: option.value,
-                label: option.label,
-              }))}
+              options={OPERATIONS_QUICK_PAYMENT_TYPE_FILTERS
+                .filter((option) => !(hideCashPaymentType && option.value === 'EFECTIVO'))
+                .map((option) => ({
+                  value: option.value,
+                  label: option.label,
+                }))}
               value={filters.paymentTypes}
               onChange={(paymentTypes) => onChange({ ...filters, paymentTypes })}
             />

@@ -48,6 +48,9 @@ export default function OperationsPage() {
   const navigate = useNavigate();
 
   const { hasRole, user } = useAuth();
+  // Cuentas solo trabaja ingresos bancarios; efectivo es responsabilidad de cajas.
+  const hideCashPaymentType =
+    hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS']) && !hasRole(['JEFA_CAJAS']);
   // Nueva clave: el caché anterior puede contener filtros impuestos por el rol.
   const { filters: savedFilters, setFilters } = useUrlFilters<OperationsFiltersType>(
     initialFilters,
@@ -59,7 +62,9 @@ export default function OperationsPage() {
     status: !savedFilters.workQueue && savedFilters.status === 'ALL' && savedFilters.paymentStatus === 'RECHAZADA'
       ? 'RECHAZADA' : savedFilters.status,
     paymentStatus: '',
-  }), [savedFilters]);
+    paymentTypes: hideCashPaymentType && savedFilters.paymentTypes === 'EFECTIVO'
+      ? '' : savedFilters.paymentTypes,
+  }), [savedFilters, hideCashPaymentType]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isAddPaymentModalOpen, setIsAddPaymentModalOpen] = useState(false);
   const [selectedOperation, setSelectedOperation] = useState<PaymentOperationResponse | null>(null);
@@ -259,6 +264,7 @@ export default function OperationsPage() {
           filters={filters}
           onChange={setFilters}
           showPaymentTypeFilter={showPaymentTypeFilter && !filters.workQueue}
+          hideCashPaymentType={hideCashPaymentType}
           bankAccounts={bankAccountsCatalog}
           showSocioFilter={showSocioFilter}
           socios={commercialLevelOneUsers}
