@@ -7,7 +7,7 @@ export function BankAccountStatusBadge({
 }: BankAccountStatusBadgeProps) {
   return (
     <span
-      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
+      className={`${STATUS_BADGE_CLASS} ${
         active
           ? 'bg-emerald-100 text-emerald-700'
           : 'bg-slate-100 text-slate-700'
@@ -17,3 +17,4 @@ export function BankAccountStatusBadge({
     </span>
   );
 }
+import { STATUS_BADGE_CLASS } from '@/shared/components/ui/status-badge-styles';

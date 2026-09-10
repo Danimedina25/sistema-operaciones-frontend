@@ -1,5 +1,6 @@
 import { classifyAging, type AgingLevel } from '@/shared/utils/aging';
 import { cn } from '@/shared/lib/cn';
+import { STATUS_BADGE_CLASS } from '@/shared/components/ui/status-badge-styles';
 
 interface AgingBadgeProps {
   /** Fecha efectiva del comprobante, si el backend la provee. */
@@ -47,7 +48,8 @@ export function AgingBadge({ effectiveDate, createdAt, className }: AgingBadgePr
     <span
       title={`Fecha usada: ${formattedDate}`}
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] font-medium',
+        STATUS_BADGE_CLASS,
+        'gap-1.5 text-[11px]',
         styles.bg,
         styles.text,
         className,

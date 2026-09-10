@@ -1,4 +1,5 @@
 import { cn } from '@/shared/lib/cn';
+import { STATUS_BADGE_CLASS } from '@/shared/components/ui/status-badge-styles';
 
 interface Props {
   status:
@@ -14,7 +15,7 @@ export function CommissionBeneficiaryPaymentStatusBadge({
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium',
+        STATUS_BADGE_CLASS,
 
         status === 'PAGADA' &&
           'bg-emerald-100 text-emerald-700',

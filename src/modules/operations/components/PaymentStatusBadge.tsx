@@ -1,4 +1,5 @@
 import { cn } from '@/shared/lib/cn';
+import { STATUS_BADGE_CLASS } from '@/shared/components/ui/status-badge-styles';
 import {
   paymentStatusLabels,
 } from '@/modules/operations/constants/operations.constants';
@@ -18,17 +19,8 @@ export function PaymentStatusBadge({
   return (
     <span
       className={cn(
-        `
-        inline-flex
-        items-center
-        rounded-full
-        border
-        px-3
-        py-1
-        text-xs
-        font-semibold
-        tracking-wide
-        `,
+        STATUS_BADGE_CLASS,
+        'tracking-wide',
         status === 'VALIDADA' &&
           `
           border-emerald-200

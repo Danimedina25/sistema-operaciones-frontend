@@ -4,6 +4,7 @@ import type {
     MyWeeklyCommissionOperationResponse,
 } from '../types/commercial-partner-commissions.types';
 import { useMemo, useState } from 'react';
+import { STATUS_BADGE_CLASS } from '@/shared/components/ui/status-badge-styles';
 
 interface Props {
     operations:
@@ -33,7 +34,7 @@ function StatusBadge({
 
     if (!status) {
         return (
-            <span className="text-[10px] text-slate-400">
+            <span className={`${STATUS_BADGE_CLASS} text-slate-400`}>
                 —
             </span>
         );
@@ -44,7 +45,7 @@ function StatusBadge({
 
     return (
         <span
-            className={`inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-medium ${isPaid
+            className={`${STATUS_BADGE_CLASS} ${isPaid
                 ? 'bg-emerald-100 text-emerald-700'
                 : 'bg-amber-100 text-amber-700'
                 }`}

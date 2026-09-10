@@ -4,6 +4,7 @@ import type {
   ReturnPaymentStatus,
 } from '@/modules/operations/types/operations.types.ts';
 import { cn } from '@/shared/lib/cn';
+import { STATUS_BADGE_CLASS } from '@/shared/components/ui/status-badge-styles';
 
 interface DeliverySemaphoreBadgeProps {
   estatus: ReturnPaymentStatus | ReturnInstallmentStatus;
@@ -59,7 +60,7 @@ export function DeliverySemaphoreBadge({ estatus, scheduledAt, className }: Deli
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold',
+        STATUS_BADGE_CLASS,
         styles.bg,
         styles.text,
         className,

@@ -1,4 +1,5 @@
 import { cn } from "@/shared/lib/cn";
+import { STATUS_BADGE_CLASS } from '@/shared/components/ui/status-badge-styles';
 import type { ReturnPaymentStatus } from '../../types/operations.types.ts';
 
 interface ReturnStatusBadgeProps {
@@ -17,19 +18,7 @@ export function ReturnStatusBadge({ status }: ReturnStatusBadgeProps) {
   return (
     <span
       className={cn(
-        `
-        inline-flex
-        min-w-[140px]
-        items-center
-        justify-center
-        rounded-full
-        border
-        px-3
-        py-1
-        text-center
-        text-xs
-        font-semibold
-        `,
+        STATUS_BADGE_CLASS,
         status === 'RETORNADO' &&
           'border-emerald-200 bg-emerald-50 text-emerald-700',
 

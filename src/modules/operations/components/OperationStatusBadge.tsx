@@ -1,4 +1,6 @@
 import { OperationStatus } from "../types/operations.types.ts";
+import { cn } from '@/shared/lib/cn';
+import { STATUS_BADGE_CLASS } from '@/shared/components/ui/status-badge-styles';
 
 interface OperationStatusBadgeProps {
   status: OperationStatus;
@@ -56,7 +58,7 @@ export function OperationStatusBadge({
 
   return (
     <span
-      className={`inline-flex min-w-[140px] items-center justify-center rounded-lg border border-current/15 px-3 py-1.5 text-center text-xs font-bold ${style} ${className}`}
+      className={cn(STATUS_BADGE_CLASS, 'font-bold', style, className)}
     >
       {label}
     </span>
