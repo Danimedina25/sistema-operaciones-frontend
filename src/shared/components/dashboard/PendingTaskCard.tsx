@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 import { MetricCard } from '@/shared/components/dashboard/MetricCard';
+import { cn } from '@/shared/lib/cn';
 
 interface PendingTaskCardProps {
   label: string;
@@ -35,7 +36,7 @@ export function PendingTaskCard({
       onClick={onClick}
       variant={hasItems ? (urgent ? 'amber' : 'blue') : 'default'}
       helperText={!isLoading && count === 0 ? 'Sin pendientes' : undefined}
-      className={className}
+      className={cn('flex h-44 min-w-0 flex-col', className)}
     />
   );
 }
