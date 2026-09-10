@@ -36,7 +36,7 @@ export function PendingTaskCard({
       onClick={onClick}
       variant={hasItems ? (urgent ? 'amber' : 'blue') : 'default'}
       helperText={!isLoading && count === 0 ? 'Sin pendientes' : undefined}
-      className={cn('flex h-44 min-w-0 flex-col', className)}
+      className={cn('flex h-32 min-w-0 flex-col', className)}
     />
   );
 }
