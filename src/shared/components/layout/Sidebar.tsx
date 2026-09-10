@@ -35,6 +35,12 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   {
+    to: paths.myPending,
+    label: 'Mis pendientes',
+    icon: ListTodo,
+    allowedRoles: ROUTE_ACCESS.myPending,
+  },
+  {
     to: paths.dashboard,
     label: 'Dashboard',
     icon: Gauge,
@@ -57,12 +63,6 @@ const navItems: NavItem[] = [
     label: 'Cuentas bancarias',
     icon: Landmark,
     allowedRoles: ROUTE_ACCESS.bankAccounts,
-  },
-  {
-    to: paths.myPending,
-    label: 'Mis pendientes',
-    icon: ListTodo,
-    allowedRoles: ROUTE_ACCESS.myPending,
   },
   {
     to: paths.clientes,
