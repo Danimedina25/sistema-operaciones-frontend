@@ -12,6 +12,7 @@ import { TopOperationsTable } from '@/modules/direccion/components/TopOperations
 import { ExceptionsList } from '@/modules/direccion/components/ExceptionsList';
 import { ConcentrationIndicator } from '@/modules/direccion/components/ConcentrationIndicator';
 import { RegisteredProfitability } from '@/modules/direccion/components/RegisteredProfitability';
+import { formatPeriodDate } from '@/modules/operations/utils/operation-formatters';
 
 const initialPeriodFilters = { period: 'THIS_MONTH' as DashboardPeriod, customStart: '', customEnd: '' };
 
@@ -53,7 +54,7 @@ export function ExecutiveDashboard() {
           <div>
             <h1 className="text-lg font-semibold text-slate-900">Dashboard ejecutivo</h1>
             <p className="text-xs text-slate-500">
-              Periodo: {period.startDate} a {period.endDate}
+              Periodo: {formatPeriodDate(period.startDate)} al {formatPeriodDate(period.endDate)}
             </p>
           </div>
 

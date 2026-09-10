@@ -8,6 +8,7 @@ import { WeeklyCommissionsSummary } from '@/modules/gerente/components/WeeklyCom
 import { CommercialPartnersRanking } from '@/modules/gerente/components/CommercialPartnersRanking';
 import { StalledOperationsTable } from '@/modules/gerente/components/StalledOperationsTable';
 import { OperationalHealth } from '@/modules/gerente/components/OperationalHealth';
+import { formatPeriodDate } from '@/modules/operations/utils/operation-formatters';
 
 const initialPeriodFilters = { period: 'THIS_MONTH' as DashboardPeriod, customStart: '', customEnd: '' };
 
@@ -35,7 +36,7 @@ export function GerenteDashboard() {
           <div>
             <h1 className="text-lg font-semibold text-slate-900">Dashboard gerencial</h1>
             <p className="text-xs text-slate-500">
-              Periodo: {period.startDate} a {period.endDate}
+              Periodo: {formatPeriodDate(period.startDate)} al {formatPeriodDate(period.endDate)}
             </p>
           </div>
 
