@@ -7,6 +7,38 @@ const day: CashDay = { id: 1, fecha: '2026-09-14', version: 0, saldoInicial: 100
   saldoContado: null, diferencia: null, apertura: { ...emptyCounts(), D100: 1 }, cierre: {},
   closedAt: null, observacionesCierre: null, abiertoPor: 1, cerradoPor: null };
 describe('Formulario de apertura y cierre', () => {
+  it('confirma el corte en cero con la fecha del día y permite volver sin guardar', async () => {
+    const submit = vi.fn().mockResolvedValue(undefined);
+    render(<CashDayForm mode="close" day={{ ...day, saldoActual: 0 }} busy={false} onSubmit={submit} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar cierre de caja' }));
+    expect(screen.getByRole('dialog')).toHaveTextContent('2026-09-14');
+    expect(screen.getByRole('dialog')).toHaveTextContent('$0.00');
+    expect(submit).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Volver a capturar' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(submit).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar cierre de caja' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sí, registrar $0.00' }));
+    await waitFor(() => expect(submit).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ saldoContado: 0, denominaciones: emptyCounts() })));
+  });
+  it('también requiere confirmar una apertura en cero', async () => {
+    const submit = vi.fn().mockResolvedValue(undefined);
+    render(<CashDayForm mode="open" previous={null} busy={false} onSubmit={submit} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir caja' }));
+    expect(screen.getByRole('dialog')).toHaveTextContent('saldo inicial de apertura');
+    expect(submit).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Sí, registrar $0.00' }));
+    await waitFor(() => expect(submit).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ saldoInicial: 0 })));
+  });
+  it('no permite confirmar cero si la caja cambió mientras el diálogo estaba abierto', () => {
+    const submit = vi.fn();
+    const current = { ...day, saldoActual: 0 };
+    const { rerender } = render(<CashDayForm mode="close" day={current} busy={false} onSubmit={submit} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar cierre de caja' }));
+    rerender(<CashDayForm mode="close" day={{ ...current, version: 1 }} busy={false} onSubmit={submit} />);
+    expect(screen.getByRole('button', { name: 'Sí, registrar $0.00' })).toBeDisabled();
+    expect(submit).not.toHaveBeenCalled();
+  });
   it('oculta el cero al enfocar y lo restaura al salir sin alterar el conteo', () => {
     render(<CashDayForm mode="open" previous={null} busy={false} onSubmit={vi.fn()} />);
     const quantity = screen.getByLabelText('Cantidad de $100.00');
