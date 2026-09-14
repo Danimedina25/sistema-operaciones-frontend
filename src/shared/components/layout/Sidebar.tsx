@@ -36,6 +36,12 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   {
+    to: paths.cajaGeneral,
+    label: 'Caja General',
+    icon: Landmark,
+    allowedRoles: ROUTE_ACCESS.cajaGeneral,
+  },
+  {
     to: paths.myPending,
     label: 'Mis pendientes',
     icon: ListTodo,

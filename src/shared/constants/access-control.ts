@@ -10,6 +10,7 @@ export const ROUTE_ACCESS = {
   myPending: ['SOCIO_COMERCIAL', 'JEFA_CAJAS', 'JEFA_CUENTAS', 'AUXILIAR_CUENTAS'],
   teamPending: ['GERENTE'],
   corte: ['ADMIN', 'GERENTE', 'DIRECCION'],
+  cajaGeneral: ['ADMIN', 'JEFA_CAJAS', 'GERENTE', 'DIRECCION'],
   users: ['ADMIN', 'GERENTE', 'DIRECCION'],
   clientes: ['ADMIN', 'GERENTE', 'DIRECCION', 'SOCIO_COMERCIAL'],
   mycomercialpartners: ['ADMIN', 'GERENTE', 'DIRECCION', 'SOCIO_COMERCIAL'],

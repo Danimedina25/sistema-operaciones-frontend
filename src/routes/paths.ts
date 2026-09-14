@@ -7,6 +7,7 @@ export const paths = {
 
   dashboard: '/',
   corte: '/corte',
+  cajaGeneral: '/caja-general',
 
   users: '/usuarios',
   clientes: '/clientes',

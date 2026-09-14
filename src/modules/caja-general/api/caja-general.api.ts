@@ -1,0 +1,12 @@
+import { api } from '@/shared/lib/axios';
+import type { CashDay, CashDelivery, CashLedger, CashMovement, CloseCashDay, CreateCashMovement, OpenCashDay } from '../types/caja-general.types';
+const root = '/api/caja-general';
+type Envelope<T> = { data: T };
+export const cajaGeneralApi = {
+  latest: async () => (await api.get<Envelope<CashDay | null>>(`${root}/latest`)).data.data,
+  ledger: async (startDate: string, endDate: string) => (await api.get<Envelope<CashLedger>>(`${root}/ledger`, { params: { startDate, endDate } })).data.data,
+  deliveries: async (page: number) => (await api.get<Envelope<CashDelivery[]>>(`${root}/deliveries`, { params: { page } })).data.data,
+  open: async (request: OpenCashDay) => (await api.post<Envelope<CashDay>>(`${root}/days`, request)).data.data,
+  movement: async (id: number, request: CreateCashMovement) => (await api.post<Envelope<CashMovement>>(`${root}/days/${id}/movements`, request)).data.data,
+  close: async (id: number, request: CloseCashDay) => (await api.post<Envelope<CashDay>>(`${root}/days/${id}/close`, request)).data.data,
+};

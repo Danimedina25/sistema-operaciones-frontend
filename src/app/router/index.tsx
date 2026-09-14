@@ -1,3 +1,4 @@
+import CajaGeneralPage from '@/modules/caja-general/pages/CajaGeneralPage';
 import MyPendingPage from '@/modules/operations/pages/MyPendingPage';
 import TeamPendingPage from '@/modules/operations/pages/TeamPendingPage';
 import { createBrowserRouter } from 'react-router-dom';
@@ -63,6 +64,10 @@ export const router = createBrowserRouter([
           {
             path: paths.dashboard,
             element: <DashboardPage />,
+          },
+          {
+            element: <RoleGuard allowedRoles={ROUTE_ACCESS.cajaGeneral} />,
+            children: [{ path: paths.cajaGeneral, element: <CajaGeneralPage /> }],
           },
           {
             element: <RoleGuard allowedRoles={ROUTE_ACCESS.corte} />,
