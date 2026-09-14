@@ -7,6 +7,26 @@ const day: CashDay = { id: 1, fecha: '2026-09-14', version: 0, saldoInicial: 100
   saldoContado: null, diferencia: null, apertura: { ...emptyCounts(), D100: 1 }, cierre: {},
   closedAt: null, observacionesCierre: null, abiertoPor: 1, cerradoPor: null };
 describe('Formulario de apertura y cierre', () => {
+  it('oculta el cero al enfocar y lo restaura al salir sin alterar el conteo', () => {
+    render(<CashDayForm mode="open" previous={null} busy={false} onSubmit={vi.fn()} />);
+    const quantity = screen.getByLabelText('Cantidad de $100.00');
+    expect(quantity).toHaveValue(0);
+    fireEvent.focus(quantity);
+    expect(quantity).toHaveValue(null);
+    expect(screen.getByText('Total contado: $0.00')).toBeInTheDocument();
+    fireEvent.blur(quantity);
+    expect(quantity).toHaveValue(0);
+    fireEvent.focus(quantity);
+    fireEvent.change(quantity, { target: { value: '3' } });
+    fireEvent.blur(quantity);
+    fireEvent.focus(quantity);
+    expect(quantity).toHaveValue(3);
+    expect(screen.getByText('Total contado: $300.00')).toBeInTheDocument();
+    fireEvent.change(quantity, { target: { value: '' } });
+    expect(screen.getByText('Total contado: $0.00')).toBeInTheDocument();
+    fireEvent.blur(quantity);
+    expect(quantity).toHaveValue(0);
+  });
   it('impide apertura cuyo desglose no coincide y envía apertura corregida', async () => {
     const submit = vi.fn().mockResolvedValue(undefined);
     render(<CashDayForm mode="open" previous={null} busy={false} onSubmit={submit} />);
