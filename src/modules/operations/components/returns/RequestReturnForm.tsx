@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
@@ -6,16 +6,20 @@ import { ReturnDestinationAccountSuggestion, ReturnPaymentResponse } from '../..
 import { ReturnPaymentType } from '@/shared/utils/form.utils.js';
 import { MEXICAN_BANKS } from '@/modules/bank-accounts/components/BankAccountFormModal.js';
 import { useReturnDestinationAccountSuggestions } from '../../hooks/returns/use-operation-returns.js';
+import { ReturnExcelImport } from './ReturnExcelImport';
+import { RETURN_METHODS, validateReturnDraft } from '../../utils/return-excel';
+import type { DraftErrors } from '../../utils/return-excel';
 import { NominaFileField } from './NominaFileField';
 import {
   detectDestinationAccountKind,
-  validateDestinationAccountIdentifiers,
 } from '../../utils/return-destination-account';
 
 
 interface ReturnPaymentItem {
   id: string; // react key
   paymentId?: number; // id BD
+  excelSource?: string;
+  importIssues?: DraftErrors;
   monto: string;
   tipoPago: '' | ReturnPaymentType;
   banco?: string;
@@ -152,7 +156,11 @@ export function RequestReturnForm({
 
   const [archivoNomina, setArchivoNomina] = useState<File | null>(null);
 
-  useEffect(() => {
+  const [errors, setErrors] = useState<PaymentErrors>({});
+
+  const [previousInitialPayments, setPreviousInitialPayments] = useState(initialPayments);
+  if (initialPayments !== previousInitialPayments) {
+    setPreviousInitialPayments(initialPayments);
     if (initialPayments?.length) {
       setPagos(initialPayments.map(mapPaymentToForm));
     } else {
@@ -160,9 +168,8 @@ export function RequestReturnForm({
     }
 
     setErrors({});
-  }, [initialPayments]);
+  }
 
-  const [errors, setErrors] = useState<PaymentErrors>({});
   const [showBankOptions, setShowBankOptions] = useState<
     Record<string, boolean>
   >({});
@@ -205,6 +212,7 @@ export function RequestReturnForm({
             titular: account.titular ?? '',
             cuenta: account.cuenta ?? '',
             clabe: account.clabe ?? '',
+            importIssues: Object.fromEntries(Object.entries(pago.importIssues ?? {}).filter(([key]) => !['banco', 'titular', 'cuenta', 'clabe'].includes(key))),
           }
           : pago,
       ),
@@ -250,45 +258,7 @@ export function RequestReturnForm({
     const newErrors: PaymentErrors = {};
 
     pagos.forEach((pago) => {
-      const pagoErrors: PaymentErrors[string] = {};
-      const monto = parseCurrency(pago.monto);
-
-      if (monto <= 0) {
-        pagoErrors.monto = 'El monto debe ser mayor a cero';
-      }
-
-      if (!pago.tipoPago) {
-        pagoErrors.tipoPago = 'El tipo de retorno es obligatorio';
-      }
-
-      const requiereDatosBancarios =
-        pago.tipoPago === 'TRANSFERENCIA' || pago.tipoPago === 'DEPOSITO';
-
-      if (requiereDatosBancarios) {
-        if (!pago.banco?.trim()) {
-          pagoErrors.banco = 'El banco destino es obligatorio';
-        }
-
-        if (!pago.titular?.trim()) {
-          pagoErrors.titular = 'El titular de la cuenta es obligatorio';
-        }
-
-        Object.assign(
-          pagoErrors,
-          validateDestinationAccountIdentifiers(pago.cuenta, pago.clabe),
-        );
-      }
-
-      if (pago.tipoPago === 'EFECTIVO' || pago.tipoPago === 'RETIRO_SIN_TARJETA') {
-        const autorizado1 = pago.autorizadoParaRecibirEfectivo1?.trim() ?? '';
-        const autorizado2 = pago.autorizadoParaRecibirEfectivo2?.trim() ?? '';
-        const autorizado3 = pago.autorizadoParaRecibirEfectivo3?.trim() ?? '';
-
-        if (!autorizado1 && !autorizado2 && !autorizado3) {
-          pagoErrors.autorizadoParaRecibirEfectivo1 =
-            'Debes capturar al menos una persona autorizada para recibir efectivo';
-        }
-      }
+      const pagoErrors = { ...validateReturnDraft(pago), ...pago.importIssues };
       if (Object.keys(pagoErrors).length > 0) {
         newErrors[pago.id] = pagoErrors;
       }
@@ -346,6 +316,12 @@ export function RequestReturnForm({
           return {
             ...pago,
             tipoPago: value as ReturnPaymentType,
+            importIssues: Object.fromEntries(Object.entries(pago.importIssues ?? {}).filter(([key]) => {
+              if (key === 'tipoPago') return false;
+              if (['banco', 'titular', 'cuenta', 'clabe'].includes(key)) return requiereDatosBancarios;
+              if (key.startsWith('autorizado')) return requiereAutorizadosEfectivo;
+              return true;
+            })),
 
             banco: requiereDatosBancarios ? pago.banco : '',
             titular: requiereDatosBancarios ? pago.titular : '',
@@ -402,6 +378,7 @@ export function RequestReturnForm({
           ? {
             ...pago,
             [field]: formattedValue,
+            importIssues: Object.fromEntries(Object.entries(pago.importIssues ?? {}).filter(([key]) => key !== field && !(field.startsWith('autorizado') && key === 'autorizadoParaRecibirEfectivo1'))),
           }
           : pago,
       ),
@@ -437,7 +414,7 @@ export function RequestReturnForm({
 
   function removePago(paymentId: string) {
     setPagos((current) => {
-      if (current.length === 1) return current;
+      if (current.length === 1) return current[0].excelSource ? [createEmptyPayment()] : current;
       return current.filter((pago) => pago.id !== paymentId);
     });
   }
@@ -445,7 +422,7 @@ export function RequestReturnForm({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (excedeMonto) return;
+    if (excedeMonto || isSubmitting) return;
 
     const isValid = validatePayments();
 
@@ -508,6 +485,15 @@ export function RequestReturnForm({
         </div>
       </div>
 
+      <ReturnExcelImport disabled={isSubmitting} currentTotal={totalSolicitado} available={montoDisponible} onImport={(payments, sheet) => {
+        const imported = payments.map(payment => ({ ...payment.draft, id: crypto.randomUUID(), excelSource: `${sheet} · fila ${payment.row}`, importIssues: payment.importIssues }));
+        setPagos(current => {
+          const empty = current.length === 1 && !current[0].paymentId && !current[0].excelSource && Object.entries(current[0]).every(([key, value]) => key === 'id' || !value);
+          return [...(empty ? [] : current), ...imported];
+        });
+        setErrors(current => ({ ...current, ...Object.fromEntries(imported.map(payment => [payment.id, { ...validateReturnDraft(payment), ...payment.importIssues }])) }));
+      }} />
+      {pagos.some(pago => pago.excelSource) && <p role="status" className="text-sm text-blue-800">Los retornos están prellenados. Revisa los datos antes de registrarlos.</p>}
       <NominaFileField value={archivoNomina} onChange={setArchivoNomina} />
 
       {excedeMonto ? (
@@ -542,13 +528,14 @@ export function RequestReturnForm({
                 <div>
                   <h3 className="text-sm font-semibold text-slate-900">
                     Pago #{index + 1}
+                    {pago.excelSource && <span className="ml-2 font-normal">Excel: {pago.excelSource}</span>}
                   </h3>
                   <p className="text-xs text-slate-500">
                     Define cómo se debe entregar este monto al cliente.
                   </p>
                 </div>
 
-                {pagos.length > 1 ? (
+                {pagos.length > 1 || pago.excelSource ? (
                   <button
                     type="button"
                     onClick={() => removePago(pago.id)}
@@ -560,6 +547,7 @@ export function RequestReturnForm({
                 ) : null}
               </div>
 
+              {!!Object.keys(pago.importIssues ?? {}).length && <ul className="mb-3 text-sm text-amber-800">{Object.entries(pago.importIssues ?? {}).map(([field, message]) => <li key={field}>{message}</li>)}</ul>}
               <div className="grid gap-4 lg:grid-cols-2">
                 <div>
                   <label className="mb-2 block text-sm font-medium text-slate-700">
@@ -591,9 +579,7 @@ export function RequestReturnForm({
                     className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
                   >
                     <option value="">Selecciona un tipo</option>
-                    <option value="EFECTIVO">Efectivo</option>
-                    <option value="TRANSFERENCIA">Transferencia</option>
-                    <option value="RETIRO_SIN_TARJETA">Retiro sin tarjeta</option>
+                    {RETURN_METHODS.map(method => <option key={method.value} value={method.value}>{method.label}</option>)}
                   </select>
 
                   {errors[pago.id]?.tipoPago ? (
