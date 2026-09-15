@@ -10,18 +10,22 @@ import { useCajaGeneral } from '../hooks/use-caja-general';
 import { CashDayForm, cashInput } from '../components/CashDayForm';
 import { CashMovementForm } from '../components/CashMovementForm';
 import { CashLedgerTable } from '../components/CashLedgerTable';
+import { DeleteCashDayModal } from '../components/DeleteCashDayModal';
+import type { CashDay } from '../types/caja-general.types';
 import { currency } from '../utils/cash-amounts';
 export default function CajaGeneralPage() {
   const { user } = useAuth();
   const canWrite = user?.roles.some(role => role === 'ADMIN' || role === 'JEFA_CAJAS');
+  const canDelete = user?.roles.includes('ADMIN') ?? false;
   const today = formatDate(new Date());
   const { filters, setFilters } = useTableFilters('table-filters:caja-general', { mode: 'daily', fecha: today, startDate: today, endDate: today });
   const start = filters.mode === 'daily' ? filters.fecha : filters.startDate;
   const end = filters.mode === 'daily' ? filters.fecha : filters.endDate;
-  const { latest, ledger, open, movement, close } = useCajaGeneral(start, end);
+  const { latest, ledger, open, movement, close, deleteDay } = useCajaGeneral(start, end);
   const [tab, setTab] = useState<'movement' | 'close'>('movement');
+  const [deleteTarget, setDeleteTarget] = useState<CashDay | null>(null);
   const day = latest.data;
-  const busy = open.isPending || movement.isPending || close.isPending;
+  const busy = open.isPending || movement.isPending || close.isPending || deleteDay.isPending;
   const selectDate = (fecha: string) => setFilters(current => ({ ...current, mode: 'daily', fecha }));
   return <div className="mx-auto max-w-[1600px] space-y-6">
     <section className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-xl shadow-slate-950/[0.06]">
@@ -62,8 +66,22 @@ export default function CajaGeneralPage() {
       {!start || !end || start > end ? <p role="alert">Selecciona un rango de fechas válido.</p> : <>
         {ledger.isPending && <p className="text-sm text-slate-500">Cargando movimientos…</p>}
         {ledger.isError && <p role="alert" className="text-sm text-red-600">{getApiErrorMessage(ledger.error)} <button onClick={() => void ledger.refetch()}>Reintentar</button></p>}
-        {ledger.isSuccess && <CashLedgerTable ledger={ledger.data} />}
+        {ledger.isSuccess && <CashLedgerTable ledger={ledger.data} canDelete={canDelete} onDelete={setDeleteTarget} />}
       </>}
     </section>
+    <DeleteCashDayModal
+      key={deleteTarget?.id ?? 'closed'}
+      day={deleteTarget}
+      movementCount={deleteTarget ? ledger.data?.movimientos.filter(item => item.diaId === deleteTarget.id).length ?? 0 : 0}
+      isSubmitting={deleteDay.isPending}
+      onClose={() => { if (!deleteDay.isPending) setDeleteTarget(null); }}
+      onConfirm={async motivo => {
+        if (!deleteTarget) return;
+        try {
+          await deleteDay.mutateAsync({ id: deleteTarget.id, version: deleteTarget.version, motivo });
+          setDeleteTarget(null);
+        } catch { /* El modal conserva los datos para corregir o reintentar. */ }
+      }}
+    />
   </div>;
 }

@@ -1,5 +1,8 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 import { Camera } from 'lucide-react';
+import { DenominationFields } from '@/modules/caja-general/components/DenominationFields';
+import { emptyCounts, countCents } from '@/modules/caja-general/utils/cash-amounts';
+import type { CashCounts } from '@/modules/caja-general/types/caja-general.types';
 import { Modal } from '@/shared/components/ui/Modal';
 import { formatCurrency, formatDateTime } from '@/modules/operations/utils/operation-formatters';
 import {
@@ -16,6 +19,7 @@ interface MarkCashReturnDeliveredModalProps {
     operationId: number,
     comprobante: File,
     personaQueRecibioEfectivo: string,
+    denominaciones?: CashCounts,
   ) => void;
   onClose: () => void;
 }
@@ -41,6 +45,7 @@ export function MarkCashReturnDeliveredModal({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectValue, setSelectValue] = useState('');
   const [otraNombre, setOtraNombre] = useState('');
+  const [denominaciones, setDenominaciones] = useState(emptyCounts);
 
   const selectId = useId();
   const selectErrorId = useId();
@@ -65,6 +70,7 @@ export function MarkCashReturnDeliveredModal({
     setComprobante(null);
     setSelectValue('');
     setOtraNombre('');
+    setDenominaciones(emptyCounts());
   }, [target?.id]);
 
   useEffect(() => {
@@ -85,11 +91,20 @@ export function MarkCashReturnDeliveredModal({
     ? personaQueRecibio.length > 0
     : selectValue !== '' && autorizados.includes(selectValue);
   const fotoValida = !!comprobante && comprobante.type.startsWith('image/');
-  const canConfirm = receptorValido && fotoValida && !isSubmitting;
+  const isPhysicalCash = target?.tipoPago === 'EFECTIVO';
+  const desgloseValido = !isPhysicalCash
+    || countCents(denominaciones) === Math.round((target?.monto ?? 0) * 100);
+  const canConfirm = receptorValido && fotoValida && desgloseValido && !isSubmitting;
 
   const handleConfirm = () => {
     if (!target || !comprobante || !canConfirm) return;
-    onConfirm(target.id, target.operationId, comprobante, personaQueRecibio);
+    onConfirm(
+      target.id,
+      target.operationId,
+      comprobante,
+      personaQueRecibio,
+      isPhysicalCash ? denominaciones : undefined,
+    );
   };
 
   return (
@@ -125,6 +140,24 @@ export function MarkCashReturnDeliveredModal({
               {target.scheduledAt ? formatDateTime(target.scheduledAt) : '-'}
             </p>
           </div>
+
+          {isPhysicalCash ? (
+            <div className="mt-4">
+              <DenominationFields
+                value={denominaciones}
+                onChange={setDenominaciones}
+                disabled={isSubmitting}
+              />
+              {!desgloseValido ? (
+                <p role="alert" className="mt-2 text-xs text-red-600">
+                  El desglose debe sumar exactamente {formatCurrency(target.monto)}.
+                </p>
+              ) : null}
+              <p className="mt-2 text-xs text-slate-500">
+                Al confirmar se registrará automáticamente esta entrega como salida de Caja General.
+              </p>
+            </div>
+          ) : null}
 
           <div className="mt-4">
             <label

@@ -6,10 +6,11 @@ Implementación en el frontend y en el backend `Sistema de Operaciones`, módulo
 
 - Una única caja abierta. Apertura por fecha y desglose de las once denominaciones: $1,000, $500, $200, $100, $50, $20, $10, $5, $2, $1 y $0.50.
 - Entradas y salidas manuales con concepto, banco cuando aplica, comprobante opcional y desglose. Los tipos describen el origen/destino del **efectivo físico**; registrar una transferencia, depósito o cheque pendiente en bancos no constituye una entrada física a esta caja.
-- Salidas vinculadas a parcialidades `OperationReturnInstallment` de tipo `EFECTIVO`, estatus `COMPLETADA`. El selector muestra entregas no vinculadas, con paginación. El importe se lee de la FK: `monto_manual` queda **NULL**, la referencia es única y no se modifica la parcialidad ni el corte existente.
+- Los retornos `EFECTIVO` generan automáticamente su salida cuando la Jefa de Cajas registra la entrega física. Ese modal exige el desglose exacto; entrega y salida se guardan en la misma transacción. Si no hay caja abierta del día, falta saldo o el desglose no coincide, ninguna de las dos operaciones se confirma. El importe se lee de la FK: `monto_manual` queda **NULL** y la referencia es única.
 - Libro por día/rango con concepto, entrada, salida y saldo acumulado; apertura, resumen diario, detalle por denominación, vínculo a operación y comprobante. Muestra los saldos originales, no reinicia el acumulado al filtrar.
 - Cierre con saldo esperado, contado, diferencia y explicación obligatoria si existe diferencia. Día cerrado inmutable; la siguiente apertura debe ser posterior y comenzar con el importe contado anterior. No se introduce un ajuste de efectivo automático ni se borra la diferencia.
 - Registro de usuario y fecha para apertura, movimientos y cierre. Administración y Jefa de Cajas pueden registrar; Gerencia y Dirección consultan. Autorización en backend y guardas/menú en frontend.
+- Solo Administración puede eliminar un corte de cualquier fecha. La confirmación exige escribir `ELIMINAR`, indicar el motivo y trabajar sobre la versión consultada. Se eliminan el día, movimientos y desgloses, mientras las operaciones/retornos originales permanecen. Una auditoría independiente conserva fecha, saldos, cantidad de movimientos, motivo, usuario y hora de eliminación.
 
 ## Integridad
 
@@ -25,7 +26,7 @@ Se leyeron ambos Excel y el Word originales. El Excel de caja incluye inicio, en
 
 Se reutilizan `OperationReturnInstallment`, `PaymentType`, los roles existentes, `AuthenticatedUserService`, `ApiResponse`, las excepciones comunes, JPA/transacciones, Axios, React Query, `useTableFilters`, `TableFilterSection`, `DateRangeCalendarField`, `FileUploadField`, carga existente a Firebase, enlaces a operaciones y el diseño visual de operaciones/corte. No se agregan dependencias.
 
-`PaymentType.RETIRO_SIN_TARJETA` en el sistema actual es un retorno al cliente con cuenta bancaria de origen y código propio; no equivale a una entrada de Caja General. No se vincula como efectivo recibido ni se suma automáticamente. Los TD/RST capturados manualmente aquí representan efectivo recibido y deben diferenciarse de los retornos existentes. La relación con el futuro inventario de tarjetas queda pendiente de Fase 2.
+`PaymentType.RETIRO_SIN_TARJETA` en el sistema actual es un retorno al cliente con cuenta bancaria de origen y código propio; no equivale a una salida de Caja General y no se registra automáticamente allí. Los TD/RST capturados manualmente en Caja General representan efectivo recibido y deben diferenciarse de los retornos existentes. La relación con el futuro inventario de tarjetas queda pendiente de Fase 2.
 
 ## API
 
@@ -51,7 +52,7 @@ Fase 2 no implementada: lotes de cheques, inventario y entrega de tarjetas, rela
 - `TODO: confirmar con negocio` PDF descargable o impresión del navegador. La opción inicial propuesta para Fase 2 es una vista compartida con CSS de impresión y `window.print()`: no agrega dependencias y permite guardar como PDF desde el navegador. Quedan pendientes implementación y validación de paginado/fidelidad de los tres formatos.
 - `TODO: confirmar con negocio` historial completo de tarjetas o estado actual. No se crea un catálogo provisional que pierda trazabilidad.
 
-Los TODO también se encuentran en el servicio del backend. Las vinculaciones son explícitas: una entrega completada no aparece como salida hasta que se selecciona y se registra su desglose. La fecha real de la entrega permanece en el registro original; se impide vincular una entrega posterior al día de caja.
+Los TODO también se encuentran en el servicio del backend. Las entregas históricas completadas antes de esta automatización todavía pueden vincularse manualmente desde Caja General. Las entregas nuevas en efectivo se registran automáticamente al momento de su cierre y conservan la fecha real en el registro original.
 
 ## Validación
 

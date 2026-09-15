@@ -9,4 +9,7 @@ export const cajaGeneralApi = {
   open: async (request: OpenCashDay) => (await api.post<Envelope<CashDay>>(`${root}/days`, request)).data.data,
   movement: async (id: number, request: CreateCashMovement) => (await api.post<Envelope<CashMovement>>(`${root}/days/${id}/movements`, request)).data.data,
   close: async (id: number, request: CloseCashDay) => (await api.post<Envelope<CashDay>>(`${root}/days/${id}/close`, request)).data.data,
+  deleteDay: async (id: number, version: number, motivo: string) => {
+    await api.delete(`${root}/days/${id}`, { data: { confirmacion: 'ELIMINAR', motivo, version } });
+  },
 };

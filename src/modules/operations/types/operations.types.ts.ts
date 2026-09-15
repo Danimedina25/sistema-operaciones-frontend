@@ -292,6 +292,8 @@ export interface DeliverReturnInstallmentRequest {
    * los autorizados de la solicitud y guarda el nombre canónico.
    */
   personaQueRecibioEfectivo: string;
+  /** Obligatorio para EFECTIVO; genera la salida de Caja General. */
+  denominaciones?: import('@/modules/caja-general/types/caja-general.types').CashCounts;
 }
 
 export interface CancelReturnInstallmentRequest {
@@ -395,6 +397,7 @@ export interface ScheduleCashReturnPickupRequest {
 export interface MarkCashReturnDeliveredRequest {
   comprobanteEntregaEfectivoUrl: string;
   personaQueRecibioEfectivo: string;
+  denominaciones?: import('@/modules/caja-general/types/caja-general.types').CashCounts;
 }
 
 export interface ReturnPaymentResponse {

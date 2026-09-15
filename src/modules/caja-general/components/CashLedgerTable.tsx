@@ -7,14 +7,16 @@ export function CountSummary({ counts }: { counts: Partial<CashCounts> }) {
     <tbody>{DENOMINATIONS.map(([key, cents]) => <tr key={key}><td>{currency(cents / 100)}</td><td>{counts[key] ?? 0}</td><td>{currency((counts[key] ?? 0) * cents / 100)}</td></tr>)}</tbody>
   </table>;
 }
-export function CashLedgerTable({ ledger }: { ledger: CashLedger }) {
+export function CashLedgerTable({ ledger, canDelete = false, onDelete }: { ledger: CashLedger; canDelete?: boolean; onDelete?: (day: CashLedger['dias'][number]) => void }) {
   if (ledger.dias.length === 0) return <p className="p-6 text-sm text-slate-500">No hay aperturas registradas en este periodo.</p>;
   return <div className="space-y-6">{ledger.dias.map(day => {
     const movements = ledger.movimientos.filter(m => m.diaId === day.id);
     const incoming = movements.filter(m => m.direccion === 'ENTRADA').reduce((sum, m) => sum + Math.round(m.monto * 100), 0) / 100;
     const outgoing = movements.filter(m => m.direccion === 'SALIDA').reduce((sum, m) => sum + Math.round(m.monto * 100), 0) / 100;
     return <section key={day.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-      <div className="bg-slate-900 px-5 py-4 text-white"><h3 className="font-semibold">Corte del día {day.fecha}</h3><p className="text-sm text-slate-300">{day.closedAt ? 'Caja cerrada' : 'Caja abierta'}</p></div>
+      <div className="flex items-center justify-between gap-4 bg-slate-900 px-5 py-4 text-white"><div><h3 className="font-semibold">Corte del día {day.fecha}</h3><p className="text-sm text-slate-300">{day.closedAt ? 'Caja cerrada' : 'Caja abierta'}</p></div>
+        {canDelete && <button type="button" onClick={() => onDelete?.(day)} className="rounded-lg border border-red-400/40 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-100 hover:bg-red-500/25">Eliminar corte</button>}
+      </div>
       <div className="overflow-x-auto"><table className="w-full text-left text-sm">
         <thead className="bg-slate-50 text-slate-600"><tr>{['Movimiento', 'Entrada', 'Salida', 'Saldo acumulado'].map(label => <th key={label} className="px-5 py-3">{label}</th>)}</tr></thead>
         <tbody className="divide-y divide-slate-100">

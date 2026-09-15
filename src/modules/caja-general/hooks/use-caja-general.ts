@@ -19,5 +19,9 @@ export function useCajaGeneral(start: string, end: string) {
   const open = useMutation({ mutationFn: (data: OpenCashDay) => cajaGeneralApi.open(data), ...options });
   const movement = useMutation({ mutationFn: ({ id, data }: { id: number; data: CreateCashMovement }) => cajaGeneralApi.movement(id, data), ...options });
   const close = useMutation({ mutationFn: ({ id, data }: { id: number; data: CloseCashDay }) => cajaGeneralApi.close(id, data), ...options });
-  return { latest, ledger, open, movement, close };
+  const deleteDay = useMutation({
+    mutationFn: ({ id, version, motivo }: { id: number; version: number; motivo: string }) => cajaGeneralApi.deleteDay(id, version, motivo),
+    ...options,
+  });
+  return { latest, ledger, open, movement, close, deleteDay };
 }

@@ -137,12 +137,13 @@ function TodayCashDeliveriesOverview() {
           selectedDelivery ? installmentToCashDeliveryTarget(selectedDelivery) : null
         }
         isSubmitting={isSubmitting}
-        onConfirm={(installmentId, operationId, comprobante, personaQueRecibioEfectivo) =>
+        onConfirm={(installmentId, operationId, comprobante, personaQueRecibioEfectivo, denominaciones) =>
           void submitDeliverReturnInstallment(
             installmentId,
             operationId,
             comprobante,
             personaQueRecibioEfectivo,
+            denominaciones,
           )
         }
         onClose={() => setSelectedDelivery(null)}

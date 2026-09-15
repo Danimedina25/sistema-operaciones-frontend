@@ -11,6 +11,7 @@ import { markCashReturnAsDelivered } from '@/modules/operations/api/operations.a
 import { uploadOperationProof } from '@/modules/operations/api/operations-storage.api';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { getApiErrorMessage } from '@/shared/utils/errors';
+import type { CashCounts } from '@/modules/caja-general/types/caja-general.types';
 
 interface UseMarkCashReturnDeliveredOptions {
   onSuccess?: () => void | Promise<void>;
@@ -27,6 +28,7 @@ export function useMarkCashReturnDelivered(
     operationId: number,
     comprobanteEntrega: File,
     personaQueRecibioEfectivo: string,
+    denominaciones?: CashCounts,
   ) => {
     try {
       if (!user?.userId) {
@@ -54,6 +56,7 @@ export function useMarkCashReturnDelivered(
       await markCashReturnAsDelivered(returnPaymentId, {
         comprobanteEntregaEfectivoUrl: uploadResult.downloadUrl,
         personaQueRecibioEfectivo: persona,
+        denominaciones,
       });
 
       toast.success('Efectivo marcado como entregado');

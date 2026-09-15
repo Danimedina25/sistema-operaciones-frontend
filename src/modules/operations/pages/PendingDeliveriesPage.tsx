@@ -35,6 +35,6 @@ export default function PendingDeliveriesPage() {
     </QueryState>
     <Pagination currentPage={page + 1} totalPages={query.data?.totalPages ?? 0} totalElements={query.data?.totalElements ?? 0} isLoading={query.isFetching} onPageChange={(value) => setPagination({ filters, page: value - 1 })} />
     <MarkCashReturnDeliveredModal target={selected ? installmentToCashDeliveryTarget(selected) : null} isSubmitting={isSubmitting}
-      onConfirm={(id, operationId, proof, person) => void submitDeliverReturnInstallment(id, operationId, proof, person)} onClose={() => setSelected(null)} />
+      onConfirm={(id, operationId, proof, person, denominaciones) => void submitDeliverReturnInstallment(id, operationId, proof, person, denominaciones)} onClose={() => setSelected(null)} />
   </div>;
 }

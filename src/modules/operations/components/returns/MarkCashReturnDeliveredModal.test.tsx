@@ -33,6 +33,12 @@ function confirmButton() {
   return screen.getByRole('button', { name: /sí, marcar como entregado/i });
 }
 
+async function fillCashBreakdown(user: ReturnType<typeof userEvent.setup>) {
+  const quantity = screen.getByLabelText('Cantidad de $100.00');
+  await user.clear(quantity);
+  await user.type(quantity, '100');
+}
+
 function renderModal(overrides: Partial<Parameters<typeof MarkCashReturnDeliveredModal>[0]> = {}) {
   const onConfirm = vi.fn();
   const onClose = vi.fn();
@@ -97,6 +103,26 @@ describe('MarkCashReturnDeliveredModal', () => {
     ).toBeInTheDocument();
   });
 
+  it('no solicita denominaciones ni envía salida de caja para retiro sin tarjeta', async () => {
+    const user = userEvent.setup();
+    const { onConfirm } = renderModal({
+      target: { ...baseTarget, tipoPago: 'RETIRO_SIN_TARJETA' },
+    });
+
+    expect(screen.queryByText('Desglose por denominación')).not.toBeInTheDocument();
+    await user.selectOptions(selectEl(), 'Juan Pérez');
+    await user.upload(fileInput(), imageFile());
+    expect(confirmButton()).toBeEnabled();
+    await user.click(confirmButton());
+    expect(onConfirm).toHaveBeenCalledWith(
+      42,
+      1500,
+      expect.any(File),
+      'Juan Pérez',
+      undefined,
+    );
+  });
+
   it('el botón está deshabilitado sin receptor / sin foto', async () => {
     const user = userEvent.setup();
     renderModal();
@@ -120,10 +146,11 @@ describe('MarkCashReturnDeliveredModal', () => {
 
     await user.selectOptions(selectEl(), 'Juan Pérez');
     await user.upload(fileInput(), imageFile());
+    await fillCashBreakdown(user);
 
     expect(confirmButton()).toBeEnabled();
     await user.click(confirmButton());
-    expect(onConfirm).toHaveBeenCalledWith(42, 1500, expect.any(File), 'Juan Pérez');
+    expect(onConfirm).toHaveBeenCalledWith(42, 1500, expect.any(File), 'Juan Pérez', expect.objectContaining({ D100: 100 }));
   });
 
   it('permite capturar una persona ajena a la lista con "Otra persona"', async () => {
@@ -137,13 +164,14 @@ describe('MarkCashReturnDeliveredModal', () => {
     const input = screen.getByRole('textbox');
     await user.type(input, '  Pedro   Ramírez  ');
     await user.upload(fileInput(), imageFile());
+    await fillCashBreakdown(user);
 
     expect(screen.getByText(/se registrará como excepción/i)).toBeInTheDocument();
     expect(confirmButton()).toBeEnabled();
 
     await user.click(confirmButton());
     // El nombre va normalizado (trim + espacios colapsados).
-    expect(onConfirm).toHaveBeenCalledWith(42, 1500, expect.any(File), 'Pedro Ramírez');
+    expect(onConfirm).toHaveBeenCalledWith(42, 1500, expect.any(File), 'Pedro Ramírez', expect.objectContaining({ D100: 100 }));
   });
 
   it('sin autorizados: muestra directamente el campo de texto (sin bloqueo)', async () => {
@@ -157,10 +185,11 @@ describe('MarkCashReturnDeliveredModal', () => {
 
     await user.type(screen.getByRole('textbox'), 'Alguien Externo');
     await user.upload(fileInput(), imageFile());
+    await fillCashBreakdown(user);
 
     expect(confirmButton()).toBeEnabled();
     await user.click(confirmButton());
-    expect(onConfirm).toHaveBeenCalledWith(42, 1500, expect.any(File), 'Alguien Externo');
+    expect(onConfirm).toHaveBeenCalledWith(42, 1500, expect.any(File), 'Alguien Externo', expect.objectContaining({ D100: 100 }));
   });
 
   it('mensaje según confirmación del socio', () => {
@@ -189,6 +218,7 @@ describe('MarkCashReturnDeliveredModal', () => {
 
     await user.selectOptions(selectEl(), 'María Gómez Díaz');
     await user.upload(fileInput(), imageFile());
+    await fillCashBreakdown(user);
     expect(confirmButton()).toBeEnabled();
 
     rerender(
