@@ -236,7 +236,7 @@ export function resolveReturnModalTitle(params: {
 }): string {
   const esEfectivo = isCashReturnMethod(params.tipoPago);
   if (params.variant === 'manage') {
-    if (esEfectivo) return 'Confirmar recolección';
+    if (esEfectivo) return 'Programar recolección';
     return params.estatus === 'RETORNADO' ? 'Retorno' : 'Retornar';
   }
   return esEfectivo ? 'Historial de recolecciones' : 'Historial de retornos';
@@ -260,7 +260,7 @@ export interface ReturnRowActionsView {
   primaryLabel: 'Ver recolección' | 'Ver retorno' | 'Retornar';
   /** Variante del modal que abre el botón principal. */
   primaryVariant: ReturnModalVariant;
-  /** Muestra el botón independiente "Confirmar recolección" (solo efectivo). */
+  /** Muestra el botón independiente "Programar recolección" (solo efectivo). */
   showConfirmRecoleccion: boolean;
 }
 

@@ -29,7 +29,7 @@ interface ReturnPaymentsTableProps {
   canEditRequestReturnPayments?: boolean;
   /** "Ver retorno" / "Ver recolección" — consulta de solo lectura. */
   onOpenReturn?: (returnRequest: ReturnPaymentResponse) => void;
-  /** "Retornar" (no efectivo) / "Confirmar recolección" (efectivo) — operativo. */
+  /** "Retornar" (no efectivo) / "Programar recolección" (efectivo) — operativo. */
   onManageReturn?: (returnRequest: ReturnPaymentResponse) => void;
   onEditReturn?: (returnPayment: ReturnPaymentResponse) => void;
   operationStatus?: OperationStatus;
@@ -156,7 +156,7 @@ export function ReturnPaymentsTable({
             onClick={() => onManageReturn?.(returnPayment)}
             className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700"
           >
-            Confirmar recolección
+            Programar recolección
           </button>
         )}
 

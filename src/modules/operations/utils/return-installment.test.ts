@@ -319,13 +319,13 @@ describe('installmentToCashDeliveryTarget', () => {
 });
 
 describe('resolveReturnModalTitle', () => {
-  it('efectivo: view → "Historial de recolecciones", manage → "Confirmar recolección"', () => {
+  it('efectivo: view → "Historial de recolecciones", manage → "Programar recolección"', () => {
     expect(
       resolveReturnModalTitle({ variant: 'view', tipoPago: 'EFECTIVO', estatus: 'EN_RECOLECCION' }),
     ).toBe('Historial de recolecciones');
     expect(
       resolveReturnModalTitle({ variant: 'manage', tipoPago: 'RETIRO_SIN_TARJETA', estatus: 'EN_RECOLECCION' }),
-    ).toBe('Confirmar recolección');
+    ).toBe('Programar recolección');
   });
 
   it('no efectivo: view → "Historial de retornos", manage → "Retornar"/"Retorno"', () => {
@@ -390,7 +390,7 @@ describe('resolveReturnRowActions', () => {
     expect(r.primaryVariant).toBe('view');
   });
 
-  it('efectivo: "Confirmar recolección" solo para la parte que falta confirmar', () => {
+  it('efectivo: "Programar recolección" solo para la parte que falta confirmar', () => {
     // La jefa ya cerró, falta el socio → botón solo para el socio.
     expect(
       resolveReturnRowActions({ ...efectivo, parcialidades: [soloJefa], canRegister: false, ...roles.socio })
@@ -433,7 +433,7 @@ describe('resolveReturnRowActions', () => {
     ).toBe(false);
   });
 
-  it('efectivo: un rol que no opera efectivo nunca ve "Confirmar recolección"', () => {
+  it('efectivo: un rol que no opera efectivo nunca ve "Programar recolección"', () => {
     expect(
       resolveReturnRowActions({ ...efectivo, parcialidades: [soloSocio], canRegister: false, ...roles.jefaCuentas })
         .showConfirmRecoleccion,
