@@ -17,6 +17,19 @@ beforeEach(() => {
   ] }]);
 });
 describe('prellenado de retornos', () => {
+  it('mantiene fijo el resumen y actualiza solicitado y faltante durante la captura', () => {
+    render(<RequestReturnForm {...props} montoSolicitado={100} faltaPorSolicitar={900} onSubmit={vi.fn()} />);
+    const summary = screen.getByTestId('return-live-summary');
+    expect(summary).toHaveClass('sticky', 'top-0');
+    expect(within(summary).getByText('$100.00')).toBeInTheDocument();
+    expect(within(summary).getByText('$900.00')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByPlaceholderText('1,000.00'), { target: { value: '250' } });
+
+    expect(within(summary).getByText('$350.00')).toBeInTheDocument();
+    expect(within(summary).getByText('$650.00')).toBeInTheDocument();
+  });
+
   it('cargar y prellenar no envía; permite editar y registra solo con el botón final', async () => {
     const submit = vi.fn().mockResolvedValue(undefined);
     render(<RequestReturnForm {...props} onSubmit={submit} />);

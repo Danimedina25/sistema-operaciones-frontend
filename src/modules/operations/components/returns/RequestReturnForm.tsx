@@ -295,6 +295,14 @@ export function RequestReturnForm({
   );
 
   const excedeMonto = totalSolicitado > montoDisponible;
+  const montoSolicitadoEnVivo = Math.max(
+    montoSolicitado - montoInicial + totalSolicitado,
+    0,
+  );
+  const faltaPorSolicitarEnVivo = Math.max(
+    montoTotalRetornar - montoSolicitadoEnVivo,
+    0,
+  );
 
   function updatePago(
     paymentId: string,
@@ -452,7 +460,7 @@ export function RequestReturnForm({
 
   return (
     <form className="space-y-6" onSubmit={handleSubmit}>
-      <div className="grid gap-3 rounded-xl bg-slate-50 p-4 text-sm md:grid-cols-4">
+      <div data-testid="return-live-summary" className="sticky top-0 z-50 -mx-4 -mt-4 grid grid-cols-2 gap-3 rounded-b-2xl border-b border-slate-200 bg-white px-4 py-3 text-sm shadow-lg before:absolute before:inset-x-0 before:-top-10 before:h-10 before:bg-white sm:-mx-7 sm:-mt-7 sm:px-5 sm:py-4 md:grid-cols-4">
         <div>
           <span className="block text-slate-500">Cliente</span>
           <span className="font-semibold text-slate-900">
@@ -470,17 +478,17 @@ export function RequestReturnForm({
         <div>
           <span className="block text-slate-500">Monto solicitado</span>
           <span className="font-semibold text-slate-900">
-            ${formatCurrencyDisplay(montoSolicitado)}
+            ${formatCurrencyDisplay(montoSolicitadoEnVivo)}
           </span>
         </div>
 
         <div>
           <span className="block text-slate-500">Falta por solicitar</span>
           <span
-            className={`font-semibold ${saldoPendiente === 0 ? 'text-emerald-700' : 'text-slate-900'
+            className={`font-semibold ${faltaPorSolicitarEnVivo === 0 ? 'text-emerald-700' : 'text-slate-900'
               }`}
           >
-            ${formatCurrencyDisplay(saldoPendiente)}
+            ${formatCurrencyDisplay(faltaPorSolicitarEnVivo)}
           </span>
         </div>
       </div>
