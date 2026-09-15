@@ -5,7 +5,7 @@ Implementación en el frontend y en el backend `Sistema de Operaciones`, módulo
 ## Alcance implementado
 
 - Una única caja abierta. Apertura por fecha y desglose de las once denominaciones: $1,000, $500, $200, $100, $50, $20, $10, $5, $2, $1 y $0.50.
-- Entradas y salidas manuales con concepto, banco cuando aplica, comprobante opcional y desglose. Los tipos describen el origen/destino del **efectivo físico**; registrar una transferencia, depósito o cheque pendiente en bancos no constituye una entrada física a esta caja.
+- Entradas y salidas manuales exclusivamente de efectivo, con concepto, comprobante opcional y desglose. El frontend solo envía `EFECTIVO` y el backend rechaza cheque, transferencia, depósito y retiros con o sin tarjeta. Los registros históricos de esos tipos se conservan para consulta.
 - Los retornos `EFECTIVO` generan automáticamente su salida cuando la Jefa de Cajas registra la entrega física. Ese modal exige el desglose exacto; entrega y salida se guardan en la misma transacción. Si no hay caja abierta del día, falta saldo o el desglose no coincide, ninguna de las dos operaciones se confirma. El importe se lee de la FK: `monto_manual` queda **NULL** y la referencia es única.
 - Libro por día/rango con concepto, entrada, salida y saldo acumulado; apertura, resumen diario, detalle por denominación, vínculo a operación y comprobante. Muestra los saldos originales, no reinicia el acumulado al filtrar.
 - Cierre con saldo esperado, contado, diferencia y explicación obligatoria si existe diferencia. Día cerrado inmutable; la siguiente apertura debe ser posterior y comenzar con el importe contado anterior. No se introduce un ajuste de efectivo automático ni se borra la diferencia.
@@ -26,7 +26,7 @@ Se leyeron ambos Excel y el Word originales. El Excel de caja incluye inicio, en
 
 Se reutilizan `OperationReturnInstallment`, `PaymentType`, los roles existentes, `AuthenticatedUserService`, `ApiResponse`, las excepciones comunes, JPA/transacciones, Axios, React Query, `useTableFilters`, `TableFilterSection`, `DateRangeCalendarField`, `FileUploadField`, carga existente a Firebase, enlaces a operaciones y el diseño visual de operaciones/corte. No se agregan dependencias.
 
-`PaymentType.RETIRO_SIN_TARJETA` en el sistema actual es un retorno al cliente con cuenta bancaria de origen y código propio; no equivale a una salida de Caja General y no se registra automáticamente allí. Los TD/RST capturados manualmente en Caja General representan efectivo recibido y deben diferenciarse de los retornos existentes. La relación con el futuro inventario de tarjetas queda pendiente de Fase 2.
+`PaymentType.RETIRO_SIN_TARJETA` en el sistema actual es un retorno al cliente con cuenta bancaria de origen y código propio; no equivale a una salida de Caja General y no se registra automáticamente allí. Los movimientos con tarjetas, depósitos, transferencias o cheques quedan fuera del alcance actual. La relación con el futuro inventario de tarjetas queda pendiente de Fase 2.
 
 ## API
 

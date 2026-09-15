@@ -4,7 +4,6 @@ export const DENOMINATIONS = [
 ] as const;
 export type Denomination = typeof DENOMINATIONS[number][0];
 export type CashCounts = Record<Denomination, number>;
-export const CASH_BANKS = ['BBVA', 'Banorte', 'Kapital', 'Inbursa', 'Bajío', 'Scotiabank', 'Scotiabank Nómina', 'Scotiabank RST'] as const;
 export const CONCEPTS = {
   EFECTIVO: 'Efectivo', CHEQUE: 'Cheque cobrado', TRANSFERENCIA: 'Transferencia', DEPOSITO: 'Depósito',
   RETIRO_CON_TARJETA: 'Retiro con tarjeta (TD)', RETIRO_SIN_TARJETA: 'Retiro sin tarjeta (RST)',

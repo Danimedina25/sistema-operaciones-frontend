@@ -5,7 +5,7 @@ import { uploadOperationProof } from '@/modules/operations/api/operations-storag
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { getApiErrorMessage } from '@/shared/utils/errors';
 import { cajaGeneralApi } from '../api/caja-general.api';
-import { CASH_BANKS, CONCEPTS, type CashConcept, type CashDay, type CashDelivery, type CreateCashMovement } from '../types/caja-general.types';
+import { type CashDay, type CashDelivery, type CreateCashMovement } from '../types/caja-general.types';
 import { currency, emptyCounts, parseCents, validateCashAmount } from '../utils/cash-amounts';
 import { DenominationFields } from './DenominationFields';
 import { cashButton, cashInput } from './CashDayForm';
@@ -15,9 +15,7 @@ export function CashMovementForm({ day, busy, onSubmit }: { day: CashDay; busy: 
   const [linked, setLinked] = useState(false);
   const [delivery, setDelivery] = useState<CashDelivery | null>(null);
   const [page, setPage] = useState(0);
-  const [type, setType] = useState<CashConcept>('EFECTIVO');
   const [concept, setConcept] = useState('');
-  const [bank, setBank] = useState('');
   const [amount, setAmount] = useState('');
   const [counts, setCounts] = useState(emptyCounts);
   const [files, setFiles] = useState<FileList>();
@@ -50,8 +48,8 @@ export function CashMovementForm({ day, busy, onSubmit }: { day: CashDay; busy: 
         }
         proof = uploaded.current!.url;
       }
-      const data = { direccion: direction, tipo: linked ? 'EFECTIVO' as const : type, concepto: concept.trim(),
-        banco: linked || type === 'EFECTIVO' ? null : bank, monto: linked ? null : parseCents(selectedAmount) / 100,
+      const data = { direccion: direction, tipo: 'EFECTIVO' as const, concepto: concept.trim(),
+        banco: null, monto: linked ? null : parseCents(selectedAmount) / 100,
         parcialidadId: linked ? delivery!.id : null, denominaciones: counts, comprobanteUrl: proof };
       const signature = JSON.stringify(data);
       if (retry.current?.signature !== signature) retry.current = { signature, id: crypto.randomUUID() };
@@ -94,22 +92,12 @@ export function CashMovementForm({ day, busy, onSubmit }: { day: CashDay; busy: 
         </div>
         <p className="text-sm text-slate-600">Importe de la entrega: <strong>{delivery ? currency(delivery.monto) : '—'}</strong>. Se toma del registro original.</p>
       </div> : <>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="text-sm font-medium text-slate-700">Tipo de concepto
-            <select value={type} onChange={e => setType(e.target.value as CashConcept)} className={cashInput}>
-              {Object.entries(CONCEPTS).map(([key, label]) => <option value={key} key={key}>{label}</option>)}
-            </select>
-          </label>
-          <label className="text-sm font-medium text-slate-700">Importe
+        <div>
+          <label className="block text-sm font-medium text-slate-700">Importe
             <input type="text" inputMode="decimal" required value={amount} onChange={e => setAmount(e.target.value)} className={cashInput} />
           </label>
         </div>
-        {type !== 'EFECTIVO' && <label className="block text-sm font-medium text-slate-700">Banco
-          <select required value={bank} onChange={e => setBank(e.target.value)} className={cashInput}>
-            <option value="">Selecciona un banco</option>{CASH_BANKS.map(name => <option key={name}>{name}</option>)}
-          </select>
-        </label>}
-        <p className="text-sm text-slate-600">Registra únicamente efectivo que entra o sale físicamente. Si ya existe una entrega, usa “Vincular entrega existente”.</p>
+        <p className="text-sm text-slate-600">Caja General registra exclusivamente efectivo que entra o sale físicamente. Si ya existe una entrega en efectivo, usa “Vincular entrega existente”.</p>
       </>}
       <label className="block text-sm font-medium text-slate-700">Concepto
         <input required maxLength={300} value={concept} onChange={e => setConcept(e.target.value)} className={cashInput} />
