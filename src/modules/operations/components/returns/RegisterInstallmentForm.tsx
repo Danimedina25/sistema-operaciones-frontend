@@ -33,6 +33,7 @@ interface RegisterInstallmentFormProps {
   bankAccounts: SelectOption[];
   isSubmitting: boolean;
   onSubmit: (values: RegisterInstallmentFormValues) => Promise<void>;
+  onAmountChange?: (amount: number) => void;
   /** Oculta el panel "Solicitud seleccionada" (lo muestra ReturnRequestSummarySection). */
   hideSummary?: boolean;
 }
@@ -48,6 +49,7 @@ export function RegisterInstallmentForm({
   bankAccounts,
   isSubmitting,
   onSubmit,
+  onAmountChange,
   hideSummary = false,
 }: RegisterInstallmentFormProps) {
   const totals = resolveReturnRequestTotals(returnRequest);
@@ -145,6 +147,7 @@ export function RegisterInstallmentForm({
           placeholder="0.00"
           className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
           {...register('monto', {
+            onChange: (event) => onAmountChange?.(parseMonto(event.target.value)),
             validate: (value) => {
               const n = parseMonto(value ?? '');
               if (n <= 0) return 'El importe debe ser mayor a 0';
@@ -156,11 +159,11 @@ export function RegisterInstallmentForm({
         />
         {errors.monto ? (
           <p className="mt-1 text-xs text-red-600">{errors.monto.message}</p>
-        ) : (
+        ) : !esEfectivo ? (
           <p className="mt-1 text-xs text-slate-500">
             Pendiente después del retorno: {formatCurrency(pendienteDespues)}
           </p>
-        )}
+        ) : null}
       </div>
 
       {requiereCuentaOrigen ? (

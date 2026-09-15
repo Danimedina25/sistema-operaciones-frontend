@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { History, PlusCircle } from 'lucide-react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts';
@@ -22,6 +22,7 @@ import {
 } from './RegisterInstallmentForm';
 import { ReturnRequestSummarySection } from './ReturnRequestSummarySection';
 import { InstallmentHistoryTable } from './InstallmentHistoryTable';
+import { formatCurrency } from '../../utils/operation-formatters';
 
 interface ReturnPaymentModalProps {
   open: boolean;
@@ -80,6 +81,10 @@ export function ReturnPaymentModal({
   const { user } = useAuth();
   const roles = user?.roles ?? [];
   const { accounts } = useBankAccounts();
+  const [cashDraft, setCashDraft] = useState<{ requestId: number | null; amount: number }>({
+    requestId: null,
+    amount: 0,
+  });
 
   const isManage = variant === 'manage';
   const isCashManage =
@@ -103,6 +108,7 @@ export function ReturnPaymentModal({
   };
 
   const totals = returnRequest ? resolveReturnRequestTotals(returnRequest) : null;
+  const cashDraftAmount = returnRequest?.id === cashDraft.requestId ? cashDraft.amount : 0;
   const esEfectivo = returnRequest
     ? isCashReturnMethod(returnRequest.tipoPago)
     : false;
@@ -165,6 +171,7 @@ export function ReturnPaymentModal({
             bankAccounts={bankAccounts}
             isSubmitting={isSubmittingInstallment}
             hideSummary
+            onAmountChange={(amount) => setCashDraft({ requestId: returnRequest.id, amount })}
             onSubmit={(values) =>
               onSubmitInstallment(returnRequest.id, {
                 ...values,
@@ -206,6 +213,28 @@ export function ReturnPaymentModal({
         // si aplica, el formulario para programar una nueva. Sin secciones
         // informativas.
         <div className="space-y-6">
+          {totals ? (
+            <section data-testid="cash-collection-summary" className="sticky top-0 z-50 -mx-4 -mt-4 grid grid-cols-2 gap-3 rounded-b-2xl border-b border-slate-200 bg-white px-4 py-3 text-sm shadow-lg before:absolute before:inset-x-0 before:-top-10 before:h-10 before:bg-white sm:-mx-7 sm:-mt-7 sm:px-5 sm:py-4 md:grid-cols-4">
+              <div>
+                <span className="block text-slate-500">Total solicitado</span>
+                <strong className="text-base text-slate-900">{formatCurrency(totals.montoSolicitado)}</strong>
+              </div>
+              <div>
+                <span className="block text-slate-500">Ya programado</span>
+                <strong className="text-base text-slate-900">{formatCurrency(totals.montoRetornado + totals.montoEnProceso)}</strong>
+              </div>
+              <div>
+                <span className="block text-slate-500">Nueva recolección</span>
+                <strong className="text-base text-slate-900">{formatCurrency(cashDraftAmount)}</strong>
+              </div>
+              <div>
+                <span className="block text-slate-500">Pendiente</span>
+                <strong className={cashDraftAmount >= totals.montoDisponible ? 'text-base text-emerald-700' : 'text-base text-amber-700'}>
+                  {formatCurrency(Math.max(totals.montoDisponible - cashDraftAmount, 0))}
+                </strong>
+              </div>
+            </section>
+          ) : null}
           <section className="rounded-2xl border border-slate-200 bg-white p-4">
             <h3 className="mb-3 text-sm font-semibold text-slate-900">
               Recolecciones registradas
