@@ -13,7 +13,10 @@ type Props = { busy: boolean } & (
 export function CashDayForm(props: Props) {
   const [fecha, setFecha] = useState(formatDate(new Date()));
   const [amount, setAmount] = useState(props.mode === 'open' ? String(props.previous?.saldoContado ?? 0) : '0');
-  const [counts, setCounts] = useState(emptyCounts);
+  const inheritsPreviousClose = props.mode === 'open' && props.previous !== null;
+  const [counts, setCounts] = useState(() => props.mode === 'open' && props.previous
+    ? { ...emptyCounts(), ...props.previous.cierre }
+    : emptyCounts());
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
   const [confirmZero, setConfirmZero] = useState(false);
@@ -51,11 +54,11 @@ export function CashDayForm(props: Props) {
       {props.mode === 'open' && <label className="block text-sm font-medium text-slate-700">Fecha de apertura
         <input type="date" required max={formatDate(new Date())} value={fecha} onChange={e => setFecha(e.target.value)} className={cashInput} />
       </label>}
-      {props.mode === 'open' && props.previous && <p className="text-sm text-slate-600">Último cierre contado: {currency(props.previous.saldoContado ?? 0)}. El saldo inicial debe coincidir.</p>}
+      {props.mode === 'open' && props.previous && <p className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">Saldo y denominaciones heredados del corte del <strong>{props.previous.fecha}</strong>: {currency(props.previous.saldoContado ?? 0)}. Revisa los datos y confirma la apertura.</p>}
       {props.mode === 'open' && <label className="block text-sm font-medium text-slate-700">Saldo inicial
-        <input type="text" inputMode="decimal" required value={amount} onChange={e => setAmount(e.target.value)} className={cashInput} />
+        <input type="text" inputMode="decimal" required readOnly={inheritsPreviousClose} value={amount} onChange={e => setAmount(e.target.value)} className={`${cashInput} ${inheritsPreviousClose ? 'cursor-not-allowed bg-slate-50 text-slate-600' : ''}`} />
       </label>}
-      <DenominationFields value={counts} onChange={setCounts} />
+      <DenominationFields value={counts} onChange={setCounts} disabled={inheritsPreviousClose} />
       {props.mode === 'close' && <>
         <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm sm:flex-row sm:items-center sm:justify-between">
           <span className="text-slate-600">Saldo esperado: <strong className="text-slate-950">{currency(props.day.saldoActual)}</strong></span>

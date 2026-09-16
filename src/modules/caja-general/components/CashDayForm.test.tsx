@@ -31,6 +31,29 @@ describe('Formulario de apertura y cierre', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Sí, registrar $0.00' }));
     await waitFor(() => expect(submit).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ saldoInicial: 0 })));
   });
+  it('hereda saldo y denominaciones del último corte y abre sin recapturarlos', async () => {
+    const submit = vi.fn().mockResolvedValue(undefined);
+    const previous = {
+      ...day,
+      closedAt: '2026-09-14T19:00:00',
+      saldoContado: 100,
+      cierre: { ...emptyCounts(), D50: 2 },
+    };
+    render(<CashDayForm mode="open" previous={previous} busy={false} onSubmit={submit} />);
+
+    expect(screen.getByLabelText('Saldo inicial')).toHaveValue('100');
+    expect(screen.getByLabelText('Saldo inicial')).toHaveAttribute('readonly');
+    expect(screen.getByLabelText('Cantidad de $50.00')).toHaveValue(2);
+    expect(screen.getByLabelText('Cantidad de $50.00')).toBeDisabled();
+    expect(screen.getByText(/Saldo y denominaciones heredados/)).toHaveTextContent('2026-09-14');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir caja' }));
+
+    await waitFor(() => expect(submit).toHaveBeenCalledWith(expect.objectContaining({
+      saldoInicial: 100,
+      denominaciones: expect.objectContaining({ D50: 2, D100: 0 }),
+    })));
+  });
   it('no permite confirmar cero si la caja cambió mientras el diálogo estaba abierto', () => {
     const submit = vi.fn();
     const current = { ...day, saldoActual: 0 };

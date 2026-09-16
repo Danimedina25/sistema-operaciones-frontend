@@ -5,6 +5,7 @@ Implementación en el frontend y en el backend `Sistema de Operaciones`, módulo
 ## Alcance implementado
 
 - Una única caja abierta. Apertura por fecha y desglose de las once denominaciones: $1,000, $500, $200, $100, $50, $20, $10, $5, $2, $1 y $0.50.
+- Cada apertura posterior hereda automáticamente el saldo contado y el desglose completo del último corte cerrado. Los valores se muestran prellenados y protegidos para que el usuario solo los revise y confirme; únicamente la primera apertura se captura manualmente.
 - Entradas y salidas de efectivo físico con tres conceptos: `EFECTIVO`, `CHEQUE` cobrado y `RETIRO_CON_TARJETA`. Cheque y retiro con tarjeta exigen un banco del catálogo. Transferencias, depósitos y retiros sin tarjeta se rechazan porque no incorporan efectivo físico a esta caja.
 - La UI v2 presenta saldo y totales diarios en un hero, separa el ciclo de apertura/cierre de los movimientos, muestra el progreso Apertura → En operación → Cierre y permite expandir una sola acción a la vez. El importe de cada movimiento y del cierre se calcula directamente desde las once denominaciones.
 - Los retornos `EFECTIVO` generan automáticamente su salida cuando la Jefa de Cajas registra la entrega física. Ese modal exige el desglose exacto; entrega y salida se guardan en la misma transacción. Si no hay caja abierta del día, falta saldo o el desglose no coincide, ninguna de las dos operaciones se confirma. El importe se lee de la FK: `monto_manual` queda **NULL** y la referencia es única.
