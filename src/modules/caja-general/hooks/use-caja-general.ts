@@ -2,13 +2,15 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { getApiErrorMessage } from '@/shared/utils/errors';
+import { formatDate } from '@/shared/utils/weeks';
 import { cajaGeneralApi } from '../api/caja-general.api';
 import type { CloseCashDay, CreateCashMovement, OpenCashDay } from '../types/caja-general.types';
 export function useCajaGeneral(start: string, end: string) {
   const client = useQueryClient();
   const { user } = useAuth();
   const latest = useQuery({ queryKey: ['caja-general', user?.userId, 'latest'], queryFn: cajaGeneralApi.latest });
-  const ledger = useQuery({ queryKey: ['caja-general', user?.userId, 'ledger', start, end], queryFn: () => cajaGeneralApi.ledger(start, end), enabled: Boolean(start && end && start <= end) });
+  const today = formatDate(new Date());
+  const ledger = useQuery({ queryKey: ['caja-general', user?.userId, 'ledger', start, end], queryFn: () => cajaGeneralApi.ledger(start, end), enabled: Boolean(start && end && start <= end && end <= today) });
   const options = {
     onSuccess: async () => {
       toast.success('Caja General actualizada');

@@ -11,7 +11,7 @@ type Props = { busy: boolean } & (
   { mode: 'close'; day: CashDay; onSubmit: (value: CloseCashDay) => Promise<unknown> }
 );
 export function CashDayForm(props: Props) {
-  const [fecha, setFecha] = useState(formatDate(new Date()));
+  const fecha = formatDate(new Date());
   const [amount, setAmount] = useState(props.mode === 'open' ? String(props.previous?.saldoContado ?? 0) : '0');
   const inheritsPreviousClose = props.mode === 'open' && props.previous !== null;
   const [counts, setCounts] = useState(() => props.mode === 'open' && props.previous
@@ -51,9 +51,7 @@ export function CashDayForm(props: Props) {
   }
   return <><form onSubmit={submit} className="space-y-4">
     <fieldset disabled={props.busy || changed || confirmZero} className="space-y-4">
-      {props.mode === 'open' && <label className="block text-sm font-medium text-slate-700">Fecha de apertura
-        <input type="date" required max={formatDate(new Date())} value={fecha} onChange={e => setFecha(e.target.value)} className={cashInput} />
-      </label>}
+      {props.mode === 'open' && <p className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">Fecha de apertura: <strong className="text-slate-950">{fecha}</strong></p>}
       {props.mode === 'open' && props.previous && <p className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">Saldo y denominaciones heredados del corte del <strong>{props.previous.fecha}</strong>: {currency(props.previous.saldoContado ?? 0)}. Revisa los datos y confirma la apertura.</p>}
       {props.mode === 'open' && <label className="block text-sm font-medium text-slate-700">Saldo inicial
         <input type="text" inputMode="decimal" required readOnly={inheritsPreviousClose} value={amount} onChange={e => setAmount(e.target.value)} className={`${cashInput} ${inheritsPreviousClose ? 'cursor-not-allowed bg-slate-50 text-slate-600' : ''}`} />

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { DateRange } from 'react-date-range';
+import { DateRange, type RangeKeyDict } from 'react-date-range';
 import 'react-date-range/dist/styles.css';
 import 'react-date-range/dist/theme/default.css';
 import { dateToISO, formatDisplayDate, isoToDate } from '@/shared/utils/date-formats';
@@ -15,6 +15,7 @@ interface DateRangeCalendarFieldProps {
   onChange: (value: DateRangeValue) => void;
   placeholder?: string;
   className?: string;
+  maxDate?: Date;
 }
 
 export function DateRangeCalendarField({
@@ -23,6 +24,7 @@ export function DateRangeCalendarField({
   onChange,
   placeholder = 'Selecciona un rango de fechas',
   className = '',
+  maxDate,
 }: DateRangeCalendarFieldProps) {
   const [open, setOpen] = useState(false);
   const [draftRange, setDraftRange] = useState({
@@ -33,15 +35,18 @@ export function DateRangeCalendarField({
 
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    if (!open) return;
-
+  function toggleCalendar() {
+    if (open) {
+      setOpen(false);
+      return;
+    }
     setDraftRange({
       startDate: startDate ? isoToDate(startDate) : new Date(),
       endDate: endDate ? isoToDate(endDate) : new Date(),
       key: 'selection',
     });
-  }, [open, startDate, endDate]);
+    setOpen(true);
+  }
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -79,7 +84,7 @@ export function DateRangeCalendarField({
     <div ref={containerRef} className={`relative ${className}`}>
       <button
         type="button"
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={toggleCalendar}
         className="flex h-11 w-full items-center rounded-lg border border-slate-300 bg-white px-3 text-left text-sm text-slate-700 outline-none focus:border-slate-900"
       >
         <span className={hasValue ? '' : 'text-slate-400'}>{label}</span>
@@ -96,7 +101,7 @@ export function DateRangeCalendarField({
           <div className="fixed inset-x-2 top-1/2 z-50 max-h-[85vh] -translate-y-1/2 overflow-x-auto overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3 shadow-xl sm:absolute sm:inset-x-auto sm:left-0 sm:top-11 sm:max-h-none sm:translate-y-0 sm:overflow-visible sm:p-4">
             <DateRange
               ranges={[draftRange]}
-              onChange={(item: any) => {
+              onChange={(item: RangeKeyDict) => {
                 const selection = item.selection;
 
                 setDraftRange({
@@ -110,6 +115,7 @@ export function DateRangeCalendarField({
               editableDateInputs={false}
               showDateDisplay={false}
               showMonthAndYearPickers
+              maxDate={maxDate}
               rangeColors={['#0f172a']}
               months={1}
               direction="horizontal"
