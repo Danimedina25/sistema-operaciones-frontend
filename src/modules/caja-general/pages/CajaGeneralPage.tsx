@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowDown, ArrowUp, Landmark, WalletCards } from 'lucide-react';
+import { ArrowDown, ArrowUp, Banknote, WalletCards } from 'lucide-react';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { TableFilterSection } from '@/shared/components/ui/TableFilterSection';
 import { DateRangeCalendarField } from '@/shared/components/ui/DateRangeCalendarField';
@@ -53,7 +53,7 @@ export default function CajaGeneralPage() {
 
   return <div className="mx-auto max-w-[1180px] space-y-6 pb-10">
     <header>
-      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-blue-700"><Landmark className="h-4 w-4" /> Control de efectivo</p>
+      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-blue-700"><Banknote className="h-4 w-4" /> Control de efectivo</p>
       <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Caja General</h1>
       <p className="mt-1 text-sm text-slate-500">Control diario de entradas, salidas y corte por denominación.</p>
     </header>

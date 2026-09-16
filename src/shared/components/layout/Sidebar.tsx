@@ -10,6 +10,7 @@ import {
   HandCoins,
   BadgeDollarSign,
   LogOut,
+  Banknote,
   BanknoteArrowDown,
   ClipboardCheck,
   ListTodo,
@@ -38,7 +39,7 @@ const navItems: NavItem[] = [
   {
     to: paths.cajaGeneral,
     label: 'Caja General',
-    icon: Landmark,
+    icon: Banknote,
     allowedRoles: ROUTE_ACCESS.cajaGeneral,
   },
   {
