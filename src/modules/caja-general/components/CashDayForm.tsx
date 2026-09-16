@@ -71,7 +71,7 @@ export function CashDayForm(props: Props) {
         </label>
         <p className="text-sm text-slate-600">Al cerrar se conserva el conteo y ya no se podrán registrar movimientos en este día.</p>
       </>}
-      <div className="flex justify-end"><button disabled={props.busy || changed} className={cashButton}>{props.busy ? 'Guardando…' : props.mode === 'open' ? 'Abrir caja' : 'Cerrar caja con este conteo'}</button></div>
+      <button disabled={props.busy || changed} className={`${cashButton} w-full`}>{props.busy ? 'Guardando…' : props.mode === 'open' ? 'Abrir caja' : 'Cerrar caja con este conteo'}</button>
     </fieldset>
     {changed && <p role="alert" className="text-sm text-amber-700">La caja cambió durante el conteo. Vuelve a la pestaña de movimientos y abre nuevamente el cierre para revisar el saldo actualizado.</p>}
     {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
