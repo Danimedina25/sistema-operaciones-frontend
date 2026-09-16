@@ -72,6 +72,34 @@ Un pago sólo cuenta como `VALIDADA` y por su `fechaValidacion`; una parcialidad
 `EFECTIVO` nunca admite banco ni cuenta. `RETIRO_CON_TARJETA` conserva el catálogo fijo
 (`CASH_CARD_BANKS`) y no afecta ningún saldo bancario.
 
+## Alcance de cada corte (definido por negocio)
+
+- **"Cortes y saldos"** (`daily_cash_cuts`, global) es la posición de las **cuentas bancarias**.
+- **"Caja General"** (`cash_general_days`) es el **efectivo físico**.
+
+De ahí se sigue que cobrar un cheque en ventanilla es una **salida del corte global**: el
+dinero dejó el banco y se volvió efectivo. Su entrada correspondiente ya vivía en el libro de
+Caja General. Antes de este cambio el corte global nunca miró `cash_general_movements`, así que
+el saldo bancario quedaba inflado por cada cheque cobrado.
+
+La columna es `daily_cash_cuts.salidas_cheque_cobrado`, con `DEFAULT 0` y sin recálculo: los
+cortes históricos conservan intactos su `total_salidas` y su `saldo_final`, y la cadena de
+saldo inicial no se mueve.
+
+A diferencia del corte **por cuenta**, el corte **global** incluye también los cheques
+históricos que sólo guardan el nombre del banco como texto: no se sabe de qué cuenta salieron,
+pero salieron de alguna, y aquí no hace falta atribuirlos.
+
+Dos conceptos siguen sin encajar en esa definición y están pendientes de decisión:
+
+- `entradasEfectivo` y `retornosEfectivo` en el corte global son movimientos de **efectivo**,
+  no de bancos. Bajo la definición anterior los cubría el mismo saldo; bajo la nueva no
+  deberían estar ahí. Sacarlos cambia el significado de toda la cadena histórica de
+  `saldo_final`, así que necesita una decisión aparte y probablemente un recálculo.
+- `RETIRO_CON_TARJETA` tiene exactamente la misma forma que el cheque cobrado —saca dinero de
+  un banco y lo vuelve efectivo— y por la misma razón debería restarse del corte global. No se
+  incluyó todavía por instrucción explícita.
+
 ## Cortes bancarios
 
 `bank_account_daily_cuts` gana la columna `salidas_cheque`, con `DEFAULT 0`. Se agrega como

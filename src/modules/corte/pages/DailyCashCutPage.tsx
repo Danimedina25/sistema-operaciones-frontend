@@ -387,7 +387,7 @@ export default function DailyCashCutPage() {
 
                                 <BreakdownCard
                                     title="Salidas"
-                                    description="Dinero pagado por retornos a clientes y/o comisiones de socios comerciales."
+                                    description="Dinero que sale de las cuentas bancarias: retornos a clientes, comisiones de socios y cheques cobrados que pasan a efectivo."
                                     totalLabel="Total salidas"
                                     total={currentData.totalSalidas}
                                     highlight="negative"
@@ -407,6 +407,10 @@ export default function DailyCashCutPage() {
                                         {
                                             label: 'Retornos a clientes por cheque',
                                             value: currentData.retornosCheque,
+                                        },
+                                        {
+                                            label: 'Cheques cobrados hacia Caja General',
+                                            value: currentData.salidasChequeCobrado,
                                         },
                                         {
                                             label: 'Pago de comisiones a socios comerciales',

@@ -20,6 +20,8 @@ export interface DailyCashCutResponse {
   retornosCheque: number;
   totalRetornos: number;
 
+  /** Cheques cobrados en ventanilla: salen del banco y entran como efectivo a Caja General. */
+  salidasChequeCobrado: number;
   totalComisionesSocios: number;
   totalComisionesOficina: number;
 
@@ -55,6 +57,8 @@ export interface CashCutRangeResponse {
   retornosCheque: number;
   totalRetornos: number;
 
+  /** Cheques cobrados en ventanilla: salen del banco y entran como efectivo a Caja General. */
+  salidasChequeCobrado: number;
   totalComisionesSocios: number;
   totalComisionesOficina: number;
 
