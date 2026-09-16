@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Modal } from '@/shared/components/ui/Modal';
 import type { CashDay } from '../types/caja-general.types';
 import { currency } from '../utils/cash-amounts';
+import { formatCashDate } from '../utils/cash-dates';
 
 export function DeleteCashDayModal({ day, movementCount, isSubmitting, onClose, onConfirm }: {
   day: CashDay | null;
@@ -22,7 +23,7 @@ export function DeleteCashDayModal({ day, movementCount, isSubmitting, onClose, 
         <p className="mt-1">Las operaciones y los retornos originales vinculados se conservarán.</p>
       </div>
       <dl className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-white p-4 text-sm">
-        <div><dt className="text-slate-500">Fecha</dt><dd className="font-semibold">{day.fecha}</dd></div>
+        <div><dt className="text-slate-500">Fecha</dt><dd className="font-semibold">{formatCashDate(day.fecha)}</dd></div>
         <div><dt className="text-slate-500">Movimientos</dt><dd className="font-semibold">{movementCount}</dd></div>
         <div><dt className="text-slate-500">Saldo inicial</dt><dd className="font-semibold">{currency(day.saldoInicial)}</dd></div>
         <div><dt className="text-slate-500">Saldo esperado</dt><dd className="font-semibold">{currency(day.saldoActual)}</dd></div>

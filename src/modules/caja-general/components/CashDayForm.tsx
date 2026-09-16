@@ -4,6 +4,7 @@ import { DenominationFields } from './DenominationFields';
 import { countCents, currency, emptyCounts, parseCents, validateCashAmount } from '../utils/cash-amounts';
 import type { CashDay, CloseCashDay, OpenCashDay } from '../types/caja-general.types';
 import { formatDate } from '@/shared/utils/weeks';
+import { formatCashDate } from '../utils/cash-dates';
 export const cashInput = 'mt-1 h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-200';
 export const cashButton = 'rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50';
 type Props = { busy: boolean } & (
@@ -51,8 +52,8 @@ export function CashDayForm(props: Props) {
   }
   return <><form onSubmit={submit} className="space-y-4">
     <fieldset disabled={props.busy || changed || confirmZero} className="space-y-4">
-      {props.mode === 'open' && <p className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">Fecha de apertura: <strong className="text-slate-950">{fecha}</strong></p>}
-      {props.mode === 'open' && props.previous && <p className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">Saldo y denominaciones heredados del corte del <strong>{props.previous.fecha}</strong>: {currency(props.previous.saldoContado ?? 0)}. Revisa los datos y confirma la apertura.</p>}
+      {props.mode === 'open' && <p className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">Fecha de apertura: <strong className="text-slate-950">{formatCashDate(fecha)}</strong></p>}
+      {props.mode === 'open' && props.previous && <p className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">Saldo y denominaciones heredados del corte del <strong>{formatCashDate(props.previous.fecha)}</strong>: {currency(props.previous.saldoContado ?? 0)}. Revisa los datos y confirma la apertura.</p>}
       {props.mode === 'open' && <label className="block text-sm font-medium text-slate-700">Saldo inicial
         <input type="text" inputMode="decimal" required readOnly={inheritsPreviousClose} value={amount} onChange={e => setAmount(e.target.value)} className={`${cashInput} ${inheritsPreviousClose ? 'cursor-not-allowed bg-slate-50 text-slate-600' : ''}`} />
       </label>}
@@ -78,7 +79,7 @@ export function CashDayForm(props: Props) {
       <div className="space-y-5">
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
           <p className="font-semibold">Todas las denominaciones están en cero.</p>
-          <p className="mt-2 text-sm">Estás capturando <strong>$0.00</strong> como {props.mode === 'close' ? 'saldo contado del corte' : 'saldo inicial de apertura'} del día <strong>{props.mode === 'close' ? props.day.fecha : fecha}</strong>.</p>
+          <p className="mt-2 text-sm">Estás capturando <strong>$0.00</strong> como {props.mode === 'close' ? 'saldo contado del corte' : 'saldo inicial de apertura'} del día <strong>{formatCashDate(props.mode === 'close' ? props.day.fecha : fecha)}</strong>.</p>
         </div>
         <p className="text-sm text-slate-600">¿Deseas registrar este importe o volver para capturar las cantidades?</p>
         {changed && <p role="alert" className="text-sm text-amber-700">La caja cambió durante el conteo. Vuelve para revisar el saldo actualizado.</p>}

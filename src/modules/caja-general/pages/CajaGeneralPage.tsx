@@ -13,6 +13,7 @@ import { CashLedgerTable } from '../components/CashLedgerTable';
 import { DeleteCashDayModal } from '../components/DeleteCashDayModal';
 import type { CashDay } from '../types/caja-general.types';
 import { currency } from '../utils/cash-amounts';
+import { formatCashDate } from '../utils/cash-dates';
 
 type ActivePanel = 'ENTRADA' | 'SALIDA' | 'open' | 'close' | null;
 
@@ -86,9 +87,9 @@ export default function CajaGeneralPage() {
       <div className="flex items-start gap-3">
         <span className={`rounded-xl p-2.5 ${isOpen ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}><WalletCards className="h-5 w-5" /></span>
         <div>
-          <p className="flex items-center gap-2 text-sm font-semibold text-slate-950">{filters.mode === 'daily' ? (viewingToday ? 'Caja de hoy' : `Caja del ${filters.fecha}`) : 'Último corte del periodo'} {isOpen && <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />} {day ? (isOpen ? 'Abierta' : 'Cerrada') : 'Sin corte'}</p>
+          <p className="flex items-center gap-2 text-sm font-semibold text-slate-950">{filters.mode === 'daily' ? (viewingToday ? 'Caja de hoy' : `Caja del ${formatCashDate(filters.fecha)}`) : 'Último corte del periodo'} {isOpen && <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />} {day ? (isOpen ? 'Abierta' : 'Cerrada') : 'Sin corte'}</p>
           <p className="mt-1 text-sm text-slate-500">{day
-            ? `Corte ${day.fecha} · ${isOpen ? `abierta a las ${openingTime(day.createdAt)} por ${day.abiertoPorNombre || `Usuario #${day.abiertoPor}`}` : 'sin sesión activa'} · saldo inicial ${currency(day.saldoInicial)}`
+            ? `Corte del día ${formatCashDate(day.fecha)} · ${isOpen ? `abierta a las ${openingTime(day.createdAt)} por ${day.abiertoPorNombre || `Usuario #${day.abiertoPor}`}` : 'sin sesión activa'} · saldo inicial ${currency(day.saldoInicial)}`
             : 'Todavía no existe un corte de Caja General.'}</p>
         </div>
       </div>
