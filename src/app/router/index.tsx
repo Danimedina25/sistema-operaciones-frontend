@@ -31,6 +31,7 @@ import CommercialPartnersPage from '@/modules/socioscomerciales/pages/Commercial
 import CommercialPartnerCommissionsPage from '@/modules/comisionessocioscomerciales/pages/CommercialPartnerCommissionsPage';
 import MyCommercialPartnerCommissionsPage from '@/modules/comisionessocioscomerciales/pages/MyCommercialPartnerCommissionsPage';
 import DailyCashCutPage from '@/modules/corte/pages/DailyCashCutPage';
+import { BankMovementsPage } from '@/modules/corte/pages/BankMovementsPage';
 import ReturnsRequestedPage from '@/modules/operations/pages/ReturnsRequestedPage';
 import TodayCashDeliveriesPage from '@/modules/operations/pages/TodayCashDeliveriesPage';
 import ConfiguracionesPage from '@/modules/configuraciones/pages/ConfiguracionesPage';
@@ -75,6 +76,15 @@ export const router = createBrowserRouter([
               {
                 path: paths.corte,
                 element: <DailyCashCutPage />,
+              },
+            ],
+          },
+          {
+            element: <RoleGuard allowedRoles={ROUTE_ACCESS.bankMovements} />,
+            children: [
+              {
+                path: paths.bankMovements,
+                element: <BankMovementsPage />,
               },
             ],
           },

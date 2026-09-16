@@ -66,6 +66,12 @@ const navItems: NavItem[] = [
     allowedRoles: ROUTE_ACCESS.corte,
   },
   {
+    to: paths.bankMovements,
+    label: 'Movimientos bancarios',
+    icon: LayoutDashboard,
+    allowedRoles: ROUTE_ACCESS.bankMovements,
+  },
+  {
     to: paths.users,
     label: 'Usuarios',
     icon: Users,

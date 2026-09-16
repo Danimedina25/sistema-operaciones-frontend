@@ -4,7 +4,11 @@ export const DENOMINATIONS = [
 ] as const;
 export type Denomination = typeof DENOMINATIONS[number][0];
 export type CashCounts = Record<Denomination, number>;
-export const CASH_BANKS = ['BBVA', 'Banorte', 'Scotiabank', 'Inbursa', 'Kapital', 'Bajío'] as const;
+/**
+ * Catálogo fijo heredado. Sólo sigue vigente para `RETIRO_CON_TARJETA`: el cheque cobrado
+ * ya no usa nombres de banco sino la cuenta bancaria real del sistema.
+ */
+export const CASH_CARD_BANKS = ['BBVA', 'Banorte', 'Scotiabank', 'Inbursa', 'Kapital', 'Bajío'] as const;
 export const CASH_MOVEMENT_CONCEPTS = {
   EFECTIVO: 'Efectivo', CHEQUE: 'Cheque cobrado', RETIRO_CON_TARJETA: 'Retiro con tarjeta',
 } as const;
@@ -19,6 +23,8 @@ export interface CashDay {
 export interface CashMovement {
   id: number; diaId: number; fecha: string; createdAt: string; direccion: 'ENTRADA' | 'SALIDA';
   tipo: CashConcept; concepto: string; banco: string | null; monto: number; saldoAcumulado: number;
+  bankAccountId: number | null; cuentaBanco: string | null; cuentaTitular: string | null;
+  cuentaNumero: string | null; cuentaActiva: boolean | null;
   parcialidadId: number | null; operacionId: number | null; denominaciones: CashCounts;
   comprobanteUrl: string | null; creadoPor: number;
 }
@@ -27,5 +33,6 @@ export interface OpenCashDay { fecha: string; saldoInicial: number; denominacion
 export interface CloseCashDay { saldoContado: number; version: number; denominaciones: CashCounts; observaciones: string }
 export interface CreateCashMovement {
   requestId: string; direccion: 'ENTRADA' | 'SALIDA'; tipo: CashConcept; concepto: string; banco: string | null;
+  bankAccountId: number | null;
   monto: number | null; parcialidadId: number | null; denominaciones: CashCounts; comprobanteUrl: string | null;
 }

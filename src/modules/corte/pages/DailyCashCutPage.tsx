@@ -11,6 +11,7 @@ import { useDailyCashCut } from '../hooks/use-daily-cash-cut';
 import { formatDate } from '@/modules/operations/utils/operation-formatters';
 import { formatDate as toISODate } from '@/shared/utils/weeks';
 import { DateRangeCalendarField } from '@/shared/components/ui/DateRangeCalendarField';
+import { maskAccountNumber } from '@/shared/utils/account-formatting';
 import { ArrowDownToLine, ArrowUpFromLine, Building2, CalendarDays, Landmark, LoaderCircle, Scale, Search } from 'lucide-react';
 
 function todayISO() {
@@ -105,10 +106,6 @@ export default function DailyCashCutPage() {
 
         fetchRangeCut(startDate, endDate);
     }, [fecha, mainView, dateMode, startDate, endDate]);
-
-    useEffect(() => {
-        console.log('bankBalancesGrouped', bankBalancesGrouped);
-    }, [bankBalancesGrouped]);
 
 
     const cashCutTitle = isDailyMode
@@ -805,10 +802,10 @@ function BankGroupAccordion({
 
                                 <div className="mt-1 flex flex-col gap-1 text-xs text-slate-500 sm:flex-row sm:gap-4">
                                     <span>
-                                        Cuenta: {maskAccount(account.numeroCuenta)}
+                                        Cuenta: {maskAccountNumber(account.numeroCuenta)}
                                     </span>
                                     <span>
-                                        CLABE: {maskAccount(account.clabe)}
+                                        CLABE: {maskAccountNumber(account.clabe)}
                                     </span>
                                 </div>
                             </div>
@@ -834,14 +831,3 @@ function BankGroupAccordion({
     );
 }
 
-function maskAccount(value?: string | null) {
-    if (!value) return '—';
-
-    const cleanValue = value.trim();
-
-    if (cleanValue.length <= 4) {
-        return cleanValue;
-    }
-
-    return `****${cleanValue.slice(-4)}`;
-}

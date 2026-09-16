@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import { buildOperationDetailPath } from '@/routes/paths';
-import { DENOMINATIONS, type CashCounts, type CashLedger } from '../types/caja-general.types';
+import { formatBankAccountLabel } from '@/shared/utils/bank-account-label';
+import { maskAccountNumber } from '@/shared/utils/account-formatting';
+import { DENOMINATIONS, type CashCounts, type CashLedger, type CashMovement } from '../types/caja-general.types';
 import { currency } from '../utils/cash-amounts';
 import { formatCashDate, formatCashDateTime } from '../utils/cash-dates';
 export function CountSummary({ counts }: { counts: Partial<CashCounts> }) {
@@ -8,6 +10,23 @@ export function CountSummary({ counts }: { counts: Partial<CashCounts> }) {
     <tbody>{DENOMINATIONS.map(([key, cents]) => <tr key={key}><td>{currency(cents / 100)}</td><td>{counts[key] ?? 0}</td><td>{currency((counts[key] ?? 0) * cents / 100)}</td></tr>)}</tbody>
   </table>;
 }
+/**
+ * Los movimientos nuevos de cheque cobrado llevan cuenta bancaria real; los anteriores a la
+ * integración sólo conservan el nombre del banco como texto. Las cuentas inactivas se siguen
+ * mostrando: el histórico no se reescribe.
+ */
+function describeAccount(movement: CashMovement): string | null {
+  if (movement.cuentaTitular && movement.cuentaBanco && movement.cuentaNumero) {
+    const label = formatBankAccountLabel({
+      titular: movement.cuentaTitular,
+      banco: movement.cuentaBanco,
+      numeroCuenta: maskAccountNumber(movement.cuentaNumero),
+    });
+    return movement.cuentaActiva === false ? `${label} (inactiva)` : label;
+  }
+  return movement.banco;
+}
+
 export function CashLedgerTable({ ledger, canDelete = false, onDelete }: { ledger: CashLedger; canDelete?: boolean; onDelete?: (day: CashLedger['dias'][number]) => void }) {
   if (ledger.dias.length === 0) return <p className="p-6 text-sm text-slate-500">No hay aperturas registradas en este periodo.</p>;
   return <div className="space-y-6">{ledger.dias.map(day => {
@@ -24,7 +43,7 @@ export function CashLedgerTable({ ledger, canDelete = false, onDelete }: { ledge
           <tr><td className="px-4 py-3"><details><summary className="cursor-pointer font-medium">Inicio en caja</summary><CountSummary counts={day.apertura} /></details></td><td /><td /><td className="px-4 py-3 text-right font-semibold">{currency(day.saldoInicial)}</td></tr>
           {movements.map(m => <tr key={m.id}>
             <td className="min-w-72 px-4 py-3"><details><summary className="cursor-pointer font-medium text-slate-800">{m.concepto}{m.parcialidadId ? <span className="ml-2 text-xs font-normal text-slate-400">vinculado</span> : null}</summary>
-              <div className="mt-2 space-y-2 text-xs text-slate-600"><p>Registro #{m.id} · {formatCashDateTime(m.createdAt)} · Usuario #{m.creadoPor}{m.banco ? ` · ${m.banco}` : ''}</p>
+              <div className="mt-2 space-y-2 text-xs text-slate-600"><p>Registro #{m.id} · {formatCashDateTime(m.createdAt)} · Usuario #{m.creadoPor}{describeAccount(m) ? ` · ${describeAccount(m)}` : ''}</p>
                 {m.parcialidadId && m.operacionId && <Link className="text-blue-700 underline" to={buildOperationDetailPath(m.operacionId)}>Operación #{m.operacionId} · Entrega #{m.parcialidadId}</Link>}
                 {m.comprobanteUrl?.startsWith('https://') && <a className="block text-blue-700 underline" target="_blank" rel="noreferrer" href={m.comprobanteUrl}>Ver comprobante</a>}
                 <CountSummary counts={m.denominaciones} />

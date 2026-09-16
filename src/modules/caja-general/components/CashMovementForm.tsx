@@ -1,6 +1,8 @@
-import { useRef, useState, type FormEvent } from 'react';
+import { useMemo, useRef, useState, type FormEvent } from 'react';
 import { getApiErrorMessage } from '@/shared/utils/errors';
-import { CASH_BANKS, CASH_MOVEMENT_CONCEPTS, type CapturableCashConcept, type CashDay, type CreateCashMovement } from '../types/caja-general.types';
+import { BankAccountCombobox } from '@/shared/components/ui/BankAccountCombobox';
+import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts';
+import { CASH_CARD_BANKS, CASH_MOVEMENT_CONCEPTS, type CapturableCashConcept, type CashDay, type CreateCashMovement } from '../types/caja-general.types';
 import { countCents, emptyCounts, validateCashAmount } from '../utils/cash-amounts';
 import { DenominationFields } from './DenominationFields';
 import { cashInput } from './CashDayForm';
@@ -15,10 +17,25 @@ export function CashMovementForm({ direction, day, busy, onSubmit }: {
 }) {
   const [type, setType] = useState<CapturableCashConcept>('EFECTIVO');
   const [bank, setBank] = useState('');
+  const [bankAccountId, setBankAccountId] = useState<number | null>(null);
   const [counts, setCounts] = useState(emptyCounts);
   const [error, setError] = useState('');
   const retry = useRef<{ signature: string; id: string } | null>(null);
   const totalCents = countCents(counts);
+  const { accounts, isLoading: loadingAccounts } = useBankAccounts();
+
+  // El cheque cobrado saca efectivo del banco, así que sólo existe como entrada de caja.
+  const concepts = useMemo(
+    () => Object.entries(CASH_MOVEMENT_CONCEPTS)
+      .filter(([value]) => direction === 'ENTRADA' || value !== 'CHEQUE') as [CapturableCashConcept, string][],
+    [direction],
+  );
+
+  function changeType(next: CapturableCashConcept) {
+    setType(next);
+    setBank('');
+    setBankAccountId(null);
+  }
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -28,24 +45,32 @@ export function CashMovementForm({ direction, day, busy, onSubmit }: {
     if (direction === 'SALIDA' && totalCents > Math.round(day.saldoActual * 100)) {
       setError('Saldo insuficiente: la caja no puede quedar negativa.'); return;
     }
-    if (type !== 'EFECTIVO' && !bank) { setError('Selecciona el banco relacionado con el movimiento.'); return; }
+    if (type === 'CHEQUE' && !bankAccountId) {
+      setError('Selecciona la cuenta bancaria de la que se cobró el cheque.'); return;
+    }
+    if (type === 'RETIRO_CON_TARJETA' && !bank) {
+      setError('Selecciona el banco relacionado con el movimiento.'); return;
+    }
 
     const data = {
       direccion: direction,
       tipo: type,
       concepto: CASH_MOVEMENT_CONCEPTS[type],
-      banco: type === 'EFECTIVO' ? null : bank,
+      banco: type === 'RETIRO_CON_TARJETA' ? bank : null,
+      bankAccountId: type === 'CHEQUE' ? bankAccountId : null,
       monto: amount,
       parcialidadId: null,
       denominaciones: counts,
       comprobanteUrl: null,
     };
+    // La cuenta forma parte de la firma: reintentar la misma captura conserva el UUID, y
+    // cambiar de cuenta genera uno nuevo porque ya es otro movimiento.
     const signature = JSON.stringify(data);
     if (retry.current?.signature !== signature) retry.current = { signature, id: crypto.randomUUID() };
     setError('');
     try {
       await onSubmit({ ...data, requestId: retry.current.id });
-      setType('EFECTIVO'); setBank(''); setCounts(emptyCounts()); retry.current = null;
+      setType('EFECTIVO'); setBank(''); setBankAccountId(null); setCounts(emptyCounts()); retry.current = null;
     } catch (err) { setError(getApiErrorMessage(err)); }
   }
 
@@ -54,16 +79,29 @@ export function CashMovementForm({ direction, day, busy, onSubmit }: {
     <fieldset disabled={busy} className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block text-sm font-medium text-slate-700">Concepto
-          <select aria-label="Concepto" value={type} onChange={event => { setType(event.target.value as CapturableCashConcept); setBank(''); }} className={cashInput}>
-            {Object.entries(CASH_MOVEMENT_CONCEPTS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          <select aria-label="Concepto" value={type} onChange={event => changeType(event.target.value as CapturableCashConcept)} className={cashInput}>
+            {concepts.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
         </label>
-        <label className="block text-sm font-medium text-slate-700">Banco {type === 'EFECTIVO' ? '(no aplica)' : ''}
-          <select aria-label="Banco" disabled={type === 'EFECTIVO'} value={bank} onChange={event => setBank(event.target.value)} className={cashInput}>
-            <option value="">—</option>
-            {CASH_BANKS.map(name => <option key={name} value={name}>{name}</option>)}
-          </select>
-        </label>
+
+        {type === 'CHEQUE' ? (
+          <BankAccountCombobox
+            label="Banco (cuenta que se debita)"
+            ariaLabel="Banco"
+            accounts={accounts}
+            value={bankAccountId}
+            onChange={setBankAccountId}
+            isLoading={loadingAccounts}
+            onlyActive
+          />
+        ) : (
+          <label className="block text-sm font-medium text-slate-700">Banco {type === 'EFECTIVO' ? '(no aplica)' : ''}
+            <select aria-label="Banco" disabled={type === 'EFECTIVO'} value={bank} onChange={event => setBank(event.target.value)} className={cashInput}>
+              <option value="">—</option>
+              {CASH_CARD_BANKS.map(name => <option key={name} value={name}>{name}</option>)}
+            </select>
+          </label>
+        )}
       </div>
 
       <DenominationFields value={counts} onChange={setCounts} />

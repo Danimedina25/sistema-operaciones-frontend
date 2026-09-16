@@ -6,13 +6,33 @@ Implementación en el frontend y en el backend `Sistema de Operaciones`, módulo
 
 - Una única caja abierta. Apertura por fecha y desglose de las once denominaciones: $1,000, $500, $200, $100, $50, $20, $10, $5, $2, $1 y $0.50.
 - Cada apertura posterior hereda automáticamente el saldo contado y el desglose completo del último corte cerrado. Los valores se muestran prellenados y protegidos para que el usuario solo los revise y confirme; únicamente la primera apertura se captura manualmente.
-- Entradas y salidas de efectivo físico con tres conceptos: `EFECTIVO`, `CHEQUE` cobrado y `RETIRO_CON_TARJETA`. Cheque y retiro con tarjeta exigen un banco del catálogo. Transferencias, depósitos y retiros sin tarjeta se rechazan porque no incorporan efectivo físico a esta caja.
+- Entradas y salidas de efectivo físico con tres conceptos: `EFECTIVO`, `CHEQUE` cobrado y `RETIRO_CON_TARJETA`. El cheque cobrado exige una **cuenta bancaria real y activa** del sistema, identificada por `bankAccountId`, y sólo existe como entrada; el retiro con tarjeta conserva el catálogo fijo de nombres de banco. Transferencias, depósitos y retiros sin tarjeta se rechazan porque no incorporan efectivo físico a esta caja.
 - La UI v2 presenta saldo y totales diarios en un hero, separa el ciclo de apertura/cierre de los movimientos, muestra el progreso Apertura → En operación → Cierre y permite expandir una sola acción a la vez. El importe de cada movimiento y del cierre se calcula directamente desde las once denominaciones.
 - Los retornos `EFECTIVO` generan automáticamente su salida cuando la Jefa de Cajas registra la entrega física. Ese modal exige el desglose exacto; entrega y salida se guardan en la misma transacción. Si no hay caja abierta del día, falta saldo o el desglose no coincide, ninguna de las dos operaciones se confirma. El importe se lee de la FK: `monto_manual` queda **NULL** y la referencia es única.
 - Libro por día/rango con concepto, entrada, salida y saldo acumulado; apertura, resumen diario, detalle por denominación, vínculo a operación y comprobante. Muestra los saldos originales, no reinicia el acumulado al filtrar.
 - Cierre con saldo esperado, contado, diferencia y explicación obligatoria si existe diferencia. Día cerrado inmutable; la siguiente apertura debe ser posterior y comenzar con el importe contado anterior. No se introduce un ajuste de efectivo automático ni se borra la diferencia.
 - Registro de usuario y fecha para apertura, movimientos y cierre. Administración y Jefa de Cajas pueden registrar; Gerencia y Dirección consultan. Autorización en backend y guardas/menú en frontend.
 - Solo Administración puede eliminar un corte de cualquier fecha. La confirmación exige escribir `ELIMINAR`, indicar el motivo y trabajar sobre la versión consultada. Se eliminan el día, movimientos y desgloses, mientras las operaciones/retornos originales permanecen. Una auditoría independiente conserva fecha, saldos, cantidad de movimientos, motivo, usuario y hora de eliminación.
+
+## Cheque cobrado y cuenta bancaria
+
+Cobrar un cheque saca dinero de una cuenta bancaria y lo mete al efectivo físico. Desde
+septiembre de 2026 ese movimiento afecta los dos libros: un mismo renglón de
+`cash_general_movements` es a la vez la entrada de efectivo y la salida bancaria, así que es
+imposible que exista una sin la otra y la idempotencia por `requestId` protege a ambas.
+
+El banco ya no se escribe: se elige la cuenta en un selector buscable que filtra por titular,
+banco y número, y que sólo ofrece cuentas activas. El texto `banco` se conserva como snapshot
+para que el histórico siga siendo legible. Los movimientos anteriores a este cambio quedan como
+"cuenta no vinculada" y no entran al saldo bancario: no se adivina una cuenta a partir del
+nombre del banco.
+
+`RETIRO_CON_TARJETA` sigue sin efecto bancario. Representa efectivo ya retirado, pero las
+tarjetas no están modeladas y no hay forma de saber de qué cuenta salen; queda pendiente junto
+con el inventario de tarjetas de la Fase 2.
+
+El detalle contable completo, la matriz de eventos y la vista de consulta están en
+[movimientos-bancarios.md](movimientos-bancarios.md).
 
 ## Integridad
 
@@ -39,7 +59,7 @@ Todas las respuestas usan `ApiResponse<T>`. Los DTO de escritura y lectura está
 | GET | `/latest` | Última caja; `data: null` si aún no existe |
 | GET | `/ledger?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD` | Libro por rango de hasta un año |
 | POST | `/days` | Apertura |
-| POST | `/days/{id}/movements` | Entrada/salida, UUID de petición obligatorio |
+| POST | `/days/{id}/movements` | Entrada/salida, UUID de petición obligatorio; `bankAccountId` obligatorio para cheque cobrado |
 | POST | `/days/{id}/close` | Cierre, versión obligatoria |
 
 Las denominaciones se envían como mapa completo `D1000`…`D1`, `D050`, con cantidades enteras y cero donde no aplique. La pantalla no busca ni vincula entregas de otros módulos; toda captura manual es directa y su monto se deriva del desglose.
