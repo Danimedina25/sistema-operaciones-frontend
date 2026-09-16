@@ -61,18 +61,21 @@ export function CashMovementForm({ day, busy, onSubmit }: { day: CashDay; busy: 
   }
   return <form onSubmit={submit} className="space-y-4">
     <fieldset disabled={pending} className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="text-sm font-medium text-slate-700">Movimiento
-          <select value={direction} onChange={e => { setDirection(e.target.value as typeof direction); setLinked(false); setDelivery(null); }} className={cashInput}>
-            <option value="ENTRADA">Entrada</option><option value="SALIDA">Salida</option>
-          </select>
-        </label>
-        {direction === 'SALIDA' && <label className="text-sm font-medium text-slate-700">Origen de la salida
-          <select value={linked ? 'linked' : 'manual'} onChange={e => { setLinked(e.target.value === 'linked'); setDelivery(null); }} className={cashInput}>
-            <option value="manual">Manual (sin entrega previa)</option><option value="linked">Vincular entrega existente</option>
-          </select>
-        </label>}
+      <div className="grid grid-cols-2 gap-2" aria-label="Movimiento">
+        {(['ENTRADA', 'SALIDA'] as const).map(value => {
+          const active = direction === value;
+          return <button key={value} type="button" aria-pressed={active} onClick={() => { setDirection(value); setLinked(false); setDelivery(null); }}
+            className={`rounded-lg border px-4 py-2.5 text-sm font-semibold transition ${active ? value === 'ENTRADA' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-red-500 bg-red-50 text-red-700' : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}`}>
+            {value === 'ENTRADA' ? 'Entrada' : 'Salida'}
+          </button>;
+        })}
       </div>
+      {direction === 'SALIDA' && <div className="flex flex-col gap-3 rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-800 sm:flex-row sm:items-center sm:justify-between">
+        <span>{linked ? 'Selecciona la entrega en efectivo que deseas vincular.' : '¿Ya existe una entrega en efectivo confirmada? Vincúlala para evitar una captura duplicada.'}</span>
+        <button type="button" onClick={() => { setLinked(current => !current); setDelivery(null); }} className="shrink-0 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800">
+          {linked ? 'Captura manual' : 'Vincular entrega existente'}
+        </button>
+      </div>}
       {linked ? <div className="space-y-2 rounded-xl bg-slate-50 p-4">
         <label className="text-sm font-medium text-slate-700">Entrega de efectivo completada
           <select required aria-label="Entrega de efectivo completada" value={delivery?.id ?? ''} onChange={e => {
@@ -92,21 +95,24 @@ export function CashMovementForm({ day, busy, onSubmit }: { day: CashDay; busy: 
         </div>
         <p className="text-sm text-slate-600">Importe de la entrega: <strong>{delivery ? currency(delivery.monto) : '—'}</strong>. Se toma del registro original.</p>
       </div> : <>
-        <div>
+        <div className="grid gap-4 sm:grid-cols-2">
           <label className="block text-sm font-medium text-slate-700">Importe
             <input type="text" inputMode="decimal" required value={amount} onChange={e => setAmount(e.target.value)} className={cashInput} />
+          </label>
+          <label className="block text-sm font-medium text-slate-700">Concepto
+            <input required maxLength={300} value={concept} onChange={e => setConcept(e.target.value)} className={cashInput} />
           </label>
         </div>
         <p className="text-sm text-slate-600">Caja General registra exclusivamente efectivo que entra o sale físicamente. Si ya existe una entrega en efectivo, usa “Vincular entrega existente”.</p>
       </>}
-      <label className="block text-sm font-medium text-slate-700">Concepto
+      {linked && <label className="block text-sm font-medium text-slate-700">Concepto
         <input required maxLength={300} value={concept} onChange={e => setConcept(e.target.value)} className={cashInput} />
-      </label>
+      </label>}
       <DenominationFields value={counts} onChange={setCounts} />
       <details className="rounded-xl border border-slate-200 p-4"><summary className="cursor-pointer text-sm font-medium">Comprobante opcional</summary>
         <div className="mt-3"><FileUploadField inputId="caja-general-proof" value={files} onChange={setFiles} /></div>
       </details>
-      <button disabled={pending} className={cashButton}>{pending ? 'Guardando…' : 'Registrar movimiento'}</button>
+      <button disabled={pending} className={`${cashButton} w-full`}>{pending ? 'Guardando…' : 'Registrar movimiento'}</button>
     </fieldset>
     {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
   </form>;

@@ -16,7 +16,7 @@ function mount(submit: (data: unknown) => Promise<unknown>) {
 describe('Movimientos de caja', () => {
   it('bloquea una salida superior al saldo', () => {
     const submit = vi.fn(); mount(submit);
-    fireEvent.change(screen.getByLabelText('Movimiento'), { target: { value: 'SALIDA' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Salida' }));
     fireEvent.change(screen.getByLabelText('Importe'), { target: { value: '200' } });
     fireEvent.change(screen.getByLabelText('Concepto'), { target: { value: 'Gasto' } });
     fireEvent.change(screen.getByLabelText('Cantidad de $100.00'), { target: { value: '2' } });
@@ -25,8 +25,8 @@ describe('Movimientos de caja', () => {
   });
   it('vincula entrega por referencia sin enviar otro monto', async () => {
     const submit = vi.fn().mockResolvedValue(undefined); mount(submit);
-    fireEvent.change(screen.getByLabelText('Movimiento'), { target: { value: 'SALIDA' } });
-    fireEvent.change(screen.getByLabelText('Origen de la salida'), { target: { value: 'linked' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Salida' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Vincular entrega existente' }));
     await screen.findByRole('option', { name: /Operación #42/ });
     fireEvent.change(screen.getByLabelText('Entrega de efectivo completada'), { target: { value: '9' } });
     fireEvent.change(screen.getByLabelText('Cantidad de $100.00'), { target: { value: '1' } });

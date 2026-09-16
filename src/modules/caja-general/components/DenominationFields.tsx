@@ -7,10 +7,10 @@ export function DenominationFields({ value, onChange, disabled = false }: {
 }) {
   const [emptyField, setEmptyField] = useState<Denomination | null>(null);
   const total = countCents(value);
-  return <fieldset disabled={disabled} className="rounded-xl border border-slate-200 p-4">
-    <legend className="px-2 text-sm font-semibold text-slate-800">Desglose por denominación</legend>
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-      {DENOMINATIONS.map(([key, cents]) => <label key={key} className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 text-sm text-slate-600 focus-within:border-slate-400 focus-within:bg-white">
+  return <fieldset disabled={disabled} className="pt-1">
+    <legend className="mb-2 text-sm font-semibold text-slate-800">Desglose por denominación</legend>
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+      {DENOMINATIONS.map(([key, cents]) => <label key={key} className="rounded-lg border border-transparent bg-slate-50 p-2.5 text-sm text-slate-600 transition focus-within:border-slate-300 focus-within:bg-white">
         <span className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1">
           <MexicanDenominationIcon denomination={key} />
           <span className="font-semibold text-slate-800">{currency(cents / 100)}</span>
@@ -26,10 +26,10 @@ export function DenominationFields({ value, onChange, disabled = false }: {
             // Vacío equivale a cero para el cálculo; no convierte una entrada inválida en cero.
             onChange({ ...value, [key]: event.target.validity.badInput ? NaN : Number(event.target.value) });
           }}
-          className="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3 outline-none focus:ring-2 focus:ring-slate-200" />
+          className="mt-1 h-9 w-full rounded-md border border-slate-200 bg-white px-2 text-center outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100" />
         <span className="mt-1 block text-xs text-slate-500">= {Number.isFinite(value[key]) ? currency(value[key] * cents / 100) : '—'}</span>
       </label>)}
     </div>
-    <p className="mt-4 text-right font-semibold text-slate-900" aria-live="polite">Total contado: {Number.isFinite(total) ? currency(total / 100) : 'Revisa las cantidades'}</p>
+    <div className="mt-4 flex items-baseline justify-end gap-3 border-t border-slate-200 pt-3" aria-live="polite"><span className="text-sm text-slate-500">Total capturado</span><strong className="text-xl text-slate-950">{Number.isFinite(total) ? currency(total / 100) : 'Revisa las cantidades'}</strong></div>
   </fieldset>;
 }

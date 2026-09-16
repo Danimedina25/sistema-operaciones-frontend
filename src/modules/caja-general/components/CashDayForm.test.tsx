@@ -45,7 +45,7 @@ describe('Formulario de apertura y cierre', () => {
     expect(quantity).toHaveValue(0);
     fireEvent.focus(quantity);
     expect(quantity).toHaveValue(null);
-    expect(screen.getByText('Total contado: $0.00')).toBeInTheDocument();
+    expect(screen.getByText('$0.00')).toBeInTheDocument();
     fireEvent.blur(quantity);
     expect(quantity).toHaveValue(0);
     fireEvent.focus(quantity);
@@ -53,9 +53,9 @@ describe('Formulario de apertura y cierre', () => {
     fireEvent.blur(quantity);
     fireEvent.focus(quantity);
     expect(quantity).toHaveValue(3);
-    expect(screen.getByText('Total contado: $300.00')).toBeInTheDocument();
+    expect(screen.getByText('$300.00')).toBeInTheDocument();
     fireEvent.change(quantity, { target: { value: '' } });
-    expect(screen.getByText('Total contado: $0.00')).toBeInTheDocument();
+    expect(screen.getByText('$0.00')).toBeInTheDocument();
     fireEvent.blur(quantity);
     expect(quantity).toHaveValue(0);
   });
