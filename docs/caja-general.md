@@ -5,7 +5,8 @@ Implementación en el frontend y en el backend `Sistema de Operaciones`, módulo
 ## Alcance implementado
 
 - Una única caja abierta. Apertura por fecha y desglose de las once denominaciones: $1,000, $500, $200, $100, $50, $20, $10, $5, $2, $1 y $0.50.
-- Entradas y salidas manuales exclusivamente de efectivo, con concepto, comprobante opcional y desglose. El frontend solo envía `EFECTIVO` y el backend rechaza cheque, transferencia, depósito y retiros con o sin tarjeta. Los registros históricos de esos tipos se conservan para consulta.
+- Entradas y salidas de efectivo físico con tres conceptos: `EFECTIVO`, `CHEQUE` cobrado y `RETIRO_CON_TARJETA`. Cheque y retiro con tarjeta exigen un banco del catálogo. Transferencias, depósitos y retiros sin tarjeta se rechazan porque no incorporan efectivo físico a esta caja.
+- La UI v2 presenta saldo y totales diarios en un hero, separa el ciclo de apertura/cierre de los movimientos, muestra el progreso Apertura → En operación → Cierre y permite expandir una sola acción a la vez. El importe de cada movimiento y del cierre se calcula directamente desde las once denominaciones.
 - Los retornos `EFECTIVO` generan automáticamente su salida cuando la Jefa de Cajas registra la entrega física. Ese modal exige el desglose exacto; entrega y salida se guardan en la misma transacción. Si no hay caja abierta del día, falta saldo o el desglose no coincide, ninguna de las dos operaciones se confirma. El importe se lee de la FK: `monto_manual` queda **NULL** y la referencia es única.
 - Libro por día/rango con concepto, entrada, salida y saldo acumulado; apertura, resumen diario, detalle por denominación, vínculo a operación y comprobante. Muestra los saldos originales, no reinicia el acumulado al filtrar.
 - Cierre con saldo esperado, contado, diferencia y explicación obligatoria si existe diferencia. Día cerrado inmutable; la siguiente apertura debe ser posterior y comenzar con el importe contado anterior. No se introduce un ajuste de efectivo automático ni se borra la diferencia.
@@ -26,7 +27,7 @@ Se leyeron ambos Excel y el Word originales. El Excel de caja incluye inicio, en
 
 Se reutilizan `OperationReturnInstallment`, `PaymentType`, los roles existentes, `AuthenticatedUserService`, `ApiResponse`, las excepciones comunes, JPA/transacciones, Axios, React Query, `useTableFilters`, `TableFilterSection`, `DateRangeCalendarField`, `FileUploadField`, carga existente a Firebase, enlaces a operaciones y el diseño visual de operaciones/corte. No se agregan dependencias.
 
-`PaymentType.RETIRO_SIN_TARJETA` en el sistema actual es un retorno al cliente con cuenta bancaria de origen y código propio; no equivale a una salida de Caja General y no se registra automáticamente allí. Los movimientos con tarjetas, depósitos, transferencias o cheques quedan fuera del alcance actual. La relación con el futuro inventario de tarjetas queda pendiente de Fase 2.
+`PaymentType.RETIRO_SIN_TARJETA` en el sistema actual es un retorno al cliente con cuenta bancaria de origen y código propio; no equivale a una salida de Caja General y no se registra automáticamente allí. El concepto manual `RETIRO_CON_TARJETA` representa efectivo ya retirado que entra o sale físicamente y exige seleccionar banco. La relación con el futuro inventario de tarjetas queda pendiente de Fase 2.
 
 ## API
 
@@ -36,12 +37,11 @@ Todas las respuestas usan `ApiResponse<T>`. Los DTO de escritura y lectura está
 | --- | --- | --- |
 | GET | `/latest` | Última caja; `data: null` si aún no existe |
 | GET | `/ledger?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD` | Libro por rango de hasta un año |
-| GET | `/deliveries?page=0` | Entregas completadas sin vincular, 50 por página |
 | POST | `/days` | Apertura |
 | POST | `/days/{id}/movements` | Entrada/salida, UUID de petición obligatorio |
 | POST | `/days/{id}/close` | Cierre, versión obligatoria |
 
-Las denominaciones se envían como mapa completo `D1000`…`D1`, `D050`, con cantidades enteras y cero donde no aplique. Una salida vinculada envía `parcialidadId` y `monto: null`.
+Las denominaciones se envían como mapa completo `D1000`…`D1`, `D050`, con cantidades enteras y cero donde no aplique. La pantalla no busca ni vincula entregas de otros módulos; toda captura manual es directa y su monto se deriva del desglose.
 
 ## Pendiente / decisiones de negocio
 
@@ -52,7 +52,7 @@ Fase 2 no implementada: lotes de cheques, inventario y entrega de tarjetas, rela
 - `TODO: confirmar con negocio` PDF descargable o impresión del navegador. La opción inicial propuesta para Fase 2 es una vista compartida con CSS de impresión y `window.print()`: no agrega dependencias y permite guardar como PDF desde el navegador. Quedan pendientes implementación y validación de paginado/fidelidad de los tres formatos.
 - `TODO: confirmar con negocio` historial completo de tarjetas o estado actual. No se crea un catálogo provisional que pierda trazabilidad.
 
-Los TODO también se encuentran en el servicio del backend. Las entregas históricas completadas antes de esta automatización todavía pueden vincularse manualmente desde Caja General. Las entregas nuevas en efectivo se registran automáticamente al momento de su cierre y conservan la fecha real en el registro original.
+Los TODO también se encuentran en el servicio del backend. Las entregas nuevas en efectivo siguen generando su salida de Caja General desde el flujo transaccional de entrega; ese proceso automático no se expone como una opción de vinculación manual en esta pantalla.
 
 ## Validación
 

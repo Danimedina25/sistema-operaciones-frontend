@@ -1,7 +1,7 @@
 import { useRef, useState, type FormEvent } from 'react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { DenominationFields } from './DenominationFields';
-import { currency, emptyCounts, parseCents, validateCashAmount } from '../utils/cash-amounts';
+import { countCents, currency, emptyCounts, parseCents, validateCashAmount } from '../utils/cash-amounts';
 import type { CashDay, CloseCashDay, OpenCashDay } from '../types/caja-general.types';
 import { formatDate } from '@/shared/utils/weeks';
 export const cashInput = 'mt-1 h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-200';
@@ -21,10 +21,12 @@ export function CashDayForm(props: Props) {
   // Captura la versión al iniciar el conteo; una actualización remota no debe aceptar silenciosamente un cierre viejo.
   const [version] = useState(props.mode === 'close' ? props.day.version : 0);
   const changed = props.mode === 'close' && version !== props.day.version;
-  const difference = props.mode === 'close' ? (parseCents(amount) - Math.round(props.day.saldoActual * 100)) / 100 : 0;
+  const countedCents = countCents(counts);
+  const capturedAmount = props.mode === 'close' ? countedCents / 100 : parseCents(amount) / 100;
+  const difference = props.mode === 'close' ? capturedAmount - props.day.saldoActual : 0;
   async function save(zeroConfirmed = false) {
     if (props.busy || changed || saving.current) return;
-    const problem = validateCashAmount(amount, counts);
+    const problem = validateCashAmount(String(capturedAmount), counts);
     if (problem) { setError(problem); return; }
     if (props.mode === 'close' && difference !== 0 && !notes.trim()) { setError('Explica la diferencia antes de cerrar la caja.'); return; }
     setError('');
@@ -36,7 +38,7 @@ export function CashDayForm(props: Props) {
     saving.current = true;
     try {
       if (props.mode === 'open') await props.onSubmit({ fecha, saldoInicial: parseCents(amount) / 100, denominaciones: counts });
-      else await props.onSubmit({ version, saldoContado: parseCents(amount) / 100, denominaciones: counts, observaciones: notes });
+      else await props.onSubmit({ version, saldoContado: capturedAmount, denominaciones: counts, observaciones: notes });
     } catch { /* El hook conserva el formulario y presenta el error del servidor. */ }
     finally { saving.current = false; }
   }
@@ -50,18 +52,23 @@ export function CashDayForm(props: Props) {
         <input type="date" required max={formatDate(new Date())} value={fecha} onChange={e => setFecha(e.target.value)} className={cashInput} />
       </label>}
       {props.mode === 'open' && props.previous && <p className="text-sm text-slate-600">Último cierre contado: {currency(props.previous.saldoContado ?? 0)}. El saldo inicial debe coincidir.</p>}
-      <label className="block text-sm font-medium text-slate-700">{props.mode === 'open' ? 'Saldo inicial' : 'Saldo contado'}
+      {props.mode === 'open' && <label className="block text-sm font-medium text-slate-700">Saldo inicial
         <input type="text" inputMode="decimal" required value={amount} onChange={e => setAmount(e.target.value)} className={cashInput} />
-      </label>
+      </label>}
       <DenominationFields value={counts} onChange={setCounts} />
       {props.mode === 'close' && <>
-        <p className="rounded-xl bg-slate-50 p-4 text-sm">Saldo esperado: <strong>{currency(props.day.saldoActual)}</strong> · Diferencia: <strong>{Number.isFinite(difference) ? currency(difference) : '—'}</strong></p>
+        <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm sm:flex-row sm:items-center sm:justify-between">
+          <span className="text-slate-600">Saldo esperado: <strong className="text-slate-950">{currency(props.day.saldoActual)}</strong></span>
+          <span className={`font-semibold ${difference === 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+            {!Number.isFinite(difference) ? 'Revisa las cantidades' : difference === 0 ? 'El conteo cuadra exactamente' : `${difference > 0 ? 'Sobrante' : 'Faltante'}: ${currency(Math.abs(difference))}`}
+          </span>
+        </div>
         <label className="block text-sm font-medium text-slate-700">Observaciones del cierre {difference !== 0 ? '(obligatorias por diferencia)' : ''}
           <textarea maxLength={500} value={notes} onChange={e => setNotes(e.target.value)} className={`${cashInput} h-24 py-3`} />
         </label>
         <p className="text-sm text-slate-600">Al cerrar se conserva el conteo y ya no se podrán registrar movimientos en este día.</p>
       </>}
-      <button disabled={props.busy || changed} className={cashButton}>{props.busy ? 'Guardando…' : props.mode === 'open' ? 'Abrir caja' : 'Confirmar cierre de caja'}</button>
+      <div className="flex justify-end"><button disabled={props.busy || changed} className={cashButton}>{props.busy ? 'Guardando…' : props.mode === 'open' ? 'Abrir caja' : 'Cerrar caja con este conteo'}</button></div>
     </fieldset>
     {changed && <p role="alert" className="text-sm text-amber-700">La caja cambió durante el conteo. Vuelve a la pestaña de movimientos y abre nuevamente el cierre para revisar el saldo actualizado.</p>}
     {error && <p role="alert" className="text-sm text-red-600">{error}</p>}

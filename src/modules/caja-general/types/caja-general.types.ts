@@ -4,24 +4,23 @@ export const DENOMINATIONS = [
 ] as const;
 export type Denomination = typeof DENOMINATIONS[number][0];
 export type CashCounts = Record<Denomination, number>;
-export const CONCEPTS = {
-  EFECTIVO: 'Efectivo', CHEQUE: 'Cheque cobrado', TRANSFERENCIA: 'Transferencia', DEPOSITO: 'Depósito',
-  RETIRO_CON_TARJETA: 'Retiro con tarjeta (TD)', RETIRO_SIN_TARJETA: 'Retiro sin tarjeta (RST)',
+export const CASH_BANKS = ['BBVA', 'Banorte', 'Scotiabank', 'Inbursa', 'Kapital', 'Bajío'] as const;
+export const CASH_MOVEMENT_CONCEPTS = {
+  EFECTIVO: 'Efectivo', CHEQUE: 'Cheque cobrado', RETIRO_CON_TARJETA: 'Retiro con tarjeta',
 } as const;
-export type CashConcept = keyof typeof CONCEPTS;
+export type CapturableCashConcept = keyof typeof CASH_MOVEMENT_CONCEPTS;
+export type CashConcept = CapturableCashConcept | 'TRANSFERENCIA' | 'DEPOSITO' | 'RETIRO_SIN_TARJETA';
 export interface CashDay {
   id: number; fecha: string; version: number; saldoInicial: number; saldoActual: number;
   saldoContado: number | null; diferencia: number | null; apertura: CashCounts; cierre: Partial<CashCounts>;
-  observacionesCierre: string | null; closedAt: string | null; abiertoPor: number; cerradoPor: number | null;
+  observacionesCierre: string | null; createdAt: string; closedAt: string | null;
+  abiertoPor: number; abiertoPorNombre: string; cerradoPor: number | null;
 }
 export interface CashMovement {
   id: number; diaId: number; fecha: string; createdAt: string; direccion: 'ENTRADA' | 'SALIDA';
   tipo: CashConcept; concepto: string; banco: string | null; monto: number; saldoAcumulado: number;
   parcialidadId: number | null; operacionId: number | null; denominaciones: CashCounts;
   comprobanteUrl: string | null; creadoPor: number;
-}
-export interface CashDelivery {
-  id: number; operacionId: number; monto: number; fechaRealizacion: string; personaQueRecibioEfectivo: string | null;
 }
 export interface CashLedger { dias: CashDay[]; movimientos: CashMovement[] }
 export interface OpenCashDay { fecha: string; saldoInicial: number; denominaciones: CashCounts }

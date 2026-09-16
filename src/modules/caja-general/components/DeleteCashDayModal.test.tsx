@@ -8,7 +8,8 @@ const day: CashDay = {
   id: 8, fecha: '2026-09-15', version: 3, saldoInicial: 1000,
   saldoActual: 750, saldoContado: 750, diferencia: 0,
   apertura: emptyCounts(), cierre: emptyCounts(), observacionesCierre: null,
-  closedAt: '2026-09-15T19:00:00', abiertoPor: 1, cerradoPor: 1,
+  createdAt: '2026-09-15T08:00:00', closedAt: '2026-09-15T19:00:00',
+  abiertoPor: 1, abiertoPorNombre: 'Jefa de Cajas', cerradoPor: 1,
 };
 
 describe('DeleteCashDayModal', () => {
