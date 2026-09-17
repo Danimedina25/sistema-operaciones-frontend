@@ -34,6 +34,25 @@ con el inventario de tarjetas de la Fase 2.
 El detalle contable completo, la matriz de eventos y la vista de consulta están en
 [movimientos-bancarios.md](movimientos-bancarios.md).
 
+## Caja que quedó abierta de un día anterior
+
+Si un día se olvida cerrar la caja, al día siguiente la operación quedaba trabada: no se podía
+cerrar la anterior por no ser la de hoy, y no se podía abrir la de hoy porque la anterior seguía
+abierta. Ahora **el cierre admite una caja de fecha pasada**; la captura de movimientos sigue
+restringida al día actual, así que desde que venció ese día no se le pudo agregar nada y el
+efectivo no debería haber cambiado. Si hay diferencia, el cierre la registra y exige explicarla
+como siempre. La pantalla avisa de la caja pendiente y ofrece cerrarla antes de abrir la nueva.
+
+## Conteo final prellenado
+
+El cierre llega con el desglose que debería haber en caja —apertura más entradas menos salidas,
+denominación por denominación— para que el conteo se revise en lugar de recapturarse. Sigue
+siendo editable: lo que manda es el efectivo contado, y de ahí sale la diferencia.
+
+Una denominación puede salir negativa si durante el día se cambió físicamente un billete por
+otros: el importe total cuadra con el saldo, pero el detalle no. Esas se prellenan en cero y la
+pantalla lo advierte, en vez de bloquear el cierre.
+
 ## Integridad
 
 Se usan `BigDecimal` con dos decimales en el backend y centavos enteros para validaciones del frontend. Se rechazan importes fuera de rango, desgloses incompletos, negativos, fraccionados o con suma diferente. La deserialización de cantidades rechaza fracciones antes de que Jackson pueda truncarlas.

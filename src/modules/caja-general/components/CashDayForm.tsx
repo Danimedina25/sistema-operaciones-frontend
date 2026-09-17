@@ -15,9 +15,23 @@ export function CashDayForm(props: Props) {
   const fecha = formatDate(new Date());
   const [amount, setAmount] = useState(props.mode === 'open' ? String(props.previous?.saldoContado ?? 0) : '0');
   const inheritsPreviousClose = props.mode === 'open' && props.previous !== null;
-  const [counts, setCounts] = useState(() => props.mode === 'open' && props.previous
-    ? { ...emptyCounts(), ...props.previous.cierre }
-    : emptyCounts());
+  // El cierre arranca con el desglose esperado, para revisarlo contra el conteo real en vez
+  // de recapturarlo desde cero. Si alguna denominación salió negativa —se cambió un billete
+  // durante el día— se prellena en cero y se avisa, porque el formulario no admite negativos.
+  const expected = props.mode === 'close' ? props.day.denominacionesEsperadas : null;
+  const hasNegativeExpected = expected != null
+    && Object.values(expected).some(quantity => (quantity ?? 0) < 0);
+  const [counts, setCounts] = useState(() => {
+    if (props.mode === 'open' && props.previous) return { ...emptyCounts(), ...props.previous.cierre };
+    if (props.mode === 'close' && expected) {
+      const prefilled = emptyCounts();
+      for (const [denomination, quantity] of Object.entries(expected)) {
+        prefilled[denomination as keyof typeof prefilled] = Math.max(0, quantity ?? 0);
+      }
+      return prefilled;
+    }
+    return emptyCounts();
+  });
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
   const [confirmZero, setConfirmZero] = useState(false);
@@ -57,6 +71,8 @@ export function CashDayForm(props: Props) {
       {props.mode === 'open' && <label className="block text-sm font-medium text-slate-700">Saldo inicial
         <input type="text" inputMode="decimal" required readOnly={inheritsPreviousClose} value={amount} onChange={e => setAmount(e.target.value)} className={`${cashInput} ${inheritsPreviousClose ? 'cursor-not-allowed bg-slate-50 text-slate-600' : ''}`} />
       </label>}
+      {props.mode === 'close' && expected && <p className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">Desglose prellenado con lo que debería haber en caja según la apertura y los movimientos del día. <strong>Cuenta el efectivo y corrige lo que no coincida</strong> antes de confirmar.</p>}
+      {props.mode === 'close' && hasNegativeExpected && <p role="alert" className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">Alguna denominación quedó en negativo, lo que ocurre cuando se cambió físicamente un billete durante el día. Esas se prellenaron en cero: revisa el conteo con cuidado.</p>}
       <DenominationFields value={counts} onChange={setCounts} disabled={inheritsPreviousClose} />
       {props.mode === 'close' && <>
         <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm sm:flex-row sm:items-center sm:justify-between">
@@ -69,6 +85,7 @@ export function CashDayForm(props: Props) {
           <textarea maxLength={500} value={notes} onChange={e => setNotes(e.target.value)} className={`${cashInput} h-24 py-3`} />
         </label>
         <p className="text-sm text-slate-600">Al cerrar se conserva el conteo y ya no se podrán registrar movimientos en este día.</p>
+        {props.day.fecha !== fecha && <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">Esta caja quedó abierta del <strong>{formatCashDate(props.day.fecha)}</strong>. Desde entonces no se le pudo capturar ningún movimiento, así que el efectivo no debería haber cambiado. Ciérrala para poder abrir la de hoy.</p>}
       </>}
       <button disabled={props.busy || changed} className={`${cashButton} w-full`}>{props.busy ? 'Guardando…' : props.mode === 'open' ? 'Abrir caja' : 'Cerrar caja con este conteo'}</button>
     </fieldset>

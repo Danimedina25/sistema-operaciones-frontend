@@ -18,7 +18,7 @@ vi.mock('@/modules/bank-accounts/hooks/use-bank-accounts', () => ({
 const day: CashDay = {
   id: 1, fecha: '2026-09-14', version: 0, saldoInicial: 100, saldoActual: 100,
   saldoContado: null, diferencia: null, apertura: emptyCounts(), cierre: {}, closedAt: null,
-  observacionesCierre: null, createdAt: '2026-09-14T08:00:00', abiertoPor: 1,
+  denominacionesEsperadas: null, observacionesCierre: null, createdAt: '2026-09-14T08:00:00', abiertoPor: 1,
   abiertoPorNombre: 'Jefa de Cajas', cerradoPor: null,
 };
 

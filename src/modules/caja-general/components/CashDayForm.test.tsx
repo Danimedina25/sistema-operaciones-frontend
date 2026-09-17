@@ -5,7 +5,7 @@ import { emptyCounts } from '../utils/cash-amounts';
 import type { CashDay } from '../types/caja-general.types';
 const day: CashDay = { id: 1, fecha: '2026-09-14', version: 0, saldoInicial: 100, saldoActual: 100,
   saldoContado: null, diferencia: null, apertura: { ...emptyCounts(), D100: 1 }, cierre: {},
-  createdAt: '2026-09-14T08:00:00', closedAt: null, observacionesCierre: null,
+  denominacionesEsperadas: null, createdAt: '2026-09-14T08:00:00', closedAt: null, observacionesCierre: null,
   abiertoPor: 1, abiertoPorNombre: 'Jefa de Cajas', cerradoPor: null };
 describe('Formulario de apertura y cierre', () => {
   it('confirma el corte en cero con la fecha del día y permite volver sin guardar', async () => {
@@ -111,4 +111,34 @@ describe('Formulario de apertura y cierre', () => {
     expect(screen.getByRole('button', { name: 'Cerrar caja con este conteo' })).toBeDisabled();
     expect(screen.getByRole('alert')).toHaveTextContent('cambió durante el conteo');
   });
+  it('prellena el cierre con el desglose esperado para solo revisarlo', async () => {
+    const submit = vi.fn().mockResolvedValue(undefined);
+    render(<CashDayForm mode="close" busy={false} onSubmit={submit}
+      day={{ ...day, saldoActual: 1200, denominacionesEsperadas: { ...emptyCounts(), D1000: 1, D100: 2 } }} />);
+
+    expect((screen.getByLabelText('Cantidad de $1,000.00') as HTMLInputElement).value).toBe('1');
+    expect((screen.getByLabelText('Cantidad de $100.00') as HTMLInputElement).value).toBe('2');
+    expect(screen.getByText(/Desglose prellenado/)).toBeInTheDocument();
+    // Cuadra con el saldo esperado, así que se puede confirmar sin tocar nada.
+    expect(screen.getByText('El conteo cuadra exactamente')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar caja con este conteo' }));
+    await waitFor(() => expect(submit).toHaveBeenCalledWith(expect.objectContaining({ saldoContado: 1200 })));
+  });
+
+  it('avisa y prellena en cero cuando una denominación sale negativa', () => {
+    render(<CashDayForm mode="close" busy={false} onSubmit={vi.fn()}
+      day={{ ...day, saldoActual: 900, denominacionesEsperadas: { ...emptyCounts(), D1000: 1, D100: -1 } }} />);
+
+    expect((screen.getByLabelText('Cantidad de $100.00') as HTMLInputElement).value).toBe('0');
+    expect(screen.getByRole('alert')).toHaveTextContent('quedó en negativo');
+  });
+
+  it('explica que la caja quedó abierta de un día anterior', () => {
+    render(<CashDayForm mode="close" busy={false} onSubmit={vi.fn()}
+      day={{ ...day, fecha: '2026-09-10' }} />);
+
+    expect(screen.getByText(/quedó abierta del/)).toBeInTheDocument();
+  });
+
 });

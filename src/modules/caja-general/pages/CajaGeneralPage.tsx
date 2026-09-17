@@ -39,8 +39,12 @@ export default function CajaGeneralPage() {
     : days[days.length - 1];
   const viewingToday = filters.mode === 'daily' && filters.fecha === today;
   const canOperate = Boolean(canWrite && viewingToday);
+  // Caja que quedó abierta de un día anterior: hay que cerrarla antes de poder abrir la de hoy.
+  const pendingDay = latest.data && !latest.data.closedAt && latest.data.fecha < today ? latest.data : null;
+  const closingDay = day && !day.closedAt ? day : pendingDay;
   const isOpen = !!day && !day.closedAt;
-  const canStartAction = canOperate && ledger.isSuccess && (!day || isOpen);
+  const canClose = Boolean(canWrite && viewingToday && closingDay);
+  const canStartAction = canOperate && ledger.isSuccess && (isOpen || (!day && !pendingDay));
   const movements = ledger.data?.movimientos ?? [];
   const incoming = movements.filter(item => item.direccion === 'ENTRADA').reduce((sum, item) => sum + item.monto, 0);
   const outgoing = movements.filter(item => item.direccion === 'SALIDA').reduce((sum, item) => sum + item.monto, 0);
@@ -93,10 +97,10 @@ export default function CajaGeneralPage() {
             : 'Todavía no existe un corte de Caja General.'}</p>
         </div>
       </div>
-      {canStartAction && <button type="button" disabled={busy} title={isOpen ? 'Inicia el conteo final de la caja abierta' : 'Inicia una nueva sesión de caja'}
-        onClick={() => setActivePanel(isOpen ? 'close' : 'open')}
-        className={`rounded-lg border px-4 py-2.5 text-sm font-semibold disabled:opacity-50 ${isOpen ? 'border-red-200 text-red-700 hover:bg-red-50' : 'border-slate-300 text-slate-800 hover:bg-slate-50'}`}>
-        {isOpen ? 'Cerrar caja' : 'Abrir caja'}
+      {(canStartAction || (canClose && !isOpen)) && <button type="button" disabled={busy} title={closingDay ? 'Inicia el conteo final de la caja abierta' : 'Inicia una nueva sesión de caja'}
+        onClick={() => setActivePanel(closingDay ? 'close' : 'open')}
+        className={`rounded-lg border px-4 py-2.5 text-sm font-semibold disabled:opacity-50 ${closingDay ? 'border-red-200 text-red-700 hover:bg-red-50' : 'border-slate-300 text-slate-800 hover:bg-slate-50'}`}>
+        {closingDay ? (pendingDay && !isOpen ? `Cerrar caja del ${formatCashDate(pendingDay.fecha)}` : 'Cerrar caja') : 'Abrir caja'}
       </button>}
     </section>
 
@@ -109,7 +113,9 @@ export default function CajaGeneralPage() {
     {latest.isPending && <p className="text-sm text-slate-500">Cargando caja…</p>}
     {latest.isError && <p role="alert" className="text-sm text-red-600">{getApiErrorMessage(latest.error)} <button onClick={() => void latest.refetch()}>Reintentar</button></p>}
 
-    {activePanel === 'open' && canOperate && !day && <section className="rounded-xl border border-slate-200 border-t-4 border-t-slate-950 bg-white p-5 shadow-sm">
+    {pendingDay && !isOpen && viewingToday && <p role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-800">La caja del <strong>{formatCashDate(pendingDay.fecha)}</strong> quedó abierta. Ciérrala para poder abrir la de hoy; el saldo contado de ese cierre será el saldo inicial de la nueva caja.</p>}
+
+    {activePanel === 'open' && canOperate && !day && !pendingDay && <section className="rounded-xl border border-slate-200 border-t-4 border-t-slate-950 bg-white p-5 shadow-sm">
       <p className="mb-4 text-xs font-bold uppercase tracking-wide text-slate-500">Apertura de caja</p>
       <CashDayForm key={latest.data?.id ?? 'first'} mode="open" previous={latest.data ?? null} busy={busy} onSubmit={async value => { const result = await open.mutateAsync(value); selectDate(result.fecha); setActivePanel(null); }} />
     </section>}
@@ -129,10 +135,10 @@ export default function CajaGeneralPage() {
       {(activePanel === 'ENTRADA' || activePanel === 'SALIDA') && <CashMovementForm key={`${day.id}-${activePanel}`} direction={activePanel} day={day} busy={busy} onSubmit={async data => { await movement.mutateAsync({ id: day.id, data }); selectDate(day.fecha); setActivePanel(null); }} />}
     </section>}
 
-    {isOpen && canOperate && activePanel === 'close' && <section className="rounded-xl border border-slate-200 border-t-4 border-t-slate-950 bg-white p-5 shadow-sm">
+    {closingDay && canClose && activePanel === 'close' && <section className="rounded-xl border border-slate-200 border-t-4 border-t-slate-950 bg-white p-5 shadow-sm">
       <p className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-500">Conteo final y cierre</p>
       <p className="mb-5 text-sm text-slate-500">Cuenta el efectivo físico disponible y compara el resultado con el saldo esperado.</p>
-      <CashDayForm key={day.id} mode="close" day={day} busy={busy} onSubmit={async data => { await close.mutateAsync({ id: day.id, data }); selectDate(day.fecha); setActivePanel(null); }} />
+      <CashDayForm key={closingDay.id} mode="close" day={closingDay} busy={busy} onSubmit={async data => { await close.mutateAsync({ id: closingDay.id, data }); selectDate(closingDay.fecha); setActivePanel(null); }} />
     </section>}
 
     {!viewingToday && ledger.isSuccess && <p className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600">Modo consulta. Las fechas anteriores permiten revisar cortes y movimientos, sin abrir, cerrar ni registrar operaciones.</p>}

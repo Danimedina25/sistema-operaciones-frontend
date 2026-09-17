@@ -22,6 +22,8 @@ export type CashConcept = CapturableCashConcept | 'TRANSFERENCIA' | 'DEPOSITO' |
 export interface CashDay {
   id: number; fecha: string; version: number; saldoInicial: number; saldoActual: number;
   saldoContado: number | null; diferencia: number | null; apertura: CashCounts; cierre: Partial<CashCounts>;
+  /** Desglose que debería haber: apertura + entradas − salidas. Null si la caja ya cerró. */
+  denominacionesEsperadas: Partial<CashCounts> | null;
   observacionesCierre: string | null; createdAt: string; closedAt: string | null;
   abiertoPor: number; abiertoPorNombre: string; cerradoPor: number | null;
 }
