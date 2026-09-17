@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BankMovementsPage } from './BankMovementsPage';
+import { todayIso } from '../hooks/use-bank-movements';
 import type { BankMovement, BankMovementTotals } from '../types/bank-movements.types';
 import type { BankAccountResponse } from '@/modules/bank-accounts/types/bank-accounts.types';
 
@@ -108,7 +109,9 @@ describe('BankMovementsPage', () => {
     openFilters();
     const desde = screen.getByLabelText('Desde') as HTMLInputElement;
     const hasta = screen.getByLabelText('Hasta') as HTMLInputElement;
-    const today = new Date().toISOString().slice(0, 10);
+    // La fecha del usuario es la LOCAL, no la UTC: comparar contra toISOString() hacía
+    // fallar esta prueba por las tardes, cuando UTC ya cambió de día.
+    const today = todayIso();
     expect(desde.max).toBe(today);
     expect(hasta.max).toBe(today);
 

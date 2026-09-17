@@ -18,6 +18,8 @@ export interface DailyCashCutResponse {
   retornosDeposito: number;
   retornosEfectivo: number;
   retornosCheque: number;
+  /** Retiros sin tarjeta entregados: salen de la cuenta origen de la parcialidad. */
+  retornosRetiroSinTarjeta: number;
   totalRetornos: number;
 
   /** Cheques cobrados en ventanilla: salen del banco y entran como efectivo a Caja General. */
@@ -55,6 +57,8 @@ export interface CashCutRangeResponse {
   retornosDeposito: number;
   retornosEfectivo: number;
   retornosCheque: number;
+  /** Retiros sin tarjeta entregados: salen de la cuenta origen de la parcialidad. */
+  retornosRetiroSinTarjeta: number;
   totalRetornos: number;
 
   /** Cheques cobrados en ventanilla: salen del banco y entran como efectivo a Caja General. */

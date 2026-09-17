@@ -90,15 +90,44 @@ A diferencia del corte **por cuenta**, el corte **global** incluye también los 
 históricos que sólo guardan el nombre del banco como texto: no se sabe de qué cuenta salieron,
 pero salieron de alguna, y aquí no hace falta atribuirlos.
 
-Dos conceptos siguen sin encajar en esa definición y están pendientes de decisión:
+La fórmula del corte global quedó así:
 
-- `entradasEfectivo` y `retornosEfectivo` en el corte global son movimientos de **efectivo**,
-  no de bancos. Bajo la definición anterior los cubría el mismo saldo; bajo la nueva no
-  deberían estar ahí. Sacarlos cambia el significado de toda la cadena histórica de
-  `saldo_final`, así que necesita una decisión aparte y probablemente un recálculo.
-- `RETIRO_CON_TARJETA` tiene exactamente la misma forma que el cheque cobrado —saca dinero de
-  un banco y lo vuelve efectivo— y por la misma razón debería restarse del corte global. No se
-  incluyó todavía por instrucción explícita.
+```
+total entradas = pagos validados por transferencia + depósito + cheque
+total salidas  = retornos completados por transferencia + depósito + cheque + retiro sin tarjeta
+               + comisiones pagadas a socios
+               + cheques cobrados
+saldo final    = saldo inicial + total entradas − total salidas
+```
+
+Tres consecuencias de la definición:
+
+- **El efectivo sale del total.** `entradasEfectivo` y `retornosEfectivo` se siguen calculando
+  y guardando como dato informativo del día, pero ya no mueven el saldo: ese dinero entra y
+  sale de Caja General, que tiene su propio libro.
+- **El retiro sin tarjeta entra al total.** Sale de la cuenta origen de la parcialidad y
+  faltaba por completo: el corte sumaba transferencia, depósito, efectivo y cheque, pero nunca
+  este tipo. Cada retiro entregado dejaba el saldo bancario inflado. En el corte **por cuenta**
+  sí se restaba desde antes, así que las dos vistas se contradecían.
+- **El cheque cobrado se resta**, por lo explicado arriba.
+
+### Recalcular la serie histórica
+
+A diferencia de las columnas anteriores, este cambio sí altera el significado de los cortes ya
+guardados, porque su fórmula era otra. Para dejar la cadena coherente hay que rehacerla:
+
+```
+POST /api/daily-cash-cuts/recalculate?desde=YYYY-MM-DD    (rol ADMIN)
+```
+
+Es determinista e idempotente: los importes se recalculan siempre desde los pagos, retornos y
+cheques originales, nunca desde los agregados guardados. Lo único que respeta es el
+`saldo_inicial` capturado a mano en el primer corte de la historia, que es un dato de negocio y
+no se puede derivar de ningún movimiento. **Si ese número incluía efectivo, hay que corregirlo
+aparte**: ninguna operación automática puede saberlo.
+
+`RETIRO_CON_TARJETA` de Caja General sigue pendiente: tiene la misma forma que el cheque
+cobrado, pero las tarjetas no están modeladas y no se sabe de qué cuenta retiran.
 
 ## Cortes bancarios
 

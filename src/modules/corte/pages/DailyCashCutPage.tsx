@@ -361,7 +361,7 @@ export default function DailyCashCutPage() {
                             <div className="grid gap-6 xl:grid-cols-2">
                                 <BreakdownCard
                                     title="Entradas"
-                                    description="Pagos de ingreso validados. La comisión de oficina está incluida dentro de estas entradas."
+                                    description="Dinero que entra a las cuentas bancarias por pagos validados. La comisión de oficina está incluida. El efectivo se lleva en Caja General."
                                     totalLabel="Total entradas"
                                     total={currentData.totalEntradas}
                                     highlight="positive"
@@ -375,10 +375,6 @@ export default function DailyCashCutPage() {
                                             value: currentData.entradasDeposito,
                                         },
                                         {
-                                            label: 'Efectivo',
-                                            value: currentData.entradasEfectivo,
-                                        },
-                                        {
                                             label: 'Cheque',
                                             value: currentData.entradasCheque,
                                         },
@@ -387,7 +383,7 @@ export default function DailyCashCutPage() {
 
                                 <BreakdownCard
                                     title="Salidas"
-                                    description="Dinero que sale de las cuentas bancarias: retornos a clientes, comisiones de socios y cheques cobrados que pasan a efectivo."
+                                    description="Dinero que sale de las cuentas bancarias: retornos a clientes, comisiones de socios y cheques cobrados que pasan a efectivo. Los retornos en efectivo salen de Caja General."
                                     totalLabel="Total salidas"
                                     total={currentData.totalSalidas}
                                     highlight="negative"
@@ -401,12 +397,12 @@ export default function DailyCashCutPage() {
                                             value: currentData.retornosDeposito,
                                         },
                                         {
-                                            label: 'Retornos a clientes en efectivo',
-                                            value: currentData.retornosEfectivo,
-                                        },
-                                        {
                                             label: 'Retornos a clientes por cheque',
                                             value: currentData.retornosCheque,
+                                        },
+                                        {
+                                            label: 'Retornos a clientes por retiro sin tarjeta',
+                                            value: currentData.retornosRetiroSinTarjeta,
                                         },
                                         {
                                             label: 'Cheques cobrados hacia Caja General',
