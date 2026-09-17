@@ -21,3 +21,9 @@ export function formatCashDateTime(value: string): string {
   if (!date || !time) return value;
   return `${formatCashDate(date)} · ${time.slice(0, 5)} h`;
 }
+
+/** Sólo la hora, para las filas del libro donde la fecha ya la da el encabezado del día. */
+export function formatCashTime(value: string): string {
+  const [, time] = value.split('T');
+  return time ? time.slice(0, 5) : '—';
+}
