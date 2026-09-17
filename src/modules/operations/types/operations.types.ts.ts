@@ -161,6 +161,8 @@ export interface UpdateOperationPaymentRequest {
 export interface UpdatePaymentStatusRequest {
   observaciones?: string;
   comprobanteValidacionUrl?: string
+  /** Obligatorio al validar un pago EFECTIVO: ese dinero entra a Caja General. */
+  denominaciones?: import('@/modules/caja-general/types/caja-general.types').CashCounts;
 }
 
 export interface OperationPaymentResponse {

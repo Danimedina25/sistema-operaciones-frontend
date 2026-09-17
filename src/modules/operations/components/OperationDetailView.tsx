@@ -8,6 +8,7 @@ import {
 } from '../types/operations.types.ts';
 import { ReturnPaymentsTable } from './returns/ReturnPaymentsTable.js';
 import { useAuth } from '@/modules/auth/store/auth.context.js';
+import type { CashCounts } from '@/modules/caja-general/types/caja-general.types';
 
 interface OperationDetailViewProps {
   operation: PaymentOperationResponse;
@@ -17,7 +18,8 @@ interface OperationDetailViewProps {
   onValidatePayment?: (
     operationId: number,
     paymentId: number,
-    comprobanteValidacion: File
+    comprobanteValidacion: File,
+    denominaciones?: CashCounts
   ) => Promise<void> | void;
   onRejectPayment?: (paymentId: number, motivo: string) => Promise<void> | void;
   onEditValidationReceipt?: (
@@ -173,11 +175,12 @@ export function OperationDetailView({
           operationId={operation.id}
           clienteNombre={operation.clienteNombre}
           socioComercialTelefono={operation.socioComercialTelefono}
-          onValidatePayment={(paymentId, comprobanteValidacion) =>
+          onValidatePayment={(paymentId, comprobanteValidacion, denominaciones) =>
             onValidatePayment?.(
               operation.id,
               paymentId,
-              comprobanteValidacion
+              comprobanteValidacion,
+              denominaciones
             )
           }
           onAddPayment={() => onAddPayment(operation.id)}

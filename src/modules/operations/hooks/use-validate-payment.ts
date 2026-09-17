@@ -4,6 +4,7 @@ import { validatePayment } from '@/modules/operations/api/operations.api';
 import { uploadOperationProof } from '@/modules/operations/api/operations-storage.api';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { getApiErrorMessage } from '@/shared/utils/errors';
+import type { CashCounts } from '@/modules/caja-general/types/caja-general.types';
 
 interface UseValidatePaymentOptions {
   onSuccess?: () => void | Promise<void>;
@@ -17,6 +18,7 @@ export function useValidatePayment(options?: UseValidatePaymentOptions) {
     operationId: number,
     paymentId: number,
     comprobanteValidacion: File,
+    denominaciones?: CashCounts,
   ) => {
     try {
       if (!user?.userId) {
@@ -37,6 +39,7 @@ export function useValidatePayment(options?: UseValidatePaymentOptions) {
 
       await validatePayment(paymentId, {
         comprobanteValidacionUrl: uploadResult.downloadUrl,
+        ...(denominaciones ? { denominaciones } : {}),
       });
 
       toast.success('Pago validado correctamente');

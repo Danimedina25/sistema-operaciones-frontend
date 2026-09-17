@@ -23,6 +23,9 @@ import {
 import { buildOperationDetailPath } from '@/routes/paths';
 import { RowActionsMenu } from '@/shared/components/ui/RowActionsMenu';
 import { CircleDollarSign, ClipboardCopy, Check, FileCheck2, MessageCircle, Plus, ReceiptText, X } from 'lucide-react';
+import { DenominationFields } from '@/modules/caja-general/components/DenominationFields';
+import { countCents, currency, emptyCounts } from '@/modules/caja-general/utils/cash-amounts';
+import type { CashCounts } from '@/modules/caja-general/types/caja-general.types';
 
 const BANK_PAYMENT_TYPES: PaymentType[] = ['TRANSFERENCIA', 'DEPOSITO', 'CHEQUE'];
 
@@ -33,7 +36,8 @@ interface PaymentsTableProps {
   socioComercialTelefono?: string | null;
   onValidatePayment?: (
     paymentId: number,
-    comprobanteValidacion: File
+    comprobanteValidacion: File,
+    denominaciones?: CashCounts
   ) => Promise<void> | void;
   onRejectPayment?: (paymentId: number, motivo: string) => Promise<void> | void;
   onEditValidationReceipt?: (
@@ -120,6 +124,10 @@ export function PaymentsTable({
   const [rejectReason, setRejectReason] = useState('');
   const [rejectReasonError, setRejectReasonError] = useState('');
   const canAddPayment = (montoPendientePorRegistrar ?? 0) > 0 && canModifyPayments;
+  // Un pago en efectivo validado entra a Caja General, y allí todo movimiento exige su
+  // desglose por denominación. Se captura aquí, con quien recibe físicamente el dinero.
+  const [cashCounts, setCashCounts] = useState<CashCounts>(emptyCounts);
+  const [cashCountsError, setCashCountsError] = useState('');
   const [validationReceipt, setValidationReceipt] = useState<File | null>(null);
   const [validationReceiptError, setValidationReceiptError] = useState('');
   const [validationReceiptPreviewUrl, setValidationReceiptPreviewUrl] =
@@ -186,6 +194,8 @@ export function PaymentsTable({
     setRejectReasonError('');
     setValidationReceipt(null);
     setValidationReceiptError('');
+    setCashCounts(emptyCounts());
+    setCashCountsError('');
   };
 
   const closeReviewDrawer = () => {
@@ -233,9 +243,24 @@ export function PaymentsTable({
           return;
         }
 
+        const esEfectivo = reviewingPayment?.tipoPago === 'EFECTIVO';
+
+        if (esEfectivo) {
+          const capturado = countCents(cashCounts);
+          if (!Number.isFinite(capturado) || capturado <= 0) {
+            setCashCountsError('Captura el desglose del efectivo recibido.');
+            return;
+          }
+          if (capturado !== Math.round((reviewingPayment?.monto ?? 0) * 100)) {
+            setCashCountsError('El desglose debe sumar exactamente el importe del pago.');
+            return;
+          }
+        }
+
         await onValidatePayment?.(
           reviewingPaymentId,
-          validationReceipt
+          validationReceipt,
+          esEfectivo ? cashCounts : undefined
         );
 
         setReviewingPaymentId(null);
@@ -959,6 +984,23 @@ export function PaymentsTable({
                 </div>
               ) : activeAction === 'VALIDATE' ? (
                 <div>
+                  {reviewingPayment.tipoPago === 'EFECTIVO' ? (
+                    <div className="mb-5 space-y-3">
+                      <p className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-800">
+                        Este pago entra como efectivo a Caja General al validarse. Captura el
+                        desglose de lo que recibiste; debe sumar {currency(reviewingPayment.monto)}.
+                      </p>
+                      <DenominationFields
+                        value={cashCounts}
+                        onChange={(next) => { setCashCounts(next); setCashCountsError(''); }}
+                        disabled={isConfirmingAction}
+                      />
+                      {cashCountsError ? (
+                        <p role="alert" className="text-xs font-medium text-rose-600">{cashCountsError}</p>
+                      ) : null}
+                    </div>
+                  ) : null}
+
                   <label className="mb-2 block text-sm font-medium text-slate-700">
                     Comprobante de validación <span className="text-rose-600">*</span>
                   </label>
