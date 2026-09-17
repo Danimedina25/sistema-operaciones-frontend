@@ -15,12 +15,16 @@ export type CommissionBeneficiaryPaymentStatus =
 
 export interface PayCommissionRequest {
   paymentProofUrl: string;
+  /** Cuenta desde la que se transfiere: la comisión sale de un banco. */
+  cuentaOrigenId: number;
 }
 
 export interface PayCommissionBatchRequest {
   commissionIds: number[];
 
   paymentProofUrl: string;
+  /** Cuenta desde la que se transfiere todo el lote. */
+  cuentaOrigenId: number;
 }
 
 export interface CommissionPartnerSummaryResponse {

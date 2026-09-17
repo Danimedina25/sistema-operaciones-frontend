@@ -28,6 +28,7 @@ export function usePayCommission() {
     commissionId: number,
     operationId: number,
     comprobante: File,
+    cuentaOrigenId: number,
   ) => {
 
     try {
@@ -53,6 +54,7 @@ export function usePayCommission() {
           {
             paymentProofUrl:
               uploadResult.downloadUrl,
+            cuentaOrigenId,
           },
         );
 

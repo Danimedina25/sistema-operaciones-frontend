@@ -363,6 +363,7 @@ export default function CommercialPartnerCommissionsPage() {
         }
         onSubmit={async (
           paymentProofFile,
+          cuentaOrigenId,
         ) => {
 
           if (!selectedPartner) {
@@ -372,6 +373,7 @@ export default function CommercialPartnerCommissionsPage() {
           await handlePayBeneficiaryCommissions(
             selectedPartner.commissionIdsToPay,
             paymentProofFile,
+            cuentaOrigenId,
           );
 
           setIsPayPartnerModalOpen(

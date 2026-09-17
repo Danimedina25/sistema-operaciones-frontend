@@ -123,6 +123,7 @@ export function useCommercialPartnerCommissionPaymentsPage() {
 
   async function handleSubmitPayment(
     paymentProofFile: File,
+    cuentaOrigenId: number,
   ) {
 
     if (
@@ -134,6 +135,7 @@ export function useCommercialPartnerCommissionPaymentsPage() {
     await handlePayBeneficiaryCommissions(
       selectedBeneficiary.commissionIdsToPay,
       paymentProofFile,
+      cuentaOrigenId,
     );
 
     setIsPayModalOpen(

@@ -51,6 +51,8 @@ auditables más el corte anterior.
 | Retorno completado por cheque | Salida | Sin efecto |
 | Retorno completado por retiro sin tarjeta | Salida | Sin efecto |
 | Retorno completado en efectivo | Sin efecto | Salida |
+| Pago validado en efectivo | Sin efecto | **Entrada** |
+| Comisión a socio pagada por transferencia | **Salida** | Sin efecto |
 | Cheque cobrado en Caja General | **Salida** | **Entrada** |
 | Retiro sin tarjeta en Caja General | **Salida** | **Entrada** |
 
@@ -261,8 +263,10 @@ Sin dependencias nuevas.
    "cuenta no vinculada" y no entran al libro. Corregirlos exige un mapeo manual.
 3. **`RETIRO_CON_TARJETA`** tiene la misma forma contable que el cheque, pero las tarjetas no
    están modeladas y no hay forma de saber de qué cuenta retiran. Queda como trabajo aparte.
-4. **`salidasComisiones` sigue en cero.** Las comisiones pagadas a socios comerciales nunca
-   reducen el saldo bancario, aunque la columna existe desde el diseño original.
+4. **Comisiones pagadas antes del cambio.** Conservan `cuenta_origen_id` NULL: nadie registró
+   de qué cuenta salieron y no se puede inferir. Quedan fuera del corte por cuenta —igual que
+   los cheques históricos— pero el corte global las sigue contando, porque a él sólo le importa
+   que salieron de algún banco.
 5. **`GET /grouped` escribe.** Persiste cortes faltantes como efecto lateral de una lectura. Se
    conservó el comportamiento para no cambiar qué fechas quedan materializadas.
 6. **Zona horaria.** `hibernate.jdbc.time_zone=UTC` está en las pruebas pero no en producción.

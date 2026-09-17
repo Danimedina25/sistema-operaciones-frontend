@@ -148,6 +148,7 @@ export function useCommercialPartnerCommissionsPage() {
 
   async function handleSubmitPayment(
     paymentProofFile: File,
+    cuentaOrigenId: number,
   ) {
     if (!selectedBeneficiary) {
       return;
@@ -157,6 +158,7 @@ export function useCommercialPartnerCommissionsPage() {
       selectedBeneficiary.commissionId,
       selectedBeneficiary.operationId,
       paymentProofFile,
+      cuentaOrigenId,
     );
 
     setIsPayModalOpen(false);

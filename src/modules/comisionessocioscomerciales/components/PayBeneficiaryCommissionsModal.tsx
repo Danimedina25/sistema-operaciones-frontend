@@ -6,6 +6,8 @@ import type {
     CommissionPartnerSummaryResponse,
 } from '../types/commercial-partner-commissions.types';
 import { formatPeriodDate } from '@/modules/operations/utils/operation-formatters';
+import { BankAccountCombobox } from '@/shared/components/ui/BankAccountCombobox';
+import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts';
 
 interface PayBeneficiaryCommissionsModalProps {
     open: boolean;
@@ -22,6 +24,7 @@ interface PayBeneficiaryCommissionsModalProps {
 
     onSubmit: (
         paymentProofFile: File,
+        cuentaOrigenId: number,
     ) => Promise<void>;
 }
 
@@ -111,6 +114,10 @@ export function PayBeneficiaryCommissionsModal({
 
     }, [paymentProofFile]);
 
+    const { accounts, isLoading: loadingAccounts } = useBankAccounts();
+    const [cuentaOrigenId, setCuentaOrigenId] = useState<number | null>(null);
+    const [cuentaError, setCuentaError] = useState('');
+
     useEffect(() => {
 
         if (!open) {
@@ -124,6 +131,9 @@ export function PayBeneficiaryCommissionsModal({
         setPreviewUrl(
             null,
         );
+
+        setCuentaOrigenId(null);
+        setCuentaError('');
 
     }, [open]);
 
@@ -379,6 +389,21 @@ export function PayBeneficiaryCommissionsModal({
 
                     </div>
 
+                    <div className="border-t border-slate-200 pt-4">
+                        <BankAccountCombobox
+                            label="Cuenta de origen"
+                            accounts={accounts}
+                            value={cuentaOrigenId}
+                            onChange={setCuentaOrigenId}
+                            isLoading={loadingAccounts}
+                            onlyActive
+                            fieldError={cuentaError}
+                        />
+                        <p className="mt-1 text-xs text-slate-500">
+                            Las comisiones se pagan por transferencia; esta cuenta es la que se descuenta.
+                        </p>
+                    </div>
+
                     <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
 
                         <button
@@ -404,8 +429,14 @@ export function PayBeneficiaryCommissionsModal({
                                     return;
                                 }
 
+                                if (!cuentaOrigenId) {
+                                    setCuentaError('Selecciona la cuenta desde la que se transfiere.');
+                                    return;
+                                }
+
                                 void onSubmit(
                                     paymentProofFile,
+                                    cuentaOrigenId,
                                 );
                             }}
                             className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"

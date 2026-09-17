@@ -28,6 +28,7 @@ export function usePayBeneficiaryCommissions() {
         async (
             commissionIds: number[],
             paymentProofFile: File,
+            cuentaOrigenId: number,
         ) => {
 
             try {
@@ -57,6 +58,7 @@ export function usePayBeneficiaryCommissions() {
                     commissionIds,
                     paymentProofUrl:
                         uploadResult.downloadUrl,
+                    cuentaOrigenId,
                 });
 
                 toast.success(

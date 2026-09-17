@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 
 import { Modal } from '@/shared/components/ui/Modal';
+import { BankAccountCombobox } from '@/shared/components/ui/BankAccountCombobox';
+import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts';
 
 import type {
   CommissionBeneficiaryResponse,
@@ -17,6 +19,7 @@ interface PayCommissionModalProps {
 
   onSubmit: (
     paymentProof: File,
+    cuentaOrigenId: number,
   ) => Promise<void>;
 }
 
@@ -92,6 +95,10 @@ export function PayCommissionModal({
       );
   }, [paymentProofFile]);
 
+  const { accounts, isLoading: loadingAccounts } = useBankAccounts();
+  const [cuentaOrigenId, setCuentaOrigenId] = useState<number | null>(null);
+  const [cuentaError, setCuentaError] = useState('');
+
   useEffect(() => {
     if (open) {
       setPaymentProofFile(
@@ -101,6 +108,9 @@ export function PayCommissionModal({
       setPreviewUrl(
         null,
       );
+
+      setCuentaOrigenId(null);
+      setCuentaError('');
     }
   }, [open]);
 
@@ -283,6 +293,21 @@ export function PayCommissionModal({
             </div>
           </div>
 
+          <div className="border-t border-slate-200 pt-4">
+            <BankAccountCombobox
+              label="Cuenta de origen"
+              accounts={accounts}
+              value={cuentaOrigenId}
+              onChange={setCuentaOrigenId}
+              isLoading={loadingAccounts}
+              onlyActive
+              fieldError={cuentaError}
+            />
+            <p className="mt-1 text-xs text-slate-500">
+              Las comisiones se pagan por transferencia; esta cuenta es la que se descuenta.
+            </p>
+          </div>
+
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <button
               type="button"
@@ -303,8 +328,14 @@ export function PayCommissionModal({
                   return;
                 }
 
+                if (!cuentaOrigenId) {
+                  setCuentaError('Selecciona la cuenta desde la que se transfiere.');
+                  return;
+                }
+
                 void onSubmit(
                   paymentProofFile,
+                  cuentaOrigenId,
                 );
               }}
               className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
