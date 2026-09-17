@@ -135,6 +135,28 @@ cheques originales, nunca desde los agregados guardados. Lo único que respeta e
 no se puede derivar de ningún movimiento. **Si ese número incluía efectivo, hay que corregirlo
 aparte**: ninguna operación automática puede saberlo.
 
+### Reconstruir la serie desde cero
+
+`recalculate` sólo rehace cortes que existen. Para reconstruir la serie completa —incluso si
+no queda ninguno— está:
+
+```
+POST /api/daily-cash-cuts/rebuild?desde=YYYY-MM-DD&hasta=YYYY-MM-DD&saldoInicial=0   (rol ADMIN)
+```
+
+Borra los cortes del rango en las dos series bancarias —la global y la de cada cuenta— y los
+vuelve a calcular día por día en orden ascendente desde las operaciones registradas. `hasta`
+es opcional y se recorta a ayer: **el día de hoy nunca se registra**, porque congelarlo a media
+jornada dejaría de mostrarse en vivo. `saldoInicial` sólo se usa cuando no hay ningún corte
+anterior a `desde`.
+
+**Caja General no se puede reconstruir así, y es a propósito.** Sus movimientos no se derivan
+de nada: son la captura original, con su desglose por denominación y su conteo de apertura y
+cierre. Un cheque cobrado o un retiro sin tarjeta existen únicamente porque alguien los
+capturó. Borrarlos es perder el dato, no recalcularlo. Lo único que sí se regenera son las
+entregas de retornos en efectivo, que nacen del flujo de entrega y vuelven a aparecer como
+pendientes de vincular.
+
 Los dos retiros de banco hacia la caja —cheque cobrado y retiro sin tarjeta— se agrupan en la
 columna `salidas_caja_general` de ambos cortes. El detalle por instrumento se consulta en
 Movimientos bancarios.
