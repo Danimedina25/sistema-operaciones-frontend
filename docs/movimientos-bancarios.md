@@ -52,25 +52,34 @@ auditables más el corte anterior.
 | Retorno completado por retiro sin tarjeta | Salida | Sin efecto |
 | Retorno completado en efectivo | Sin efecto | Salida |
 | Cheque cobrado en Caja General | **Salida** | **Entrada** |
-| Retiro con tarjeta en Caja General | Sin efecto (ver hallazgos) | Entrada o salida |
+| Retiro sin tarjeta en Caja General | **Salida** | **Entrada** |
 
 Un pago sólo cuenta como `VALIDADA` y por su `fechaValidacion`; una parcialidad sólo como
 `COMPLETADA` y por su `fechaRealizacion`.
 
-## Reglas del cheque cobrado
+## Retiros de banco hacia la caja
 
-1. Exige una cuenta bancaria **real y activa**, identificada por `bankAccountId`. El nombre
+Dos conceptos de Caja General describen el mismo hecho contable —efectivo que sale de una
+cuenta bancaria y entra a la caja— con distinto instrumento: **cheque cobrado** y **retiro sin
+tarjeta**. Los dos siguen exactamente las mismas reglas:
+
+1. Exigen una cuenta bancaria **real y activa**, identificada por `bankAccountId`. El nombre
    del banco ya no es identidad: se rechaza si viene como texto.
-2. Sólo existe en dirección `ENTRADA`. Capturarlo como salida se rechaza en el servicio y
-   además lo impide una restricción `CHECK`.
+2. Sólo existen en dirección `ENTRADA`: retirar del banco únicamente puede meter efectivo a la
+   caja, nunca sacarlo. Lo rechaza el servicio y además lo impide una restricción `CHECK`.
 3. El importe entra a Caja General y sale de la cuenta en la misma fila y la misma transacción.
-4. Es idempotente por el `requestId` que ya usaba Caja General. Reutilizar el UUID con otra
+4. Son idempotentes por el `requestId` que ya usaba Caja General. Reutilizar el UUID con otra
    cuenta se rechaza con conflicto.
-5. Conserva el nombre del banco como snapshot para que el histórico siga siendo legible.
+5. Conservan el nombre del banco como snapshot para que el histórico siga siendo legible.
 6. El movimiento bancario conserva la referencia al movimiento de Caja General que lo originó.
 
-`EFECTIVO` nunca admite banco ni cuenta. `RETIRO_CON_TARJETA` conserva el catálogo fijo
-(`CASH_CARD_BANKS`) y no afecta ningún saldo bancario.
+`EFECTIVO` nunca admite banco ni cuenta.
+
+**`RETIRO_CON_TARJETA` ya no existe.** Nunca existió en la operación: se retira sin tarjeta,
+con un código generado contra una cuenta concreta. El valor se conserva en el enum sólo para
+poder leer movimientos históricos que lo usaron, y esos conservan su texto de banco sin cuenta
+vinculada. Con esto desaparece el último uso del catálogo fijo de nombres de banco: todo
+movimiento que toca un banco lo hace por llave foránea.
 
 ## Alcance de cada corte (definido por negocio)
 
@@ -126,8 +135,9 @@ cheques originales, nunca desde los agregados guardados. Lo único que respeta e
 no se puede derivar de ningún movimiento. **Si ese número incluía efectivo, hay que corregirlo
 aparte**: ninguna operación automática puede saberlo.
 
-`RETIRO_CON_TARJETA` de Caja General sigue pendiente: tiene la misma forma que el cheque
-cobrado, pero las tarjetas no están modeladas y no se sabe de qué cuenta retiran.
+Los dos retiros de banco hacia la caja —cheque cobrado y retiro sin tarjeta— se agrupan en la
+columna `salidas_caja_general` de ambos cortes. El detalle por instrumento se consulta en
+Movimientos bancarios.
 
 ## Cortes bancarios
 

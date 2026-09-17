@@ -383,7 +383,7 @@ export default function DailyCashCutPage() {
 
                                 <BreakdownCard
                                     title="Salidas"
-                                    description="Dinero que sale de las cuentas bancarias: retornos a clientes, comisiones de socios y cheques cobrados que pasan a efectivo. Los retornos en efectivo salen de Caja General."
+                                    description="Dinero que sale de las cuentas bancarias: retornos a clientes, comisiones de socios y el efectivo retirado hacia Caja General. Los retornos en efectivo salen de Caja General."
                                     totalLabel="Total salidas"
                                     total={currentData.totalSalidas}
                                     highlight="negative"
@@ -405,8 +405,8 @@ export default function DailyCashCutPage() {
                                             value: currentData.retornosRetiroSinTarjeta,
                                         },
                                         {
-                                            label: 'Cheques cobrados hacia Caja General',
-                                            value: currentData.salidasChequeCobrado,
+                                            label: 'Efectivo retirado hacia Caja General',
+                                            value: currentData.salidasCajaGeneral,
                                         },
                                         {
                                             label: 'Pago de comisiones a socios comerciales',

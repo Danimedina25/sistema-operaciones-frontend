@@ -2,7 +2,7 @@ import { useMemo, useRef, useState, type FormEvent } from 'react';
 import { getApiErrorMessage } from '@/shared/utils/errors';
 import { BankAccountCombobox } from '@/shared/components/ui/BankAccountCombobox';
 import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts';
-import { CASH_CARD_BANKS, CASH_MOVEMENT_CONCEPTS, type CapturableCashConcept, type CashDay, type CreateCashMovement } from '../types/caja-general.types';
+import { BANK_WITHDRAWAL_CONCEPTS, CASH_MOVEMENT_CONCEPTS, type CapturableCashConcept, type CashDay, type CreateCashMovement } from '../types/caja-general.types';
 import { countCents, emptyCounts, validateCashAmount } from '../utils/cash-amounts';
 import { DenominationFields } from './DenominationFields';
 import { cashInput } from './CashDayForm';
@@ -16,7 +16,6 @@ export function CashMovementForm({ direction, day, busy, onSubmit }: {
   onSubmit: (request: CreateCashMovement) => Promise<unknown>;
 }) {
   const [type, setType] = useState<CapturableCashConcept>('EFECTIVO');
-  const [bank, setBank] = useState('');
   const [bankAccountId, setBankAccountId] = useState<number | null>(null);
   const [counts, setCounts] = useState(emptyCounts);
   const [error, setError] = useState('');
@@ -24,16 +23,18 @@ export function CashMovementForm({ direction, day, busy, onSubmit }: {
   const totalCents = countCents(counts);
   const { accounts, isLoading: loadingAccounts } = useBankAccounts();
 
-  // El cheque cobrado saca efectivo del banco, así que sólo existe como entrada de caja.
+  const retiraDelBanco = (BANK_WITHDRAWAL_CONCEPTS as readonly string[]).includes(type);
+
+  // Retirar del banco sólo mete efectivo a la caja: esos conceptos no existen como salida.
   const concepts = useMemo(
     () => Object.entries(CASH_MOVEMENT_CONCEPTS)
-      .filter(([value]) => direction === 'ENTRADA' || value !== 'CHEQUE') as [CapturableCashConcept, string][],
+      .filter(([value]) => direction === 'ENTRADA'
+        || !(BANK_WITHDRAWAL_CONCEPTS as readonly string[]).includes(value)) as [CapturableCashConcept, string][],
     [direction],
   );
 
   function changeType(next: CapturableCashConcept) {
     setType(next);
-    setBank('');
     setBankAccountId(null);
   }
 
@@ -45,19 +46,16 @@ export function CashMovementForm({ direction, day, busy, onSubmit }: {
     if (direction === 'SALIDA' && totalCents > Math.round(day.saldoActual * 100)) {
       setError('Saldo insuficiente: la caja no puede quedar negativa.'); return;
     }
-    if (type === 'CHEQUE' && !bankAccountId) {
-      setError('Selecciona la cuenta bancaria de la que se cobró el cheque.'); return;
-    }
-    if (type === 'RETIRO_CON_TARJETA' && !bank) {
-      setError('Selecciona el banco relacionado con el movimiento.'); return;
+    if (retiraDelBanco && !bankAccountId) {
+      setError('Selecciona la cuenta bancaria de la que salió el dinero.'); return;
     }
 
     const data = {
       direccion: direction,
       tipo: type,
       concepto: CASH_MOVEMENT_CONCEPTS[type],
-      banco: type === 'RETIRO_CON_TARJETA' ? bank : null,
-      bankAccountId: type === 'CHEQUE' ? bankAccountId : null,
+      banco: null,
+      bankAccountId: retiraDelBanco ? bankAccountId : null,
       monto: amount,
       parcialidadId: null,
       denominaciones: counts,
@@ -70,7 +68,7 @@ export function CashMovementForm({ direction, day, busy, onSubmit }: {
     setError('');
     try {
       await onSubmit({ ...data, requestId: retry.current.id });
-      setType('EFECTIVO'); setBank(''); setBankAccountId(null); setCounts(emptyCounts()); retry.current = null;
+      setType('EFECTIVO'); setBankAccountId(null); setCounts(emptyCounts()); retry.current = null;
     } catch (err) { setError(getApiErrorMessage(err)); }
   }
 
@@ -84,7 +82,7 @@ export function CashMovementForm({ direction, day, busy, onSubmit }: {
           </select>
         </label>
 
-        {type === 'CHEQUE' ? (
+        {retiraDelBanco ? (
           <BankAccountCombobox
             label="Banco (cuenta que se debita)"
             ariaLabel="Banco"
@@ -95,10 +93,9 @@ export function CashMovementForm({ direction, day, busy, onSubmit }: {
             onlyActive
           />
         ) : (
-          <label className="block text-sm font-medium text-slate-700">Banco {type === 'EFECTIVO' ? '(no aplica)' : ''}
-            <select aria-label="Banco" disabled={type === 'EFECTIVO'} value={bank} onChange={event => setBank(event.target.value)} className={cashInput}>
+          <label className="block text-sm font-medium text-slate-700">Banco (no aplica)
+            <select aria-label="Banco" disabled value="" className={cashInput}>
               <option value="">—</option>
-              {CASH_CARD_BANKS.map(name => <option key={name} value={name}>{name}</option>)}
             </select>
           </label>
         )}

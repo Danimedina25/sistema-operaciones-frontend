@@ -22,8 +22,8 @@ export interface DailyCashCutResponse {
   retornosRetiroSinTarjeta: number;
   totalRetornos: number;
 
-  /** Cheques cobrados en ventanilla: salen del banco y entran como efectivo a Caja General. */
-  salidasChequeCobrado: number;
+  /** Efectivo retirado del banco hacia la caja: cheque cobrado y retiro sin tarjeta. */
+  salidasCajaGeneral: number;
   totalComisionesSocios: number;
   totalComisionesOficina: number;
 
@@ -61,8 +61,8 @@ export interface CashCutRangeResponse {
   retornosRetiroSinTarjeta: number;
   totalRetornos: number;
 
-  /** Cheques cobrados en ventanilla: salen del banco y entran como efectivo a Caja General. */
-  salidasChequeCobrado: number;
+  /** Efectivo retirado del banco hacia la caja: cheque cobrado y retiro sin tarjeta. */
+  salidasCajaGeneral: number;
   totalComisionesSocios: number;
   totalComisionesOficina: number;
 

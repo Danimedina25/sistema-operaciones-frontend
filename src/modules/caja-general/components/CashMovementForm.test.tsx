@@ -48,16 +48,16 @@ describe('Movimientos de caja', () => {
     mount('ENTRADA', vi.fn());
     expect(screen.getByRole('option', { name: 'Efectivo' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Cheque cobrado' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'Retiro con tarjeta' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Retiro sin tarjeta' })).toBeInTheDocument();
     expect(screen.queryByRole('option', { name: 'Transferencia' })).not.toBeInTheDocument();
     expect(screen.queryByRole('option', { name: 'Depósito' })).not.toBeInTheDocument();
   });
 
-  it('no ofrece el cheque cobrado como salida de caja', () => {
+  it('no ofrece como salida los conceptos que retiran del banco', () => {
     mount('SALIDA', vi.fn());
     expect(screen.getByRole('option', { name: 'Efectivo' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'Retiro con tarjeta' })).toBeInTheDocument();
     expect(screen.queryByRole('option', { name: 'Cheque cobrado' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Retiro sin tarjeta' })).not.toBeInTheDocument();
   });
 
   it('exige una cuenta bancaria real para el cheque cobrado y envía su id', async () => {
@@ -99,15 +99,18 @@ describe('Movimientos de caja', () => {
     expect(screen.getByText('No se encontraron cuentas')).toBeInTheDocument();
   });
 
-  it('el retiro con tarjeta conserva el catálogo fijo de bancos', async () => {
+  it('el retiro sin tarjeta también exige la cuenta real', async () => {
     const submit = vi.fn().mockResolvedValue(undefined); mount('ENTRADA', submit);
-    fireEvent.change(screen.getByLabelText('Concepto'), { target: { value: 'RETIRO_CON_TARJETA' } });
+    fireEvent.change(screen.getByLabelText('Concepto'), { target: { value: 'RETIRO_SIN_TARJETA' } });
     fireEvent.change(screen.getByLabelText('Cantidad de $100.00'), { target: { value: '1' } });
-    fireEvent.change(screen.getByLabelText('Banco'), { target: { value: 'BBVA' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar entrada' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Selecciona la cuenta bancaria');
+
+    pickAccount('Tesorería');
     fireEvent.click(screen.getByRole('button', { name: 'Registrar entrada' }));
 
     await waitFor(() => expect(submit).toHaveBeenCalledWith(expect.objectContaining({
-      tipo: 'RETIRO_CON_TARJETA', banco: 'BBVA', bankAccountId: null,
+      tipo: 'RETIRO_SIN_TARJETA', banco: null, bankAccountId: 7,
     })));
   });
 

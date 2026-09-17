@@ -4,16 +4,21 @@ export const DENOMINATIONS = [
 ] as const;
 export type Denomination = typeof DENOMINATIONS[number][0];
 export type CashCounts = Record<Denomination, number>;
-/**
- * Catálogo fijo heredado. Sólo sigue vigente para `RETIRO_CON_TARJETA`: el cheque cobrado
- * ya no usa nombres de banco sino la cuenta bancaria real del sistema.
- */
-export const CASH_CARD_BANKS = ['BBVA', 'Banorte', 'Scotiabank', 'Inbursa', 'Kapital', 'Bajío'] as const;
 export const CASH_MOVEMENT_CONCEPTS = {
-  EFECTIVO: 'Efectivo', CHEQUE: 'Cheque cobrado', RETIRO_CON_TARJETA: 'Retiro con tarjeta',
+  EFECTIVO: 'Efectivo', CHEQUE: 'Cheque cobrado', RETIRO_SIN_TARJETA: 'Retiro sin tarjeta',
 } as const;
+/**
+ * Conceptos que sacan efectivo de una cuenta bancaria y lo meten a la caja: exigen la
+ * cuenta real y sólo existen como entrada.
+ */
+export const BANK_WITHDRAWAL_CONCEPTS = ['CHEQUE', 'RETIRO_SIN_TARJETA'] as const;
 export type CapturableCashConcept = keyof typeof CASH_MOVEMENT_CONCEPTS;
-export type CashConcept = CapturableCashConcept | 'TRANSFERENCIA' | 'DEPOSITO' | 'RETIRO_SIN_TARJETA';
+/**
+ * Tipo de lectura. Incluye conceptos que ya no se capturan: los pagos bancarios y
+ * `RETIRO_CON_TARJETA`, que nunca existió en la operación y sólo aparece en movimientos
+ * históricos anteriores al cambio.
+ */
+export type CashConcept = CapturableCashConcept | 'TRANSFERENCIA' | 'DEPOSITO' | 'RETIRO_CON_TARJETA';
 export interface CashDay {
   id: number; fecha: string; version: number; saldoInicial: number; saldoActual: number;
   saldoContado: number | null; diferencia: number | null; apertura: CashCounts; cierre: Partial<CashCounts>;
