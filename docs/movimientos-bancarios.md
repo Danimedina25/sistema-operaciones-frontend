@@ -212,8 +212,20 @@ Parámetros comunes: `desde`, `hasta` (obligatorios), `bankAccountId`, `banco`, 
 Validaciones: rango obligatorio y ordenado, no futuro, máximo un año — el mismo criterio que
 el libro de Caja General.
 
-Roles: `ADMIN`, `GERENTE`, `DIRECCION`, `AUXILIAR_CUENTAS`, iguales a los de consulta de
-saldos bancarios.
+Roles: `ADMIN`, `JEFA_CUENTAS`, `GERENTE`, `DIRECCION`, `AUXILIAR_CUENTAS`, iguales a los de
+consulta de saldos bancarios.
+
+### Quién opera el módulo
+
+| Acción | Roles |
+|---|---|
+| Consultar cortes, saldos y movimientos | `ADMIN`, `JEFA_CUENTAS`, `GERENTE`, `DIRECCION`, `AUXILIAR_CUENTAS` |
+| Registrar cortes (`POST /register`, `POST /api/daily-cash-cuts`) | `ADMIN`, `JEFA_CUENTAS` |
+| Recalcular y reconstruir la serie | `ADMIN` |
+
+Jefa de Cuentas opera el módulo junto con Administración. **Gerencia y Dirección pasan a ser
+sólo consulta**: antes podían registrar cortes. Recalcular y reconstruir reescriben cortes ya
+cerrados, así que se quedan en Administración aunque sean "operar el módulo".
 
 El renglón expone `origen`, `sourceId`, fecha y hora, dirección, tipo, concepto, importe,
 la cuenta (`cuentaBanco`, `cuentaTitular`, `cuentaNumero`, `cuentaActiva`), las referencias a
