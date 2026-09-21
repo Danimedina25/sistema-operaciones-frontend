@@ -20,6 +20,7 @@ import {
   X
 } from 'lucide-react';
 
+import { ChequeIcon } from '@/shared/components/icons/ChequeIcon';
 import { paths } from '@/routes/paths';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { cn } from '@/shared/lib/cn';
@@ -36,7 +37,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { to: paths.cheques, label: 'Cheques por cobrar', icon: Banknote, allowedRoles: ROUTE_ACCESS.cheques },
+  { to: paths.cheques, label: 'Cheques por cobrar', icon: ChequeIcon, allowedRoles: ROUTE_ACCESS.cheques },
   {
     to: paths.cajaGeneral,
     label: 'Caja General',

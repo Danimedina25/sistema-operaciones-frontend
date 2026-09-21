@@ -32,6 +32,14 @@ describe('Sidebar', () => {
     expect(screen.queryByRole('link', { name: 'Movimientos bancarios' })).toBeNull();
   });
 
+  // El ícono propio del módulo lo distingue de Caja General, que usa el billete.
+  it('usa el ícono de cheque en la entrada de Cheques por cobrar', () => {
+    renderSidebar('/cheques');
+
+    const link = screen.getByRole('link', { name: 'Cheques por cobrar' });
+    expect(link.querySelector('[data-icon="cheque"]')).not.toBeNull();
+  });
+
   it('mantiene activo Cortes y saldos en sus dos rutas', () => {
     renderSidebar('/corte');
     expect(screen.getByRole('link', { name: 'Cortes y saldos' })).toHaveAttribute(
