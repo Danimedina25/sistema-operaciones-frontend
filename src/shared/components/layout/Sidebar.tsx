@@ -68,12 +68,6 @@ const navItems: NavItem[] = [
     allowedRoles: ROUTE_ACCESS.corte,
   },
   {
-    to: paths.bankMovements,
-    label: 'Movimientos bancarios',
-    icon: LayoutDashboard,
-    allowedRoles: ROUTE_ACCESS.bankMovements,
-  },
-  {
     to: paths.users,
     label: 'Usuarios',
     icon: Users,
@@ -211,7 +205,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               <NavLink
                 key={to}
                 to={to}
-                end={to === paths.corte}
                 onClick={onClose}
                 className={({ isActive }) =>
                   cn(

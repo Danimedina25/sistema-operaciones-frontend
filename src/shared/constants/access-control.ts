@@ -13,6 +13,7 @@ export const ROUTE_ACCESS = {
   // Jefa de Cuentas opera el módulo; Gerencia y Dirección sólo consultan (el backend les
   // niega las escrituras). AUXILIAR_CUENTAS ya tenía acceso de lectura a los endpoints.
   corte: ['ADMIN', 'JEFA_CUENTAS', 'GERENTE', 'DIRECCION', 'AUXILIAR_CUENTAS'],
+  bankBalances: ['ADMIN', 'JEFA_CUENTAS', 'GERENTE', 'DIRECCION', 'AUXILIAR_CUENTAS'],
   bankMovements: ['ADMIN', 'JEFA_CUENTAS', 'GERENTE', 'DIRECCION', 'AUXILIAR_CUENTAS'],
   cajaGeneral: ['ADMIN', 'JEFA_CAJAS', 'GERENTE', 'DIRECCION'],
   users: ['ADMIN', 'GERENTE', 'DIRECCION'],

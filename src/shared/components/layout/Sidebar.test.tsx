@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { Sidebar } from './Sidebar';
@@ -24,27 +24,27 @@ function renderSidebar(pathname: string) {
 }
 
 describe('Sidebar', () => {
-  it('activa solamente Movimientos bancarios en su ruta', () => {
-    renderSidebar('/corte/movimientos');
-
-    expect(screen.getByRole('link', { name: 'Movimientos bancarios' })).toHaveAttribute(
-      'aria-current',
-      'page',
-    );
-    expect(screen.getByRole('link', { name: 'Cortes y saldos' })).not.toHaveAttribute(
-      'aria-current',
-    );
-  });
-
-  it('mantiene activo Cortes y saldos en la ruta exacta', () => {
+  // Movimientos bancarios dejó de ser una entrada propia: es una pestaña dentro de
+  // Cortes y saldos, así que su URL debe resaltar esa única opción.
+  it('no ofrece una entrada aparte para Movimientos bancarios', () => {
     renderSidebar('/corte');
 
+    expect(screen.queryByRole('link', { name: 'Movimientos bancarios' })).toBeNull();
+  });
+
+  it('mantiene activo Cortes y saldos en sus dos rutas', () => {
+    renderSidebar('/corte');
     expect(screen.getByRole('link', { name: 'Cortes y saldos' })).toHaveAttribute(
       'aria-current',
       'page',
     );
-    expect(screen.getByRole('link', { name: 'Movimientos bancarios' })).not.toHaveAttribute(
+
+    cleanup();
+
+    renderSidebar('/corte/movimientos');
+    expect(screen.getByRole('link', { name: 'Cortes y saldos' })).toHaveAttribute(
       'aria-current',
+      'page',
     );
   });
 });

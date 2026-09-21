@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { BankMovementsPage } from './BankMovementsPage';
+import { BankMovementsSection } from './BankMovementsSection';
 import { todayIso } from '../hooks/use-bank-movements';
 import type { BankMovement, BankMovementTotals } from '../types/bank-movements.types';
 import type { BankAccountResponse } from '@/modules/bank-accounts/types/bank-accounts.types';
@@ -55,16 +55,17 @@ function openFilters() {
   fireEvent.click(screen.getByRole('button', { name: /mostrar/i }));
 }
 
-function mount() {
+/** El periodo llega desde la cabecera de Cortes y saldos, no de esta sección. */
+function mount(desde = '2026-09-16', hasta = '2026-09-16') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={client}>
-      <MemoryRouter><BankMovementsPage /></MemoryRouter>
+      <MemoryRouter><BankMovementsSection desde={desde} hasta={hasta} /></MemoryRouter>
     </QueryClientProvider>,
   );
 }
 
-describe('BankMovementsPage', () => {
+describe('BankMovementsSection', () => {
   beforeEach(() => {
     window.sessionStorage.clear();
     searchBankMovements.mockReset().mockResolvedValue({
@@ -103,22 +104,28 @@ describe('BankMovementsPage', () => {
     expect(screen.queryByRole('button', { name: /registrar|agregar|nuevo|nueva|capturar/i })).toBeNull();
   });
 
-  it('no permite consultar fechas futuras', async () => {
+  it('consulta el periodo que le pasa la cabecera', async () => {
+    mount('2026-09-01', '2026-09-16');
+    await waitFor(() => expect(searchBankMovements).toHaveBeenLastCalledWith(
+      expect.objectContaining({ desde: '2026-09-01', hasta: '2026-09-16' }), 0, 20,
+    ));
+  });
+
+  it('el periodo ya no se captura dentro de los filtros de la sección', async () => {
     mount();
     await screen.findByText('Cheque cobrado');
     openFilters();
-    const desde = screen.getByLabelText('Desde') as HTMLInputElement;
-    const hasta = screen.getByLabelText('Hasta') as HTMLInputElement;
+    expect(screen.queryByLabelText('Desde')).toBeNull();
+    expect(screen.queryByLabelText('Hasta')).toBeNull();
+  });
+
+  it('no consulta fechas futuras aunque la cabecera las entregue', async () => {
     // La fecha del usuario es la LOCAL, no la UTC: comparar contra toISOString() hacía
     // fallar esta prueba por las tardes, cuando UTC ya cambió de día.
-    const today = todayIso();
-    expect(desde.max).toBe(today);
-    expect(hasta.max).toBe(today);
-
-    const future = '2099-01-01';
-    fireEvent.change(hasta, { target: { value: future } });
+    expect('2099-01-01' > todayIso()).toBe(true);
+    mount('2099-01-01', '2099-01-01');
     expect(await screen.findByRole('alert')).toHaveTextContent('no sea futuro');
-    expect(searchBankMovements).toHaveBeenCalledTimes(1);
+    expect(searchBankMovements).not.toHaveBeenCalled();
   });
 
   it('pagina desde el backend y reinicia al cambiar un filtro', async () => {

@@ -7,6 +7,7 @@ export const paths = {
 
   dashboard: '/',
   corte: '/corte',
+  bankBalances: '/corte/saldos',
   bankMovements: '/corte/movimientos',
   cajaGeneral: '/caja-general',
   cheques: '/cheques-por-cobrar',

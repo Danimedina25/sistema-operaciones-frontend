@@ -32,7 +32,6 @@ import CommercialPartnersPage from '@/modules/socioscomerciales/pages/Commercial
 import CommercialPartnerCommissionsPage from '@/modules/comisionessocioscomerciales/pages/CommercialPartnerCommissionsPage';
 import MyCommercialPartnerCommissionsPage from '@/modules/comisionessocioscomerciales/pages/MyCommercialPartnerCommissionsPage';
 import DailyCashCutPage from '@/modules/corte/pages/DailyCashCutPage';
-import { BankMovementsPage } from '@/modules/corte/pages/BankMovementsPage';
 import ReturnsRequestedPage from '@/modules/operations/pages/ReturnsRequestedPage';
 import TodayCashDeliveriesPage from '@/modules/operations/pages/TodayCashDeliveriesPage';
 import ConfiguracionesPage from '@/modules/configuraciones/pages/ConfiguracionesPage';
@@ -82,11 +81,17 @@ export const router = createBrowserRouter([
             ],
           },
           {
+            // Saldos y Movimientos son pestañas de Cortes y saldos: comparten página y
+            // cada una conserva su propia URL para poder enlazarse y recargarse.
             element: <RoleGuard allowedRoles={ROUTE_ACCESS.bankMovements} />,
             children: [
               {
+                path: paths.bankBalances,
+                element: <DailyCashCutPage />,
+              },
+              {
                 path: paths.bankMovements,
-                element: <BankMovementsPage />,
+                element: <DailyCashCutPage />,
               },
             ],
           },

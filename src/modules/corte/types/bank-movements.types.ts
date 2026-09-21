@@ -57,5 +57,11 @@ export interface BankMovementFilters {
   tipo: BankMovementType | '';
 }
 
+/**
+ * Los filtros que el libro de movimientos captura por su cuenta. El periodo queda fuera
+ * porque lo fija la cabecera de Cortes y saldos, compartida con las otras pestañas.
+ */
+export type BankMovementSideFilters = Omit<BankMovementFilters, 'desde' | 'hasta'>;
+
 export type BankMovementPageApiResponse = ApiResponse<PaginatedResponse<BankMovement>>;
 export type BankMovementTotalsApiResponse = ApiResponse<BankMovementTotals>;

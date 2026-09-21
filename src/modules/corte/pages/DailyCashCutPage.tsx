@@ -2,6 +2,7 @@ import { useTableFilters } from '@/shared/hooks/use-table-filters';
 // src/modules/corte/pages/DailyCashCutPage.tsx
 
 import { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import type {
     BankGroupBalanceResponse,
     CashCutRangeResponse,
@@ -12,6 +13,8 @@ import { formatDate } from '@/modules/operations/utils/operation-formatters';
 import { formatDate as toISODate } from '@/shared/utils/weeks';
 import { DateRangeCalendarField } from '@/shared/components/ui/DateRangeCalendarField';
 import { maskAccountNumber } from '@/shared/utils/account-formatting';
+import { paths } from '@/routes/paths';
+import { BankMovementsSection } from '../components/BankMovementsSection';
 import { ArrowDownToLine, ArrowUpFromLine, Building2, CalendarDays, Landmark, LoaderCircle, Scale, Search } from 'lucide-react';
 
 function todayISO() {
@@ -26,11 +29,38 @@ function formatCurrency(value?: number | null) {
 }
 
 
-type MainView = 'cashCuts' | 'bankBalances';
+type MainView = 'cashCuts' | 'bankBalances' | 'bankMovements';
 type DateMode = 'daily' | 'range';
 
+/**
+ * Cada pestaña tiene su propia URL, así se puede enlazar y recargar sin perderla.
+ *
+ * La pestaña activa se DERIVA de la ruta en lugar de guardarse en estado: navegar
+ * remonta la página, y un estado local se reiniciaría en cada cambio de pestaña. Las
+ * fechas sobreviven al remonte porque `useTableFilters` las persiste.
+ */
+const VIEW_PATHS: Record<MainView, string> = {
+    cashCuts: paths.corte,
+    bankBalances: paths.bankBalances,
+    bankMovements: paths.bankMovements,
+};
+
+const VIEW_BY_PATH: Record<string, MainView> = {
+    [paths.corte]: 'cashCuts',
+    [paths.bankBalances]: 'bankBalances',
+    [paths.bankMovements]: 'bankMovements',
+};
+
 export default function DailyCashCutPage() {
-    const [mainView, setMainView] = useState<MainView>('cashCuts');
+    const location = useLocation();
+    const navigate = useNavigate();
+    const mainView: MainView = VIEW_BY_PATH[location.pathname] ?? 'cashCuts';
+
+    const selectView = (next: MainView) => {
+        if (VIEW_PATHS[next] !== location.pathname) {
+            navigate(VIEW_PATHS[next]);
+        }
+    };
     const { filters, setFilters } = useTableFilters('table-filters:daily-cash-cut', {
         dateMode: 'daily' as DateMode,
         fecha: todayISO(),
@@ -59,6 +89,7 @@ export default function DailyCashCutPage() {
 
     const isCashCutsView = mainView === 'cashCuts';
     const isBankBalancesView = mainView === 'bankBalances';
+    const isBankMovementsView = mainView === 'bankMovements';
     const isDailyMode = dateMode === 'daily';
     const isRangeMode = dateMode === 'range';
 
@@ -72,14 +103,20 @@ export default function DailyCashCutPage() {
         return isDailyMode ? dailyCut : rangeCut;
     }, [dailyCut, rangeCut, isCashCutsView, isDailyMode]);
 
-    const isLoading = isCashCutsView
-        ? isDailyMode
-            ? isLoadingDailyCut
-            : isLoadingRangeCut
-        : isLoadingBankBalances;
+    const isLoading = isBankMovementsView
+        ? false
+        : isCashCutsView
+            ? isDailyMode
+                ? isLoadingDailyCut
+                : isLoadingRangeCut
+            : isLoadingBankBalances;
     const showLoadingOverlay = isLoading && Boolean(currentData);
 
     const handleSearch = async () => {
+        if (isBankMovementsView) {
+            return;
+        }
+
         if (isBankBalancesView) {
             await fetchBankBalancesGrouped(fecha);
             return;
@@ -94,6 +131,11 @@ export default function DailyCashCutPage() {
     };
 
     useEffect(() => {
+        // El libro de movimientos consulta por su cuenta; no hay corte ni saldos que pedir.
+        if (mainView === 'bankMovements') {
+            return;
+        }
+
         if (mainView === 'bankBalances') {
             fetchBankBalancesGrouped(fecha);
             return;
@@ -116,15 +158,17 @@ export default function DailyCashCutPage() {
         ? `Saldos bancarios del ${formatDate(fecha)}`
         : `Saldos bancarios del ${formatDate(startDate)} al ${formatDate(endDate)}`;
 
-    const pageTitle =
-        mainView === 'cashCuts'
-            ? 'Cortes diarios'
-            : 'Saldos bancarios';
+    const pageTitle = {
+        cashCuts: 'Cortes diarios',
+        bankBalances: 'Saldos bancarios',
+        bankMovements: 'Movimientos bancarios',
+    }[mainView];
 
-    const pageDescription =
-        mainView === 'cashCuts'
-            ? 'Consulta saldos, entradas y salidas de dinero en las operaciones.'
-            : 'Consulta los saldos de las cuentas bancarias agrupadas por banco.';
+    const pageDescription = {
+        cashCuts: 'Consulta saldos, entradas y salidas de dinero en las operaciones.',
+        bankBalances: 'Consulta los saldos de las cuentas bancarias agrupadas por banco.',
+        bankMovements: 'Consulta del movimiento de las cuentas bancarias: pagos validados, retornos completados y cheques cobrados en Caja General.',
+    }[mainView];
 
     return (
 
@@ -143,10 +187,10 @@ export default function DailyCashCutPage() {
             <div className={`space-y-6 ${showLoadingOverlay ? 'pointer-events-none opacity-60' : ''}`}>
                 <div className="space-y-6">
                     <section className="rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid gap-2 sm:grid-cols-3">
                             <button
                                 type="button"
-                                onClick={() => setMainView('cashCuts')}
+                                onClick={() => selectView('cashCuts')}
                                 className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${mainView === 'cashCuts'
                                     ? 'bg-slate-900 text-white shadow-md'
                                     : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
@@ -157,13 +201,24 @@ export default function DailyCashCutPage() {
 
                             <button
                                 type="button"
-                                onClick={() => setMainView('bankBalances')}
+                                onClick={() => selectView('bankBalances')}
                                 className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${mainView === 'bankBalances'
                                     ? 'bg-slate-900 text-white shadow-md'
                                     : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                                     }`}
                             >
                                 Saldos bancarios
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => selectView('bankMovements')}
+                                className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${mainView === 'bankMovements'
+                                    ? 'bg-slate-900 text-white shadow-md'
+                                    : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                                    }`}
+                            >
+                                Movimientos bancarios
                             </button>
                         </div>
                     </section>
@@ -183,7 +238,7 @@ export default function DailyCashCutPage() {
                                     {pageDescription}
                                 </p>
                             </div>
-                            {isCashCutsView ? (
+                            {isBankBalancesView ? null : (
                                 <div className="inline-flex rounded-xl border border-white/10 bg-white/5 p-1">
                                     <button
                                         type="button"
@@ -207,19 +262,26 @@ export default function DailyCashCutPage() {
                                         Rango de fechas
                                     </button>
                                 </div>
-                            ) : null}
+                            )}
 
                         </div></div>
 
                         <div className="grid gap-4 bg-white p-6 lg:grid-cols-[1fr_auto] lg:items-end">
                             {isBankBalancesView || isDailyMode ? (
                                 <div>
-                                    <label className="mb-1 block text-sm font-medium text-slate-700">
-                                        {isBankBalancesView ? 'Fecha de saldos' : 'Fecha del corte'}
+                                    <label htmlFor="corte-fecha" className="mb-1 block text-sm font-medium text-slate-700">
+                                        {isBankBalancesView
+                                            ? 'Fecha de saldos'
+                                            : isBankMovementsView
+                                                ? 'Fecha de movimientos'
+                                                : 'Fecha del corte'}
                                     </label>
                                     <input
+                                        id="corte-fecha"
                                         type="date"
                                         value={fecha}
+                                        /* No hay movimientos por venir; el corte sí admite consultar cualquier fecha. */
+                                        max={isBankMovementsView ? todayISO() : undefined}
                                         onChange={(event) => setFecha(event.target.value)}
                                         className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-800 shadow-sm outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 lg:max-w-xs"
                                     />
@@ -233,6 +295,7 @@ export default function DailyCashCutPage() {
                                     <DateRangeCalendarField
                                         startDate={startDate}
                                         endDate={endDate}
+                                        maxDate={isBankMovementsView ? new Date() : undefined}
                                         className="min-w-[320px]"
                                         onChange={({ startDate: start, endDate: end }) => {
                                             if (!start || !end) {
@@ -270,6 +333,13 @@ export default function DailyCashCutPage() {
                             </div>
                         </div>
                     </section>
+
+                    {isBankMovementsView ? (
+                        <BankMovementsSection
+                            desde={isDailyMode ? fecha : startDate}
+                            hasta={isDailyMode ? fecha : endDate}
+                        />
+                    ) : null}
 
                     {isBankBalancesView ? (
                         <BankBalancesSection
