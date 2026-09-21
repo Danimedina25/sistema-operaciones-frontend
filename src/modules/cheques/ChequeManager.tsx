@@ -25,6 +25,7 @@ const linkStyle = 'text-xs font-medium text-blue-600 hover:underline';
 const STATE_BADGE: Record<ChequeState, string> = {
   POR_COBRAR: 'border-amber-200 bg-amber-50 text-amber-700',
   DEPOSITADO: 'border-blue-200 bg-blue-50 text-blue-700',
+  PENDIENTE_COBRO_EFECTIVO: 'border-violet-200 bg-violet-50 text-violet-700',
   COBRADO: 'border-emerald-200 bg-emerald-50 text-emerald-700',
   DEVUELTO: 'border-rose-200 bg-rose-50 text-rose-700',
   CANCELADO: 'border-slate-200 bg-slate-100 text-slate-600',
@@ -100,15 +101,17 @@ function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () =>
   // Preserve exactly the same command and idempotency key after an uncertain response.
   const pendingCommand = useRef<ChequeCommand | null>(null);
   const submitting = useRef(false);
-  const cash = useQuery({ queryKey: ['caja-general', user?.userId, 'latest'], queryFn: cajaGeneralApi.latest, enabled: action === 'COBRAR_EFECTIVO' });
+  const cash = useQuery({ queryKey: ['caja-general', user?.userId, 'latest'], queryFn: cajaGeneralApi.latest, enabled: action === 'CONFIRMAR_COBRO_EFECTIVO' });
   const mutation = useMutation({
     mutationFn: async () => {
       if (!action || !user?.userId) throw new Error('Selecciona una acción.');
       if (!pendingCommand.current) {
         const command: ChequeCommand = { requestId: crypto.randomUUID(), version: cheque.version, accion: action, fecha: date,
           ...(['DEPOSITAR', 'COBRAR_BANCO'].includes(action) && account ? { cuentaDestinoId: account } : {}),
-          ...(['DEVOLVER', 'CANCELAR'].includes(action) ? { motivo: reason.trim() } : { comprobanteUrl: file ? 'pending-upload' : undefined }),
-          ...(action === 'COBRAR_EFECTIVO' ? { diaCajaId: cash.data && !cash.data.closedAt ? cash.data.id : undefined, denominaciones: counts } : {}),
+          ...(['DEVOLVER', 'CANCELAR', 'DEVOLVER_A_CUENTAS', 'RETIRAR_COBRO_EFECTIVO'].includes(action) ? { motivo: reason.trim() } : {}),
+          ...(action === 'ASIGNAR_COBRO_EFECTIVO' && reason.trim() ? { motivo: reason.trim() } : {}),
+          ...(['DEPOSITAR', 'COBRAR_BANCO', 'CONFIRMAR_COBRO_EFECTIVO'].includes(action) ? { comprobanteUrl: file ? 'pending-upload' : undefined } : {}),
+          ...(action === 'CONFIRMAR_COBRO_EFECTIVO' ? { diaCajaId: cash.data && !cash.data.closedAt ? cash.data.id : undefined, denominaciones: counts } : {}),
         };
         const issue = validateChequeCommand(cheque, command, allowed);
         if (issue) throw new Error(issue);
@@ -116,7 +119,7 @@ function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () =>
           const accounts = await getBankAccounts();
           if (!accounts.some(a => a.id === command.cuentaDestinoId && a.activo)) throw new Error('Selecciona una cuenta bancaria activa.');
         }
-        if (file && !['DEVOLVER', 'CANCELAR'].includes(action)) {
+        if (file && ['DEPOSITAR', 'COBRAR_BANCO', 'CONFIRMAR_COBRO_EFECTIVO'].includes(action)) {
           command.comprobanteUrl = (await uploadOperationProof({ file, userId: user.userId, operationId: cheque.operacionId })).downloadUrl;
         }
         pendingCommand.current = command;
@@ -133,7 +136,9 @@ function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () =>
     onError: e => setError(getApiErrorMessage(e)),
   });
   const locked = mutation.isPending || pendingCommand.current !== null || completed;
-  const esMotivo = ['DEVOLVER', 'CANCELAR'].includes(action);
+  const requiresReason = ['DEVOLVER', 'CANCELAR', 'DEVOLVER_A_CUENTAS', 'RETIRAR_COBRO_EFECTIVO'].includes(action);
+  const optionalReason = action === 'ASIGNAR_COBRO_EFECTIVO';
+  const requiresProof = ['DEPOSITAR', 'COBRAR_BANCO', 'CONFIRMAR_COBRO_EFECTIVO'].includes(action);
 
   return <>
     <div className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
@@ -142,7 +147,7 @@ function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () =>
       <p><span className="font-medium">Emisor:</span> {cheque.emisor}</p>
       <p><span className="font-medium">Beneficiario:</span> {cheque.beneficiario}</p>
       <p><span className="font-medium">Fecha de recepción:</span> {cheque.fechaRecepcion}</p>
-      <p><span className="font-medium">Destino:</span> {cheque.destinoCobro === 'EFECTIVO' ? 'Caja General' : cheque.cuentaDestinoEtiqueta ?? 'Por definir'}</p>
+      <p><span className="font-medium">Destino:</span> {cheque.estado === 'PENDIENTE_COBRO_EFECTIVO' ? 'Caja General · pendiente de recepción' : cheque.destinoCobro === 'EFECTIVO' ? 'Caja General' : cheque.cuentaDestinoEtiqueta ?? 'Por definir'}</p>
     </div>
 
     <div className="flex flex-wrap gap-4">
@@ -174,8 +179,11 @@ function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () =>
 
           {action === 'DEPOSITAR' && <p className={noteBanner}>El depósito quedará en compensación y no aumentará el saldo disponible.</p>}
           {action === 'COBRAR_BANCO' && <p className={noteBanner}>Confirma únicamente cuando el banco haya acreditado los recursos.</p>}
+          {action === 'ASIGNAR_COBRO_EFECTIVO' && <p className={noteBanner}>La responsabilidad pasará a la Jefa de Cajas. Esta acción no registra todavía un ingreso.</p>}
+          {action === 'RETIRAR_COBRO_EFECTIVO' && <p className={noteBanner}>El cheque volverá a Cuentas para decidir un nuevo medio de cobro.</p>}
+          {action === 'DEVOLVER_A_CUENTAS' && <p className={noteBanner}>El intento quedará en el historial y el cheque regresará a Cuentas; todavía podrá depositarse.</p>}
 
-          {action === 'COBRAR_EFECTIVO' && <>
+          {action === 'CONFIRMAR_COBRO_EFECTIVO' && <>
             <p className={noteBanner}>Registra el efectivo recibido en Caja General. No se retirarán fondos de una cuenta propia.</p>
             {cash.isPending ? <p className="text-sm text-slate-500">Consultando caja…</p>
               : cash.isError ? <p role="alert" className={alertBanner}>No se pudo consultar Caja General. <button type="button" onClick={() => void cash.refetch()} className="font-semibold underline">Reintentar</button></p>
@@ -184,12 +192,13 @@ function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () =>
             <DenominationFields value={counts} onChange={setCounts} disabled={locked} />
           </>}
 
-          {esMotivo ? (
+          {(requiresReason || optionalReason) && (
             <div>
-              <label htmlFor="cheque-reason" className={fieldLabel}>Motivo <span className="text-rose-600">*</span></label>
-              <textarea id="cheque-reason" rows={4} className={fieldControl} required value={reason} onChange={e => setReason(e.target.value)} />
+              <label htmlFor="cheque-reason" className={fieldLabel}>{optionalReason ? 'Observación' : 'Motivo'} {requiresReason && <span className="text-rose-600">*</span>}</label>
+              <textarea id="cheque-reason" rows={4} className={fieldControl} required={requiresReason} value={reason} onChange={e => setReason(e.target.value)} />
             </div>
-          ) : (
+          )}
+          {requiresProof && (
             <div>
               <label htmlFor="cheque-proof" className={fieldLabel}>Comprobante <span className="text-rose-600">*</span></label>
               <input id="cheque-proof" className={`${fieldControl} file:mr-3 file:rounded-lg file:border-0 file:bg-slate-200 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-slate-700`} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" required onChange={e => setFile(e.target.files?.[0] ?? null)} />
@@ -205,8 +214,8 @@ function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () =>
 
       <button
         type="submit"
-        disabled={!action || mutation.isPending || (action === 'COBRAR_EFECTIVO' && (cash.isPending || cash.isError || !cash.data || !!cash.data.closedAt))}
-        className={`inline-flex h-11 w-full items-center justify-center rounded-xl text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 ${esMotivo ? 'bg-rose-600 hover:bg-rose-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+        disabled={!action || mutation.isPending || (action === 'CONFIRMAR_COBRO_EFECTIVO' && (cash.isPending || cash.isError || !cash.data || !!cash.data.closedAt))}
+        className={`inline-flex h-11 w-full items-center justify-center rounded-xl text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 ${requiresReason ? 'bg-rose-600 hover:bg-rose-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
       >
         {mutation.isPending ? 'Guardando…' : pendingCommand.current ? 'Reintentar solicitud' : 'Confirmar acción'}
       </button>

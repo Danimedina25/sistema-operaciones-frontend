@@ -8,8 +8,11 @@ const role = (name: RoleName) => (roles: RoleName[]) => roles.includes(name);
 const command: ChequeCommand = { requestId: 'abc', version: 1, accion: 'COBRAR_BANCO', fecha: '2026-09-20', cuentaDestinoId: 1, comprobanteUrl: 'proof' };
 describe('cheque collection boundaries', () => {
   it('separates cash reception from bank management', () => {
-    expect(allowedChequeActions(cheque, role('JEFA_CUENTAS'))).not.toContain('COBRAR_EFECTIVO');
-    expect(allowedChequeActions(cheque, role('JEFA_CAJAS'))).toEqual(['COBRAR_EFECTIVO']);
+    expect(allowedChequeActions(cheque, role('JEFA_CUENTAS'))).toContain('ASIGNAR_COBRO_EFECTIVO');
+    expect(allowedChequeActions(cheque, role('JEFA_CAJAS'))).toEqual([]);
+    const assigned = { ...cheque, estado: 'PENDIENTE_COBRO_EFECTIVO' as const };
+    expect(allowedChequeActions(assigned, role('JEFA_CAJAS'))).toEqual(['CONFIRMAR_COBRO_EFECTIVO', 'DEVOLVER_A_CUENTAS']);
+    expect(allowedChequeActions(assigned, role('JEFA_CUENTAS'))).toEqual(['RETIRAR_COBRO_EFECTIVO']);
     expect(allowedChequeActions(cheque, role('SOCIO_COMERCIAL'))).toEqual([]);
   });
   it.each(['COBRADO', 'DEVUELTO', 'CANCELADO'] as const)('blocks ordinary movements after %s', estado => {
@@ -19,8 +22,9 @@ describe('cheque collection boundaries', () => {
     expect(allowedChequeActions({ ...cheque, requiereConciliacion: true }, role('ADMIN'))).toEqual([]);
     expect(allowedChequeActions({ ...cheque, estado: null }, role('ADMIN'))).toEqual([]);
   });
-  it('does not allow cash collection or a second deposit while clearing', () => {
+  it('only lets the head of accounts resolve a cheque while clearing', () => {
     expect(allowedChequeActions({ ...cheque, estado: 'DEPOSITADO' }, role('ADMIN'))).toEqual(['COBRAR_BANCO', 'DEVOLVER']);
+    expect(allowedChequeActions({ ...cheque, estado: 'DEPOSITADO' }, role('AUXILIAR_CUENTAS'))).toEqual([]);
   });
   it('requires account and proof for bank collection', () => {
     expect(validateChequeCommand(cheque, command, ['COBRAR_BANCO'])).toBeNull();
@@ -28,10 +32,15 @@ describe('cheque collection boundaries', () => {
     expect(validateChequeCommand(cheque, { ...command, comprobanteUrl: undefined }, ['COBRAR_BANCO'])).toContain('comprobante');
   });
   it('requires an open cash day and exact denominations for cash collection', () => {
-    const cash: ChequeCommand = { ...command, accion: 'COBRAR_EFECTIVO', cuentaDestinoId: undefined, denominaciones: { ...emptyCounts(), D100: 1 } };
-    expect(validateChequeCommand(cheque, cash, ['COBRAR_EFECTIVO'])).toContain('Abre');
-    expect(validateChequeCommand(cheque, { ...cash, diaCajaId: 1 }, ['COBRAR_EFECTIVO'])).toBeNull();
-    expect(validateChequeCommand(cheque, { ...cash, diaCajaId: 1, denominaciones: emptyCounts() }, ['COBRAR_EFECTIVO'])).toContain('desglose');
+    const cash: ChequeCommand = { ...command, accion: 'CONFIRMAR_COBRO_EFECTIVO', cuentaDestinoId: undefined, denominaciones: { ...emptyCounts(), D100: 1 } };
+    expect(validateChequeCommand(cheque, cash, ['CONFIRMAR_COBRO_EFECTIVO'])).toContain('Abre');
+    expect(validateChequeCommand(cheque, { ...cash, diaCajaId: 1 }, ['CONFIRMAR_COBRO_EFECTIVO'])).toBeNull();
+    expect(validateChequeCommand(cheque, { ...cash, diaCajaId: 1, denominaciones: emptyCounts() }, ['CONFIRMAR_COBRO_EFECTIVO'])).toContain('desglose');
+  });
+  it('returns a failed cash attempt to accounts without proof but with a reason', () => {
+    const returned: ChequeCommand = { ...command, accion: 'DEVOLVER_A_CUENTAS', cuentaDestinoId: undefined, comprobanteUrl: undefined };
+    expect(validateChequeCommand(cheque, returned, ['DEVOLVER_A_CUENTAS'])).toContain('motivo');
+    expect(validateChequeCommand(cheque, { ...returned, motivo: 'Solo permite abono en cuenta' }, ['DEVOLVER_A_CUENTAS'])).toBeNull();
   });
   it('requires a reason and rejects unauthorized commands', () => {
     expect(validateChequeCommand(cheque, { ...command, accion: 'DEVOLVER' }, ['DEVOLVER'])).toContain('motivo');

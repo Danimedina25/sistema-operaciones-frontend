@@ -126,7 +126,7 @@ describe('Cheques recibidos', () => {
     mount(validate, { tipoPago: 'CHEQUE', cuentaDestinoId: null, chequeEstado: 'POR_COBRAR' });
 
     // El estado sigue informándose en la columna Tipo…
-    expect(screen.getAllByText('Por cobrar').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Recibido').length).toBeGreaterThan(0);
     // …pero ya no hay un botón suelto ahí.
     expect(screen.queryByRole('button', { name: 'Gestionar cheque' })).not.toBeInTheDocument();
 

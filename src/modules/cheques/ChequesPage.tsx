@@ -7,7 +7,7 @@ import { ChequeManager } from './ChequeManager';
 import { buildOperationDetailPath } from '@/routes/paths';
 import { currency } from '@/modules/caja-general/utils/cash-amounts';
 import { getApiErrorMessage } from '@/shared/utils/errors';
-const defaults: ChequeFilters = { estados: 'POR_COBRAR,DEPOSITADO', busqueda: '', cliente: '', operacionId: '', banco: '', desde: '', hasta: '', page: 0 };
+const defaults: ChequeFilters = { estados: 'POR_COBRAR,DEPOSITADO,PENDIENTE_COBRO_EFECTIVO', busqueda: '', cliente: '', operacionId: '', banco: '', desde: '', hasta: '', page: 0 };
 export default function ChequesPage() {
   const [draft, setDraft] = useState(defaults);
   const [filters, setFilters] = useState(defaults);
@@ -17,7 +17,7 @@ export default function ChequesPage() {
   return <div className="space-y-6 p-4 sm:p-6">
     <div><h1 className="text-2xl font-bold">Cheques por cobrar</h1><p className="text-slate-600">Consulta y gestiona los cheques recibidos como pagos de ingreso.</p></div>
     <form className="grid gap-3 rounded-xl border bg-white p-4 sm:grid-cols-3" onSubmit={e => { e.preventDefault(); setFilters({ ...draft, page: 0 }); }}>
-      <label>Estado<select className="block w-full rounded border p-2" value={draft.estados} onChange={e => setDraft({ ...draft, estados: e.target.value })}><option value="POR_COBRAR,DEPOSITADO">Pendientes y depositados</option><option value="">Todos</option>{Object.entries(chequeLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
+      <label>Estado<select className="block w-full rounded border p-2" value={draft.estados} onChange={e => setDraft({ ...draft, estados: e.target.value })}><option value="POR_COBRAR,DEPOSITADO,PENDIENTE_COBRO_EFECTIVO">Pendientes y en proceso</option><option value="">Todos</option>{Object.entries(chequeLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
       {(['busqueda', 'cliente', 'operacionId', 'banco', 'desde', 'hasta'] as const).map(key => <label key={key}>{({ busqueda: 'Número o datos del cheque', cliente: 'Cliente', operacionId: 'Operación', banco: 'Banco emisor', desde: 'Recibido desde', hasta: 'Recibido hasta' })[key]}<input className="block w-full rounded border p-2" type={key === 'desde' || key === 'hasta' ? 'date' : key === 'operacionId' ? 'number' : 'text'} min={key === 'operacionId' ? 1 : undefined} value={draft[key]} onChange={e => setDraft({ ...draft, [key]: e.target.value })} /></label>)}
       <button className="self-end rounded bg-blue-700 p-2 text-white" type="submit">Filtrar</button>
     </form>

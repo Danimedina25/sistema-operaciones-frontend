@@ -170,14 +170,21 @@ export function PaymentsTable({
     return false; // RETIRO_SIN_TARJETA no aplica a ingresos
   }
 
-  function canSeePayment(tipoPago: PaymentType) {
+  function canSeePayment(payment: OperationPaymentResponse) {
     if (isAdmin) return true;
-    if (isJefaCajas || isCuentas) return (isJefaCajas && (tipoPago === 'EFECTIVO' || tipoPago === 'CHEQUE')) || (isCuentas && BANK_PAYMENT_TYPES.includes(tipoPago));
+    if (isJefaCajas) {
+      if (payment.tipoPago === 'EFECTIVO') return true;
+      return payment.tipoPago === 'CHEQUE' && (
+        payment.chequeEstado === 'PENDIENTE_COBRO_EFECTIVO' ||
+        (payment.chequeEstado === 'COBRADO' && payment.cuentaDestinoId === null)
+      );
+    }
+    if (isCuentas) return BANK_PAYMENT_TYPES.includes(payment.tipoPago);
     return true; // ADMIN, GERENTE, DIRECCION, SOCIO_COMERCIAL ven todo
   }
 
   const visiblePayments = useMemo(
-    () => payments.filter((payment) => canSeePayment(payment.tipoPago)),
+    () => payments.filter(canSeePayment),
     [payments, isJefaCajas, isCuentas],
   );
 
@@ -345,7 +352,9 @@ export function PaymentsTable({
     // El cheque no se valida por el panel genérico, pero su gestión es la misma acción
     // para el usuario: revisar el pago. Por eso vive en Acciones junto a las demás.
     const canManageCheque =
-      payment.tipoPago === 'CHEQUE' && (isAdmin || isCuentas || isJefaCajas);
+      payment.tipoPago === 'CHEQUE' && (
+        isAdmin || isCuentas || (isJefaCajas && payment.chequeEstado === 'PENDIENTE_COBRO_EFECTIVO')
+      );
     const canReview = canValidate || canManageCheque;
     const hasActions = canEdit || canReview || canNotify;
 

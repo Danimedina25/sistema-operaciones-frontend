@@ -101,6 +101,22 @@ const notificationPresentation: Record<NotificationType, NotificationPresentatio
     icon: Banknote,
     iconClassName: 'bg-amber-50 text-amber-600',
   },
+  CHEQUE_CASH_COLLECTION_ASSIGNED: {
+    icon: Banknote,
+    iconClassName: 'bg-violet-50 text-violet-600',
+  },
+  CHEQUE_CASH_COLLECTION_RETURNED: {
+    icon: RefreshCw,
+    iconClassName: 'bg-amber-50 text-amber-600',
+  },
+  CHEQUE_CASH_COLLECTION_WITHDRAWN: {
+    icon: XCircle,
+    iconClassName: 'bg-slate-100 text-slate-600',
+  },
+  CHEQUE_CASH_COLLECTION_COMPLETED: {
+    icon: Check,
+    iconClassName: 'bg-emerald-50 text-emerald-600',
+  },
   RETURN_INSTALLMENT_SCHEDULED: {
     icon: CalendarClock,
     iconClassName: 'bg-blue-50 text-blue-600',
