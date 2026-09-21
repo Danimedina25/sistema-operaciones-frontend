@@ -5,6 +5,7 @@ import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts
 import { BANK_WITHDRAWAL_CONCEPTS, CASH_MOVEMENT_CONCEPTS, type CapturableCashConcept, type CashDay, type CreateCashMovement } from '../types/caja-general.types';
 import { countCents, emptyCounts, validateCashAmount } from '../utils/cash-amounts';
 import { DenominationFields } from './DenominationFields';
+import { Button } from '@/shared/components/ui/Button';
 import { cashInput } from './CashDayForm';
 
 type Direction = 'ENTRADA' | 'SALIDA';
@@ -73,7 +74,7 @@ export function CashMovementForm({ direction, day, busy, onSubmit }: {
   }
 
   const incoming = direction === 'ENTRADA';
-  return <form onSubmit={submit} className={`space-y-5 rounded-b-xl border p-5 ${incoming ? 'border-emerald-200' : 'border-red-200'}`}>
+  return <form onSubmit={submit} className={`space-y-5 rounded-b-2xl border bg-white p-5 ${incoming ? 'border-emerald-200' : 'border-red-200'}`}>
     <fieldset disabled={busy} className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block text-sm font-medium text-slate-700">Concepto
@@ -104,10 +105,10 @@ export function CashMovementForm({ direction, day, busy, onSubmit }: {
       <DenominationFields value={counts} onChange={setCounts} />
 
       <div className="flex justify-end border-t border-slate-200 pt-4">
-        <button disabled={busy || !Number.isFinite(totalCents) || totalCents <= 0}
-          className={`rounded-lg px-6 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 ${incoming ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'}`}>
+        <Button disabled={busy || !Number.isFinite(totalCents) || totalCents <= 0}
+          className={incoming ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'}>
           {busy ? 'Guardando…' : `Registrar ${incoming ? 'entrada' : 'salida'}`}
-        </button>
+        </Button>
       </div>
     </fieldset>
     {error && <p role="alert" className="text-sm text-red-600">{error}</p>}

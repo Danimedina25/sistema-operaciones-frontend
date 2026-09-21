@@ -14,6 +14,8 @@ import { formatDate as toISODate } from '@/shared/utils/weeks';
 import { DateRangeCalendarField } from '@/shared/components/ui/DateRangeCalendarField';
 import { maskAccountNumber } from '@/shared/utils/account-formatting';
 import { paths } from '@/routes/paths';
+import { PageHeader } from '@/shared/components/layout/PageHeader';
+import { fieldControl, fieldLabel, panelShell } from '@/shared/styles/ui-tokens';
 import { BankMovementsSection } from '../components/BankMovementsSection';
 import { ArrowDownToLine, ArrowUpFromLine, Building2, CalendarDays, Landmark, LoaderCircle, Scale, Search } from 'lucide-react';
 
@@ -222,54 +224,41 @@ export default function DailyCashCutPage() {
                             </button>
                         </div>
                     </section>
-                    <section className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-xl shadow-slate-950/[0.06]">
-                        <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 p-6 text-white">
-                        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                            <div>
-                                <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-blue-300">
-                                    <Scale className="h-4 w-4" /> Cortes y saldos
-                                </p>
+                    <PageHeader
+                        title={pageTitle}
+                        description={pageDescription}
+                        actions={isBankBalancesView ? null : (
+                            <div className="inline-flex rounded-xl border border-slate-200 bg-white p-1">
+                                <button
+                                    type="button"
+                                    onClick={() => setDateMode('daily')}
+                                    className={`rounded-lg px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${dateMode === 'daily'
+                                        ? 'bg-slate-900 text-white'
+                                        : 'text-slate-600 hover:bg-slate-50'
+                                        }`}
+                                >
+                                    Día
+                                </button>
 
-                                <h1 className="mt-2 text-2xl font-bold tracking-tight text-white">
-                                    {pageTitle}
-                                </h1>
-
-                                <p className="mt-1 text-sm text-slate-400">
-                                    {pageDescription}
-                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => setDateMode('range')}
+                                    className={`rounded-lg px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${dateMode === 'range'
+                                        ? 'bg-slate-900 text-white'
+                                        : 'text-slate-600 hover:bg-slate-50'
+                                        }`}
+                                >
+                                    Rango de fechas
+                                </button>
                             </div>
-                            {isBankBalancesView ? null : (
-                                <div className="inline-flex rounded-xl border border-white/10 bg-white/5 p-1">
-                                    <button
-                                        type="button"
-                                        onClick={() => setDateMode('daily')}
-                                        className={`rounded-lg px-4 py-2 text-sm font-medium transition ${dateMode === 'daily'
-                                            ? 'bg-white text-slate-950 shadow-sm'
-                                            : 'text-slate-400 hover:text-white'
-                                            }`}
-                                    >
-                                        Día
-                                    </button>
+                        )}
+                    />
 
-                                    <button
-                                        type="button"
-                                        onClick={() => setDateMode('range')}
-                                        className={`rounded-lg px-4 py-2 text-sm font-medium transition ${dateMode === 'range'
-                                            ? 'bg-white text-slate-950 shadow-sm'
-                                            : 'text-slate-400 hover:text-white'
-                                            }`}
-                                    >
-                                        Rango de fechas
-                                    </button>
-                                </div>
-                            )}
-
-                        </div></div>
-
-                        <div className="grid gap-4 bg-white p-6 lg:grid-cols-[1fr_auto] lg:items-end">
+                    <section className={panelShell}>
+                        <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
                             {isBankBalancesView || isDailyMode ? (
                                 <div>
-                                    <label htmlFor="corte-fecha" className="mb-1 block text-sm font-medium text-slate-700">
+                                    <label htmlFor="corte-fecha" className={fieldLabel}>
                                         {isBankBalancesView
                                             ? 'Fecha de saldos'
                                             : isBankMovementsView
@@ -283,14 +272,14 @@ export default function DailyCashCutPage() {
                                         /* No hay movimientos por venir; el corte sí admite consultar cualquier fecha. */
                                         max={isBankMovementsView ? todayISO() : undefined}
                                         onChange={(event) => setFecha(event.target.value)}
-                                        className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-800 shadow-sm outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 lg:max-w-xs"
+                                        className={`${fieldControl} lg:max-w-xs`}
                                     />
                                 </div>
                             ) : (
                                 <div>
-                                    <label className="mb-1 block text-sm font-medium text-slate-700">
+                                    <span className={fieldLabel}>
                                         Rango de fechas
-                                    </label>
+                                    </span>
 
                                     <DateRangeCalendarField
                                         startDate={startDate}
@@ -309,28 +298,6 @@ export default function DailyCashCutPage() {
                                     />
                                 </div>
                             )}
-
-                            <div className="flex flex-col gap-2 sm:flex-row">
-                                {/*  <button
-                            type="button"
-                            onClick={handleSearch}
-                            disabled={isLoading}
-                            className="inline-flex h-11 items-center justify-center rounded-xl bg-slate-900 px-5 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                            {isLoading ? 'Consultando...' : 'Consultar'}
-                        </button>
- */}
-                                {/* {isDailyMode ? (
-                                    <button
-                                        type="button"
-                                        onClick={handleRegisterCut}
-                                        disabled={isRegisteringCut}
-                                        className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                                    >
-                                        {isRegisteringCut ? 'Registrando...' : 'Registrar corte'}
-                                    </button>
-                                ) : null} */}
-                            </div>
                         </div>
                     </section>
 
@@ -364,7 +331,7 @@ export default function DailyCashCutPage() {
 
                     {isCashCutsView && currentData ? (
                         <>
-                            <section className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-xl shadow-slate-950/[0.06]">
+                            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/5">
                                 <div className="bg-gradient-to-r from-slate-950 to-slate-800 px-6 py-5 text-white">
                                 <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                                     <div>
@@ -486,7 +453,7 @@ export default function DailyCashCutPage() {
                                 />
                             </div>
 
-                            <section className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-lg shadow-slate-950/[0.05]">
+                            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/5">
                                 <div className="flex items-center gap-2 bg-slate-900 px-5 py-4 text-white"><Scale className="h-4 w-4 text-blue-300" /><h3 className="text-sm font-bold">
                                     Resumen operativo
                                 </h3></div>
@@ -620,7 +587,7 @@ function BreakdownCard({
                 : 'border-slate-200 bg-slate-50 text-slate-900';
 
     return (
-        <section className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-lg shadow-slate-950/[0.05]">
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/5">
             <div className={`h-1 ${highlight === 'positive' ? 'bg-emerald-500' : highlight === 'negative' ? 'bg-rose-500' : 'bg-blue-500'}`} />
             <div className="p-5">
             <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 sm:flex-row sm:items-start sm:justify-between">
@@ -751,7 +718,7 @@ function BankBalancesSection({
         : safeGroups;
 
     return (
-        <section className="mt-6 overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-xl shadow-slate-950/[0.06]">
+        <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/5">
             <div className="flex flex-col gap-3 bg-gradient-to-r from-slate-950 to-slate-800 p-6 text-white md:flex-row md:items-center md:justify-between">
                 <div>
                     <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-blue-300"><Landmark className="h-4 w-4" /> Posición bancaria</p>

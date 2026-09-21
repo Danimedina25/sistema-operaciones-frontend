@@ -1,12 +1,20 @@
 import { useRef, useState, type FormEvent } from 'react';
 import { Modal } from '@/shared/components/ui/Modal';
+import { Button } from '@/shared/components/ui/Button';
+import {
+  fieldControl,
+  noteInfo,
+  noteNeutral,
+  noteWarning,
+  secondaryButton,
+} from '@/shared/styles/ui-tokens';
 import { DenominationFields } from './DenominationFields';
 import { countCents, currency, emptyCounts, parseCents, validateCashAmount } from '../utils/cash-amounts';
 import type { CashDay, CloseCashDay, OpenCashDay } from '../types/caja-general.types';
 import { formatDate } from '@/shared/utils/weeks';
 import { formatCashDate } from '../utils/cash-dates';
-export const cashInput = 'mt-1 h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-200';
-export const cashButton = 'rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50';
+/** El campo canónico del sistema, con el margen que pide ir dentro de un `<label>`. */
+export const cashInput = `mt-1 ${fieldControl}`;
 type Props = { busy: boolean } & (
   { mode: 'open'; previous: CashDay | null; onSubmit: (value: OpenCashDay) => Promise<unknown> } |
   { mode: 'close'; day: CashDay; onSubmit: (value: CloseCashDay) => Promise<unknown> }
@@ -66,16 +74,16 @@ export function CashDayForm(props: Props) {
   }
   return <><form onSubmit={submit} className="space-y-4">
     <fieldset disabled={props.busy || changed || confirmZero} className="space-y-4">
-      {props.mode === 'open' && <p className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">Fecha de apertura: <strong className="text-slate-950">{formatCashDate(fecha)}</strong></p>}
-      {props.mode === 'open' && props.previous && <p className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">Saldo y denominaciones heredados del corte del <strong>{formatCashDate(props.previous.fecha)}</strong>: {currency(props.previous.saldoContado ?? 0)}. Revisa los datos y confirma la apertura.</p>}
+      {props.mode === 'open' && <p className={noteNeutral}>Fecha de apertura: <strong className="text-slate-950">{formatCashDate(fecha)}</strong></p>}
+      {props.mode === 'open' && props.previous && <p className={noteInfo}>Saldo y denominaciones heredados del corte del <strong>{formatCashDate(props.previous.fecha)}</strong>: {currency(props.previous.saldoContado ?? 0)}. Revisa los datos y confirma la apertura.</p>}
       {props.mode === 'open' && <label className="block text-sm font-medium text-slate-700">Saldo inicial
         <input type="text" inputMode="decimal" required readOnly={inheritsPreviousClose} value={amount} onChange={e => setAmount(e.target.value)} className={`${cashInput} ${inheritsPreviousClose ? 'cursor-not-allowed bg-slate-50 text-slate-600' : ''}`} />
       </label>}
-      {props.mode === 'close' && expected && <p className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">Desglose prellenado con lo que debería haber en caja según la apertura y los movimientos del día. <strong>Cuenta el efectivo y corrige lo que no coincida</strong> antes de confirmar.</p>}
-      {props.mode === 'close' && hasNegativeExpected && <p role="alert" className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">Alguna denominación quedó en negativo, lo que ocurre cuando se cambió físicamente un billete durante el día. Esas se prellenaron en cero: revisa el conteo con cuidado.</p>}
+      {props.mode === 'close' && expected && <p className={noteInfo}>Desglose prellenado con lo que debería haber en caja según la apertura y los movimientos del día. <strong>Cuenta el efectivo y corrige lo que no coincida</strong> antes de confirmar.</p>}
+      {props.mode === 'close' && hasNegativeExpected && <p role="alert" className={noteWarning}>Alguna denominación quedó en negativo, lo que ocurre cuando se cambió físicamente un billete durante el día. Esas se prellenaron en cero: revisa el conteo con cuidado.</p>}
       <DenominationFields value={counts} onChange={setCounts} disabled={inheritsPreviousClose} />
       {props.mode === 'close' && <>
-        <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm sm:flex-row sm:items-center sm:justify-between">
           <span className="text-slate-600">Saldo esperado: <strong className="text-slate-950">{currency(props.day.saldoActual)}</strong></span>
           <span className={`font-semibold ${difference === 0 ? 'text-emerald-700' : 'text-red-700'}`}>
             {!Number.isFinite(difference) ? 'Revisa las cantidades' : difference === 0 ? 'El conteo cuadra exactamente' : `${difference > 0 ? 'Sobrante' : 'Faltante'}: ${currency(Math.abs(difference))}`}
@@ -85,24 +93,24 @@ export function CashDayForm(props: Props) {
           <textarea maxLength={500} value={notes} onChange={e => setNotes(e.target.value)} className={`${cashInput} h-24 py-3`} />
         </label>
         <p className="text-sm text-slate-600">Al cerrar se conserva el conteo y ya no se podrán registrar movimientos en este día.</p>
-        {props.day.fecha !== fecha && <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">Esta caja quedó abierta del <strong>{formatCashDate(props.day.fecha)}</strong>. Desde entonces no se le pudo capturar ningún movimiento, así que el efectivo no debería haber cambiado. Ciérrala para poder abrir la de hoy.</p>}
+        {props.day.fecha !== fecha && <p className={noteWarning}>Esta caja quedó abierta del <strong>{formatCashDate(props.day.fecha)}</strong>. Desde entonces no se le pudo capturar ningún movimiento, así que el efectivo no debería haber cambiado. Ciérrala para poder abrir la de hoy.</p>}
       </>}
-      <button disabled={props.busy || changed} className={`${cashButton} w-full`}>{props.busy ? 'Guardando…' : props.mode === 'open' ? 'Abrir caja' : 'Cerrar caja con este conteo'}</button>
+      <Button disabled={props.busy || changed} className="w-full">{props.busy ? 'Guardando…' : props.mode === 'open' ? 'Abrir caja' : 'Cerrar caja con este conteo'}</Button>
     </fieldset>
     {changed && <p role="alert" className="text-sm text-amber-700">La caja cambió durante el conteo. Vuelve a la pestaña de movimientos y abre nuevamente el cierre para revisar el saldo actualizado.</p>}
     {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
   </form>
     <Modal open={confirmZero} title="Confirmar captura en cero" onClose={() => setConfirmZero(false)}>
       <div className="space-y-5">
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
           <p className="font-semibold">Todas las denominaciones están en cero.</p>
           <p className="mt-2 text-sm">Estás capturando <strong>$0.00</strong> como {props.mode === 'close' ? 'saldo contado del corte' : 'saldo inicial de apertura'} del día <strong>{formatCashDate(props.mode === 'close' ? props.day.fecha : fecha)}</strong>.</p>
         </div>
         <p className="text-sm text-slate-600">¿Deseas registrar este importe o volver para capturar las cantidades?</p>
         {changed && <p role="alert" className="text-sm text-amber-700">La caja cambió durante el conteo. Vuelve para revisar el saldo actualizado.</p>}
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <button type="button" autoFocus onClick={() => setConfirmZero(false)} className="rounded-xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100">Volver a capturar</button>
-          <button type="button" disabled={props.busy || changed} onClick={() => void save(true)} className={cashButton}>Sí, registrar $0.00</button>
+          <button type="button" autoFocus onClick={() => setConfirmZero(false)} className={secondaryButton}>Volver a capturar</button>
+          <Button type="button" disabled={props.busy || changed} onClick={() => void save(true)}>Sí, registrar $0.00</Button>
         </div>
       </div>
     </Modal>

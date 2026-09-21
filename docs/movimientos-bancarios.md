@@ -246,7 +246,9 @@ que tiene a la vista, y el contador usa `totalElements`.
   error y lista vacía. Busca por titular, banco y número, sin acentos ni separadores. Muestra
   sólo cuentas activas para capturas nuevas; las consultas históricas pasan `onlyActive={false}`.
 - `src/shared/utils/bank-account-label.ts` — `Titular — Banco — Número`, en un solo lugar.
-- `src/modules/corte/pages/BankMovementsPage.tsx` — la vista, sin ninguna acción de captura.
+- `src/modules/corte/components/BankMovementsSection.tsx` — la vista, sin ninguna acción de
+  captura. Es la tercera pestaña de Cortes y saldos (`/corte/movimientos`); el periodo lo
+  fija la cabecera compartida de esa pantalla, no la sección.
 
 Sin dependencias nuevas.
 

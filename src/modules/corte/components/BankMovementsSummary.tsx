@@ -1,3 +1,4 @@
+import { MetricCard } from '@/shared/components/dashboard/MetricCard';
 import { currency } from '@/modules/caja-general/utils/cash-amounts';
 import type { BankMovementTotals } from '../types/bank-movements.types';
 
@@ -10,24 +11,25 @@ export function BankMovementsSummary({ totals, isLoading }: {
   isLoading: boolean;
 }) {
   const cards = [
-    { label: 'Total de entradas', value: totals?.totalEntradas, tone: 'text-emerald-700' },
-    { label: 'Total de salidas', value: totals?.totalSalidas, tone: 'text-red-700' },
+    { label: 'Total de entradas', value: totals?.totalEntradas, variant: 'emerald' as const },
+    { label: 'Total de salidas', value: totals?.totalSalidas, variant: 'rose' as const },
     {
       label: 'Variación neta',
       value: totals?.variacionNeta,
-      tone: (totals?.variacionNeta ?? 0) < 0 ? 'text-red-700' : 'text-slate-900',
+      variant: (totals?.variacionNeta ?? 0) < 0 ? ('rose' as const) : ('default' as const),
     },
   ];
 
   return (
     <div className="grid gap-4 sm:grid-cols-3">
       {cards.map(card => (
-        <div key={card.label} className="rounded-2xl border border-slate-200 bg-white p-4">
-          <p className="text-sm text-slate-500">{card.label}</p>
-          <p className={`mt-1 text-2xl font-semibold tabular-nums ${card.tone}`}>
-            {isLoading || card.value === undefined ? '—' : currency(card.value)}
-          </p>
-        </div>
+        <MetricCard
+          key={card.label}
+          label={card.label}
+          value={card.value === undefined ? '—' : currency(card.value)}
+          isLoading={isLoading}
+          variant={card.variant}
+        />
       ))}
       <p className="sm:col-span-3 text-xs text-slate-500">
         {isLoading || totals === undefined

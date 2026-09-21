@@ -26,10 +26,10 @@ export function DenominationFields({ value, onChange, disabled = false }: {
             // Vacío equivale a cero para el cálculo; no convierte una entrada inválida en cero.
             onChange({ ...value, [key]: event.target.validity.badInput ? NaN : Number(event.target.value) });
           }}
-          className="mt-1 h-9 w-full rounded-md border border-slate-200 bg-white px-2 text-center outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100" />
+          className="mt-1 h-9 w-full rounded-lg border border-slate-300 bg-white px-2 text-center tabular-nums outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" />
         <span className="mt-1 block text-xs text-slate-500">= {Number.isFinite(value[key]) ? currency(value[key] * cents / 100) : '—'}</span>
       </label>)}
     </div>
-    <div className="mt-4 flex items-baseline justify-end gap-3 border-t border-slate-200 pt-3" aria-live="polite"><span className="text-sm text-slate-500">Total capturado</span><strong className="text-xl text-slate-950">{Number.isFinite(total) ? currency(total / 100) : 'Revisa las cantidades'}</strong></div>
+    <div className="mt-4 flex items-baseline justify-end gap-3 border-t border-slate-200 pt-3" aria-live="polite"><span className="text-sm text-slate-500">Total capturado</span><strong className="text-xl font-semibold tabular-nums text-slate-950">{Number.isFinite(total) ? currency(total / 100) : 'Revisa las cantidades'}</strong></div>
   </fieldset>;
 }

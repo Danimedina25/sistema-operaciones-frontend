@@ -3,6 +3,7 @@ import { paths, buildOperationDetailPath } from '@/routes/paths';
 import { currency } from '@/modules/caja-general/utils/cash-amounts';
 import { formatCashDateTime } from '@/modules/caja-general/utils/cash-dates';
 import { formatBankAccountLabel } from '@/shared/utils/bank-account-label';
+import { tableHeadCell, tableHeadRow, tableShell } from '@/shared/styles/ui-tokens';
 import {
   BANK_MOVEMENT_ORIGINS,
   BANK_MOVEMENT_TYPES,
@@ -36,47 +37,48 @@ function Reference({ movement }: { movement: BankMovement }) {
  */
 export function BankMovementsTable({ movements }: { movements: BankMovement[] }) {
   return (
-    <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+    <div className={tableShell}>
+      <div className="overflow-x-auto">
       <table className="w-full min-w-[56rem] text-left text-sm">
-        <thead className="bg-slate-50 text-xs uppercase text-slate-500">
-          <tr>
-            <th className="px-4 py-3">Fecha y hora</th>
-            <th className="px-4 py-3">Dirección</th>
-            <th className="px-4 py-3 text-right">Importe</th>
-            <th className="px-4 py-3">Concepto</th>
-            <th className="px-4 py-3">Cuenta</th>
-            <th className="px-4 py-3">Origen</th>
-            <th className="px-4 py-3">Referencia</th>
-            <th className="px-4 py-3">Usuario</th>
+        <thead className="bg-slate-100">
+          <tr className={tableHeadRow}>
+            <th className={tableHeadCell}>Fecha y hora</th>
+            <th className={tableHeadCell}>Dirección</th>
+            <th className={`${tableHeadCell} text-right`}>Importe</th>
+            <th className={tableHeadCell}>Concepto</th>
+            <th className={tableHeadCell}>Cuenta</th>
+            <th className={tableHeadCell}>Origen</th>
+            <th className={tableHeadCell}>Referencia</th>
+            <th className={tableHeadCell}>Usuario</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody>
           {movements.map(movement => {
             const incoming = movement.direccion === 'ENTRADA';
             return (
-              <tr key={movement.id} className="align-top">
-                <td className="whitespace-nowrap px-4 py-3 text-slate-600">
+              <tr key={movement.id} className="align-top border-t border-slate-200 text-sm transition-colors hover:bg-blue-50/40">
+                <td className="whitespace-nowrap px-4 py-4 text-slate-600">
                   {formatCashDateTime(movement.fecha)}
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-4">
                   <span className={`rounded-full px-2 py-1 text-xs font-medium ${
                     incoming ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
                   }`}>
                     {incoming ? 'Entrada' : 'Salida'}
                   </span>
                 </td>
-                <td className={`whitespace-nowrap px-4 py-3 text-right tabular-nums font-medium ${
+                <td className={`whitespace-nowrap px-4 py-4 text-right tabular-nums font-medium ${
                   incoming ? 'text-emerald-700' : 'text-red-700'
                 }`}>
                   {incoming ? '' : '−'}{currency(movement.monto)}
                 </td>
-                <td className="px-4 py-3 text-slate-700">
+                <td className="px-4 py-4 text-slate-700">
                   {movement.concepto}
                   <span className="block text-xs text-slate-500">
                     {BANK_MOVEMENT_TYPES[movement.tipo] ?? movement.tipo}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-slate-700">
+                <td className="px-4 py-4 text-slate-700">
                   {formatBankAccountLabel({
                     titular: movement.cuentaTitular,
                     banco: movement.cuentaBanco,
@@ -86,9 +88,9 @@ export function BankMovementsTable({ movements }: { movements: BankMovement[] })
                     <span className="ml-2 text-xs text-amber-600">(inactiva)</span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-slate-600">{BANK_MOVEMENT_ORIGINS[movement.origen]}</td>
-                <td className="px-4 py-3"><Reference movement={movement} /></td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-4 text-slate-600">{BANK_MOVEMENT_ORIGINS[movement.origen]}</td>
+                <td className="px-4 py-4"><Reference movement={movement} /></td>
+                <td className="px-4 py-4 text-slate-600">
                   {movement.usuarioNombre ?? (movement.usuarioId ? `Usuario #${movement.usuarioId}` : '—')}
                 </td>
               </tr>
@@ -96,6 +98,7 @@ export function BankMovementsTable({ movements }: { movements: BankMovement[] })
           })}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

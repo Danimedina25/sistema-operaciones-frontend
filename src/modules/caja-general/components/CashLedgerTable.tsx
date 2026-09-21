@@ -5,6 +5,9 @@ import { buildOperationDetailPath } from '@/routes/paths';
 import { formatBankAccountLabel } from '@/shared/utils/bank-account-label';
 import { maskAccountNumber } from '@/shared/utils/account-formatting';
 import { DENOMINATIONS, type CashCounts, type CashDay, type CashLedger, type CashMovement } from '../types/caja-general.types';
+import { MetricCard } from '@/shared/components/dashboard/MetricCard';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { smallOutlineButton, tableShell } from '@/shared/styles/ui-tokens';
 import { currency } from '../utils/cash-amounts';
 import { formatCashDate, formatCashDateTime, formatCashTime } from '../utils/cash-dates';
 
@@ -185,12 +188,14 @@ function LedgerEntry({ row }: { row: LedgerRow }) {
   );
 }
 
+/** Reutiliza el KPI del sistema para que el resumen del día se vea como los del tablero. */
 function SummaryCard({ label, value, tone }: { label: string; value: number; tone?: 'entrada' | 'salida' }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
-      <p className="text-xs text-slate-500">{label}</p>
-      <p className={`mt-1 text-xl font-semibold tabular-nums ${tone ? TONE[tone].amount : 'text-slate-950'}`}>{currency(value)}</p>
-    </div>
+    <MetricCard
+      label={label}
+      value={currency(value)}
+      variant={tone === 'entrada' ? 'emerald' : tone === 'salida' ? 'rose' : 'default'}
+    />
   );
 }
 
@@ -199,7 +204,9 @@ export function CashLedgerTable({ ledger, canDelete = false, onDelete }: {
   canDelete?: boolean;
   onDelete?: (day: CashLedger['dias'][number]) => void;
 }) {
-  if (ledger.dias.length === 0) return <p className="p-6 text-sm text-slate-500">No hay aperturas registradas en este periodo.</p>;
+  if (ledger.dias.length === 0) {
+    return <EmptyState title="Sin aperturas" description="No hay aperturas registradas en este periodo." />;
+  }
 
   return <div className="space-y-6">{ledger.dias.map(day => {
     const movements = ledger.movimientos.filter(movement => movement.diaId === day.id);
@@ -211,13 +218,13 @@ export function CashLedgerTable({ ledger, canDelete = false, onDelete }: {
       <section key={day.id} className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-3">
-            <h3 className="font-semibold text-slate-950">Corte del día {formatCashDate(day.fecha)}</h3>
+            <h3 className="text-base font-semibold text-slate-900">Corte del día {formatCashDate(day.fecha)}</h3>
             <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${day.closedAt ? 'bg-slate-100 text-slate-600' : 'bg-emerald-50 text-emerald-700'}`}>
               {day.closedAt ? 'Caja cerrada' : 'Caja abierta'}
             </span>
           </div>
           {canDelete && (
-            <button type="button" onClick={() => onDelete?.(day)} className="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50">
+            <button type="button" onClick={() => onDelete?.(day)} className={`${smallOutlineButton} border-red-200 text-red-700 hover:bg-red-50`}>
               Eliminar corte
             </button>
           )}
@@ -229,7 +236,7 @@ export function CashLedgerTable({ ledger, canDelete = false, onDelete }: {
           <SummaryCard label="Saldo acumulado" value={day.saldoActual} />
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <div className={tableShell}>
           <ul>
             {buildRows(day, movements).map(row => <LedgerEntry key={row.key} row={row} />)}
           </ul>

@@ -37,13 +37,23 @@ const entrada = movement({
   parcialidadId: null, operacionId: null, denominaciones: { ...emptyCounts(), D1000: 10 },
 });
 
+/**
+ * El resumen usa el `MetricCard` compartido, que coloca la etiqueta y el valor en dos
+ * bloques hermanos dentro de la tarjeta. Se busca la tarjeta completa en lugar del padre
+ * inmediato de la etiqueta, porque entradas y salidas pueden coincidir en importe y hay
+ * que verificar que cada cifra está bajo su propia etiqueta.
+ */
+function metricCard(label: string) {
+  return screen.getByText(label).closest('div.w-full') as HTMLElement;
+}
+
 describe('Libro de movimientos', () => {
   it('resume entradas, salidas y saldo del día', () => {
     mount({ dias: [day], movimientos: [salida, entrada] });
 
-    expect(screen.getByText('Entradas del día').parentElement).toHaveTextContent('$10,000.00');
-    expect(screen.getByText('Salidas del día').parentElement).toHaveTextContent('$10,000.00');
-    expect(screen.getByText('Saldo acumulado').parentElement).toHaveTextContent('$5,418.00');
+    expect(metricCard('Entradas del día')).toHaveTextContent('$10,000.00');
+    expect(metricCard('Salidas del día')).toHaveTextContent('$10,000.00');
+    expect(metricCard('Saldo acumulado')).toHaveTextContent('$5,418.00');
   });
 
   it('muestra la apertura y cada movimiento con su hora, signo y saldo', () => {

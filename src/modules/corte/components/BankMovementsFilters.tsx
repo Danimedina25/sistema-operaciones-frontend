@@ -2,9 +2,11 @@ import { useMemo } from 'react';
 import { TableFilterSection } from '@/shared/components/ui/TableFilterSection';
 import { BankAccountCombobox } from '@/shared/components/ui/BankAccountCombobox';
 import type { BankAccountResponse } from '@/modules/bank-accounts/types/bank-accounts.types';
+import { fieldControl } from '@/shared/styles/ui-tokens';
 import { BANK_MOVEMENT_TYPES, type BankMovementSideFilters } from '../types/bank-movements.types';
 
-const field = 'mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal text-slate-900 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200';
+/** El campo del sistema, con el margen que pide ir dentro de un `<label>`. */
+const field = `mt-1 ${fieldControl}`;
 
 /** El periodo no se captura aquí: vive en la cabecera compartida de Cortes y saldos. */
 export function BankMovementsFilters({ filters, onChange, accounts, isLoadingAccounts }: {
