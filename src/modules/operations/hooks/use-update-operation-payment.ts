@@ -56,10 +56,15 @@ export function useUpdateOperationPayment(
           paymentId,
           {
             monto: values.monto,
+            numeroCheque: values.tipoPago === 'CHEQUE' ? values.numeroCheque?.trim() : undefined,
+            bancoEmisor: values.tipoPago === 'CHEQUE' ? values.bancoEmisor?.trim() : undefined,
+            emisor: values.tipoPago === 'CHEQUE' ? values.emisor?.trim() : undefined,
+            beneficiario: values.tipoPago === 'CHEQUE' ? values.beneficiario?.trim() : undefined,
+
             tipoPago: values.tipoPago,
             fechaComprobante: toLocalDateTime(values.fechaComprobante) || '',
             cuentaDestinoId:
-              values.cuentaDestinoId,
+              values.tipoPago === 'CHEQUE' ? null : values.cuentaDestinoId,
             comprobanteUrl,
             observaciones:
               values.observaciones?.trim() ||

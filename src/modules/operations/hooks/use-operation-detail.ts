@@ -28,6 +28,14 @@ export function useOperationDetail(operationId: number) {
     void fetchOperation();
   }, [fetchOperation]);
 
+  useEffect(() => {
+    const refresh = (event: Event) => {
+      if ((event as CustomEvent<{ operationId: number }>).detail.operationId === operationId) void fetchOperation();
+    };
+    window.addEventListener('cheque-updated', refresh);
+    return () => window.removeEventListener('cheque-updated', refresh);
+  }, [operationId, fetchOperation]);
+
   return {
     operation,
     isLoading,

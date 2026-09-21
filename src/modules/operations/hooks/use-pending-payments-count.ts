@@ -53,11 +53,13 @@ export function usePendingPaymentsCount() {
 
     void fetchCount();
 
+    const refresh = () => { void fetchCount(); };
+    window.addEventListener('cheque-updated', refresh);
     const intervalId = window.setInterval(() => {
       void fetchCount();
     }, REFRESH_INTERVAL_MS);
 
-    return () => window.clearInterval(intervalId);
+    return () => { window.clearInterval(intervalId); window.removeEventListener('cheque-updated', refresh); };
   }, [enabled, fetchCount]);
 
   return { count: enabled ? count : null, enabled, refetch: fetchCount };

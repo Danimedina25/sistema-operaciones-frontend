@@ -1,3 +1,4 @@
+import ChequesPage from '@/modules/cheques/ChequesPage';
 import CajaGeneralPage from '@/modules/caja-general/pages/CajaGeneralPage';
 import MyPendingPage from '@/modules/operations/pages/MyPendingPage';
 import TeamPendingPage from '@/modules/operations/pages/TeamPendingPage';
@@ -62,6 +63,7 @@ export const router = createBrowserRouter([
       {
         element: <AdminLayout />,
         children: [
+          { element: <RoleGuard allowedRoles={ROUTE_ACCESS.cheques} />, children: [{ path: paths.cheques, element: <ChequesPage /> }] },
           {
             path: paths.dashboard,
             element: <DashboardPage />,

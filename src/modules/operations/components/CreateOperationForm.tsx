@@ -888,7 +888,7 @@ export function CreateOperationForm({
                         className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
                         {...register(`pagos.${index}.tipoPago`, {
                           onChange: (event) => {
-                            if (event.target.value === 'EFECTIVO') {
+                            if (['EFECTIVO', 'CHEQUE'].includes(event.target.value)) {
                               setValue(
                                 `pagos.${index}.cuentaDestinoId`,
                                 undefined,
@@ -948,7 +948,13 @@ export function CreateOperationForm({
                       ) : null}
                     </div>
 
-                    {tipoPagoActual !== 'EFECTIVO' && (
+                    {tipoPagoActual === 'CHEQUE' && <div className="space-y-3"><p>El negocio definirá el destino al gestionar el cobro.</p>
+                      <label className="block">Número de cheque<input className="block w-full rounded border p-2" {...register(`pagos.${index}.numeroCheque`)} />{pagoErrors?.numeroCheque && <span role="alert" className="text-red-700">{pagoErrors.numeroCheque.message}</span>}</label>
+                      <label className="block">Banco emisor<input className="block w-full rounded border p-2" {...register(`pagos.${index}.bancoEmisor`)} />{pagoErrors?.bancoEmisor && <span role="alert" className="text-red-700">{pagoErrors.bancoEmisor.message}</span>}</label>
+                      <label className="block">Emisor del cheque<input className="block w-full rounded border p-2" {...register(`pagos.${index}.emisor`)} />{pagoErrors?.emisor && <span role="alert" className="text-red-700">{pagoErrors.emisor.message}</span>}</label>
+                      <label className="block">Beneficiario<input className="block w-full rounded border p-2" {...register(`pagos.${index}.beneficiario`)} />{pagoErrors?.beneficiario && <span role="alert" className="text-red-700">{pagoErrors.beneficiario.message}</span>}</label>
+                    </div>}
+                    {(tipoPagoActual === 'TRANSFERENCIA' || tipoPagoActual === 'DEPOSITO') && (
                       <div>
                         <label className="mb-2 block text-sm font-medium text-slate-700">
                           Cuenta destino

@@ -16,9 +16,14 @@ interface UseCreateOperationOptions {
 }
 
 interface ValidatedPayment {
+  numeroCheque?: string;
+  bancoEmisor?: string;
+  emisor?: string;
+  beneficiario?: string;
+
   monto: number;
   tipoPago: PaymentType;
-  cuentaDestinoId?: number;
+  cuentaDestinoId?: number | null;
   comprobante: File;
   fechaComprobante: string;
   observaciones?: string;
@@ -67,7 +72,7 @@ export function useCreateOperation(options?: UseCreateOperationOptions) {
         }
 
         if (
-          pago.tipoPago !== 'EFECTIVO' &&
+          (pago.tipoPago === 'TRANSFERENCIA' || pago.tipoPago === 'DEPOSITO') &&
           !pago.cuentaDestinoId
         ) {
           toast.error(
@@ -78,8 +83,13 @@ export function useCreateOperation(options?: UseCreateOperationOptions) {
 
         pagosValidados.push({
           monto: pago.monto,
+          numeroCheque: pago.tipoPago === 'CHEQUE' ? pago.numeroCheque?.trim() : undefined,
+          bancoEmisor: pago.tipoPago === 'CHEQUE' ? pago.bancoEmisor?.trim() : undefined,
+          emisor: pago.tipoPago === 'CHEQUE' ? pago.emisor?.trim() : undefined,
+          beneficiario: pago.tipoPago === 'CHEQUE' ? pago.beneficiario?.trim() : undefined,
+
           tipoPago: pago.tipoPago as PaymentType,
-          cuentaDestinoId: pago.cuentaDestinoId,
+          cuentaDestinoId: pago.tipoPago === 'CHEQUE' ? null : pago.cuentaDestinoId,
           comprobante, // aquí ya es File
           fechaComprobante: pago.fechaComprobante,
           observaciones: pago.observaciones?.trim() || undefined,
@@ -129,8 +139,13 @@ export function useCreateOperation(options?: UseCreateOperationOptions) {
         await addOperationPayment({
           operacionId: operation.id,
           monto: pago.monto,
+          numeroCheque: pago.tipoPago === 'CHEQUE' ? pago.numeroCheque?.trim() : undefined,
+          bancoEmisor: pago.tipoPago === 'CHEQUE' ? pago.bancoEmisor?.trim() : undefined,
+          emisor: pago.tipoPago === 'CHEQUE' ? pago.emisor?.trim() : undefined,
+          beneficiario: pago.tipoPago === 'CHEQUE' ? pago.beneficiario?.trim() : undefined,
+
           tipoPago: pago.tipoPago,
-          cuentaDestinoId: pago.cuentaDestinoId,
+          cuentaDestinoId: pago.tipoPago === 'CHEQUE' ? null : pago.cuentaDestinoId,
           fechaComprobante: toLocalDateTime(pago.fechaComprobante) || '',
           comprobanteUrl: uploadResult.downloadUrl,
           observaciones: pago.observaciones,

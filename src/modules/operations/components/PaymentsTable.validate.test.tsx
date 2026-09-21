@@ -115,3 +115,12 @@ describe('Validación de un pago en efectivo', () => {
     expect(onValidatePayment).not.toHaveBeenCalled();
   });
 });
+
+it('routes cheques to collection management instead of generic validation', () => {
+  const validate = vi.fn();
+  mount(validate, { tipoPago: 'CHEQUE', cuentaDestinoId: null, chequeEstado: 'POR_COBRAR' });
+  expect(screen.queryByRole('button', { name: 'Revisar' })).not.toBeInTheDocument();
+  expect(screen.getAllByRole('button', { name: 'Gestionar cheque' }).length).toBeGreaterThan(0);
+  expect(screen.getAllByText('Por cobrar').length).toBeGreaterThan(0);
+  expect(validate).not.toHaveBeenCalled();
+});

@@ -142,6 +142,11 @@ export interface UpdateOperationRequest {
 }
 
 export interface AddPaymentRequest {
+  numeroCheque?: string | null;
+  bancoEmisor?: string | null;
+  emisor?: string | null;
+  beneficiario?: string | null;
+
   operacionId: number;
   monto: number;
   tipoPago: PaymentType;
@@ -151,9 +156,14 @@ export interface AddPaymentRequest {
   observaciones?: string;
 }
 export interface UpdateOperationPaymentRequest {
+  numeroCheque?: string | null;
+  bancoEmisor?: string | null;
+  emisor?: string | null;
+  beneficiario?: string | null;
+
   monto: number;
   tipoPago: PaymentType;
-  cuentaDestinoId: number;
+  cuentaDestinoId: number | null;
   fechaComprobante: string;
   comprobanteUrl: string;
   observaciones?: string;
@@ -166,14 +176,20 @@ export interface UpdatePaymentStatusRequest {
 }
 
 export interface OperationPaymentResponse {
+  numeroCheque?: string | null;
+  bancoEmisor?: string | null;
+  emisor?: string | null;
+  beneficiario?: string | null;
+
   id: number;
   monto: number;
   tipoPago: PaymentType;
   comprobanteUrl: string;
   comprobanteValidacionUrl: string;
-  cuentaDestinoId: number;
-  cuentaDestinoBanco: string;
-  cuentaDestinoTitular: string;
+  cuentaDestinoId: number | null;
+  cuentaDestinoBanco: string | null;
+  cuentaDestinoTitular: string | null;
+  chequeEstado?: import('@/modules/cheques/types').ChequeState | null;
   estatus: PaymentStatus;
   observaciones?: string | null;
   registradoPorId: number;

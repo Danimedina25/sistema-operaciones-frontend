@@ -27,6 +27,9 @@ import { DenominationFields } from '@/modules/caja-general/components/Denominati
 import { countCents, currency, emptyCounts } from '@/modules/caja-general/utils/cash-amounts';
 import type { CashCounts } from '@/modules/caja-general/types/caja-general.types';
 
+import { ChequeManager } from '@/modules/cheques/ChequeManager';
+import { chequeLabels } from '@/modules/cheques/types';
+
 const BANK_PAYMENT_TYPES: PaymentType[] = ['TRANSFERENCIA', 'DEPOSITO', 'CHEQUE'];
 
 interface PaymentsTableProps {
@@ -132,6 +135,7 @@ export function PaymentsTable({
   const [validationReceiptError, setValidationReceiptError] = useState('');
   const [validationReceiptPreviewUrl, setValidationReceiptPreviewUrl] =
     useState<string | null>(null);
+  const [chequePaymentId, setChequePaymentId] = useState<number | null>(null);
   const [viewingPaymentId, setViewingPaymentId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -154,12 +158,12 @@ export function PaymentsTable({
   const isCuentas = hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS']);
 
   function canValidatePaymentType(tipoPago: PaymentType) {
+    if (tipoPago === 'CHEQUE') return false;
     if (isAdmin) return true;
     if (tipoPago === 'EFECTIVO') return isJefaCajas;
     if (
       tipoPago === 'TRANSFERENCIA' ||
-      tipoPago === 'DEPOSITO' ||
-      tipoPago === 'CHEQUE'
+      tipoPago === 'DEPOSITO'
     ) {
       return isCuentas;
     }
@@ -168,7 +172,7 @@ export function PaymentsTable({
 
   function canSeePayment(tipoPago: PaymentType) {
     if (isAdmin) return true;
-    if (isJefaCajas || isCuentas) return (isJefaCajas && tipoPago === 'EFECTIVO') || (isCuentas && BANK_PAYMENT_TYPES.includes(tipoPago));
+    if (isJefaCajas || isCuentas) return (isJefaCajas && (tipoPago === 'EFECTIVO' || tipoPago === 'CHEQUE')) || (isCuentas && BANK_PAYMENT_TYPES.includes(tipoPago));
     return true; // ADMIN, GERENTE, DIRECCION, SOCIO_COMERCIAL ven todo
   }
 
@@ -205,6 +209,7 @@ export function PaymentsTable({
   };
 
   const openReviewDrawer = (paymentId: number) => {
+    if (payments.find(p => p.id === paymentId)?.tipoPago === 'CHEQUE') { setChequePaymentId(paymentId); return; }
     setReviewingPaymentId(paymentId);
     resetReviewFormState();
   };
@@ -326,7 +331,8 @@ export function PaymentsTable({
     const isPendingValidation = payment.estatus === 'PENDIENTE_VALIDACION';
     const isInProgress = payment.estatus === 'EN_PROCESO';
     const isProcessing = processingPaymentId === payment.id;
-    const canEdit = isPendingValidation && !!onEditPayment && canModifyPayments;
+    const chequeEditable = payment.tipoPago !== 'CHEQUE' || payment.chequeEstado === 'POR_COBRAR';
+    const canEdit = chequeEditable && isPendingValidation && !!onEditPayment && canModifyPayments;
     // "Revisar" abre el panel con Validar / Rechazar / Marcar en proceso /
     // Liberar; disponible tanto en pendiente como en proceso.
     const canValidate =
@@ -469,6 +475,7 @@ export function PaymentsTable({
 
   return (
     <>
+      {chequePaymentId !== null && <ChequeManager paymentId={chequePaymentId} onClose={() => setChequePaymentId(null)} />}
       <div
         className="
     overflow-hidden
@@ -587,6 +594,7 @@ export function PaymentsTable({
 
                     <td className="px-4 py-4 text-slate-600">
                       {paymentTypeLabels[payment.tipoPago]}
+                      {payment.tipoPago === 'CHEQUE' && <div className="mt-1 text-xs"><p>{payment.chequeEstado ? chequeLabels[payment.chequeEstado] : 'Requiere conciliación'}</p>{(isAdmin || isCuentas || isJefaCajas) && <button type="button" className="mt-1 rounded border px-2 py-1 text-blue-700" onClick={() => setChequePaymentId(payment.id)}>Gestionar cheque</button>}</div>}
                     </td>
 
                     <td className="px-4 py-4">
@@ -703,9 +711,10 @@ export function PaymentsTable({
                       <CircleDollarSign className="h-4 w-4 shrink-0 text-emerald-600" />
                       {formatCurrency(payment.monto)}
                     </span>
-                    <p className="mt-1 truncate text-xs font-medium text-slate-500">
+                    <div className="mt-1 text-xs font-medium text-slate-500">
                       {paymentTypeLabels[payment.tipoPago]}
-                    </p>
+                      {payment.tipoPago === 'CHEQUE' && <div className="mt-1 text-xs"><p>{payment.chequeEstado ? chequeLabels[payment.chequeEstado] : 'Requiere conciliación'}</p>{(isAdmin || isCuentas || isJefaCajas) && <button type="button" className="mt-1 rounded border px-2 py-1 text-blue-700" onClick={() => setChequePaymentId(payment.id)}>Gestionar cheque</button>}</div>}
+                    </div>
                   </div>
 
                   <div className="flex max-w-full shrink-0 items-center gap-2">

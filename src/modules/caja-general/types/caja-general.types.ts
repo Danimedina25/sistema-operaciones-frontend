@@ -18,7 +18,7 @@ export type CapturableCashConcept = keyof typeof CASH_MOVEMENT_CONCEPTS;
  * `RETIRO_CON_TARJETA`, que nunca existió en la operación y sólo aparece en movimientos
  * históricos anteriores al cambio.
  */
-export type CashConcept = CapturableCashConcept | 'TRANSFERENCIA' | 'DEPOSITO' | 'RETIRO_CON_TARJETA';
+export type CashConcept = CapturableCashConcept | 'COBRO_CHEQUE_CLIENTE' | 'TRANSFERENCIA' | 'DEPOSITO' | 'RETIRO_CON_TARJETA';
 export interface CashDay {
   id: number; fecha: string; version: number; saldoInicial: number; saldoActual: number;
   saldoContado: number | null; diferencia: number | null; apertura: CashCounts; cierre: Partial<CashCounts>;

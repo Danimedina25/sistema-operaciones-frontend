@@ -34,6 +34,10 @@ const paymentSchema = z
       }),
     ),
 
+    numeroCheque: z.string().optional(),
+    bancoEmisor: z.string().optional(),
+    emisor: z.string().optional(),
+    beneficiario: z.string().optional(),
     tipoPago: z.union([paymentTypeSchema, z.literal('')]).optional(),
     fechaComprobante: z
       .string()
@@ -60,6 +64,11 @@ const paymentSchema = z
   })
   .superRefine((value, ctx) => {
     if (value.monto > 0) {
+      if (value.tipoPago === 'CHEQUE') {
+        for (const field of ['numeroCheque', 'bancoEmisor', 'emisor', 'beneficiario'] as const) {
+          if (!value[field]?.trim()) ctx.addIssue({ code: 'custom', path: [field], message: 'Este dato del cheque es obligatorio' });
+        }
+      }
       if (!value.tipoPago) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -68,14 +77,14 @@ const paymentSchema = z
         });
       }
       if (
-        value.tipoPago !== 'EFECTIVO' &&
+        (value.tipoPago === 'TRANSFERENCIA' || value.tipoPago === 'DEPOSITO') &&
         (!value.cuentaDestinoId || value.cuentaDestinoId < 1)
       ) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['cuentaDestinoId'],
           message:
-            'La cuenta destino es obligatoria para transferencias, depósitos y cheques',
+            'La cuenta destino es obligatoria para transferencias y depósitos',
         });
       }
 

@@ -46,8 +46,13 @@ export function useAddOperationPayment(options?: UseAddOperationPaymentOptions) 
       await addOperationPayment({
         operacionId: operationId,
         monto: parseCurrency(values.monto),
+            numeroCheque: values.tipoPago === 'CHEQUE' ? values.numeroCheque?.trim() : undefined,
+            bancoEmisor: values.tipoPago === 'CHEQUE' ? values.bancoEmisor?.trim() : undefined,
+            emisor: values.tipoPago === 'CHEQUE' ? values.emisor?.trim() : undefined,
+            beneficiario: values.tipoPago === 'CHEQUE' ? values.beneficiario?.trim() : undefined,
+
         tipoPago: values.tipoPago as PaymentType,
-        cuentaDestinoId: Number(values.cuentaDestinoId),
+        cuentaDestinoId: values.tipoPago === 'CHEQUE' ? null : Number(values.cuentaDestinoId),
         fechaComprobante: toLocalDateTime(values.fechaComprobante) || '',
         comprobanteUrl: uploadResult.downloadUrl,
         observaciones: values.observaciones?.trim() || undefined,

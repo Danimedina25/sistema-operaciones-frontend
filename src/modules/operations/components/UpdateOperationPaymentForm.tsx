@@ -15,7 +15,11 @@ export interface UpdateOperationPaymentFormValues {
   monto: number;
   tipoPago: 'EFECTIVO' | 'TRANSFERENCIA' | 'DEPOSITO' | 'CHEQUE';
   fechaComprobante: string;
-  cuentaDestinoId: number;
+  cuentaDestinoId: number | null;
+  numeroCheque?: string;
+  bancoEmisor?: string;
+  emisor?: string;
+  beneficiario?: string;
   comprobante?: FileList;
   observaciones?: string;
 }
@@ -25,6 +29,10 @@ interface UpdateOperationPaymentFormInput {
   tipoPago: 'EFECTIVO' | 'TRANSFERENCIA' | 'DEPOSITO' | 'CHEQUE';
   fechaComprobante: string;
   cuentaDestinoId: string;
+  numeroCheque?: string;
+  bancoEmisor?: string;
+  emisor?: string;
+  beneficiario?: string;
   comprobante?: FileList;
   observaciones?: string;
 }
@@ -100,7 +108,11 @@ export function UpdateOperationPaymentForm({
       monto: formatCurrencyDisplay(payment.monto),
       tipoPago: payment.tipoPago as UpdateOperationPaymentFormInput['tipoPago'],
       fechaComprobante: toDateInputValue(payment.fechaComprobante),
-      cuentaDestinoId: String(payment.cuentaDestinoId),
+      numeroCheque: payment.numeroCheque ?? '',
+      bancoEmisor: payment.bancoEmisor ?? '',
+      emisor: payment.emisor ?? '',
+      beneficiario: payment.beneficiario ?? '',
+      cuentaDestinoId: payment.cuentaDestinoId ? String(payment.cuentaDestinoId) : '',
       comprobante: undefined,
       observaciones: payment.observaciones ?? '',
     },
@@ -177,9 +189,9 @@ export function UpdateOperationPaymentForm({
   });
 
   const requiereComprobante =
-    tipoPago === 'TRANSFERENCIA' || tipoPago === 'DEPOSITO';
+    tipoPago === 'TRANSFERENCIA' || tipoPago === 'DEPOSITO' || tipoPago === 'CHEQUE';
 
-  const esEfectivo = tipoPago === 'EFECTIVO';
+  const requiereCuenta = tipoPago === 'TRANSFERENCIA' || tipoPago === 'DEPOSITO';
 
   const montoCapturado = parseCurrency(montoRaw);
 
@@ -222,9 +234,15 @@ export function UpdateOperationPaymentForm({
 
     await onSubmit({
       monto: parseCurrency(values.monto),
+      numeroCheque: values.tipoPago === 'CHEQUE' ? values.numeroCheque?.trim() : undefined,
+      bancoEmisor: values.tipoPago === 'CHEQUE' ? values.bancoEmisor?.trim() : undefined,
+      emisor: values.tipoPago === 'CHEQUE' ? values.emisor?.trim() : undefined,
+      beneficiario: values.tipoPago === 'CHEQUE' ? values.beneficiario?.trim() : undefined,
+
       cuentaDestinoId:
-        values.tipoPago === 'EFECTIVO'
-          ? 0
+        values.tipoPago === 'CHEQUE'
+          ? null
+          : values.tipoPago === 'EFECTIVO' ? 0
           : Number(values.cuentaDestinoId),
       tipoPago: values.tipoPago,
       fechaComprobante: values.fechaComprobante,
@@ -235,6 +253,11 @@ export function UpdateOperationPaymentForm({
 
   return (
     <form className="space-y-6" onSubmit={handleSubmit(handleSubmitForm)}>
+      <input type="hidden" {...register('cuentaDestinoId', {
+        validate: (value, values) => !['TRANSFERENCIA', 'DEPOSITO'].includes(values.tipoPago)
+          || (Number.isInteger(Number(value)) && Number(value) > 0)
+          || 'Selecciona una cuenta bancaria',
+      })} />
       <div className="grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-3 text-sm sm:p-4 md:grid-cols-4">
         <div>
           <span className="block text-slate-500">Monto total requerido</span>
@@ -322,7 +345,7 @@ export function UpdateOperationPaymentForm({
               {...register('tipoPago', {
                 required: 'El tipo de comprobante es obligatorio',
                 onChange: (event) => {
-                  if (event.target.value === 'EFECTIVO') {
+                  if (['EFECTIVO', 'CHEQUE'].includes(event.target.value)) {
                     setValue('cuentaDestinoId', '', {
                       shouldValidate: true,
                       shouldDirty: true,
@@ -368,7 +391,13 @@ export function UpdateOperationPaymentForm({
             ) : null}
           </div>
 
-          {!esEfectivo ? (
+          {tipoPago === 'CHEQUE' && <div className="space-y-3"><p className="text-sm text-slate-600">El negocio definirá el destino al gestionar el cobro.</p>
+            <label className="block">Número de cheque<input className="block w-full rounded border p-2" {...register('numeroCheque', { validate: (value, values) => values.tipoPago !== 'CHEQUE' || !!value?.trim() || 'Este dato del cheque es obligatorio' })} />{errors.numeroCheque && <span role="alert" className="text-red-700">{errors.numeroCheque.message}</span>}</label>
+            <label className="block">Banco emisor<input className="block w-full rounded border p-2" {...register('bancoEmisor', { validate: (value, values) => values.tipoPago !== 'CHEQUE' || !!value?.trim() || 'Este dato del cheque es obligatorio' })} />{errors.bancoEmisor && <span role="alert" className="text-red-700">{errors.bancoEmisor.message}</span>}</label>
+            <label className="block">Emisor del cheque<input className="block w-full rounded border p-2" {...register('emisor', { validate: (value, values) => values.tipoPago !== 'CHEQUE' || !!value?.trim() || 'Este dato del cheque es obligatorio' })} />{errors.emisor && <span role="alert" className="text-red-700">{errors.emisor.message}</span>}</label>
+            <label className="block">Beneficiario<input className="block w-full rounded border p-2" {...register('beneficiario', { validate: (value, values) => values.tipoPago !== 'CHEQUE' || !!value?.trim() || 'Este dato del cheque es obligatorio' })} />{errors.beneficiario && <span role="alert" className="text-red-700">{errors.beneficiario.message}</span>}</label>
+          </div>}
+          {requiereCuenta ? (
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">
                 Cuenta destino
