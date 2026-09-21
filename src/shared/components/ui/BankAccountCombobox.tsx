@@ -179,8 +179,10 @@ export function BankAccountCombobox({
           onChange={event => { setQuery(event.target.value); setOpen(true); setActiveIndex(0); }}
           onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}
-          className={`w-full rounded-lg border px-3 py-2 text-sm font-normal text-slate-900 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:bg-slate-100 ${
-            fieldError ? 'border-red-400' : 'border-slate-300'
+          className={`h-11 w-full rounded-xl border bg-white px-3 text-sm font-normal text-slate-900 shadow-sm outline-none transition disabled:cursor-not-allowed disabled:bg-slate-100 ${
+            fieldError
+              ? 'border-red-500 focus:border-red-500'
+              : 'border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10'
           }`}
         />
 
