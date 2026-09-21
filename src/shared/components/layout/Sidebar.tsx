@@ -211,6 +211,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               <NavLink
                 key={to}
                 to={to}
+                end={to === paths.corte}
                 onClick={onClose}
                 className={({ isActive }) =>
                   cn(
