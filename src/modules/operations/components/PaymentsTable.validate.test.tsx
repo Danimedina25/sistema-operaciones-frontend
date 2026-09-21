@@ -137,7 +137,7 @@ describe('Cheques recibidos', () => {
     fireEvent.click(revisar[0]);
 
     // Abre la gestión del cheque, no el panel genérico de validación.
-    expect(await screen.findByRole('heading', { name: 'Gestionar cheque' })).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', { name: 'Gestionar cheque' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Validar' })).not.toBeInTheDocument();
     expect(validate).not.toHaveBeenCalled();
   });

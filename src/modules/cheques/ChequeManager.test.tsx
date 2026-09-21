@@ -17,11 +17,11 @@ describe('shared cheque manager', () => {
   it('sends a deposit command and preserves its idempotency key on an uncertain retry', async () => {
     mocks.command.mockRejectedValueOnce(new Error('Respuesta incierta')).mockResolvedValueOnce({ ...cheque, estado: 'DEPOSITADO', version: 2 });
     mount();
-    fireEvent.change(await screen.findByLabelText('Acción'), { target: { value: 'DEPOSITAR' } });
-    fireEvent.change(screen.getByLabelText('Fecha efectiva'), { target: { value: '2026-09-20' } });
+    fireEvent.change(await screen.findByLabelText(/Acción/), { target: { value: 'DEPOSITAR' } });
+    fireEvent.change(screen.getByLabelText(/Fecha efectiva/), { target: { value: '2026-09-20' } });
     await screen.findByRole('option', { name: /Empresa — Bajío/ });
     fireEvent.change(screen.getByLabelText('Cuenta bancaria'), { target: { value: '8' } });
-    await userEvent.upload(screen.getByLabelText('Comprobante'), new File(['proof'], 'proof.pdf', { type: 'application/pdf' }));
+    await userEvent.upload(screen.getByLabelText(/Comprobante/), new File(['proof'], 'proof.pdf', { type: 'application/pdf' }));
     const form = screen.getByRole('button', { name: 'Confirmar acción' }).closest('form')!;
     // jsdom file validity does not track user-event's uploaded FileList.
     fireEvent.submit(form);
@@ -36,10 +36,10 @@ describe('shared cheque manager', () => {
   it('keeps historical cheques read-only until reconciled', async () => {
     mocks.get.mockResolvedValue({ ...cheque, estado: null, requiereConciliacion: true }); mount();
     await screen.findByText(/Este cheque histórico requiere conciliación/);
-    expect(screen.queryByLabelText('Acción')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Acción/)).not.toBeInTheDocument();
   });
   it('does not offer cash collection to accounts staff', async () => {
-    mount(); await screen.findByLabelText('Acción');
+    mount(); await screen.findByLabelText(/Acción/);
     expect(screen.queryByRole('option', { name: 'Confirmar cobro en efectivo' })).not.toBeInTheDocument();
   });
 });
