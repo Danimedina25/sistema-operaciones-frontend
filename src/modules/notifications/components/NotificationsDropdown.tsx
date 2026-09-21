@@ -81,6 +81,10 @@ const notificationPresentation: Record<NotificationType, NotificationPresentatio
     icon: CircleDollarSign,
     iconClassName: 'bg-amber-50 text-amber-600',
   },
+  PAYMENT_TYPE_CHANGED: {
+    icon: RefreshCw,
+    iconClassName: 'bg-blue-50 text-blue-600',
+  },
   PAYMENT_VALIDATED: {
     icon: Check,
     iconClassName: 'bg-emerald-50 text-emerald-600',

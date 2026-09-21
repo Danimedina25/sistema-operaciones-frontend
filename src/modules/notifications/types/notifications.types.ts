@@ -3,6 +3,7 @@ import { ApiResponse } from '@/shared/types/api.types';
 export type NotificationType =
   | 'OPERATION_CREATED'
   | 'PAYMENT_SUBMITTED'
+  | 'PAYMENT_TYPE_CHANGED'
   | 'PAYMENT_VALIDATED'
   | 'PAYMENT_REJECTED'
   | 'OPERATION_STATUS_CHANGED'
