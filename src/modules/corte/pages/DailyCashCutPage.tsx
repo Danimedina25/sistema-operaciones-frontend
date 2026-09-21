@@ -11,11 +11,10 @@ import type {
 import { useDailyCashCut } from '../hooks/use-daily-cash-cut';
 import { formatDate } from '@/modules/operations/utils/operation-formatters';
 import { formatDate as toISODate } from '@/shared/utils/weeks';
-import { DateRangeCalendarField } from '@/shared/components/ui/DateRangeCalendarField';
 import { maskAccountNumber } from '@/shared/utils/account-formatting';
 import { paths } from '@/routes/paths';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
-import { fieldControl, fieldLabel, panelShell } from '@/shared/styles/ui-tokens';
+import { PeriodDateField, PeriodModeToggle } from '@/shared/components/ui/PeriodFilter';
 import { BankMovementsSection } from '../components/BankMovementsSection';
 import { ArrowDownToLine, ArrowUpFromLine, Building2, CalendarDays, Landmark, LoaderCircle, Scale, Search } from 'lucide-react';
 
@@ -228,78 +227,30 @@ export default function DailyCashCutPage() {
                         title={pageTitle}
                         description={pageDescription}
                         actions={isBankBalancesView ? null : (
-                            <div className="inline-flex rounded-xl border border-slate-200 bg-white p-1">
-                                <button
-                                    type="button"
-                                    onClick={() => setDateMode('daily')}
-                                    className={`rounded-lg px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${dateMode === 'daily'
-                                        ? 'bg-slate-900 text-white'
-                                        : 'text-slate-600 hover:bg-slate-50'
-                                        }`}
-                                >
-                                    Día
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={() => setDateMode('range')}
-                                    className={`rounded-lg px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${dateMode === 'range'
-                                        ? 'bg-slate-900 text-white'
-                                        : 'text-slate-600 hover:bg-slate-50'
-                                        }`}
-                                >
-                                    Rango de fechas
-                                </button>
-                            </div>
+                            <PeriodModeToggle mode={dateMode} onChange={setDateMode} />
                         )}
                     />
 
-                    <section className={panelShell}>
-                        <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
-                            {isBankBalancesView || isDailyMode ? (
-                                <div>
-                                    <label htmlFor="corte-fecha" className={fieldLabel}>
-                                        {isBankBalancesView
-                                            ? 'Fecha de saldos'
-                                            : isBankMovementsView
-                                                ? 'Fecha de movimientos'
-                                                : 'Fecha del corte'}
-                                    </label>
-                                    <input
-                                        id="corte-fecha"
-                                        type="date"
-                                        value={fecha}
-                                        /* No hay movimientos por venir; el corte sí admite consultar cualquier fecha. */
-                                        max={isBankMovementsView ? todayISO() : undefined}
-                                        onChange={(event) => setFecha(event.target.value)}
-                                        className={`${fieldControl} lg:max-w-xs`}
-                                    />
-                                </div>
-                            ) : (
-                                <div>
-                                    <span className={fieldLabel}>
-                                        Rango de fechas
-                                    </span>
+                    <PeriodDateField
+                        id="corte-fecha"
+                        mode={isBankBalancesView ? 'daily' : dateMode}
+                        dailyLabel={isBankBalancesView
+                            ? 'Fecha de saldos'
+                            : isBankMovementsView
+                                ? 'Fecha de movimientos'
+                                : 'Fecha del corte'}
+                        fecha={fecha}
+                        startDate={startDate}
+                        endDate={endDate}
+                        /* No hay movimientos por venir; el corte sí admite consultar cualquier fecha. */
+                        maxDate={isBankMovementsView ? todayISO() : undefined}
+                        onFechaChange={setFecha}
+                        onRangeChange={({ startDate: start, endDate: end }) => {
+                            setFilters((current) => ({ ...current, startDate: start, endDate: end }));
+                            fetchRangeCut(start, end);
+                        }}
+                    />
 
-                                    <DateRangeCalendarField
-                                        startDate={startDate}
-                                        endDate={endDate}
-                                        maxDate={isBankMovementsView ? new Date() : undefined}
-                                        className="min-w-[320px]"
-                                        onChange={({ startDate: start, endDate: end }) => {
-                                            if (!start || !end) {
-                                                return;
-                                            }
-
-                                            setFilters((current) => ({ ...current, startDate: start, endDate: end }));
-
-                                            fetchRangeCut(start, end);
-                                        }}
-                                    />
-                                </div>
-                            )}
-                        </div>
-                    </section>
 
                     {isBankMovementsView ? (
                         <BankMovementsSection

@@ -1,14 +1,12 @@
 import { useState } from 'react';
 import { ArrowDown, ArrowUp, WalletCards } from 'lucide-react';
 import { useAuth } from '@/modules/auth/store/auth.context';
-import { TableFilterSection } from '@/shared/components/ui/TableFilterSection';
-import { DateRangeCalendarField } from '@/shared/components/ui/DateRangeCalendarField';
 import { QueryState } from '@/shared/components/ui/QueryState';
+import { PeriodDateField, PeriodModeToggle, type PeriodMode } from '@/shared/components/ui/PeriodFilter';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
+import { useTableFilters } from '@/shared/hooks/use-table-filters';
 import {
   dangerOutlineButton,
-  fieldControl,
-  fieldLabel,
   microTitle,
   mutedText,
   noteDanger,
@@ -17,7 +15,6 @@ import {
   secondaryButton,
   sectionTitle,
 } from '@/shared/styles/ui-tokens';
-import { isoToDate } from '@/shared/utils/date-formats';
 import { formatDate } from '@/shared/utils/weeks';
 import { getApiErrorMessage } from '@/shared/utils/errors';
 import { useCajaGeneral } from '../hooks/use-caja-general';
@@ -41,7 +38,13 @@ export default function CajaGeneralPage() {
   const canWrite = user?.roles.some(role => role === 'ADMIN' || role === 'JEFA_CAJAS');
   const canDelete = user?.roles.includes('ADMIN') ?? false;
   const today = formatDate(new Date());
-  const [filters, setFilters] = useState({ mode: 'daily', fecha: today, startDate: today, endDate: today });
+  // Mismo mecanismo que Cortes y saldos: el periodo elegido sobrevive a la navegación.
+  const { filters, setFilters } = useTableFilters('table-filters:caja-general', {
+    mode: 'daily' as PeriodMode,
+    fecha: today,
+    startDate: today,
+    endDate: today,
+  });
   const start = filters.mode === 'daily' ? filters.fecha : filters.startDate;
   const end = filters.mode === 'daily' ? filters.fecha : filters.endDate;
   const { latest, ledger, open, movement, close, deleteDay } = useCajaGeneral(start, end);
@@ -73,6 +76,7 @@ export default function CajaGeneralPage() {
     <PageHeader
       title="Caja General"
       description="Control diario de entradas, salidas y corte por denominación."
+      actions={<PeriodModeToggle mode={filters.mode} onChange={mode => { setActivePanel(null); setFilters(current => ({ ...current, mode })); }} />}
     />
 
     <section className="flex flex-col gap-7 rounded-2xl bg-slate-950 px-6 py-7 text-white shadow-lg shadow-slate-950/10 sm:px-8 lg:flex-row lg:items-end lg:justify-between">
@@ -84,26 +88,21 @@ export default function CajaGeneralPage() {
       </div>
     </section>
 
-    <TableFilterSection title="Fecha del corte">
-      <div className="grid items-end gap-4 sm:grid-cols-2">
-        <div>
-          <label htmlFor="caja-periodo" className={fieldLabel}>Periodo</label>
-          <select id="caja-periodo" value={filters.mode} onChange={event => { setActivePanel(null); setFilters(current => ({ ...current, mode: event.target.value })); }} className={fieldControl}><option value="daily">Día</option><option value="range">Rango de fechas</option></select>
-        </div>
-        {filters.mode === 'daily' ? <div>
-          <label htmlFor="caja-fecha" className={fieldLabel}>Fecha</label>
-          <input id="caja-fecha" type="date" max={today} value={filters.fecha} onChange={event => selectDate(event.target.value)} className={fieldControl} />
-        </div> : <div>
-          <span className={fieldLabel}>Rango de fechas</span>
-          <DateRangeCalendarField maxDate={isoToDate(today)} startDate={filters.startDate} endDate={filters.endDate} onChange={({ startDate, endDate }) => {
-            if (startDate && endDate) {
-              setActivePanel(null);
-              setFilters(current => ({ ...current, startDate, endDate }));
-            }
-          }} />
-        </div>}
-      </div>
-    </TableFilterSection>
+    <PeriodDateField
+      id="caja-fecha"
+      mode={filters.mode}
+      dailyLabel="Fecha del corte"
+      fecha={filters.fecha}
+      startDate={filters.startDate}
+      endDate={filters.endDate}
+      /* La caja no admite fechas futuras: no hay efectivo que contar por venir. */
+      maxDate={today}
+      onFechaChange={selectDate}
+      onRangeChange={({ startDate, endDate }) => {
+        setActivePanel(null);
+        setFilters(current => ({ ...current, startDate, endDate }));
+      }}
+    />
 
     <section className={`flex flex-col gap-4 rounded-2xl border border-l-4 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between ${isOpen ? 'border-slate-200 border-l-emerald-500' : 'border-slate-200 border-l-slate-400'}`}>
       <div className="flex items-start gap-3">
