@@ -103,15 +103,17 @@ describe('MarkCashReturnDeliveredModal', () => {
     ).toBeInTheDocument();
   });
 
-  it('no solicita denominaciones ni envía salida de caja para retiro sin tarjeta', async () => {
+  it('exige y envía las denominaciones para retiro sin tarjeta', async () => {
     const user = userEvent.setup();
     const { onConfirm } = renderModal({
       target: { ...baseTarget, tipoPago: 'RETIRO_SIN_TARJETA' },
     });
 
-    expect(screen.queryByText('Desglose por denominación')).not.toBeInTheDocument();
+    expect(screen.getByText('Desglose por denominación')).toBeInTheDocument();
     await user.selectOptions(selectEl(), 'Juan Pérez');
     await user.upload(fileInput(), imageFile());
+    expect(confirmButton()).toBeDisabled();
+    await fillCashBreakdown(user);
     expect(confirmButton()).toBeEnabled();
     await user.click(confirmButton());
     expect(onConfirm).toHaveBeenCalledWith(
@@ -119,7 +121,7 @@ describe('MarkCashReturnDeliveredModal', () => {
       1500,
       expect.any(File),
       'Juan Pérez',
-      undefined,
+      expect.objectContaining({ D100: 100 }),
     );
   });
 

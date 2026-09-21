@@ -310,7 +310,7 @@ export interface DeliverReturnInstallmentRequest {
    * los autorizados de la solicitud y guarda el nombre canónico.
    */
   personaQueRecibioEfectivo: string;
-  /** Obligatorio para EFECTIVO; genera la salida de Caja General. */
+  /** Obligatorio para EFECTIVO y RETIRO_SIN_TARJETA; debe sumar el importe entregado. */
   denominaciones?: import('@/modules/caja-general/types/caja-general.types').CashCounts;
 }
 

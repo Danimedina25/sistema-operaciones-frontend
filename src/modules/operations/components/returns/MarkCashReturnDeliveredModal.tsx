@@ -91,8 +91,9 @@ export function MarkCashReturnDeliveredModal({
     ? personaQueRecibio.length > 0
     : selectValue !== '' && autorizados.includes(selectValue);
   const fotoValida = !!comprobante && comprobante.type.startsWith('image/');
-  const isPhysicalCash = target?.tipoPago === 'EFECTIVO';
-  const desgloseValido = !isPhysicalCash
+  const requiresCashBreakdown =
+    target?.tipoPago === 'EFECTIVO' || target?.tipoPago === 'RETIRO_SIN_TARJETA';
+  const desgloseValido = !requiresCashBreakdown
     || countCents(denominaciones) === Math.round((target?.monto ?? 0) * 100);
   const canConfirm = receptorValido && fotoValida && desgloseValido && !isSubmitting;
 
@@ -103,7 +104,7 @@ export function MarkCashReturnDeliveredModal({
       target.operationId,
       comprobante,
       personaQueRecibio,
-      isPhysicalCash ? denominaciones : undefined,
+      requiresCashBreakdown ? denominaciones : undefined,
     );
   };
 
@@ -141,7 +142,7 @@ export function MarkCashReturnDeliveredModal({
             </p>
           </div>
 
-          {isPhysicalCash ? (
+          {requiresCashBreakdown ? (
             <div className="mt-4">
               <DenominationFields
                 value={denominaciones}
@@ -153,9 +154,11 @@ export function MarkCashReturnDeliveredModal({
                   El desglose debe sumar exactamente {formatCurrency(target.monto)}.
                 </p>
               ) : null}
-              <p className="mt-2 text-xs text-slate-500">
-                Al confirmar se registrará automáticamente esta entrega como salida de Caja General.
-              </p>
+              {target.tipoPago === 'EFECTIVO' ? (
+                <p className="mt-2 text-xs text-slate-500">
+                  Al confirmar se registrará automáticamente esta entrega como salida de Caja General.
+                </p>
+              ) : null}
             </div>
           ) : null}
 
