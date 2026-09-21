@@ -233,9 +233,11 @@ export function resolveReturnModalTitle(params: {
   variant: ReturnModalVariant;
   tipoPago: PaymentType;
   estatus: ReturnPaymentResponse['estatus'];
+  isSocioComercial?: boolean;
 }): string {
   const esEfectivo = isCashReturnMethod(params.tipoPago);
   if (params.variant === 'manage') {
+    if (esEfectivo && params.isSocioComercial) return 'Confirmar recepción';
     if (esEfectivo) return 'Programar recolección';
     return params.estatus === 'RETORNADO' ? 'Retorno' : 'Retornar';
   }
@@ -260,8 +262,10 @@ export interface ReturnRowActionsView {
   primaryLabel: 'Ver recolección' | 'Ver retorno' | 'Retornar';
   /** Variante del modal que abre el botón principal. */
   primaryVariant: ReturnModalVariant;
-  /** Muestra el botón independiente "Programar recolección" (solo efectivo). */
+  /** Muestra la acción pendiente de efectivo correspondiente al perfil. */
   showConfirmRecoleccion: boolean;
+  /** Acción del efectivo según la responsabilidad del perfil actual. */
+  collectionActionLabel: 'Confirmar recepción' | 'Programar recolección';
 }
 
 type InstallmentMarks = Pick<
@@ -312,6 +316,9 @@ export function resolveReturnRowActions(params: {
       primaryLabel: 'Ver recolección',
       primaryVariant: 'view',
       showConfirmRecoleccion: tieneAccionPendiente || puedeProgramarNueva,
+      collectionActionLabel: params.isSocioComercial
+        ? 'Confirmar recepción'
+        : 'Programar recolección',
     };
   }
 
@@ -320,6 +327,7 @@ export function resolveReturnRowActions(params: {
     primaryLabel: params.canRegister ? 'Retornar' : 'Ver retorno',
     primaryVariant: params.canRegister ? 'manage' : 'view',
     showConfirmRecoleccion: false,
+    collectionActionLabel: 'Programar recolección',
   };
 }
 

@@ -80,6 +80,7 @@ export function ReturnPaymentModal({
 }: ReturnPaymentModalProps) {
   const { user } = useAuth();
   const roles = user?.roles ?? [];
+  const isSocioComercial = roles.includes('SOCIO_COMERCIAL');
   const { accounts } = useBankAccounts();
   const [cashDraft, setCashDraft] = useState<{ requestId: number | null; amount: number }>({
     requestId: null,
@@ -139,6 +140,7 @@ export function ReturnPaymentModal({
         variant,
         tipoPago: returnRequest.tipoPago,
         estatus: returnRequest.estatus,
+        isSocioComercial,
       })
     : 'Retorno';
 
@@ -214,19 +216,21 @@ export function ReturnPaymentModal({
         // informativas.
         <div className="space-y-6">
           {totals ? (
-            <section data-testid="cash-collection-summary" className="sticky top-0 z-50 -mx-4 -mt-4 grid grid-cols-2 gap-3 rounded-b-2xl border-b border-slate-200 bg-white px-4 py-3 text-sm shadow-lg before:absolute before:inset-x-0 before:-top-10 before:h-10 before:bg-white sm:-mx-7 sm:-mt-7 sm:px-5 sm:py-4 md:grid-cols-4">
+            <section data-testid="cash-collection-summary" className={`sticky top-0 z-50 -mx-4 -mt-4 grid grid-cols-2 gap-3 rounded-b-2xl border-b border-slate-200 bg-white px-4 py-3 text-sm shadow-lg before:absolute before:inset-x-0 before:-top-10 before:h-10 before:bg-white sm:-mx-7 sm:-mt-7 sm:px-5 sm:py-4 ${isSocioComercial ? 'md:grid-cols-3' : 'md:grid-cols-4'}`}>
               <div>
                 <span className="block text-slate-500">Total solicitado</span>
                 <strong className="text-base text-slate-900">{formatCurrency(totals.montoSolicitado)}</strong>
               </div>
               <div>
-                <span className="block text-slate-500">Ya programado</span>
+                <span className="block text-slate-500">{isSocioComercial ? 'Registrado' : 'Ya programado'}</span>
                 <strong className="text-base text-slate-900">{formatCurrency(totals.montoRetornado + totals.montoEnProceso)}</strong>
               </div>
-              <div>
-                <span className="block text-slate-500">Nueva recolección</span>
-                <strong className="text-base text-slate-900">{formatCurrency(cashDraftAmount)}</strong>
-              </div>
+              {!isSocioComercial ? (
+                <div>
+                  <span className="block text-slate-500">Nueva recolección</span>
+                  <strong className="text-base text-slate-900">{formatCurrency(cashDraftAmount)}</strong>
+                </div>
+              ) : null}
               <div>
                 <span className="block text-slate-500">Pendiente</span>
                 <strong className={cashDraftAmount >= totals.montoDisponible ? 'text-base text-emerald-700' : 'text-base text-amber-700'}>

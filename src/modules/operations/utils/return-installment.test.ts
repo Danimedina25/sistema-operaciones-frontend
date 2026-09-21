@@ -328,6 +328,17 @@ describe('resolveReturnModalTitle', () => {
     ).toBe('Programar recolección');
   });
 
+  it('efectivo para socio: manage → "Confirmar recepción"', () => {
+    expect(
+      resolveReturnModalTitle({
+        variant: 'manage',
+        tipoPago: 'EFECTIVO',
+        estatus: 'EN_RECOLECCION',
+        isSocioComercial: true,
+      }),
+    ).toBe('Confirmar recepción');
+  });
+
   it('no efectivo: view → "Historial de retornos", manage → "Retornar"/"Retorno"', () => {
     expect(
       resolveReturnModalTitle({ variant: 'view', tipoPago: 'TRANSFERENCIA', estatus: 'SOLICITADO' }),
@@ -390,12 +401,16 @@ describe('resolveReturnRowActions', () => {
     expect(r.primaryVariant).toBe('view');
   });
 
-  it('efectivo: "Programar recolección" solo para la parte que falta confirmar', () => {
+  it('efectivo: muestra la acción del perfil solo para la parte que falta confirmar', () => {
     // La jefa ya cerró, falta el socio → botón solo para el socio.
     expect(
       resolveReturnRowActions({ ...efectivo, parcialidades: [soloJefa], canRegister: false, ...roles.socio })
         .showConfirmRecoleccion,
     ).toBe(true);
+    expect(
+      resolveReturnRowActions({ ...efectivo, parcialidades: [soloJefa], canRegister: false, ...roles.socio })
+        .collectionActionLabel,
+    ).toBe('Confirmar recepción');
     expect(
       resolveReturnRowActions({ ...efectivo, parcialidades: [soloJefa], canRegister: false, ...roles.jefaCajas })
         .showConfirmRecoleccion,
@@ -406,6 +421,10 @@ describe('resolveReturnRowActions', () => {
       resolveReturnRowActions({ ...efectivo, parcialidades: [soloSocio], canRegister: false, ...roles.jefaCajas })
         .showConfirmRecoleccion,
     ).toBe(true);
+    expect(
+      resolveReturnRowActions({ ...efectivo, parcialidades: [soloSocio], canRegister: false, ...roles.jefaCajas })
+        .collectionActionLabel,
+    ).toBe('Programar recolección');
     expect(
       resolveReturnRowActions({ ...efectivo, parcialidades: [soloSocio], canRegister: false, ...roles.socio })
         .showConfirmRecoleccion,
