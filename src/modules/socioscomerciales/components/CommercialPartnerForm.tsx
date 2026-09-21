@@ -1,10 +1,10 @@
 // src/modules/socioscomerciales/components/CommercialPartnerForm.tsx
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import { MEXICAN_BANKS } from '@/modules/bank-accounts/components/BankAccountFormModal';
+import { BankCombobox } from '@/shared/components/ui/BankCombobox';
 import { capitalizeOnChange } from '@/shared/utils/text.utils';
 
 import { Input } from '@/shared/components/ui/Input';
@@ -63,26 +63,9 @@ export function CommercialPartnerForm({
     },
     mode: 'onChange',
   });
-  const [showBankOptions, setShowBankOptions] = useState(false);
 
-  const bankFieldValue = watch('banco') || '';
 
-  const bankContainerRef = useRef<HTMLDivElement | null>(null);
 
-  const filteredBanks = useMemo(() => {
-    const search = bankFieldValue.trim().toLowerCase();
-
-    if (!search) {
-      return MEXICAN_BANKS;
-    }
-
-    return MEXICAN_BANKS.filter((bank) => {
-      return (
-        bank.value.toLowerCase().includes(search) ||
-        bank.label.toLowerCase().includes(search)
-      );
-    });
-  }, [bankFieldValue]);
 
   useEffect(() => {
     if (initialValues) {
@@ -177,73 +160,12 @@ export function CommercialPartnerForm({
             )}
           </div>
 
-          <div
-            ref={bankContainerRef}
-            className="relative"
-          >
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Banco
-            </label>
-
-            <input
-              type="text"
-              {...register('banco')}
-              onFocus={() => setShowBankOptions(true)}
-              onChange={(event) => {
-                setValue(
-                  'banco',
-                  event.target.value,
-                  {
-                    shouldDirty: true,
-                    shouldValidate: true,
-                  },
-                );
-
-                setShowBankOptions(true);
-              }}
-              className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-slate-400"
-              placeholder="Busca o selecciona un banco"
-              autoComplete="off"
-            />
-
-            {showBankOptions && (
-              <div className="absolute z-20 mt-2 max-h-56 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
-                {filteredBanks.length > 0 ? (
-                  filteredBanks.map((bank) => (
-                    <button
-                      key={bank.value}
-                      type="button"
-                      onClick={() => {
-                        setValue(
-                          'banco',
-                          bank.value,
-                          {
-                            shouldDirty: true,
-                            shouldValidate: true,
-                          },
-                        );
-
-                        setShowBankOptions(false);
-                      }}
-                      className="block w-full px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-50"
-                    >
-                      {bank.label}
-                    </button>
-                  ))
-                ) : (
-                  <div className="px-3 py-2 text-sm text-slate-500">
-                    No se encontraron bancos
-                  </div>
-                )}
-              </div>
-            )}
-
-            {errors.banco && (
-              <p className="mt-1 text-xs text-red-600">
-                {errors.banco.message}
-              </p>
-            )}
-          </div>
+          <BankCombobox
+            label="Banco"
+            value={watch('banco') || ''}
+            onChange={bank => setValue('banco', bank, { shouldDirty: true, shouldValidate: true })}
+            fieldError={errors.banco?.message}
+          />
 
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">

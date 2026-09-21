@@ -1,10 +1,10 @@
 import { useForm, useWatch } from 'react-hook-form';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import { Input } from '@/shared/components/ui/Input';
 import { Button } from '@/shared/components/ui/Button';
-import { searchClientes } from '@/modules/clientes/api/clientes.api';
+import { ClienteCombobox } from '@/shared/components/ui/ClienteCombobox';
 import {
   updateOperationSchema,
   type UpdateOperationFormInput,
@@ -98,7 +98,6 @@ export function UpdateOperationForm({
     operation.clienteNombre,
   );
 
-  const [showClienteOptions, setShowClienteOptions] = useState(false);
 
   const nivelesRedComercialRaw = useWatch({
     control,
@@ -153,57 +152,6 @@ export function UpdateOperationForm({
     montoTotalRaw,
   ]);
 
-  const filteredClientes = useMemo(() => {
-    const search = clienteSearch.trim().toLowerCase();
-
-    if (!search) return clientes;
-
-    return clientes.filter((cliente) =>
-      cliente.label.toLowerCase().includes(search),
-    );
-  }, [clientes, clienteSearch]);
-
-  const [otrosClientesResultados, setOtrosClientesResultados] = useState<
-    SelectOption[]
-  >([]);
-
-  const [isSearchingOtrosClientes, setIsSearchingOtrosClientes] =
-    useState(false);
-
-  useEffect(() => {
-    const search = clienteSearch.trim();
-
-    if (search.length < 2 || filteredClientes.length > 0) {
-      setOtrosClientesResultados([]);
-      setIsSearchingOtrosClientes(false);
-      return;
-    }
-
-    setIsSearchingOtrosClientes(true);
-
-    const timeoutId = setTimeout(() => {
-      searchClientes(search)
-        .then((results) => {
-          setOtrosClientesResultados(
-            results.map((cliente) => ({
-              id: cliente.id,
-              label: cliente.nombre,
-              nivelesRedComercial: cliente.nivelesRedComercial,
-            })),
-          );
-        })
-        .catch(() => {
-          setOtrosClientesResultados([]);
-        })
-        .finally(() => {
-          setIsSearchingOtrosClientes(false);
-        });
-    }, 300);
-
-    return () => {
-      clearTimeout(timeoutId);
-    };
-  }, [clienteSearch, filteredClientes.length]);
 
   function selectCliente(cliente: SelectOption) {
     setClienteSearch(cliente.label);
@@ -214,7 +162,6 @@ export function UpdateOperationForm({
       shouldTouch: true,
     });
 
-    setShowClienteOptions(false);
   }
 
   const socioComercialNivel2Id = useWatch({
@@ -293,70 +240,20 @@ export function UpdateOperationForm({
               Nombre del cliente
             </label>
 
-            <div className="relative">
-              <Input
-                type="text"
-                placeholder="Buscar cliente..."
-                value={clienteSearch}
-                onFocus={() => setShowClienteOptions(true)}
-                onBlur={() => {
-                  setTimeout(() => {
-                    setShowClienteOptions(false);
-                  }, 150);
-                }}
-                onChange={(event) => {
-                  setClienteSearch(event.target.value);
-                  setShowClienteOptions(true);
-
-                  setValue('clienteId', undefined as never, {
-                    shouldValidate: false,
-                    shouldDirty: true,
-                  });
-                }}
-              />
-
-              {showClienteOptions && (
-                <div className="absolute z-50 mt-2 max-h-60 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
-                  {filteredClientes.length > 0 ? (
-                    filteredClientes.map((cliente) => (
-                      <button
-                        key={cliente.id}
-                        type="button"
-                        className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-                        onClick={() => selectCliente(cliente)}
-                      >
-                        {cliente.label}
-                      </button>
-                    ))
-                  ) : isSearchingOtrosClientes ? (
-                    <div className="px-4 py-3 text-sm text-slate-500">
-                      Buscando en clientes de otros socios comerciales...
-                    </div>
-                  ) : otrosClientesResultados.length > 0 ? (
-                    <>
-                      <div className="px-4 pt-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                        Clientes de otros socios comerciales
-                      </div>
-
-                      {otrosClientesResultados.map((cliente) => (
-                        <button
-                          key={cliente.id}
-                          type="button"
-                          className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-                          onClick={() => selectCliente(cliente)}
-                        >
-                          {cliente.label}
-                        </button>
-                      ))}
-                    </>
-                  ) : (
-                    <div className="px-4 py-3 text-sm text-slate-500">
-                      No se encontraron clientes
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+            <ClienteCombobox
+              clientes={clientes}
+              search={clienteSearch}
+              placeholder="Buscar cliente..."
+              onSearchChange={value => {
+                setClienteSearch(value);
+                // Al reescribir el nombre deja de haber cliente elegido.
+                setValue('clienteId', undefined as never, {
+                  shouldValidate: false,
+                  shouldDirty: true,
+                });
+              }}
+              onSelect={selectCliente}
+            />
 
             {errors.clienteId && (
               <p className="mt-1 text-xs text-red-600">

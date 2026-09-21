@@ -4,7 +4,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
 import { ReturnDestinationAccountSuggestion, ReturnPaymentResponse } from '../../types/operations.types.ts';
 import { ReturnPaymentType } from '@/shared/utils/form.utils.js';
-import { MEXICAN_BANKS } from '@/modules/bank-accounts/components/BankAccountFormModal.js';
+import { BankCombobox } from '@/shared/components/ui/BankCombobox';
 import { useReturnDestinationAccountSuggestions } from '../../hooks/returns/use-operation-returns.js';
 import { ReturnExcelImport } from './ReturnExcelImport';
 import { RETURN_METHODS, validateReturnDraft } from '../../utils/return-excel';
@@ -170,10 +170,6 @@ export function RequestReturnForm({
     setErrors({});
   }
 
-  const [showBankOptions, setShowBankOptions] = useState<
-    Record<string, boolean>
-  >({});
-
   const {
     data: destinationAccountSuggestions = [],
     isLoading: isLoadingDestinationAccounts,
@@ -242,17 +238,6 @@ export function RequestReturnForm({
     });
   }
 
-  function getFilteredBanks(searchValue?: string) {
-    const search = searchValue?.trim().toLowerCase() ?? '';
-
-    if (!search) {
-      return MEXICAN_BANKS;
-    }
-
-    return MEXICAN_BANKS.filter((bank) =>
-      bank.label.toLowerCase().includes(search),
-    );
-  }
 
   function validatePayments() {
     const newErrors: PaymentErrors = {};
@@ -703,78 +688,12 @@ export function RequestReturnForm({
                       />
                     </div>
 
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-slate-700">
-                        Banco destino
-                      </label>
-
-                      <div className="relative">
-                        <Input
-                          type="text"
-                          placeholder="Busca o selecciona un banco"
-                          value={pago.banco ?? ''}
-                          error={errors[pago.id]?.banco}
-                          onFocus={() =>
-                            setShowBankOptions((prev) => ({
-                              ...prev,
-                              [pago.id]: true,
-                            }))
-                          }
-                          onBlur={() => {
-                            setTimeout(() => {
-                              setShowBankOptions((prev) => ({
-                                ...prev,
-                                [pago.id]: false,
-                              }));
-                            }, 150);
-                          }}
-                          onChange={(event) => {
-                            updatePago(
-                              pago.id,
-                              'banco',
-                              event.target.value,
-                            );
-
-                            setShowBankOptions((prev) => ({
-                              ...prev,
-                              [pago.id]: true,
-                            }));
-                          }}
-                        />
-
-                        {showBankOptions[pago.id] && (
-                          <div className="absolute z-20 mt-2 max-h-56 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
-                            {getFilteredBanks(pago.banco).length > 0 ? (
-                              getFilteredBanks(pago.banco).map((bank) => (
-                                <button
-                                  key={bank.value}
-                                  type="button"
-                                  onClick={() => {
-                                    updatePago(
-                                      pago.id,
-                                      'banco',
-                                      bank.value,
-                                    );
-
-                                    setShowBankOptions((prev) => ({
-                                      ...prev,
-                                      [pago.id]: false,
-                                    }));
-                                  }}
-                                  className="block w-full px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-50"
-                                >
-                                  {bank.label}
-                                </button>
-                              ))
-                            ) : (
-                              <div className="px-3 py-2 text-sm text-slate-500">
-                                No se encontraron bancos
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    <BankCombobox
+                      label="Banco destino"
+                      value={pago.banco ?? ''}
+                      onChange={bank => updatePago(pago.id, 'banco', bank)}
+                      fieldError={errors[pago.id]?.banco}
+                    />
 
                     <div>
                       <label className="mb-2 block text-sm font-medium text-slate-700">

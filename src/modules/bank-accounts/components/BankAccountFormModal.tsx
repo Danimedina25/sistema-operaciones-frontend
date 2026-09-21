@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -6,6 +6,7 @@ import {
   type BankAccountFormValues,
 } from '@/modules/bank-accounts/schemas/bank-account.schema';
 import type { BankAccountResponse } from '@/modules/bank-accounts/types/bank-accounts.types';
+import { BankCombobox } from '@/shared/components/ui/BankCombobox';
 
 interface BankAccountFormModalProps {
   open: boolean;
@@ -16,30 +17,7 @@ interface BankAccountFormModalProps {
   onSubmit: (values: BankAccountFormValues) => void | Promise<void>;
 }
 
-export const MEXICAN_BANKS = [
-  { value: 'ALBO', label: 'ALBO' },
-  { value: 'AZTECA', label: 'AZTECA' },
-  { value: 'BANCO DEL BIENESTAR', label: 'BANCO DEL BIENESTAR' },
-  { value: 'BANBAJIO', label: 'BANBAJIO' },
-  { value: 'BANAMEX', label: 'BANAMEX' },
-  { value: 'BANCOPPEL', label: 'BANCOPPEL' },
-  { value: 'BANJERCITO', label: 'BANJERCITO' },
-  { value: 'BANKAOOL', label: 'BANKAOOL' },
-  { value: 'BANORTE', label: 'BANORTE' },
-  { value: 'BBVA MEXICO', label: 'BBVA MEXICO' },
-  { value: 'COMPARTAMOS BANCO', label: 'COMPARTAMOS BANCO' },
-  { value: 'FUNDACIÓN DONDÉ', label: 'FUNDACIÓN DONDÉ' },
-  { value: 'HSBC', label: 'HSBC' },
-  { value: 'INBURSA', label: 'INBURSA' },
-  { value: 'KAPITAL', label: 'KAPITAL' },
-  { value: 'KLAR', label: 'KLAR' },
-  { value: 'MERCADO PAGO', label: 'MERCADO PAGO' },
-  { value: 'NU MEXICO', label: 'NU MEXICO' },
-  { value: 'SANTANDER', label: 'SANTANDER' },
-  { value: 'SCOTIABANK', label: 'SCOTIABANK' },
-  { value: 'SPIN BY OXXO', label: 'SPIN BY OXXO' },
-  { value: 'STP', label: 'STP' },
-] as const;
+
 
 export function BankAccountFormModal({
   open,
@@ -66,24 +44,6 @@ export function BankAccountFormModal({
     },
   });
 
-  const [showBankOptions, setShowBankOptions] = useState(false);
-  const bankFieldValue = watch('banco') || '';
-  const bankContainerRef = useRef<HTMLDivElement | null>(null);
-
-  const filteredBanks = useMemo(() => {
-    const search = bankFieldValue.trim().toLowerCase();
-
-    if (!search) {
-      return MEXICAN_BANKS;
-    }
-
-    return MEXICAN_BANKS.filter((bank) => {
-      return (
-        bank.value.toLowerCase().includes(search) ||
-        bank.label.toLowerCase().includes(search)
-      );
-    });
-  }, [bankFieldValue]);
 
   useEffect(() => {
     if (!open) {
@@ -107,22 +67,6 @@ export function BankAccountFormModal({
       clabe: '',
     });
   }, [open, mode, initialData, reset]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        bankContainerRef.current &&
-        !bankContainerRef.current.contains(event.target as Node)
-      ) {
-        setShowBankOptions(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
 
   if (!open) {
     return null;
@@ -150,60 +94,12 @@ export function BankAccountFormModal({
           className="space-y-5 px-6 py-5"
         >
           <div className="grid gap-4 md:grid-cols-2">
-            <div ref={bankContainerRef} className="relative">
-              <label className="mb-1 block text-sm font-medium text-slate-700">
-                Banco
-              </label>
-
-              <input
-                type="text"
-                {...register('banco')}
-                onFocus={() => setShowBankOptions(true)}
-                onChange={(e) => {
-                  setValue('banco', e.target.value, {
-                    shouldDirty: true,
-                    shouldValidate: true,
-                  });
-                  setShowBankOptions(true);
-                }}
-                className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-slate-400"
-                placeholder="Busca o selecciona un banco"
-                autoComplete="off"
-              />
-
-              {showBankOptions && (
-                <div className="absolute z-20 mt-2 max-h-56 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
-                  {filteredBanks.length > 0 ? (
-                    filteredBanks.map((bank) => (
-                      <button
-                        key={bank.value}
-                        type="button"
-                        onClick={() => {
-                          setValue('banco', bank.value, {
-                            shouldDirty: true,
-                            shouldValidate: true,
-                          });
-                          setShowBankOptions(false);
-                        }}
-                        className="block w-full px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-50"
-                      >
-                        {bank.label}
-                      </button>
-                    ))
-                  ) : (
-                    <div className="px-3 py-2 text-sm text-slate-500">
-                      No se encontraron bancos
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {errors.banco && (
-                <p className="mt-1 text-xs text-red-600">
-                  {errors.banco.message}
-                </p>
-              )}
-            </div>
+            <BankCombobox
+              label="Banco"
+              value={watch('banco') || ''}
+              onChange={bank => setValue('banco', bank, { shouldDirty: true, shouldValidate: true })}
+              fieldError={errors.banco?.message}
+            />
 
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">

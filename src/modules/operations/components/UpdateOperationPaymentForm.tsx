@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Input } from '@/shared/components/ui/Input';
 import { Button } from '@/shared/components/ui/Button';
+import { BankCombobox } from '@/shared/components/ui/BankCombobox';
 import { formatDate } from '@/shared/utils/weeks';
 import { PaymentOperationResponse, OperationPaymentResponse } from '../types/operations.types.ts';
 
@@ -393,7 +394,20 @@ export function UpdateOperationPaymentForm({
 
           {tipoPago === 'CHEQUE' && <div className="space-y-3"><p className="text-sm text-slate-600">El negocio definirá el destino al gestionar el cobro.</p>
             <label className="block">Número de cheque<input className="block w-full rounded border p-2" {...register('numeroCheque', { validate: (value, values) => values.tipoPago !== 'CHEQUE' || !!value?.trim() || 'Este dato del cheque es obligatorio' })} />{errors.numeroCheque && <span role="alert" className="text-red-700">{errors.numeroCheque.message}</span>}</label>
-            <label className="block">Banco emisor<input className="block w-full rounded border p-2" {...register('bancoEmisor', { validate: (value, values) => values.tipoPago !== 'CHEQUE' || !!value?.trim() || 'Este dato del cheque es obligatorio' })} />{errors.bancoEmisor && <span role="alert" className="text-red-700">{errors.bancoEmisor.message}</span>}</label>
+            <Controller
+              name="bancoEmisor"
+              control={control}
+              rules={{ validate: (value, values) => values.tipoPago !== 'CHEQUE' || !!value?.trim() || 'Este dato del cheque es obligatorio' }}
+              render={({ field }) => (
+                <BankCombobox
+                  label="Banco emisor"
+                  value={field.value ?? ''}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  fieldError={errors.bancoEmisor?.message}
+                />
+              )}
+            />
             <label className="block">Emisor del cheque<input className="block w-full rounded border p-2" {...register('emisor', { validate: (value, values) => values.tipoPago !== 'CHEQUE' || !!value?.trim() || 'Este dato del cheque es obligatorio' })} />{errors.emisor && <span role="alert" className="text-red-700">{errors.emisor.message}</span>}</label>
             <label className="block">Beneficiario<input className="block w-full rounded border p-2" {...register('beneficiario', { validate: (value, values) => values.tipoPago !== 'CHEQUE' || !!value?.trim() || 'Este dato del cheque es obligatorio' })} />{errors.beneficiario && <span role="alert" className="text-red-700">{errors.beneficiario.message}</span>}</label>
           </div>}

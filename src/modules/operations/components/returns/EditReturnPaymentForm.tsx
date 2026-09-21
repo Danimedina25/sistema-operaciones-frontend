@@ -1,10 +1,10 @@
 // EditReturnPaymentForm.tsx
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
 import { formatCurrencyDisplay, normalizeCurrencyInput, onlyNumbers, parseCurrency, ReturnPaymentType } from '@/shared/utils/form.utils.js';
-import { MEXICAN_BANKS } from '@/modules/bank-accounts/components/BankAccountFormModal.js';
+import { BankCombobox } from '@/shared/components/ui/BankCombobox';
 import {
     ReturnDestinationAccountSuggestion,
     ReturnPaymentResponse,
@@ -91,7 +91,6 @@ export function EditReturnPaymentForm({
 
     const [errors, setErrors] =
         useState<FormErrors>({});
-    const [showBankOptions, setShowBankOptions] = useState(false);
     const [showAccountOptions, setShowAccountOptions] = useState(false);
 
     const {
@@ -136,18 +135,6 @@ export function EditReturnPaymentForm({
         }));
     }
 
-    const filteredBanks = useMemo(() => {
-        const search = form.banco.trim().toLowerCase();
-
-        if (!search) {
-            return MEXICAN_BANKS;
-        }
-
-        return MEXICAN_BANKS.filter((bank) =>
-            bank.value.toLowerCase().includes(search)
-            || bank.label.toLowerCase().includes(search),
-        );
-    }, [form.banco]);
 
     useEffect(() => {
         setForm(mapPaymentToForm(payment));
@@ -446,62 +433,12 @@ export function EditReturnPaymentForm({
                                 }
                             />
                         </div>
-                        <div>
-                            <label className="mb-2 block text-sm font-medium text-slate-700">
-                                Banco destino
-                            </label>
-
-                            <div className="relative">
-                                <Input
-                                    type="text"
-                                    placeholder="Busca o selecciona un banco"
-                                    value={form.banco}
-                                    error={errors.banco}
-                                    onFocus={() => setShowBankOptions(true)}
-                                    onBlur={() => {
-                                        setTimeout(() => {
-                                            setShowBankOptions(false);
-                                        }, 150);
-                                    }}
-                                    onChange={(event) => {
-                                        updateField(
-                                            'banco',
-                                            event.target.value,
-                                        );
-
-                                        setShowBankOptions(true);
-                                    }}
-                                />
-
-                                {showBankOptions && (
-                                    <div className="absolute z-20 mt-2 max-h-56 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
-                                        {filteredBanks.length > 0 ? (
-                                            filteredBanks.map((bank) => (
-                                                <button
-                                                    key={bank.value}
-                                                    type="button"
-                                                    className="block w-full px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-50"
-                                                    onClick={() => {
-                                                        updateField(
-                                                            'banco',
-                                                            bank.value,
-                                                        );
-
-                                                        setShowBankOptions(false);
-                                                    }}
-                                                >
-                                                    {bank.label}
-                                                </button>
-                                            ))
-                                        ) : (
-                                            <div className="px-3 py-2 text-sm text-slate-500">
-                                                No se encontraron bancos
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                        <BankCombobox
+                            label="Banco destino"
+                            value={form.banco}
+                            onChange={bank => updateField('banco', bank)}
+                            fieldError={errors.banco}
+                        />
 
                         <div>
                             <label className="mb-2 block text-sm font-medium text-slate-700">

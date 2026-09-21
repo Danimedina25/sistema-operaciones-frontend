@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useFieldArray, useForm, useWatch } from 'react-hook-form';
+import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import { Plus, Trash2 } from 'lucide-react';
 import { Input } from '@/shared/components/ui/Input';
 import { Button } from '@/shared/components/ui/Button';
+import { BankCombobox } from '@/shared/components/ui/BankCombobox';
+import { ClienteCombobox } from '@/shared/components/ui/ClienteCombobox';
 import { formatDate } from '@/shared/utils/weeks';
-import { searchClientes } from '@/modules/clientes/api/clientes.api';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import {
   createOperationSchema,
@@ -126,7 +127,6 @@ export function CreateOperationForm({
   const canEditCommission = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
 
   const [clienteSearch, setClienteSearch] = useState('');
-  const [showClienteOptions, setShowClienteOptions] = useState(false);
 
   const [accountSearch, setAccountSearch] = useState<
     Record<number, string>
@@ -137,57 +137,6 @@ export function CreateOperationForm({
   >({}); ``
 
 
-  const filteredClientes = useMemo(() => {
-    const search = clienteSearch.trim().toLowerCase();
-
-    if (!search) return clientes;
-
-    return clientes.filter((cliente) =>
-      cliente.label.toLowerCase().includes(search),
-    );
-  }, [clientes, clienteSearch]);
-
-  const [otrosClientesResultados, setOtrosClientesResultados] = useState<
-    SelectOption[]
-  >([]);
-
-  const [isSearchingOtrosClientes, setIsSearchingOtrosClientes] =
-    useState(false);
-
-  useEffect(() => {
-    const search = clienteSearch.trim();
-
-    if (search.length < 2 || filteredClientes.length > 0) {
-      setOtrosClientesResultados([]);
-      setIsSearchingOtrosClientes(false);
-      return;
-    }
-
-    setIsSearchingOtrosClientes(true);
-
-    const timeoutId = setTimeout(() => {
-      searchClientes(search)
-        .then((results) => {
-          setOtrosClientesResultados(
-            results.map((cliente) => ({
-              id: cliente.id,
-              label: cliente.nombre,
-              nivelesRedComercial: cliente.nivelesRedComercial,
-            })),
-          );
-        })
-        .catch(() => {
-          setOtrosClientesResultados([]);
-        })
-        .finally(() => {
-          setIsSearchingOtrosClientes(false);
-        });
-    }, 300);
-
-    return () => {
-      clearTimeout(timeoutId);
-    };
-  }, [clienteSearch, filteredClientes.length]);
 
   function selectCliente(cliente: SelectOption) {
     setClienteSearch(cliente.label);
@@ -197,7 +146,6 @@ export function CreateOperationForm({
       shouldTouch: true,
     });
 
-    setShowClienteOptions(false);
     void trigger('clienteId');
   }
 
@@ -453,72 +401,21 @@ export function CreateOperationForm({
             <label className="mb-2 block text-sm font-medium text-slate-700">
               Nombre del cliente
             </label>
-            <>
-              <div className="relative">
-                <Input
-                  type="text"
-                  placeholder="Buscar cliente..."
-                  value={clienteSearch}
-                  onFocus={() => setShowClienteOptions(true)}
-                  onBlur={() => {
-                    setTimeout(() => {
-                      setShowClienteOptions(false);
-                    }, 150);
-                  }}
-                  onChange={(event) => {
-                    setClienteSearch(event.target.value);
-                    setShowClienteOptions(true);
-                    setValue('clienteId', undefined, {
-                      shouldValidate: false,
-                      shouldDirty: true,
-                      shouldTouch: false,
-                    });
-                  }}
-                />
-
-                {showClienteOptions ? (
-                  <div className="absolute z-50 mt-2 max-h-60 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
-                    {filteredClientes.length > 0 ? (
-                      filteredClientes.map((cliente) => (
-                        <button
-                          key={cliente.id}
-                          type="button"
-                          className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-                          onClick={() => selectCliente(cliente)}
-                        >
-                          {cliente.label}
-                        </button>
-                      ))
-                    ) : isSearchingOtrosClientes ? (
-                      <div className="px-4 py-3 text-sm text-slate-500">
-                        Buscando en clientes de otros socios comerciales...
-                      </div>
-                    ) : otrosClientesResultados.length > 0 ? (
-                      <>
-                        <div className="px-4 pt-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                          Clientes de otros socios comerciales
-                        </div>
-
-                        {otrosClientesResultados.map((cliente) => (
-                          <button
-                            key={cliente.id}
-                            type="button"
-                            className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-                            onClick={() => selectCliente(cliente)}
-                          >
-                            {cliente.label}
-                          </button>
-                        ))}
-                      </>
-                    ) : (
-                      <div className="px-4 py-3 text-sm text-slate-500">
-                        No se encontraron clientes
-                      </div>
-                    )}
-                  </div>
-                ) : null}
-              </div>
-            </>
+            <ClienteCombobox
+              clientes={clientes}
+              search={clienteSearch}
+              placeholder="Buscar cliente..."
+              onSearchChange={value => {
+                setClienteSearch(value);
+                // Al reescribir el nombre deja de haber cliente elegido.
+                setValue('clienteId', undefined, {
+                  shouldValidate: false,
+                  shouldDirty: true,
+                  shouldTouch: false,
+                });
+              }}
+              onSelect={selectCliente}
+            />
           </div>
 
           {errors.clienteId ? (
@@ -950,7 +847,19 @@ export function CreateOperationForm({
 
                     {tipoPagoActual === 'CHEQUE' && <div className="space-y-3"><p>El negocio definirá el destino al gestionar el cobro.</p>
                       <label className="block">Número de cheque<input className="block w-full rounded border p-2" {...register(`pagos.${index}.numeroCheque`)} />{pagoErrors?.numeroCheque && <span role="alert" className="text-red-700">{pagoErrors.numeroCheque.message}</span>}</label>
-                      <label className="block">Banco emisor<input className="block w-full rounded border p-2" {...register(`pagos.${index}.bancoEmisor`)} />{pagoErrors?.bancoEmisor && <span role="alert" className="text-red-700">{pagoErrors.bancoEmisor.message}</span>}</label>
+                      <Controller
+                        name={`pagos.${index}.bancoEmisor`}
+                        control={control}
+                        render={({ field }) => (
+                          <BankCombobox
+                            label="Banco emisor"
+                            value={field.value ?? ''}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            fieldError={pagoErrors?.bancoEmisor?.message}
+                          />
+                        )}
+                      />
                       <label className="block">Emisor del cheque<input className="block w-full rounded border p-2" {...register(`pagos.${index}.emisor`)} />{pagoErrors?.emisor && <span role="alert" className="text-red-700">{pagoErrors.emisor.message}</span>}</label>
                       <label className="block">Beneficiario<input className="block w-full rounded border p-2" {...register(`pagos.${index}.beneficiario`)} />{pagoErrors?.beneficiario && <span role="alert" className="text-red-700">{pagoErrors.beneficiario.message}</span>}</label>
                     </div>}
