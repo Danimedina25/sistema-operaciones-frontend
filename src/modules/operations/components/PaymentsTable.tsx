@@ -342,9 +342,14 @@ export function PaymentsTable({
       (payment.estatus === 'VALIDADA' || payment.estatus === 'RECHAZADA') &&
       canValidatePaymentType(payment.tipoPago) &&
       !!socioComercialTelefono;
-    const hasActions = canEdit || canValidate || canNotify;
+    // El cheque no se valida por el panel genérico, pero su gestión es la misma acción
+    // para el usuario: revisar el pago. Por eso vive en Acciones junto a las demás.
+    const canManageCheque =
+      payment.tipoPago === 'CHEQUE' && (isAdmin || isCuentas || isJefaCajas);
+    const canReview = canValidate || canManageCheque;
+    const hasActions = canEdit || canReview || canNotify;
 
-    return { isProcessing, canEdit, canValidate, canNotify, hasActions };
+    return { isProcessing, canEdit, canValidate, canManageCheque, canReview, canNotify, hasActions };
   }
 
   function renderViewOptions(payment: OperationPaymentResponse): ReactNode {
@@ -373,16 +378,20 @@ export function PaymentsTable({
   }
 
   function renderRowActions(payment: OperationPaymentResponse): ReactNode {
-    const { isProcessing, canEdit, canValidate, canNotify, hasActions } =
+    const { isProcessing, canEdit, canManageCheque, canReview, canNotify, hasActions } =
       getPaymentActionFlags(payment);
 
     return (
       <>
-        {canValidate && (
+        {canReview && (
           <button
             type="button"
             disabled={isProcessing}
-            onClick={() => openReviewDrawer(payment.id)}
+            onClick={() =>
+              canManageCheque
+                ? setChequePaymentId(payment.id)
+                : openReviewDrawer(payment.id)
+            }
             className="
   flex-1
   inline-flex
@@ -594,7 +603,7 @@ export function PaymentsTable({
 
                     <td className="px-4 py-4 text-slate-600">
                       {paymentTypeLabels[payment.tipoPago]}
-                      {payment.tipoPago === 'CHEQUE' && <div className="mt-1 text-xs"><p>{payment.chequeEstado ? chequeLabels[payment.chequeEstado] : 'Requiere conciliación'}</p>{(isAdmin || isCuentas || isJefaCajas) && <button type="button" className="mt-1 rounded border px-2 py-1 text-blue-700" onClick={() => setChequePaymentId(payment.id)}>Gestionar cheque</button>}</div>}
+                      {payment.tipoPago === 'CHEQUE' && <p className="mt-1 text-xs text-slate-500">{payment.chequeEstado ? chequeLabels[payment.chequeEstado] : 'Requiere conciliación'}</p>}
                     </td>
 
                     <td className="px-4 py-4">
@@ -697,7 +706,7 @@ export function PaymentsTable({
         {/* Móvil: tarjetas apiladas */}
         <div className="space-y-3 p-3 min-[375px]:p-4 md:hidden">
           {visiblePayments.map((payment) => {
-            const { isProcessing, canEdit, canValidate, canNotify, hasActions } =
+            const { isProcessing, canEdit, canManageCheque, canReview, canNotify, hasActions } =
               getPaymentActionFlags(payment);
 
             return (
@@ -713,7 +722,7 @@ export function PaymentsTable({
                     </span>
                     <div className="mt-1 text-xs font-medium text-slate-500">
                       {paymentTypeLabels[payment.tipoPago]}
-                      {payment.tipoPago === 'CHEQUE' && <div className="mt-1 text-xs"><p>{payment.chequeEstado ? chequeLabels[payment.chequeEstado] : 'Requiere conciliación'}</p>{(isAdmin || isCuentas || isJefaCajas) && <button type="button" className="mt-1 rounded border px-2 py-1 text-blue-700" onClick={() => setChequePaymentId(payment.id)}>Gestionar cheque</button>}</div>}
+                      {payment.tipoPago === 'CHEQUE' && <p className="mt-1 text-xs text-slate-500">{payment.chequeEstado ? chequeLabels[payment.chequeEstado] : 'Requiere conciliación'}</p>}
                     </div>
                   </div>
 
@@ -782,11 +791,15 @@ export function PaymentsTable({
                 </details>
 
                 <div className="mt-4 flex flex-col gap-2 min-[360px]:flex-row min-[360px]:items-center">
-                  {canValidate ? (
+                  {canReview ? (
                     <button
                       type="button"
                       disabled={isProcessing}
-                      onClick={() => openReviewDrawer(payment.id)}
+                      onClick={() =>
+                        canManageCheque
+                          ? setChequePaymentId(payment.id)
+                          : openReviewDrawer(payment.id)
+                      }
                       className="min-h-[44px] flex-1 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isProcessing ? 'Procesando...' : 'Revisar'}

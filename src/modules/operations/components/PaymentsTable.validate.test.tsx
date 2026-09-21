@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, expect, it, vi } from 'vitest';
 import { PaymentsTable } from './PaymentsTable';
 import { emptyCounts } from '@/modules/caja-general/utils/cash-amounts';
@@ -28,10 +29,13 @@ function payment(overrides: Partial<OperationPaymentResponse> = {}): OperationPa
 type ValidateHandler = (paymentId: number, comprobante: File, denominaciones?: CashCounts) => Promise<void> | void;
 
 function mount(onValidatePayment: ValidateHandler, overrides?: Partial<OperationPaymentResponse>) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
-    <MemoryRouter>
-      <PaymentsTable payments={[payment(overrides)]} operationId={12} onValidatePayment={onValidatePayment} />
-    </MemoryRouter>,
+    <QueryClientProvider client={client}>
+      <MemoryRouter>
+        <PaymentsTable payments={[payment(overrides)]} operationId={12} onValidatePayment={onValidatePayment} />
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 
@@ -116,11 +120,25 @@ describe('Validación de un pago en efectivo', () => {
   });
 });
 
-it('routes cheques to collection management instead of generic validation', () => {
-  const validate = vi.fn();
-  mount(validate, { tipoPago: 'CHEQUE', cuentaDestinoId: null, chequeEstado: 'POR_COBRAR' });
-  expect(screen.queryByRole('button', { name: 'Revisar' })).not.toBeInTheDocument();
-  expect(screen.getAllByRole('button', { name: 'Gestionar cheque' }).length).toBeGreaterThan(0);
-  expect(screen.getAllByText('Por cobrar').length).toBeGreaterThan(0);
-  expect(validate).not.toHaveBeenCalled();
+describe('Cheques recibidos', () => {
+  it('se gestionan desde Acciones con el mismo botón Revisar', async () => {
+    const validate = vi.fn();
+    mount(validate, { tipoPago: 'CHEQUE', cuentaDestinoId: null, chequeEstado: 'POR_COBRAR' });
+
+    // El estado sigue informándose en la columna Tipo…
+    expect(screen.getAllByText('Por cobrar').length).toBeGreaterThan(0);
+    // …pero ya no hay un botón suelto ahí.
+    expect(screen.queryByRole('button', { name: 'Gestionar cheque' })).not.toBeInTheDocument();
+
+    // La acción vive en Acciones y se llama igual que las de los demás pagos.
+    const revisar = screen.getAllByRole('button', { name: 'Revisar' });
+    expect(revisar.length).toBeGreaterThan(0);
+
+    fireEvent.click(revisar[0]);
+
+    // Abre la gestión del cheque, no el panel genérico de validación.
+    expect(await screen.findByRole('heading', { name: 'Gestionar cheque' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Validar' })).not.toBeInTheDocument();
+    expect(validate).not.toHaveBeenCalled();
+  });
 });
