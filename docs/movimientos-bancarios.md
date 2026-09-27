@@ -55,6 +55,7 @@ auditables más el corte anterior.
 | Comisión a socio pagada por transferencia | **Salida** | Sin efecto |
 | Cheque cobrado en Caja General | **Salida** | **Entrada** |
 | Retiro sin tarjeta en Caja General | **Salida** | **Entrada** |
+| Transferencia entre cuentas propias | **Salida** en la origen, **entrada** en la destino | Sin efecto |
 
 Un pago sólo cuenta como `VALIDADA` y por su `fechaValidacion`; una parcialidad sólo como
 `COMPLETADA` y por su `fechaRealizacion`.
@@ -82,6 +83,30 @@ con un código generado contra una cuenta concreta. El valor se conserva en el e
 poder leer movimientos históricos que lo usaron, y esos conservan su texto de banco sin cuenta
 vinculada. Con esto desaparece el último uso del catálogo fijo de nombres de banco: todo
 movimiento que toca un banco lo hace por llave foránea.
+
+## Transferencias entre cuentas propias
+
+La Jefa de Cuentas (o Administración) registra desde Cortes y saldos el dinero que mueve de
+una cuenta propia a otra: cuenta origen, cuenta beneficiaria, monto y referencia opcional.
+
+- Es una fuente más del libro: `bank_transfers`. Una sola fila produce **dos renglones** —la
+  salida en la origen y la entrada en la destino—, así que no puede existir una sin la otra. El
+  renglón se identifica como `TRANSFERENCIA_INTERNA-{id}-{SALIDA|ENTRADA}`.
+- En el corte por cuenta entra en `entradas_transferencia_interna` y
+  `salidas_transferencia_interna`, y suma a `total_entradas` / `total_salidas` de la cuenta.
+- **El corte global (`daily_cash_cuts`) no cambia**: el dinero no sale de los bancos, sólo
+  cambia de cuenta, y sumarlo inflaría entradas y salidas por igual.
+- Se fecha al registrarse. Si alguna de las dos cuentas ya tiene su corte de hoy registrado se
+  rechaza, para no dejar un corte sin el movimiento. Toma el mismo candado global que el registro
+  de cortes y los cheques.
+- Validaciones: cuentas distintas y activas, monto mayor a cero con dos decimales, idempotente por
+  `requestId` (reintentar con otros datos es conflicto).
+- **Saldo negativo: avisa, no bloquea.** La respuesta trae `saldoOrigenResultante` y el frontend
+  muestra un aviso si quedó negativo. No se bloquea porque el saldo derivado puede no incluir
+  movimientos históricos sin cuenta vinculada.
+- No hay anulación en esta versión: una transferencia equivocada se corrige con la inversa.
+
+Migración: `migrations/2026-09-27_bank_transfers.sql` (ejecución única, antes de desplegar).
 
 ## Alcance de cada corte (definido por negocio)
 
@@ -207,6 +232,13 @@ ningún `POST`, `PUT`, `PATCH` ni `DELETE`, y una prueba lo verifica por reflexi
 | --- | --- | --- |
 | GET | `/api/bank-movements` | Página cronológica de movimientos |
 | GET | `/api/bank-movements/summary` | Totales de entradas, salidas y neto |
+
+Las transferencias entre cuentas se registran en su propio controlador, fuera del libro:
+
+| Método | Ruta | Uso | Roles |
+| --- | --- | --- | --- |
+| POST | `/api/bank-transfers` | Registrar transferencia | `ADMIN`, `JEFA_CUENTAS` |
+| GET | `/api/bank-transfers?desde=&hasta=` | Transferencias del rango | roles de consulta del libro |
 
 Parámetros comunes: `desde`, `hasta` (obligatorios), `bankAccountId`, `banco`, `direccion`,
 `tipo`. La búsqueda acepta además `page` y `size` (máximo 100).

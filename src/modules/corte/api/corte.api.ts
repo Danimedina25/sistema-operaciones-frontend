@@ -22,6 +22,12 @@ import type {
   BankMovementTotalsApiResponse,
 } from '../types/bank-movements.types';
 import type { PaginatedResponse } from '@/shared/types/api.types';
+import type {
+  BankTransfer,
+  BankTransferApiResponse,
+  BankTransferListApiResponse,
+  CreateBankTransfer,
+} from '../types/bank-transfers.types';
 
 const BANK_ACCOUNT_DAILY_CUTS_BASE_PATH =
   '/api/bank-account-daily-cuts';
@@ -99,9 +105,9 @@ export async function calculateBankBalancesGrouped(
   return response.data.data;
 }
 /**
- * Historial general de movimientos bancarios. Sólo consulta: el backend no expone
- * ninguna captura manual porque todo movimiento nace de un pago, un retorno o un
- * cheque cobrado en Caja General.
+ * Historial general de movimientos bancarios. Sólo consulta: el libro no admite captura
+ * manual porque todo movimiento nace de su fuente — un pago, un retorno, un retiro hacia
+ * Caja General, una comisión o una transferencia entre cuentas propias.
  */
 function bankMovementParams(filters: BankMovementFilters) {
   return {
@@ -134,6 +140,32 @@ export async function getBankMovementTotals(
   const response = await api.get<BankMovementTotalsApiResponse>(
     `${BANK_MOVEMENTS_BASE_PATH}/summary`,
     { params: bankMovementParams(filters) },
+  );
+
+  return response.data.data;
+}
+
+const BANK_TRANSFERS_BASE_PATH = '/api/bank-transfers';
+
+/** Transferencia entre dos cuentas propias: sale de la origen y entra a la destino. */
+export async function createBankTransfer(
+  payload: CreateBankTransfer,
+): Promise<BankTransfer> {
+  const response = await api.post<BankTransferApiResponse>(
+    BANK_TRANSFERS_BASE_PATH,
+    payload,
+  );
+
+  return response.data.data;
+}
+
+export async function listBankTransfers(
+  desde: string,
+  hasta: string,
+): Promise<BankTransfer[]> {
+  const response = await api.get<BankTransferListApiResponse>(
+    BANK_TRANSFERS_BASE_PATH,
+    { params: { desde, hasta } },
   );
 
   return response.data.data;

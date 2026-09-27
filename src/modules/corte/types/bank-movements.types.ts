@@ -1,12 +1,14 @@
 import type { ApiResponse, PaginatedResponse } from '@/shared/types/api.types';
 
-export type BankMovementOrigin = 'PAGO' | 'RETORNO' | 'CAJA_GENERAL';
+export type BankMovementOrigin = 'PAGO' | 'RETORNO' | 'CAJA_GENERAL' | 'COMISION' | 'TRANSFERENCIA_INTERNA';
 export type BankMovementDirection = 'ENTRADA' | 'SALIDA';
 
 export const BANK_MOVEMENT_ORIGINS: Record<BankMovementOrigin, string> = {
   PAGO: 'Pago de operación',
   RETORNO: 'Retorno al cliente',
   CAJA_GENERAL: 'Caja General',
+  COMISION: 'Comisión a socio',
+  TRANSFERENCIA_INTERNA: 'Transferencia entre cuentas',
 };
 
 export const BANK_MOVEMENT_TYPES = {
@@ -14,6 +16,7 @@ export const BANK_MOVEMENT_TYPES = {
   DEPOSITO: 'Depósito',
   CHEQUE: 'Cheque',
   RETIRO_SIN_TARJETA: 'Retiro sin tarjeta',
+  TRANSFERENCIA_INTERNA: 'Transferencia entre cuentas',
 } as const;
 
 export type BankMovementType = keyof typeof BANK_MOVEMENT_TYPES;

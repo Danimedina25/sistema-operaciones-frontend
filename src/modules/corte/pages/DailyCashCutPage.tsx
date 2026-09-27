@@ -16,7 +16,13 @@ import { paths } from '@/routes/paths';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { PeriodDateField, PeriodModeToggle } from '@/shared/components/ui/PeriodFilter';
 import { BankMovementsSection } from '../components/BankMovementsSection';
-import { ArrowDownToLine, ArrowUpFromLine, Building2, CalendarDays, Landmark, LoaderCircle, Scale, Search } from 'lucide-react';
+import { BankTransferModal } from '../components/BankTransferModal';
+import { createBankTransfer } from '../api/corte.api';
+import type { CreateBankTransfer } from '../types/bank-transfers.types';
+import { useAuth } from '@/modules/auth/store/auth.context';
+import { useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
+import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, Building2, CalendarDays, Landmark, LoaderCircle, Scale, Search } from 'lucide-react';
 
 function todayISO() {
     return toISODate(new Date());
@@ -56,6 +62,12 @@ export default function DailyCashCutPage() {
     const location = useLocation();
     const navigate = useNavigate();
     const mainView: MainView = VIEW_BY_PATH[location.pathname] ?? 'cashCuts';
+    const { hasRole } = useAuth();
+    const queryClient = useQueryClient();
+    // Registrar movimientos entre cuentas es de Jefa de Cuentas y Administración; los demás
+    // roles del módulo sólo consultan.
+    const canRegisterBankMovements = hasRole(['ADMIN', 'JEFA_CUENTAS']);
+    const [transferOpen, setTransferOpen] = useState(false);
 
     const selectView = (next: MainView) => {
         if (VIEW_PATHS[next] !== location.pathname) {
@@ -151,6 +163,19 @@ export default function DailyCashCutPage() {
     }, [fecha, mainView, dateMode, startDate, endDate]);
 
 
+    const submitTransfer = async (request: CreateBankTransfer) => {
+        const transfer = await createBankTransfer(request);
+        toast.success('Transferencia registrada');
+        if (transfer.saldoOrigenResultante !== null && transfer.saldoOrigenResultante < 0) {
+            toast(`La cuenta origen quedó con saldo de ${formatCurrency(transfer.saldoOrigenResultante)}. Revisa que no falte registrar una entrada.`, { icon: '⚠️', duration: 8000 });
+        }
+        await queryClient.invalidateQueries({ queryKey: ['bank-movements'] });
+        if (isBankBalancesView) {
+            await fetchBankBalancesGrouped(fecha);
+        }
+        return transfer;
+    };
+
     const cashCutTitle = isDailyMode
         ? `Corte del día ${formatDate(fecha)}`
         : `Corte del ${formatDate(startDate)} al ${formatDate(endDate)}`;
@@ -168,7 +193,7 @@ export default function DailyCashCutPage() {
     const pageDescription = {
         cashCuts: 'Consulta saldos, entradas y salidas de dinero en las operaciones.',
         bankBalances: 'Consulta los saldos de las cuentas bancarias agrupadas por banco.',
-        bankMovements: 'Consulta del movimiento de las cuentas bancarias: pagos validados, retornos completados y cheques cobrados en Caja General.',
+        bankMovements: 'Consulta del movimiento de las cuentas bancarias: pagos validados, retornos completados, retiros hacia Caja General, comisiones y transferencias entre cuentas.',
     }[mainView];
 
     return (
@@ -226,9 +251,29 @@ export default function DailyCashCutPage() {
                     <PageHeader
                         title={pageTitle}
                         description={pageDescription}
-                        actions={isBankBalancesView ? null : (
-                            <PeriodModeToggle mode={dateMode} onChange={setDateMode} />
+                        actions={(
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                                {canRegisterBankMovements ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => setTransferOpen(true)}
+                                        className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-50"
+                                    >
+                                        <ArrowLeftRight className="h-4 w-4" aria-hidden="true" />
+                                        Transferencia entre cuentas
+                                    </button>
+                                ) : null}
+                                {isBankBalancesView ? null : (
+                                    <PeriodModeToggle mode={dateMode} onChange={setDateMode} />
+                                )}
+                            </div>
                         )}
+                    />
+
+                    <BankTransferModal
+                        open={transferOpen}
+                        onClose={() => setTransferOpen(false)}
+                        onSubmit={submitTransfer}
                     />
 
                     <PeriodDateField
