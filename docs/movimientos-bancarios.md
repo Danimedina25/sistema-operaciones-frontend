@@ -53,8 +53,9 @@ auditables más el corte anterior.
 | Retorno completado en efectivo | Sin efecto | Salida |
 | Pago validado en efectivo | Sin efecto | **Entrada** |
 | Comisión a socio pagada por transferencia | **Salida** | Sin efecto |
-| Cheque cobrado en Caja General | **Salida** | **Entrada** |
-| Retiro sin tarjeta en Caja General | **Salida** | **Entrada** |
+| Retiro a Caja General registrado (pendiente, en tránsito) | Sin efecto; reduce el disponible | Sin efecto |
+| Retiro a Caja General confirmado (TD, RST o cheque) | **Salida** | **Entrada** |
+| Retiro a Caja General rechazado o cancelado | Sin efecto | Sin efecto |
 | Transferencia entre cuentas propias | **Salida** en la origen, **entrada** en la destino | Sin efecto |
 
 Un pago sólo cuenta como `VALIDADA` y por su `fechaValidacion`; una parcialidad sólo como
@@ -62,27 +63,53 @@ Un pago sólo cuenta como `VALIDADA` y por su `fechaValidacion`; una parcialidad
 
 ## Retiros de banco hacia la caja
 
-Dos conceptos de Caja General describen el mismo hecho contable —efectivo que sale de una
-cuenta bancaria y entra a la caja— con distinto instrumento: **cheque cobrado** y **retiro sin
-tarjeta**. Los dos siguen exactamente las mismas reglas:
+El efectivo que sale de una cuenta y entra a Caja General tiene tres formas —**retiro con
+tarjeta (TD)**, **retiro sin tarjeta (RST)** y **cobro de cheque** de una cuenta propia— y un
+solo flujo con dos pasos:
 
-1. Exigen una cuenta bancaria **real y activa**, identificada por `bankAccountId`. El nombre
-   del banco ya no es identidad: se rechaza si viene como texto.
-2. Sólo existen en dirección `ENTRADA`: retirar del banco únicamente puede meter efectivo a la
-   caja, nunca sacarlo. Lo rechaza el servicio y además lo impide una restricción `CHECK`.
-3. El importe entra a Caja General y sale de la cuenta en la misma fila y la misma transacción.
-4. Son idempotentes por el `requestId` que ya usaba Caja General. Reutilizar el UUID con otra
-   cuenta se rechaza con conflicto.
-5. Conservan el nombre del banco como snapshot para que el histórico siga siendo legible.
-6. El movimiento bancario conserva la referencia al movimiento de Caja General que lo originó.
+1. **Cuentas registra** (Jefa de Cuentas o Administración, desde Cortes y saldos): cuenta,
+   forma, monto y referencia; el beneficiario siempre es Caja General. Queda `PENDIENTE` en
+   `bank_cash_withdrawals`: es **efectivo en tránsito**. El saldo del banco todavía no baja,
+   pero ese monto ya no está disponible para otra salida.
+2. **Cajas confirma** (Jefa de Cajas o Administración, desde Caja General) al recibir y contar
+   el efectivo, con su desglose exacto y sobre la caja abierta de hoy. En ese momento se crea la
+   fila de `cash_general_movements` que es a la vez la entrada de efectivo y la salida bancaria:
+   el saldo del banco baja **al confirmar**. O lo **rechaza** con motivo; Cuentas puede
+   **cancelarlo** mientras siga pendiente. Las dos partes reciben notificación.
 
-`EFECTIVO` nunca admite banco ni cuenta.
+Reglas:
 
-**`RETIRO_CON_TARJETA` ya no existe.** Nunca existió en la operación: se retira sin tarjeta,
-con un código generado contra una cuenta concreta. El valor se conserva en el enum sólo para
-poder leer movimientos históricos que lo usaron, y esos conservan su texto de banco sin cuenta
-vinculada. Con esto desaparece el último uso del catálogo fijo de nombres de banco: todo
-movimiento que toca un banco lo hace por llave foránea.
+- Cuenta **real y activa** (`bankAccountId`); al confirmar se vuelve a exigir activa.
+- **Ninguna salida deja una cuenta en negativo.** Disponible = saldo de hoy − efectivo en
+  tránsito. Se valida al registrar contra el disponible y al confirmar contra el saldo.
+- Idempotencia: el registro por `requestId`; la confirmación por un ID determinista por retiro.
+  Confirmar dos veces el mismo retiro produce una sola entrada.
+- Rechazo y cancelación sólo desde `PENDIENTE`. Un retiro confirmado no se revierte; si
+  Administración elimina el día de caja, sus retiros confirmados vuelven a `PENDIENTE` y se
+  rehacen los cortes de esas cuentas.
+- Caja General **ya no captura a mano** cheques ni retiros: sólo efectivo. Capturarlos también
+  a mano contaría dos veces el mismo dinero.
+- `RETIRO_CON_TARJETA` vuelve a ser válido, siempre con cuenta. Los históricos que lo usaron sin
+  cuenta siguen fuera del libro bancario.
+
+### Agrupación en el libro de Caja General
+
+Como en el Excel de negocio, el libro de caja muestra un renglón por **día, forma y banco**:
+"Retiro 16 de 16 TD BANORTE", "Retiro 9 de 9 RST SCOTIABANK", "Cheques BAJIO".
+
+- **N** = cuentas distintas de ese banco con retiro confirmado ese día (repetir cuenta suma el
+  monto, no la cuenta). **M** = cuentas activas de ese banco al confirmar; se guarda como foto en
+  el movimiento (`grupo_banco`, `total_cuentas_banco`) para que un día pasado se lea igual.
+- Los cheques no llevan N de M: "Cheques BAJIO" suma los cheques de cuentas propias y los
+  cheques de clientes cobrados en efectivo desde el módulo de cheques (por su banco emisor).
+- Es sólo presentación: cada retiro sigue siendo su propio movimiento, con su desglose y su
+  salida bancaria. El renglón agrupado se expande al detalle por cuenta.
+- **Mismo banco aunque esté escrito distinto** (`BankNames`): se compara sin mayúsculas, acentos
+  ni palabras genéricas ("Banco", "del"…), y un nombre que contiene al otro es el mismo banco:
+  "SCOTIA NOMINA" y "SCOTIABANK PFAE" son SCOTIABANK; "Banco del Bajío" es BAJIO. La misma regla
+  agrupa los bancos en Saldos bancarios.
+
+Migración: `migrations/2026-09-29_retiros_caja_general.sql` (ejecución única, antes de desplegar).
 
 ## Transferencias entre cuentas propias
 
@@ -101,9 +128,9 @@ una cuenta propia a otra: cuenta origen, cuenta beneficiaria, monto y referencia
   de cortes y los cheques.
 - Validaciones: cuentas distintas y activas, monto mayor a cero con dos decimales, idempotente por
   `requestId` (reintentar con otros datos es conflicto).
-- **Saldo negativo: avisa, no bloquea.** La respuesta trae `saldoOrigenResultante` y el frontend
-  muestra un aviso si quedó negativo. No se bloquea porque el saldo derivado puede no incluir
-  movimientos históricos sin cuenta vinculada.
+- **No deja la cuenta origen en negativo**, como en un banco: se rechaza si el monto supera el
+  disponible (saldo de hoy menos el efectivo en tránsito a Caja General). El formulario muestra
+  el disponible antes de enviar.
 - No hay anulación en esta versión: una transferencia equivocada se corrige con la inversa.
 
 Migración: `migrations/2026-09-27_bank_transfers.sql` (ejecución única, antes de desplegar).
@@ -240,6 +267,17 @@ Las transferencias entre cuentas se registran en su propio controlador, fuera de
 | POST | `/api/bank-transfers` | Registrar transferencia | `ADMIN`, `JEFA_CUENTAS` |
 | GET | `/api/bank-transfers?desde=&hasta=` | Transferencias del rango | roles de consulta del libro |
 
+Retiros hacia Caja General:
+
+| Método | Ruta | Uso | Roles |
+| --- | --- | --- | --- |
+| GET | `/api/bank-cash-withdrawals/pending` | En tránsito (bandeja de Cajas) | consulta de Cuentas y de Caja |
+| GET | `/api/bank-cash-withdrawals?desde=&hasta=` | Retiros registrados en el rango | consulta de Cuentas y de Caja |
+| POST | `/api/bank-cash-withdrawals` | Registrar retiro | `ADMIN`, `JEFA_CUENTAS` |
+| POST | `/api/bank-cash-withdrawals/{id}/cancel` | Cancelar pendiente, con motivo | `ADMIN`, `JEFA_CUENTAS` |
+| POST | `/api/bank-cash-withdrawals/{id}/confirm` | Confirmar con `diaCajaId` y desglose | `ADMIN`, `JEFA_CAJAS` |
+| POST | `/api/bank-cash-withdrawals/{id}/reject` | Rechazar, con motivo | `ADMIN`, `JEFA_CAJAS` |
+
 Parámetros comunes: `desde`, `hasta` (obligatorios), `bankAccountId`, `banco`, `direccion`,
 `tipo`. La búsqueda acepta además `page` y `size` (máximo 100).
 
@@ -295,8 +333,8 @@ Sin dependencias nuevas.
 2. **Movimientos históricos de Caja General.** Los cheques capturados antes de este cambio sólo
    tienen el texto del banco. No se infiere ninguna cuenta a partir del nombre: quedan como
    "cuenta no vinculada" y no entran al libro. Corregirlos exige un mapeo manual.
-3. **`RETIRO_CON_TARJETA`** tiene la misma forma contable que el cheque, pero las tarjetas no
-   están modeladas y no hay forma de saber de qué cuenta retiran. Queda como trabajo aparte.
+3. **Otras salidas no validan saldo.** Los retornos y las comisiones siguen registrándose aunque
+   la cuenta no tenga saldo suficiente; sólo transferencias y retiros a Caja General lo exigen.
 4. **Comisiones pagadas antes del cambio.** Conservan `cuenta_origen_id` NULL: nadie registró
    de qué cuenta salieron y no se puede inferir. Quedan fuera del corte por cuenta —igual que
    los cheques históricos— pero el corte global las sigue contando, porque a él sólo le importa

@@ -21,7 +21,8 @@ import type {
   BankMovementTotals,
   BankMovementTotalsApiResponse,
 } from '../types/bank-movements.types';
-import type { PaginatedResponse } from '@/shared/types/api.types';
+import type { ApiResponse, PaginatedResponse } from '@/shared/types/api.types';
+import type { BankAccountBalanceDetail } from '../types/corte.types';
 import type {
   BankTransfer,
   BankTransferApiResponse,
@@ -166,6 +167,19 @@ export async function listBankTransfers(
   const response = await api.get<BankTransferListApiResponse>(
     BANK_TRANSFERS_BASE_PATH,
     { params: { desde, hasta } },
+  );
+
+  return response.data.data;
+}
+
+/** Saldo de una cuenta en una fecha: para hoy se calcula en vivo. */
+export async function getBankAccountBalance(
+  bankAccountId: number,
+  fecha: string,
+): Promise<BankAccountBalanceDetail> {
+  const response = await api.get<ApiResponse<BankAccountBalanceDetail>>(
+    `${BANK_ACCOUNT_DAILY_CUTS_BASE_PATH}/account/${bankAccountId}`,
+    { params: { fecha } },
   );
 
   return response.data.data;

@@ -22,6 +22,7 @@ import { CashDayForm } from '../components/CashDayForm';
 import { CashMovementForm } from '../components/CashMovementForm';
 import { CashLedgerTable } from '../components/CashLedgerTable';
 import { DeleteCashDayModal } from '../components/DeleteCashDayModal';
+import { PendingWithdrawalsInbox } from '../components/PendingWithdrawalsInbox';
 import type { CashDay } from '../types/caja-general.types';
 import { currency } from '../utils/cash-amounts';
 import { formatCashDate } from '../utils/cash-dates';
@@ -132,6 +133,11 @@ export default function CajaGeneralPage() {
       {getApiErrorMessage(latest.error)}{' '}
       <button type="button" onClick={() => void latest.refetch()} className="font-semibold underline">Reintentar</button>
     </p>}
+
+    <PendingWithdrawalsInbox
+      canResolve={Boolean(canWrite && viewingToday)}
+      openDayId={isOpen && viewingToday ? day.id : null}
+    />
 
     {pendingDay && !isOpen && viewingToday && <p role="alert" className={noteWarning}>La caja del <strong>{formatCashDate(pendingDay.fecha)}</strong> quedó abierta. Ciérrala para poder abrir la de hoy; el saldo contado de ese cierre será el saldo inicial de la nueva caja.</p>}
 

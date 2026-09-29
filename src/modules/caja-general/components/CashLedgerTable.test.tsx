@@ -49,7 +49,7 @@ function metricCard(label: string) {
 
 describe('Libro de movimientos', () => {
   it('resume entradas, salidas y saldo del día', () => {
-    mount({ dias: [day], movimientos: [salida, entrada] });
+    mount({ dias: [day], movimientos: [salida, entrada], grupos: [] });
 
     expect(metricCard('Entradas del día')).toHaveTextContent('$10,000.00');
     expect(metricCard('Salidas del día')).toHaveTextContent('$10,000.00');
@@ -57,7 +57,7 @@ describe('Libro de movimientos', () => {
   });
 
   it('muestra la apertura y cada movimiento con su hora, signo y saldo', () => {
-    mount({ dias: [day], movimientos: [salida, entrada] });
+    mount({ dias: [day], movimientos: [salida, entrada], grupos: [] });
 
     expect(screen.getByRole('button', { name: /Inicio en caja/ })).toHaveTextContent('08:12');
     expect(screen.getByRole('button', { name: /Retorno en efectivo/ })).toHaveTextContent('−$10,000.00');
@@ -67,7 +67,7 @@ describe('Libro de movimientos', () => {
   });
 
   it('nace colapsado y despliega el detalle al pulsar la fila', () => {
-    mount({ dias: [day], movimientos: [salida] });
+    mount({ dias: [day], movimientos: [salida], grupos: [] });
     const row = screen.getByRole('button', { name: /Retorno en efectivo/ });
 
     expect(row).toHaveAttribute('aria-expanded', 'false');
@@ -83,7 +83,7 @@ describe('Libro de movimientos', () => {
   });
 
   it('enlaza al detalle de la operación solo cuando el movimiento la tiene', () => {
-    mount({ dias: [day], movimientos: [salida, entrada] });
+    mount({ dias: [day], movimientos: [salida, entrada], grupos: [] });
 
     fireEvent.click(screen.getByRole('button', { name: /Retorno en efectivo/ }));
     expect(screen.getByRole('link', { name: /Ver operación #38/ })).toHaveAttribute('href', '/operaciones/38');
@@ -97,7 +97,7 @@ describe('Libro de movimientos', () => {
   });
 
   it('lista solo las denominaciones presentes, con su subtotal', () => {
-    mount({ dias: [day], movimientos: [salida] });
+    mount({ dias: [day], movimientos: [salida], grupos: [] });
     fireEvent.click(screen.getByRole('button', { name: /Inicio en caja/ }));
 
     // Acotado al detalle de esa fila: el libro también es una lista.
@@ -117,14 +117,14 @@ describe('Libro de movimientos', () => {
   });
 
   it('avisa cuando un movimiento no trae desglose', () => {
-    mount({ dias: [day], movimientos: [movement({ denominaciones: emptyCounts() })] });
+    mount({ dias: [day], movimientos: [movement({ denominaciones: emptyCounts() })], grupos: [] });
     fireEvent.click(screen.getByRole('button', { name: /Retorno en efectivo/ }));
 
     expect(screen.getByText('Sin desglose capturado.')).toBeInTheDocument();
   });
 
   it('destaca el corte total del día', () => {
-    mount({ dias: [day], movimientos: [salida] });
+    mount({ dias: [day], movimientos: [salida], grupos: [] });
 
     const footer = screen.getByText('Corte total del día (esperado)').parentElement as HTMLElement;
     expect(within(footer).getByText('$5,418.00')).toBeInTheDocument();
@@ -135,7 +135,7 @@ describe('Libro de movimientos', () => {
       ...day, closedAt: '2026-09-17T18:00:00', saldoContado: 5400, diferencia: -18,
       observacionesCierre: 'Faltante por redondeo', cierre: { ...emptyCounts(), D1000: 5, D200: 2 },
     };
-    mount({ dias: [closed], movimientos: [salida] });
+    mount({ dias: [closed], movimientos: [salida], grupos: [] });
 
     expect(screen.getByText('Caja cerrada')).toBeInTheDocument();
     expect(screen.getByText('Desglose del cierre')).toBeInTheDocument();
@@ -144,17 +144,56 @@ describe('Libro de movimientos', () => {
 
   it('permite eliminar el corte solo cuando se autoriza', () => {
     const onDelete = vi.fn();
-    const { unmount } = render(<MemoryRouter><CashLedgerTable ledger={{ dias: [day], movimientos: [] }} /></MemoryRouter>);
+    const { unmount } = render(<MemoryRouter><CashLedgerTable ledger={{ dias: [day], movimientos: [], grupos: [] }} /></MemoryRouter>);
     expect(screen.queryByRole('button', { name: 'Eliminar corte' })).not.toBeInTheDocument();
     unmount();
 
-    render(<MemoryRouter><CashLedgerTable ledger={{ dias: [day], movimientos: [] }} canDelete onDelete={onDelete} /></MemoryRouter>);
+    render(<MemoryRouter><CashLedgerTable ledger={{ dias: [day], movimientos: [], grupos: [] }} canDelete onDelete={onDelete} /></MemoryRouter>);
     fireEvent.click(screen.getByRole('button', { name: 'Eliminar corte' }));
     expect(onDelete).toHaveBeenCalledWith(day);
   });
 
   it('informa cuando no hay aperturas en el periodo', () => {
-    mount({ dias: [], movimientos: [] });
+    mount({ dias: [], movimientos: [], grupos: [] });
     expect(screen.getByText('No hay aperturas registradas en este periodo.')).toBeInTheDocument();
+  });
+  it('agrupa los retiros del mismo banco y forma en un solo renglón "Retiro N de M"', () => {
+    const banorte1 = movement({
+      id: 10, createdAt: '2026-09-17T10:00:00', direccion: 'ENTRADA', tipo: 'RETIRO_SIN_TARJETA',
+      concepto: 'Retiro sin tarjeta · BANORTE ••••1111', monto: 100, saldoAcumulado: 12518, parcialidadId: null, operacionId: null,
+      bankAccountId: 4, cuentaBanco: 'BANORTE', cuentaTitular: 'Operaciones SA', cuentaNumero: '00001111', cuentaActiva: true,
+      denominaciones: { ...emptyCounts(), D100: 1 },
+    });
+    const banorte2 = movement({
+      ...banorte1, id: 12, createdAt: '2026-09-17T12:00:00', concepto: 'Retiro sin tarjeta · BANORTE ••••2222',
+      monto: 200, saldoAcumulado: 12718, bankAccountId: 5, cuentaNumero: '00002222',
+      denominaciones: { ...emptyCounts(), D200: 1 },
+    });
+    const efectivo = movement({ id: 11, createdAt: '2026-09-17T11:00:00', saldoAcumulado: 2518 });
+    mount({
+      dias: [day],
+      movimientos: [banorte1, efectivo, banorte2],
+      grupos: [{
+        diaId: 1, fecha: '2026-09-17', forma: 'RST', banco: 'BANORTE', cuentas: 2, totalCuentas: 16,
+        movimientos: 2, total: 300, movementIds: [10, 12], ultimoMovimientoId: 12,
+        etiqueta: 'Retiro 2 de 16 RST BANORTE',
+      }],
+    });
+
+    const group = screen.getByRole('button', { name: /Retiro 2 de 16 RST BANORTE/ });
+    expect(group).toHaveTextContent('+$300.00');
+    // Muestra el saldo que quedó después del último retiro del grupo.
+    expect(group).toHaveTextContent('saldo $12,718.00');
+    // Los retiros del grupo no se repiten sueltos; el efectivo sí queda como su propio renglón.
+    expect(screen.queryByRole('button', { name: /BANORTE ••••1111/ })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Retorno en efectivo/ })).toHaveLength(1);
+    // El renglón agrupado va en la posición del último retiro: después del efectivo.
+    const rows = screen.getAllByRole('button', { expanded: false }).map(button => button.textContent ?? '');
+    expect(rows.findIndex(text => text.includes('Retiro 2 de 16'))).toBeGreaterThan(rows.findIndex(text => text.includes('Retorno en efectivo')));
+
+    fireEvent.click(group);
+    expect(screen.getByText('2 retiros confirmados')).toBeInTheDocument();
+    expect(screen.getByText(/Operaciones SA — BANORTE — .*1111/)).toBeInTheDocument();
+    expect(screen.getByText(/Operaciones SA — BANORTE — .*2222/)).toBeInTheDocument();
   });
 });

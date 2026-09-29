@@ -4,21 +4,15 @@ export const DENOMINATIONS = [
 ] as const;
 export type Denomination = typeof DENOMINATIONS[number][0];
 export type CashCounts = Record<Denomination, number>;
-export const CASH_MOVEMENT_CONCEPTS = {
-  EFECTIVO: 'Efectivo', CHEQUE: 'Cheque cobrado', RETIRO_SIN_TARJETA: 'Retiro sin tarjeta',
-} as const;
 /**
- * Conceptos que sacan efectivo de una cuenta bancaria y lo meten a la caja: exigen la
- * cuenta real y sólo existen como entrada.
+ * Lo único que se captura a mano en Caja General es efectivo. El efectivo retirado de una
+ * cuenta —cheque, retiro con o sin tarjeta— lo registra Cuentas y entra al confirmarlo en
+ * "Retiros por confirmar".
  */
-export const BANK_WITHDRAWAL_CONCEPTS = ['CHEQUE', 'RETIRO_SIN_TARJETA'] as const;
-export type CapturableCashConcept = keyof typeof CASH_MOVEMENT_CONCEPTS;
-/**
- * Tipo de lectura. Incluye conceptos que ya no se capturan: los pagos bancarios y
- * `RETIRO_CON_TARJETA`, que nunca existió en la operación y sólo aparece en movimientos
- * históricos anteriores al cambio.
- */
-export type CashConcept = CapturableCashConcept | 'COBRO_CHEQUE_CLIENTE' | 'TRANSFERENCIA' | 'DEPOSITO' | 'RETIRO_CON_TARJETA';
+export type CapturableCashConcept = 'EFECTIVO';
+/** Tipo de lectura: incluye lo que entra por otros flujos y los pagos bancarios históricos. */
+export type CashConcept = CapturableCashConcept | 'CHEQUE' | 'RETIRO_SIN_TARJETA' | 'RETIRO_CON_TARJETA'
+  | 'COBRO_CHEQUE_CLIENTE' | 'TRANSFERENCIA' | 'DEPOSITO';
 export interface CashDay {
   id: number; fecha: string; version: number; saldoInicial: number; saldoActual: number;
   saldoContado: number | null; diferencia: number | null; apertura: CashCounts; cierre: Partial<CashCounts>;
@@ -35,7 +29,22 @@ export interface CashMovement {
   parcialidadId: number | null; operacionId: number | null; denominaciones: CashCounts;
   comprobanteUrl: string | null; creadoPor: number;
 }
-export interface CashLedger { dias: CashDay[]; movimientos: CashMovement[] }
+/**
+ * Renglón agrupado como lo lleva negocio: "Retiro 16 de 16 TD BANORTE", "Cheques BAJIO".
+ * Junta los retiros del mismo día, forma y banco; cada uno sigue siendo su propio movimiento.
+ */
+export interface CashWithdrawalGroup {
+  diaId: number; fecha: string; forma: 'TD' | 'RST' | 'CHEQUE'; banco: string;
+  /** N: cuentas distintas retiradas (null en cheques). */
+  cuentas: number | null;
+  /** M: cuentas activas de ese banco (null en cheques). */
+  totalCuentas: number | null;
+  movimientos: number; total: number; movementIds: number[];
+  /** El grupo se muestra en la posición y con el saldo de este movimiento. */
+  ultimoMovimientoId: number;
+  etiqueta: string;
+}
+export interface CashLedger { dias: CashDay[]; movimientos: CashMovement[]; grupos: CashWithdrawalGroup[] }
 export interface OpenCashDay { fecha: string; saldoInicial: number; denominaciones: CashCounts }
 export interface CloseCashDay { saldoContado: number; version: number; denominaciones: CashCounts; observaciones: string }
 export interface CreateCashMovement {

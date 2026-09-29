@@ -7,10 +7,13 @@ import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts
 import { getApiErrorMessage } from '@/shared/utils/errors';
 import type { BankTransfer, CreateBankTransfer } from '../types/bank-transfers.types';
 import { validateTransferAmount } from '../utils/transfer-amount';
+import { fitsAvailable, useAccountAvailability } from '../hooks/use-account-availability';
+import { AvailabilityHint } from './AvailabilityHint';
 
 /**
- * Transferencia entre cuentas propias. La cuenta beneficiaria excluye a la origen, y el
- * UUID de la solicitud se conserva al reintentar la misma captura para que un doble clic
+ * Transferencia entre cuentas propias. La cuenta beneficiaria excluye a la origen y la cuenta
+ * origen no puede quedar en negativo: se muestra su disponible y no se envía un monto mayor.
+ * El UUID de la solicitud se conserva al reintentar la misma captura para que un doble clic
  * o un error de red no la registren dos veces.
  */
 export function BankTransferModal({ open, onClose, onSubmit }: {
@@ -28,6 +31,8 @@ export function BankTransferModal({ open, onClose, onSubmit }: {
   const retry = useRef<{ signature: string; id: string } | null>(null);
 
   const destinos = useMemo(() => accounts.filter(account => account.id !== origenId), [accounts, origenId]);
+  const availability = useAccountAvailability(origenId);
+  const amount = validateTransferAmount(monto) ? null : Number(monto);
 
   function reset() {
     setOrigenId(null); setDestinoId(null); setMonto(''); setReferencia(''); setError('');
@@ -51,6 +56,7 @@ export function BankTransferModal({ open, onClose, onSubmit }: {
     if (!destinoId) { setError('Selecciona la cuenta beneficiaria.'); return; }
     const amountError = validateTransferAmount(monto);
     if (amountError) { setError(amountError); return; }
+    if (!fitsAvailable(availability, Number(monto))) { setError('Saldo insuficiente en la cuenta origen.'); return; }
 
     const data = {
       cuentaOrigenId: origenId,
@@ -102,6 +108,7 @@ export function BankTransferModal({ open, onClose, onSubmit }: {
               onlyActive
             />
           </div>
+          {origenId ? <AvailabilityHint availability={availability} amount={amount} /> : null}
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block text-sm font-medium text-slate-700">Monto
               <Input

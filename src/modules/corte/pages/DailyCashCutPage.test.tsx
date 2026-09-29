@@ -33,6 +33,10 @@ vi.mock('../api/corte.api', () => ({
   getBankMovementTotals: (...args: unknown[]) => getBankMovementTotals(...args),
 }));
 
+vi.mock('@/modules/cash-withdrawals/api', () => ({
+  cashWithdrawalsApi: { pending: () => Promise.resolve([]) },
+}));
+
 vi.mock('@/modules/bank-accounts/hooks/use-bank-accounts', () => ({
   useBankAccounts: () => ({ accounts: [], isLoading: false, loadBankAccounts: vi.fn(), loadBankAccount: vi.fn(), setAccounts: vi.fn() }),
 }));

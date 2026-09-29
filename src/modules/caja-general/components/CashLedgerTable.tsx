@@ -4,7 +4,7 @@ import { ArrowDown, ArrowUp, ChevronDown, ExternalLink, Lock } from 'lucide-reac
 import { buildOperationDetailPath } from '@/routes/paths';
 import { formatBankAccountLabel } from '@/shared/utils/bank-account-label';
 import { maskAccountNumber } from '@/shared/utils/account-formatting';
-import { DENOMINATIONS, type CashCounts, type CashDay, type CashLedger, type CashMovement } from '../types/caja-general.types';
+import { DENOMINATIONS, type CashCounts, type CashDay, type CashLedger, type CashMovement, type CashWithdrawalGroup } from '../types/caja-general.types';
 import { MetricCard } from '@/shared/components/dashboard/MetricCard';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { smallOutlineButton, tableShell } from '@/shared/styles/ui-tokens';
@@ -84,25 +84,28 @@ interface LedgerRow {
   operacionId: number | null;
   parcialidadId: number | null;
   comprobanteUrl: string | null;
+  /** Retiros que forman el renglón agrupado, en el orden en que entraron. */
+  members?: CashMovement[];
 }
 
-function buildRows(day: CashDay, movements: CashMovement[]): LedgerRow[] {
-  const opening: LedgerRow = {
-    key: `day-${day.id}-opening`,
-    title: 'Inicio en caja',
-    time: formatCashTime(day.createdAt),
-    tone: 'neutral',
-    amount: day.saldoInicial,
-    running: day.saldoInicial,
-    counts: day.apertura,
-    linked: false,
-    meta: `Abierta por ${day.abiertoPorNombre || `Usuario #${day.abiertoPor}`}`,
-    operacionId: null,
-    parcialidadId: null,
-    comprobanteUrl: null,
-  };
+const WITHDRAWAL_TYPES: Partial<Record<CashMovement['tipo'], string>> = {
+  RETIRO_CON_TARJETA: 'Retiro con tarjeta',
+  RETIRO_SIN_TARJETA: 'Retiro sin tarjeta',
+  CHEQUE: 'Cheque de cuenta propia',
+  COBRO_CHEQUE_CLIENTE: 'Cheque de cliente',
+};
 
-  return [opening, ...movements.map(movement => ({
+/** Suma de los desgloses de varios movimientos. */
+function sumCounts(movements: CashMovement[]): Partial<CashCounts> {
+  const total: Partial<CashCounts> = {};
+  for (const movement of movements) {
+    for (const [key] of DENOMINATIONS) total[key] = (total[key] ?? 0) + (movement.denominaciones[key] ?? 0);
+  }
+  return total;
+}
+
+function movementRow(movement: CashMovement): LedgerRow {
+  return {
     key: `mov-${movement.id}`,
     title: movement.concepto,
     time: formatCashTime(movement.createdAt),
@@ -120,7 +123,80 @@ function buildRows(day: CashDay, movements: CashMovement[]): LedgerRow[] {
     operacionId: movement.operacionId,
     parcialidadId: movement.parcialidadId,
     comprobanteUrl: movement.comprobanteUrl,
-  }))];
+  };
+}
+
+/**
+ * El renglón agrupado ocupa el lugar del último retiro del grupo y muestra el saldo que quedó
+ * después de él: así el saldo acumulado del libro sigue leyéndose en orden.
+ */
+function groupRow(group: CashWithdrawalGroup, members: CashMovement[]): LedgerRow {
+  const last = members[members.length - 1];
+  return {
+    key: `group-${group.diaId}-${group.forma}-${group.banco}`,
+    title: group.etiqueta,
+    time: formatCashTime(last.createdAt),
+    tone: 'entrada',
+    amount: group.total,
+    running: last.saldoAcumulado,
+    counts: sumCounts(members),
+    linked: false,
+    meta: `${members.length} ${members.length === 1 ? 'retiro confirmado' : 'retiros confirmados'}`,
+    operacionId: null,
+    parcialidadId: null,
+    comprobanteUrl: null,
+    members,
+  };
+}
+
+function buildRows(day: CashDay, movements: CashMovement[], groups: CashWithdrawalGroup[] = []): LedgerRow[] {
+  const opening: LedgerRow = {
+    key: `day-${day.id}-opening`,
+    title: 'Inicio en caja',
+    time: formatCashTime(day.createdAt),
+    tone: 'neutral',
+    amount: day.saldoInicial,
+    running: day.saldoInicial,
+    counts: day.apertura,
+    linked: false,
+    meta: `Abierta por ${day.abiertoPorNombre || `Usuario #${day.abiertoPor}`}`,
+    operacionId: null,
+    parcialidadId: null,
+    comprobanteUrl: null,
+  };
+
+  const dayGroups = groups.filter(group => group.diaId === day.id);
+  const grouped = new Set(dayGroups.flatMap(group => group.movementIds));
+  const groupByLast = new Map(dayGroups.map(group => [group.ultimoMovimientoId, group]));
+  const byId = new Map(movements.map(movement => [movement.id, movement]));
+
+  const rows: LedgerRow[] = [opening];
+  for (const movement of movements) {
+    const group = groupByLast.get(movement.id);
+    if (group) {
+      const members = group.movementIds.map(id => byId.get(id)).filter((m): m is CashMovement => Boolean(m));
+      rows.push(groupRow(group, members));
+    } else if (!grouped.has(movement.id)) {
+      rows.push(movementRow(movement));
+    }
+  }
+  return rows;
+}
+
+function GroupMembers({ members }: { members: CashMovement[] }) {
+  return (
+    <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200">
+      {members.map(member => (
+        <li key={member.id} className="flex items-center justify-between gap-3 px-3 py-2 text-xs">
+          <span className="min-w-0">
+            <span className="block truncate font-semibold text-slate-800">{describeAccount(member) ?? member.concepto}</span>
+            <span className="text-slate-500">{WITHDRAWAL_TYPES[member.tipo] ?? member.concepto} · {formatCashTime(member.createdAt)} · Registro #{member.id}</span>
+          </span>
+          <span className="shrink-0 font-semibold tabular-nums text-emerald-700">+{currency(member.monto)}</span>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 function LedgerEntry({ row }: { row: LedgerRow }) {
@@ -181,6 +257,8 @@ function LedgerEntry({ row }: { row: LedgerRow }) {
 
           {row.meta && <p className="text-xs text-slate-500">{row.meta}</p>}
 
+          {row.members && <GroupMembers members={row.members} />}
+
           <DenominationBreakdown counts={row.counts} tone={row.tone} />
         </div>
       )}
@@ -238,7 +316,7 @@ export function CashLedgerTable({ ledger, canDelete = false, onDelete }: {
 
         <div className={tableShell}>
           <ul>
-            {buildRows(day, movements).map(row => <LedgerEntry key={row.key} row={row} />)}
+            {buildRows(day, movements, ledger.grupos).map(row => <LedgerEntry key={row.key} row={row} />)}
           </ul>
 
           <div className="flex items-center gap-3 border-t border-slate-200 bg-slate-50 px-4 py-3.5">

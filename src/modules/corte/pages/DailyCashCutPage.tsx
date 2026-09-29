@@ -17,12 +17,17 @@ import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { PeriodDateField, PeriodModeToggle } from '@/shared/components/ui/PeriodFilter';
 import { BankMovementsSection } from '../components/BankMovementsSection';
 import { BankTransferModal } from '../components/BankTransferModal';
+import { RegisterWithdrawalModal } from '../components/RegisterWithdrawalModal';
+import { WithdrawalsInTransit } from '../components/WithdrawalsInTransit';
+import { cashWithdrawalsApi } from '@/modules/cash-withdrawals/api';
+import { useRefreshAfterWithdrawal } from '@/modules/cash-withdrawals/hooks';
+import type { RegisterWithdrawal } from '@/modules/cash-withdrawals/types';
 import { createBankTransfer } from '../api/corte.api';
 import type { CreateBankTransfer } from '../types/bank-transfers.types';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, Building2, CalendarDays, Landmark, LoaderCircle, Scale, Search } from 'lucide-react';
+import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, Banknote, Building2, CalendarDays, Landmark, LoaderCircle, Scale, Search } from 'lucide-react';
 
 function todayISO() {
     return toISODate(new Date());
@@ -68,6 +73,8 @@ export default function DailyCashCutPage() {
     // roles del módulo sólo consultan.
     const canRegisterBankMovements = hasRole(['ADMIN', 'JEFA_CUENTAS']);
     const [transferOpen, setTransferOpen] = useState(false);
+    const [withdrawalOpen, setWithdrawalOpen] = useState(false);
+    const refreshAfterWithdrawal = useRefreshAfterWithdrawal();
 
     const selectView = (next: MainView) => {
         if (VIEW_PATHS[next] !== location.pathname) {
@@ -166,14 +173,21 @@ export default function DailyCashCutPage() {
     const submitTransfer = async (request: CreateBankTransfer) => {
         const transfer = await createBankTransfer(request);
         toast.success('Transferencia registrada');
-        if (transfer.saldoOrigenResultante !== null && transfer.saldoOrigenResultante < 0) {
-            toast(`La cuenta origen quedó con saldo de ${formatCurrency(transfer.saldoOrigenResultante)}. Revisa que no falte registrar una entrada.`, { icon: '⚠️', duration: 8000 });
-        }
-        await queryClient.invalidateQueries({ queryKey: ['bank-movements'] });
+        await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ['bank-movements'] }),
+            queryClient.invalidateQueries({ queryKey: ['account-availability'] }),
+        ]);
         if (isBankBalancesView) {
             await fetchBankBalancesGrouped(fecha);
         }
         return transfer;
+    };
+
+    const submitWithdrawal = async (request: RegisterWithdrawal) => {
+        const withdrawal = await cashWithdrawalsApi.register(request);
+        toast.success('Retiro registrado. Queda en tránsito hasta que Caja General lo confirme.');
+        await refreshAfterWithdrawal();
+        return withdrawal;
     };
 
     const cashCutTitle = isDailyMode
@@ -256,6 +270,16 @@ export default function DailyCashCutPage() {
                                 {canRegisterBankMovements ? (
                                     <button
                                         type="button"
+                                        onClick={() => setWithdrawalOpen(true)}
+                                        className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-50"
+                                    >
+                                        <Banknote className="h-4 w-4" aria-hidden="true" />
+                                        Retiro a Caja General
+                                    </button>
+                                ) : null}
+                                {canRegisterBankMovements ? (
+                                    <button
+                                        type="button"
                                         onClick={() => setTransferOpen(true)}
                                         className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-50"
                                     >
@@ -275,6 +299,13 @@ export default function DailyCashCutPage() {
                         onClose={() => setTransferOpen(false)}
                         onSubmit={submitTransfer}
                     />
+                    <RegisterWithdrawalModal
+                        open={withdrawalOpen}
+                        onClose={() => setWithdrawalOpen(false)}
+                        onSubmit={submitWithdrawal}
+                    />
+
+                    <WithdrawalsInTransit canCancel={canRegisterBankMovements} />
 
                     <PeriodDateField
                         id="corte-fecha"

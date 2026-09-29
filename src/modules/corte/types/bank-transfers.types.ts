@@ -21,7 +21,7 @@ export interface BankTransfer {
   comprobanteUrl: string | null;
   registradoPorId: number;
   registradoPorNombre: string;
-  /** Sólo llega al registrar: permite avisar si la cuenta origen quedó en negativo. */
+  /** Sólo llega al registrar: el saldo con el que quedó la cuenta origen. */
   saldoOrigenResultante: number | null;
 }
 

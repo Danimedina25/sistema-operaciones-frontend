@@ -14,6 +14,16 @@ vi.mock('@/modules/bank-accounts/hooks/use-bank-accounts', () => ({
   useBankAccounts: () => ({ accounts, isLoading: false, loadBankAccounts: vi.fn(), loadBankAccount: vi.fn(), setAccounts: vi.fn() }),
 }));
 
+/** Disponible de la cuenta origen: lo controla cada prueba. */
+const availability = { saldo: 5000, enTransito: 0, disponible: 5000 as number | null, isLoading: false };
+
+vi.mock('../hooks/use-account-availability', async importOriginal => ({
+  ...(await importOriginal<typeof import('../hooks/use-account-availability')>()),
+  useAccountAvailability: (id: number | null) => (id === null
+    ? { saldo: null, enTransito: 0, disponible: null, isLoading: false }
+    : availability),
+}));
+
 const saved: BankTransfer = {
   id: 1, fecha: '2026-09-27T10:00:00', cuentaOrigenId: 3, cuentaOrigen: '', cuentaDestinoId: 7, cuentaDestino: '',
   monto: 1500.5, referencia: null, comprobanteUrl: null, registradoPorId: 1, registradoPorNombre: 'Jefa', saldoOrigenResultante: 100,
@@ -86,6 +96,24 @@ describe('BankTransferModal', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Registrar transferencia' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('mayor a cero');
     expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('muestra el disponible y no envía un monto que deje la cuenta en negativo', async () => {
+    availability.disponible = 1000;
+    availability.enTransito = 4000;
+    const { onSubmit } = mount();
+    choose('Cuenta origen', 'BBVA');
+    choose('Cuenta beneficiaria', 'Banorte');
+    expect(screen.getByText(/Disponible \$1,000\.00/)).toBeInTheDocument();
+    expect(screen.getByText(/En tránsito a Caja General \$4,000\.00/)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '1000.01' } });
+    expect(screen.getByText(/no puede quedar en negativo/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar transferencia' }));
+    expect(onSubmit).not.toHaveBeenCalled();
+
+    availability.disponible = 5000;
+    availability.enTransito = 0;
   });
 
   it('conserva el identificador al reintentar la misma captura tras un error', async () => {

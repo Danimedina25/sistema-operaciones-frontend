@@ -94,3 +94,10 @@ export type CashCutRangeApiResponse = ApiResponse<CashCutRangeResponse>;
 
 export type BankGroupBalanceApiResponse =
   ApiResponse<BankGroupBalanceResponse[]>;
+/** Saldo de una cuenta en una fecha. Sólo se usan los campos que la pantalla necesita. */
+export interface BankAccountBalanceDetail {
+  bankAccountId: number;
+  fecha: string;
+  saldoInicial: number;
+  saldoFinal: number;
+}
