@@ -16,3 +16,15 @@ export function moneyInputToNumber(value: string): number | null {
   const raw = value.replace(/,/g, '').trim();
   return raw ? Number(raw) : null;
 }
+
+/**
+ * Monto en efectivo: además de ser válido, sus centavos deben poder pagarse con monedas. La
+ * moneda más chica es de 50 centavos, así que sólo se admiten .00 y .50.
+ */
+export function validateCashAmountInput(raw: string, emptyMessage = 'Captura el monto.'): string | null {
+  const problem = validateAmountInput(raw, emptyMessage);
+  if (problem) return problem;
+  const cents = Math.round(Number(raw.replace(/,/g, '')) * 100);
+  if (cents % 50 !== 0) return 'En efectivo sólo se admiten centavos .00 o .50: la moneda más chica es de 50 centavos.';
+  return null;
+}

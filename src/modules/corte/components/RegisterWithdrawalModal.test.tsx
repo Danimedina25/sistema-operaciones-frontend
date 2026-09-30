@@ -65,4 +65,18 @@ describe('Retiro de efectivo para Caja General', () => {
     expect(screen.getAllByRole('alert').map(a => a.textContent).join(' ')).toMatch(/Saldo insuficiente/);
     expect(onSubmit).not.toHaveBeenCalled();
   });
+  it('sólo admite centavos que se puedan entregar en monedas: .00 o .50', async () => {
+    const { onSubmit } = mount();
+    chooseAccount();
+    fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '100.25' } });
+    expect(screen.getByText(/sólo se admiten centavos \.00 o \.50/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar retiro' }));
+    expect(onSubmit).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '100.50' } });
+    expect(screen.queryByText(/sólo se admiten centavos/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar retiro' }));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    expect(onSubmit.mock.calls[0][0].monto).toBe(100.5);
+  });
 });

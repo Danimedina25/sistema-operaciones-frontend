@@ -6,7 +6,7 @@ import { MoneyInput } from '@/shared/components/ui/MoneyInput';
 import { BankAccountCombobox } from '@/shared/components/ui/BankAccountCombobox';
 import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts';
 import { getApiErrorMessage } from '@/shared/utils/errors';
-import { moneyInputToNumber, validateAmountInput } from '@/shared/utils/money-input';
+import { moneyInputToNumber, validateCashAmountInput } from '@/shared/utils/money-input';
 import { WITHDRAWAL_METHODS, type BankCashWithdrawal, type RegisterWithdrawal, type WithdrawalMethod } from '@/modules/cash-withdrawals/types';
 import { fitsAvailable, useAccountAvailability } from '../hooks/use-account-availability';
 import { AvailabilityHint } from './AvailabilityHint';
@@ -32,7 +32,8 @@ export function RegisterWithdrawalModal({ open, onClose, onSubmit }: {
   const [busy, setBusy] = useState(false);
   const retry = useRef<{ signature: string; id: string } | null>(null);
   const availability = useAccountAvailability(bankAccountId);
-  const amount = validateAmountInput(monto) ? null : moneyInputToNumber(monto);
+  const amountProblem = monto.trim() ? validateCashAmountInput(monto) : null;
+  const amount = monto.trim() && !amountProblem ? moneyInputToNumber(monto) : null;
 
   function reset() {
     setBankAccountId(null); setForma('RETIRO_CON_TARJETA'); setMonto(''); setReferencia(''); setError('');
@@ -48,7 +49,7 @@ export function RegisterWithdrawalModal({ open, onClose, onSubmit }: {
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!bankAccountId) { setError('Selecciona la cuenta de la que sale el efectivo.'); return; }
-    const amountError = validateAmountInput(monto, 'Captura el monto retirado.');
+    const amountError = validateCashAmountInput(monto, 'Captura el monto retirado.');
     if (amountError) { setError(amountError); return; }
     if (!fitsAvailable(availability, moneyInputToNumber(monto))) { setError('Saldo insuficiente en la cuenta.'); return; }
 
@@ -95,7 +96,10 @@ export function RegisterWithdrawalModal({ open, onClose, onSubmit }: {
           {bankAccountId ? <AvailabilityHint availability={availability} amount={amount} /> : null}
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block text-sm font-medium text-slate-700">Monto
-              <MoneyInput ariaLabel="Monto" value={monto} onChange={setMonto} className="mt-1" />
+              <MoneyInput ariaLabel="Monto" value={monto} onChange={value => { setMonto(value); setError(''); }} className="mt-1" />
+              <span className={`mt-1 block text-xs font-normal ${amountProblem ? 'text-red-600' : 'text-slate-500'}`}>
+                {amountProblem ?? 'Se entrega en efectivo: centavos sólo .00 o .50.'}
+              </span>
             </label>
             <label className="block text-sm font-medium text-slate-700">Referencia (opcional)
               <Input aria-label="Referencia" maxLength={300} placeholder="Número de cheque, operador…" value={referencia}
