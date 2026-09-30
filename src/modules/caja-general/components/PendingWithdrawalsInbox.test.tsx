@@ -84,10 +84,16 @@ describe('Retiros por confirmar', () => {
     await waitFor(() => expect(reject).toHaveBeenCalledWith(5, 'No llegó el efectivo'));
   });
 
-  it('sin caja abierta de hoy no se puede confirmar', async () => {
+  it('sin la caja de hoy abierta no se puede confirmar, pero sí rechazar', async () => {
     mount(true, null);
     expect(await screen.findByRole('button', { name: 'Confirmar' })).toBeDisabled();
-    expect(screen.getByText(/Abre la caja de hoy/)).toBeInTheDocument();
+    expect(screen.getByText(/caja de hoy abierta/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Rechazar' }));
+    const dialog = screen.getByRole('dialog');
+    fireEvent.change(within(dialog).getByLabelText('Motivo'), { target: { value: 'Monto con centavos incorrectos' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Rechazar retiro' }));
+    await waitFor(() => expect(reject).toHaveBeenCalledWith(5, 'Monto con centavos incorrectos'));
   });
 
   it('quien sólo consulta ve la bandeja sin acciones', async () => {

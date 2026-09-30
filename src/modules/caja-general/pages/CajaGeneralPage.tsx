@@ -135,7 +135,7 @@ export default function CajaGeneralPage() {
     </p>}
 
     <PendingWithdrawalsInbox
-      canResolve={Boolean(canWrite && viewingToday)}
+      canResolve={Boolean(canWrite)}
       openDayId={isOpen && viewingToday ? day.id : null}
     />
 

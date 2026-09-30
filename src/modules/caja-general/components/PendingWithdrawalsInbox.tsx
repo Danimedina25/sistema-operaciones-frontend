@@ -16,9 +16,12 @@ import { ConfirmWithdrawalModal } from './ConfirmWithdrawalModal';
  * recibirlo, lo confirma con su desglose (entra a la caja de hoy) o lo rechaza con motivo.
  */
 export function PendingWithdrawalsInbox({ canResolve, openDayId, onConfirmed }: {
-  /** Jefa de Cajas o Administración viendo la caja de hoy. */
+  /**
+   * Jefa de Cajas o Administración. Rechazar no mueve la caja, así que no depende de la fecha
+   * que se esté viendo; confirmar además necesita `openDayId`.
+   */
   canResolve: boolean;
-  /** Caja abierta de hoy; sin ella no se puede confirmar. */
+  /** Caja abierta de hoy, vista en la fecha de hoy; sin ella no se puede confirmar. */
   openDayId: number | null;
   onConfirmed?: () => void;
 }) {
@@ -40,7 +43,7 @@ export function PendingWithdrawalsInbox({ canResolve, openDayId, onConfirmed }: 
           <h2 className="text-sm font-semibold text-slate-950">Retiros por confirmar</h2>
           <p className="text-xs text-slate-600">
             {items.length} {items.length === 1 ? 'retiro' : 'retiros'} de las cuentas en camino a Caja General.
-            {canResolve && !openDayId ? ' Abre la caja de hoy para confirmarlos.' : ''}
+            {canResolve && !openDayId ? ' Para confirmarlos, consulta la fecha de hoy con la caja de hoy abierta; rechazarlos se puede en cualquier momento.' : ''}
           </p>
         </div>
         <span className="text-lg font-bold tabular-nums text-slate-950">{currency(total)}</span>
@@ -68,6 +71,7 @@ export function PendingWithdrawalsInbox({ canResolve, openDayId, onConfirmed }: 
                 {canResolve ? (
                   <td className="whitespace-nowrap px-4 py-3 text-right">
                     <button type="button" disabled={!openDayId} onClick={() => setConfirming(item)}
+                      title={openDayId ? undefined : 'Consulta la fecha de hoy con la caja de hoy abierta'}
                       className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50">
                       Confirmar
                     </button>
