@@ -121,6 +121,22 @@ const notificationPresentation: Record<NotificationType, NotificationPresentatio
     icon: Check,
     iconClassName: 'bg-emerald-50 text-emerald-600',
   },
+  BANK_WITHDRAWAL_PENDING: {
+    icon: Banknote,
+    iconClassName: 'bg-blue-50 text-blue-600',
+  },
+  BANK_WITHDRAWAL_CONFIRMED: {
+    icon: Check,
+    iconClassName: 'bg-emerald-50 text-emerald-600',
+  },
+  BANK_WITHDRAWAL_REJECTED: {
+    icon: XCircle,
+    iconClassName: 'bg-red-50 text-red-600',
+  },
+  BANK_WITHDRAWAL_CANCELLED: {
+    icon: XCircle,
+    iconClassName: 'bg-slate-100 text-slate-600',
+  },
   RETURN_INSTALLMENT_SCHEDULED: {
     icon: CalendarClock,
     iconClassName: 'bg-blue-50 text-blue-600',

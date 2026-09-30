@@ -13,6 +13,11 @@ export type NotificationType =
   | 'CHEQUE_CASH_COLLECTION_RETURNED'
   | 'CHEQUE_CASH_COLLECTION_WITHDRAWN'
   | 'CHEQUE_CASH_COLLECTION_COMPLETED'
+  // Retiros de efectivo de las cuentas hacia Caja General
+  | 'BANK_WITHDRAWAL_PENDING'
+  | 'BANK_WITHDRAWAL_CONFIRMED'
+  | 'BANK_WITHDRAWAL_REJECTED'
+  | 'BANK_WITHDRAWAL_CANCELLED'
   // Parcialidades de retorno
   | 'RETURN_INSTALLMENT_SCHEDULED'
   | 'RETURN_INSTALLMENT_CODE_AVAILABLE'
@@ -34,6 +39,7 @@ export type NotificationReferenceType =
   | 'COMMISSION'
   | 'RETURN_PAYMENT'
   | 'RETURN_INSTALLMENT'
+  | 'BANK_CASH_WITHDRAWAL'
   | 'NONE';
 
 export type NotificationPriority =

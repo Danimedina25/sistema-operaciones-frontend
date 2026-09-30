@@ -1,6 +1,15 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { cashWithdrawalsApi } from './api';
+import type { NotificationType } from '@/modules/notifications/types/notifications.types';
+
+/** Notificaciones que significan que un retiro cambió de estado. */
+export const WITHDRAWAL_NOTIFICATION_TYPES: readonly NotificationType[] = [
+  'BANK_WITHDRAWAL_PENDING',
+  'BANK_WITHDRAWAL_CONFIRMED',
+  'BANK_WITHDRAWAL_REJECTED',
+  'BANK_WITHDRAWAL_CANCELLED',
+];
 
 export const CASH_WITHDRAWALS_KEY = 'cash-withdrawals';
 

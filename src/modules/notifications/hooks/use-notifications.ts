@@ -10,6 +10,7 @@ import type { NotificationResponse } from '@/modules/notifications/types/notific
 import { getApiErrorMessage } from '@/shared/utils/errors';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { notificationsSocketService } from '@/modules/notifications/services/notifications.socket';
+import { emitNotificationReceived } from '@/modules/notifications/services/notification-events';
 
 interface UseNotificationsOptions {
   limit?: number;
@@ -79,6 +80,7 @@ export function useNotifications(options?: UseNotificationsOptions) {
         console.log('[WS RECEIVED NOTIFICATION]', incomingNotification);
 
         setLastIncomingNotification(incomingNotification);
+        emitNotificationReceived(incomingNotification);
 
         setNotifications((current) => {
           const alreadyExists = current.some(

@@ -2,7 +2,8 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { Inbox } from 'lucide-react';
 import { cashWithdrawalsApi } from '@/modules/cash-withdrawals/api';
-import { usePendingWithdrawals, useRefreshAfterWithdrawal } from '@/modules/cash-withdrawals/hooks';
+import { usePendingWithdrawals, useRefreshAfterWithdrawal, WITHDRAWAL_NOTIFICATION_TYPES } from '@/modules/cash-withdrawals/hooks';
+import { useNotificationReceived } from '@/modules/notifications/hooks/use-notification-received';
 import { ReasonModal } from '@/modules/cash-withdrawals/ReasonModal';
 import { WITHDRAWAL_METHODS, type BankCashWithdrawal } from '@/modules/cash-withdrawals/types';
 import { maskAccountNumber } from '@/shared/utils/account-formatting';
@@ -30,6 +31,8 @@ export function PendingWithdrawalsInbox({ canResolve, openDayId, onConfirmed }: 
   const [confirming, setConfirming] = useState<BankCashWithdrawal | null>(null);
   const [rejecting, setRejecting] = useState<BankCashWithdrawal | null>(null);
   const items = pending.data ?? [];
+  // Un retiro nuevo o cancelado por Cuentas aparece o desaparece sin recargar la página.
+  useNotificationReceived(WITHDRAWAL_NOTIFICATION_TYPES, () => { void refresh(); });
 
   if (pending.isError) return <p role="alert" className="text-sm text-red-600">{getApiErrorMessage(pending.error)}</p>;
   if (items.length === 0) return null;

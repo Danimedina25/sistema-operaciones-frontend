@@ -20,7 +20,8 @@ import { BankTransferModal } from '../components/BankTransferModal';
 import { RegisterWithdrawalModal } from '../components/RegisterWithdrawalModal';
 import { WithdrawalsInTransit } from '../components/WithdrawalsInTransit';
 import { cashWithdrawalsApi } from '@/modules/cash-withdrawals/api';
-import { useRefreshAfterWithdrawal } from '@/modules/cash-withdrawals/hooks';
+import { useRefreshAfterWithdrawal, WITHDRAWAL_NOTIFICATION_TYPES } from '@/modules/cash-withdrawals/hooks';
+import { useNotificationReceived } from '@/modules/notifications/hooks/use-notification-received';
 import type { RegisterWithdrawal } from '@/modules/cash-withdrawals/types';
 import { createBankTransfer } from '../api/corte.api';
 import type { CreateBankTransfer } from '../types/bank-transfers.types';
@@ -149,6 +150,13 @@ export default function DailyCashCutPage() {
 
         await fetchRangeCut(startDate, endDate);
     };
+
+    // Cuando Caja confirma, rechaza o recibe un retiro, el saldo, el disponible y lo que va en
+    // tránsito cambian: se vuelve a consultar lo que está en pantalla sin recargar la página.
+    useNotificationReceived(WITHDRAWAL_NOTIFICATION_TYPES, () => {
+        void handleSearch();
+        void refreshAfterWithdrawal();
+    });
 
     useEffect(() => {
         // El libro de movimientos consulta por su cuenta; no hay corte ni saldos que pedir.

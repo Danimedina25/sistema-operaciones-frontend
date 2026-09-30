@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { emitNotificationReceived } from '@/modules/notifications/services/notification-events';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -140,5 +141,18 @@ describe('DailyCashCutPage', () => {
 
     const fecha = await screen.findByLabelText('Fecha de movimientos');
     expect(fecha).toHaveAttribute('max', todayIso());
+  });
+  it('vuelve a consultar los saldos cuando Caja confirma un retiro', async () => {
+    mount(paths.bankBalances);
+    await waitFor(() => expect(fetchBankBalancesGrouped).toHaveBeenCalled());
+    const before = fetchBankBalancesGrouped.mock.calls.length;
+
+    act(() => emitNotificationReceived({
+      id: 9, titulo: 'Retiro recibido en Caja General', mensaje: '', tipo: 'BANK_WITHDRAWAL_CONFIRMED',
+      modulo: 'PAGOS', referenceType: 'BANK_CASH_WITHDRAWAL', referenceId: 5, actionUrl: '/corte',
+      prioridad: 'MEDIUM', leida: false, createdAt: '2026-09-30T10:00:00',
+    }));
+
+    await waitFor(() => expect(fetchBankBalancesGrouped.mock.calls.length).toBe(before + 1));
   });
 });
