@@ -89,8 +89,8 @@ interface LedgerRow {
 }
 
 const WITHDRAWAL_TYPES: Partial<Record<CashMovement['tipo'], string>> = {
-  RETIRO_CON_TARJETA: 'Retiro con tarjeta',
-  RETIRO_SIN_TARJETA: 'Retiro sin tarjeta',
+  RETIRO_CON_TARJETA: 'Retiro con tarjeta (TD)',
+  RETIRO_SIN_TARJETA: 'Retiro sin tarjeta (RST)',
   CHEQUE: 'Cheque de cuenta propia',
   COBRO_CHEQUE_CLIENTE: 'Cheque de cliente',
 };

@@ -3,7 +3,7 @@ import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { getApiErrorMessage } from '@/shared/utils/errors';
 import { maskAccountNumber } from '@/shared/utils/account-formatting';
-import type { BankCashWithdrawal } from '@/modules/cash-withdrawals/types';
+import { WITHDRAWAL_METHODS, type BankCashWithdrawal } from '@/modules/cash-withdrawals/types';
 import type { CashCounts } from '../types/caja-general.types';
 import { countCents, currency, emptyCounts } from '../utils/cash-amounts';
 import { DenominationFields } from './DenominationFields';
@@ -56,7 +56,7 @@ export function ConfirmWithdrawalModal({ withdrawal, onClose, onConfirm }: {
         <form onSubmit={submit} className="space-y-5">
           <dl className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
             <div><dt className="text-xs text-slate-500">Monto retirado</dt><dd className="text-lg font-bold tabular-nums text-slate-950">{currency(withdrawal.monto)}</dd></div>
-            <div><dt className="text-xs text-slate-500">Forma</dt><dd className="font-semibold text-slate-900">{withdrawal.formaEtiqueta}</dd></div>
+            <div><dt className="text-xs text-slate-500">Forma</dt><dd className="font-semibold text-slate-900">{WITHDRAWAL_METHODS[withdrawal.forma]}</dd></div>
             <div><dt className="text-xs text-slate-500">Cuenta</dt><dd className="font-semibold text-slate-900">{withdrawal.banco} {maskAccountNumber(withdrawal.cuentaNumero)}<span className="block text-xs font-normal text-slate-500">{withdrawal.cuentaTitular}</span></dd></div>
             <div><dt className="text-xs text-slate-500">Registró</dt><dd className="font-semibold text-slate-900">{withdrawal.registradoPorNombre}{withdrawal.referencia ? <span className="block text-xs font-normal text-slate-500">{withdrawal.referencia}</span> : null}</dd></div>
           </dl>

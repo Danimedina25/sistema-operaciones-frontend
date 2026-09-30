@@ -4,7 +4,7 @@ import { Inbox } from 'lucide-react';
 import { cashWithdrawalsApi } from '@/modules/cash-withdrawals/api';
 import { usePendingWithdrawals, useRefreshAfterWithdrawal } from '@/modules/cash-withdrawals/hooks';
 import { ReasonModal } from '@/modules/cash-withdrawals/ReasonModal';
-import type { BankCashWithdrawal } from '@/modules/cash-withdrawals/types';
+import { WITHDRAWAL_METHODS, type BankCashWithdrawal } from '@/modules/cash-withdrawals/types';
 import { maskAccountNumber } from '@/shared/utils/account-formatting';
 import { getApiErrorMessage } from '@/shared/utils/errors';
 import { currency } from '../utils/cash-amounts';
@@ -65,7 +65,7 @@ export function PendingWithdrawalsInbox({ canResolve, openDayId, onConfirmed }: 
               <tr key={item.id}>
                 <td className="px-4 py-3 text-slate-600">{formatCashDateTime(item.registradoEn)}<span className="block text-xs text-slate-400">{item.registradoPorNombre}</span></td>
                 <td className="px-4 py-3 text-slate-900">{item.banco} {maskAccountNumber(item.cuentaNumero)}<span className="block text-xs text-slate-500">{item.cuentaTitular}</span></td>
-                <td className="px-4 py-3 text-slate-600">{item.formaEtiqueta}{item.referencia ? <span className="block text-xs text-slate-400">{item.referencia}</span> : null}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-slate-600">{WITHDRAWAL_METHODS[item.forma]}{item.referencia ? <span className="block text-xs text-slate-400">{item.referencia}</span> : null}</td>
                 <td className="px-4 py-3 text-slate-600">Caja General</td>
                 <td className="px-4 py-3 text-right font-semibold tabular-nums text-slate-900">{currency(item.monto)}</td>
                 {canResolve ? (

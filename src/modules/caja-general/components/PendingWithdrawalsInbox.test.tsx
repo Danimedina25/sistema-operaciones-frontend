@@ -42,7 +42,7 @@ beforeEach(() => {
 describe('Retiros por confirmar', () => {
   it('lista cada retiro con su cuenta, forma, beneficiario y monto', async () => {
     mount();
-    const row = (await screen.findByText('Retiro sin tarjeta')).closest('tr') as HTMLElement;
+    const row = (await screen.findByText('Retiro sin tarjeta (RST)')).closest('tr') as HTMLElement;
     expect(row).toHaveTextContent('BANORTE');
     expect(row).toHaveTextContent('Operaciones SA');
     expect(row).toHaveTextContent('Caja General');
@@ -98,7 +98,7 @@ describe('Retiros por confirmar', () => {
 
   it('quien sólo consulta ve la bandeja sin acciones', async () => {
     mount(false);
-    await screen.findByText('Retiro sin tarjeta');
+    await screen.findByText('Retiro sin tarjeta (RST)');
     expect(screen.queryByRole('button', { name: 'Confirmar' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Rechazar' })).not.toBeInTheDocument();
   });
