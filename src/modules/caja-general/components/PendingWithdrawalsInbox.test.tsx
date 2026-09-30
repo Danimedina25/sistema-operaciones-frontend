@@ -103,4 +103,13 @@ describe('Retiros por confirmar', () => {
     await waitFor(() => expect(pending).toHaveBeenCalled());
     expect(screen.queryByText('Retiros por confirmar')).not.toBeInTheDocument();
   });
+  it('explica por qué no se puede confirmar un retiro con centavos que no son .00 ni .50', async () => {
+    pending.mockResolvedValue([{ ...withdrawal, monto: 30000.78 }]);
+    mount();
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirmar' }));
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('no se puede confirmar');
+    expect(within(dialog).queryByLabelText('Cantidad de $100.00')).not.toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Confirmar entrada a caja' })).toBeDisabled();
+  });
 });

@@ -23,6 +23,9 @@ export function ConfirmWithdrawalModal({ withdrawal, onClose, onConfirm }: {
   const totalCents = countCents(counts);
   const expectedCents = withdrawal ? Math.round(withdrawal.monto * 100) : 0;
   const matches = Number.isFinite(totalCents) && totalCents === expectedCents;
+  // Un retiro registrado antes de exigir centavos .00/.50 no se puede contar en billetes y
+  // monedas: nunca cuadraría. Se explica en lugar de dejar el botón deshabilitado sin motivo.
+  const countable = expectedCents % 50 === 0;
 
   function close() {
     if (busy) return;
@@ -57,9 +60,16 @@ export function ConfirmWithdrawalModal({ withdrawal, onClose, onConfirm }: {
             <div><dt className="text-xs text-slate-500">Cuenta</dt><dd className="font-semibold text-slate-900">{withdrawal.banco} {maskAccountNumber(withdrawal.cuentaNumero)}<span className="block text-xs font-normal text-slate-500">{withdrawal.cuentaTitular}</span></dd></div>
             <div><dt className="text-xs text-slate-500">Registró</dt><dd className="font-semibold text-slate-900">{withdrawal.registradoPorNombre}{withdrawal.referencia ? <span className="block text-xs font-normal text-slate-500">{withdrawal.referencia}</span> : null}</dd></div>
           </dl>
-          <fieldset disabled={busy}>
-            <DenominationFields value={counts} onChange={setCounts} />
-          </fieldset>
+          {countable ? (
+            <fieldset disabled={busy}>
+              <DenominationFields value={counts} onChange={setCounts} />
+            </fieldset>
+          ) : (
+            <p role="alert" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              Este retiro no se puede confirmar: sus centavos no se pueden contar en efectivo (la moneda más chica es de
+              $0.50). Recházalo para que Cuentas lo registre de nuevo con el monto que realmente se entregó.
+            </p>
+          )}
           {!matches && Number.isFinite(totalCents) && totalCents > 0 ? (
             <p className="text-sm text-amber-700">
               Faltan {currency(Math.abs(expectedCents - totalCents) / 100)} {totalCents > expectedCents ? 'de más' : 'por contar'}.
