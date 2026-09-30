@@ -2,10 +2,11 @@ import { useRef, useState, type FormEvent } from 'react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
+import { MoneyInput } from '@/shared/components/ui/MoneyInput';
 import { BankAccountCombobox } from '@/shared/components/ui/BankAccountCombobox';
 import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts';
 import { getApiErrorMessage } from '@/shared/utils/errors';
-import { validateAmountInput } from '@/shared/utils/money-input';
+import { moneyInputToNumber, validateAmountInput } from '@/shared/utils/money-input';
 import { WITHDRAWAL_METHODS, type BankCashWithdrawal, type RegisterWithdrawal, type WithdrawalMethod } from '@/modules/cash-withdrawals/types';
 import { fitsAvailable, useAccountAvailability } from '../hooks/use-account-availability';
 import { AvailabilityHint } from './AvailabilityHint';
@@ -31,7 +32,7 @@ export function RegisterWithdrawalModal({ open, onClose, onSubmit }: {
   const [busy, setBusy] = useState(false);
   const retry = useRef<{ signature: string; id: string } | null>(null);
   const availability = useAccountAvailability(bankAccountId);
-  const amount = validateAmountInput(monto) ? null : Number(monto);
+  const amount = validateAmountInput(monto) ? null : moneyInputToNumber(monto);
 
   function reset() {
     setBankAccountId(null); setForma('RETIRO_CON_TARJETA'); setMonto(''); setReferencia(''); setError('');
@@ -49,9 +50,9 @@ export function RegisterWithdrawalModal({ open, onClose, onSubmit }: {
     if (!bankAccountId) { setError('Selecciona la cuenta de la que sale el efectivo.'); return; }
     const amountError = validateAmountInput(monto, 'Captura el monto retirado.');
     if (amountError) { setError(amountError); return; }
-    if (!fitsAvailable(availability, Number(monto))) { setError('Saldo insuficiente en la cuenta.'); return; }
+    if (!fitsAvailable(availability, moneyInputToNumber(monto))) { setError('Saldo insuficiente en la cuenta.'); return; }
 
-    const data = { bankAccountId, forma, monto: Number(monto), referencia: referencia.trim() || null, comprobanteUrl: null };
+    const data = { bankAccountId, forma, monto: moneyInputToNumber(monto) ?? 0, referencia: referencia.trim() || null, comprobanteUrl: null };
     const signature = JSON.stringify(data);
     if (retry.current?.signature !== signature) retry.current = { signature, id: crypto.randomUUID() };
     setError('');
@@ -94,8 +95,7 @@ export function RegisterWithdrawalModal({ open, onClose, onSubmit }: {
           {bankAccountId ? <AvailabilityHint availability={availability} amount={amount} /> : null}
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block text-sm font-medium text-slate-700">Monto
-              <Input aria-label="Monto" inputMode="decimal" placeholder="0.00" value={monto}
-                onChange={event => setMonto(event.target.value)} className="mt-1" />
+              <MoneyInput ariaLabel="Monto" value={monto} onChange={setMonto} className="mt-1" />
             </label>
             <label className="block text-sm font-medium text-slate-700">Referencia (opcional)
               <Input aria-label="Referencia" maxLength={300} placeholder="Número de cheque, operador…" value={referencia}

@@ -2,6 +2,8 @@ import { useMemo, useRef, useState, type FormEvent } from 'react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
+import { MoneyInput } from '@/shared/components/ui/MoneyInput';
+import { moneyInputToNumber } from '@/shared/utils/money-input';
 import { BankAccountCombobox } from '@/shared/components/ui/BankAccountCombobox';
 import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts';
 import { getApiErrorMessage } from '@/shared/utils/errors';
@@ -32,7 +34,7 @@ export function BankTransferModal({ open, onClose, onSubmit }: {
 
   const destinos = useMemo(() => accounts.filter(account => account.id !== origenId), [accounts, origenId]);
   const availability = useAccountAvailability(origenId);
-  const amount = validateTransferAmount(monto) ? null : Number(monto);
+  const amount = validateTransferAmount(monto) ? null : moneyInputToNumber(monto);
 
   function reset() {
     setOrigenId(null); setDestinoId(null); setMonto(''); setReferencia(''); setError('');
@@ -56,12 +58,12 @@ export function BankTransferModal({ open, onClose, onSubmit }: {
     if (!destinoId) { setError('Selecciona la cuenta beneficiaria.'); return; }
     const amountError = validateTransferAmount(monto);
     if (amountError) { setError(amountError); return; }
-    if (!fitsAvailable(availability, Number(monto))) { setError('Saldo insuficiente en la cuenta origen.'); return; }
+    if (!fitsAvailable(availability, moneyInputToNumber(monto))) { setError('Saldo insuficiente en la cuenta origen.'); return; }
 
     const data = {
       cuentaOrigenId: origenId,
       cuentaDestinoId: destinoId,
-      monto: Number(monto),
+      monto: moneyInputToNumber(monto) ?? 0,
       referencia: referencia.trim() || null,
       comprobanteUrl: null,
     };
@@ -111,14 +113,7 @@ export function BankTransferModal({ open, onClose, onSubmit }: {
           {origenId ? <AvailabilityHint availability={availability} amount={amount} /> : null}
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block text-sm font-medium text-slate-700">Monto
-              <Input
-                aria-label="Monto"
-                inputMode="decimal"
-                placeholder="0.00"
-                value={monto}
-                onChange={event => setMonto(event.target.value)}
-                className="mt-1"
-              />
+              <MoneyInput ariaLabel="Monto" value={monto} onChange={setMonto} className="mt-1" />
             </label>
             <label className="block text-sm font-medium text-slate-700">Referencia (opcional)
               <Input
