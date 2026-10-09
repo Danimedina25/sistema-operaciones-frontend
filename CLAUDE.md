@@ -153,6 +153,7 @@ Contadores en el menú: solo donde hay trabajo (Entradas, Salidas, Comisiones de
 - **Colores con significado**: verde = entrada / validado / abrir; rojo = salida / cerrar / error; ámbar = en tránsito / pendiente; azul = activo / selección; morado = por solicitar.
 - Íconos de menú: ↓ verde para entradas, ↑ rojo para salidas.
 - **Formatos**: fecha "2 oct 2026" y "2 oct 2026, 18:55"; montos "$1,234.50" y negativos "−$1,234.50"; porcentajes "1.5%" (punto decimal); cuentas enmascaradas "BANORTE ••8998" (la CLABE completa solo en paneles de pago, con botón Copiar).
+- Todas las fechas y horas se muestran en America/Mexico_City (hora de la oficina). El 'día' de caja y cortes va de 00:00 a 23:59 en esa zona.
 - Nunca mostrar fechas ISO ni nombres internos (`updatedAt`, `CONFIRMAR_COBRO_EFECTIVO`).
 - **Tablas**: máximo 7 columnas, sin scroll horizontal, estatus y acción a la derecha, estado vacío con mensaje.
 - **Filtros**: solo el buscador visible; el resto detrás del botón "Filtros"; filtros activos como etiquetas con ×. Los valores por defecto nunca esconden pendientes.
