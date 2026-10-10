@@ -109,6 +109,7 @@ También permanecen [src/index.css](../src/index.css) y [src/App.css](../src/App
 7. **Sistema visual parcialmente compartido:** componentes base y tokens existen, pero muchas páginas repiten clases y usan modales donde el plan propone paneles laterales. Conviene consolidar piezas transversales antes de migrar pantallas.
 8. **Rutas y documentos no siempre equivalen a funcionalidad activa:** hay rutas definidas sin pantalla registrada y páginas no montadas. Confirmar uso real antes de basar navegación nueva en el nombre de un archivo.
 9. **Datos de sesión y caché:** Axios usa token persistido, React Query cachea solicitudes y notificaciones usan WebSocket. Cambiar permisos, contadores o navegación requiere invalidación y tratamiento de 401/403 coherentes.
+10. **Pendiente — zona horaria de datos existentes:** Verificar si las fechas guardadas (ej. folio 41: 05:11:49) están en hora de la oficina o en UTC. Revisar antes de rediseñar pantallas que muestran hora (caja, cortes, detalle).
 
 ## Borrador de `CLAUDE.md`
 
