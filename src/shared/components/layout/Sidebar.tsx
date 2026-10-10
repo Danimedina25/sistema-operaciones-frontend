@@ -1,271 +1,101 @@
-import { NavLink } from 'react-router-dom';
-import {
-  LayoutDashboard,
-  Gauge,
-  Users,
-  Landmark,
-  UserSquare,
-  Network,
-  ClipboardList,
-  HandCoins,
-  BadgeDollarSign,
-  LogOut,
-  Banknote,
-  BanknoteArrowDown,
-  ClipboardCheck,
-  ListTodo,
-  ListChecks,
-  Settings,
-  Clock,
-  X
-} from 'lucide-react';
-
+import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Clock3, X } from 'lucide-react';
 import { ChequeIcon } from '@/shared/components/icons/ChequeIcon';
-import { paths } from '@/routes/paths';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { cn } from '@/shared/lib/cn';
-import { formatRoles } from '@/shared/utils/role-labels';
-import { ROUTE_ACCESS } from '@/shared/constants/access-control';
-import { usePendingPaymentsCount } from '@/modules/operations/hooks/use-pending-payments-count';
-import type { RoleName } from '@/modules/auth/types/auth.types';
+import chevronDown from '@/shared/assets/navigation/49590.svg';
+import chevronUp from '@/shared/assets/navigation/519d3.svg';
+import logoutIcon from '@/shared/assets/navigation/70f01.svg';
+import cashLock from '@/shared/assets/navigation/73584.svg';
+import cashLockActive from '@/shared/assets/navigation/c2d05.svg';
+import { getNavProfile, getVisibleEntries, isNavItemActive, type NavEntry, type NavGroup, type NavItem } from './navigation';
+import { useNavigationState } from './use-navigation-state';
 
-interface NavItem {
-  to: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  allowedRoles?: readonly RoleName[];
+interface SidebarProps { isOpen: boolean; onClose: () => void }
+type Counts = ReturnType<typeof useNavigationState>['counts'];
+
+function GroupBadge({ group, counts }: { group: NavGroup; counts: Counts }) {
+  // Salidas no tiene aún un contador por solicitud. No mostramos una suma incompleta.
+  if (group.children.some(child => child.id === 'cash-returns' || child.id === 'bank-returns')) return null;
+  const badgeChildren = group.children.filter(child => child.badge);
+  if (!badgeChildren.length || badgeChildren.some(child => counts[child.badge!] === null)) return null;
+  const total = badgeChildren.reduce((sum, child) => sum + (counts[child.badge!] ?? 0), 0);
+  return total > 0 ? <Badge count={total} /> : null;
 }
 
-const navItems: NavItem[] = [
-  { to: paths.cheques, label: 'Cheques por cobrar', icon: ChequeIcon, allowedRoles: ROUTE_ACCESS.cheques },
-  {
-    to: paths.cajaGeneral,
-    label: 'Caja General',
-    icon: Banknote,
-    allowedRoles: ROUTE_ACCESS.cajaGeneral,
-  },
-  {
-    to: paths.myPending,
-    label: 'Mis pendientes',
-    icon: ListTodo,
-    allowedRoles: ROUTE_ACCESS.myPending,
-  },
-  {
-    to: paths.dashboard,
-    label: 'Dashboard',
-    icon: Gauge,
-    allowedRoles: ['GERENTE', 'DIRECCION', 'ADMIN'],
-  },
-  {
-    to: paths.teamPending,
-    label: 'Pendientes del equipo',
-    icon: ListChecks,
-    allowedRoles: ROUTE_ACCESS.teamPending,
-  },
-  {
-    to: paths.corte,
-    label: 'Cortes y saldos',
-    icon: LayoutDashboard,
-    allowedRoles: ROUTE_ACCESS.corte,
-  },
-  {
-    to: paths.users,
-    label: 'Usuarios',
-    icon: Users,
-    allowedRoles: ROUTE_ACCESS.users,
-  },
-  {
-    to: paths.bankAccounts,
-    label: 'Cuentas bancarias',
-    icon: Landmark,
-    allowedRoles: ROUTE_ACCESS.bankAccounts,
-  },
-  {
-    to: paths.clientes,
-    label: 'Clientes',
-    icon: UserSquare,
-    allowedRoles: ROUTE_ACCESS.clientes,
-  },
-  {
-    to: paths.mycomercialpartners,
-    label: 'Mi red de socios comerciales',
-    icon: Network,
-    allowedRoles: ROUTE_ACCESS.mycomercialpartners,
-  },
-  {
-    to: paths.operations,
-    label: 'Operaciones',
-    icon: ClipboardList,
-    allowedRoles: ROUTE_ACCESS.operations,
-  },
-  {
-    to: paths.returnsforrequest,
-    label: 'Retornos por solicitar',
-    icon: HandCoins,
-    allowedRoles: ROUTE_ACCESS.returnsforrequest,
-  },
-  {
-    to: paths.returnsRequested,
-    label: 'Retornos solicitados',
-    icon: ClipboardCheck,
-    allowedRoles: ROUTE_ACCESS.returnsRequested,
-  },
-  {
-    to: paths.returnsforpayment,
-    label: 'Retornos por pagar',
-    icon: BanknoteArrowDown,
-    allowedRoles: ROUTE_ACCESS.returnsforpayment,
-  },
-  {
-    to: paths.todayCashDeliveries,
-    label: 'Entregas de hoy',
-    icon: Clock,
-    allowedRoles: ROUTE_ACCESS.todayCashDeliveries,
-  },
-  {
-    to: paths.comisionessocios,
-    label: 'Pago de comisiones a socios comerciales',
-    icon: BadgeDollarSign,
-    allowedRoles: ROUTE_ACCESS.comisionessocios,
-  },
-  {
-    to: paths.miscomisiones,
-    label: 'Mis comisiones',
-    icon: BadgeDollarSign,
-    allowedRoles: ROUTE_ACCESS.miscomisiones,
-  },
-  {
-    to: paths.configuraciones,
-    label: 'Configuraciones',
-    icon: Settings,
-    allowedRoles: ROUTE_ACCESS.configuraciones,
-  },
-];
-interface SidebarProps {
-  isOpen: boolean;
-  onClose: () => void;
+function Badge({ count, active = false }: { count: number; active?: boolean }) {
+  return <span aria-hidden="true" className={cn('inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-full px-[7px] text-xs font-bold',
+    active ? 'bg-white text-brand' : 'bg-warning text-slate-950')}>{count}</span>;
 }
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
-  const { logout, user, hasRole } = useAuth();
-  const { count: pendingPaymentsCount, enabled: showPendingPaymentsBadge } =
-    usePendingPaymentsCount();
+  const { logout, user } = useAuth();
+  const location = useLocation();
+  const profile = getNavProfile(user?.roles);
+  const entries = profile ? getVisibleEntries(profile, user?.roles ?? []) : [];
+  const { counts, cashOpen, cashStateKnown } = useNavigationState(profile?.role);
+  const routeKey = `${location.pathname}${location.search}`;
+  const [groupState, setGroupState] = useState<{ routeKey: string; overrides: Record<string, boolean> }>({ routeKey: '', overrides: {} });
+  const groupOverrides = groupState.routeKey === routeKey ? groupState.overrides : {};
 
-  const visibleNavItems = navItems.filter((item) => {
-    if (!item.allowedRoles) return true;
-    return hasRole(item.allowedRoles);
-  });
+  function renderItem(item: NavItem, nested = false) {
+    const active = isNavItemActive(item, location.pathname, location.search);
+    const label = item.cashAction && cashStateKnown ? `${cashOpen ? 'Cerrar' : 'Abrir'} caja` : item.label;
+    const glyph = item.cashAction && cashOpen
+      ? (active ? cashLockActive : cashLock)
+      : (active ? item.icon.active : item.icon.normal);
+    const badge = item.badge ? counts[item.badge] : null;
+    return <Link key={item.id} to={item.to} onClick={onClose} aria-current={active ? 'page' : undefined}
+      className={cn('flex w-full items-center gap-[10px] rounded-[10px] transition-colors',
+        nested ? 'min-h-[39px] px-3 py-2 text-sm' : 'min-h-[46px] px-4 py-[13px] text-base',
+        active ? 'bg-brand font-semibold text-white shadow-brand' : nested ? 'text-[#a7b0c2] hover:bg-white/7 hover:text-white' : 'font-medium text-ink-inverse hover:bg-white/7 hover:text-white',
+        item.cashAction && !active && (cashOpen ? 'text-[#f87171]' : 'text-[#4ade80]'))}>
+      {item.id === 'cheques' ? <ChequeIcon className={cn('shrink-0', nested ? 'h-4 w-4' : 'h-5 w-5')} />
+        : item.id === 'cash-deliveries' ? <Clock3 className={cn('shrink-0', nested ? 'h-4 w-4' : 'h-5 w-5')} />
+          : <img alt="" src={glyph} className={cn('shrink-0', nested ? 'h-4 w-4' : 'h-5 w-5')} />}
+      <span className="min-w-0 flex-1">{label}</span>
+      {badge !== null && badge > 0 && <Badge count={badge} active={active} />}
+    </Link>;
+  }
 
-  return (
-    <>
-      {isOpen && (
-        <div
-          onClick={onClose}
-          aria-hidden="true"
-          className="fixed inset-0 z-30 bg-slate-950/50 lg:hidden"
-        />
-      )}
+  function renderGroup(group: NavGroup) {
+    const childActive = group.children.some(child => isNavItemActive(child, location.pathname, location.search));
+    const expanded = groupOverrides[group.id] ?? childActive;
+    return <div key={group.id}>
+      <button type="button" aria-expanded={expanded} aria-controls={`sidebar-group-${group.id}`}
+        onClick={() => setGroupState({ routeKey, overrides: { ...groupOverrides, [group.id]: !expanded } })}
+        className={cn('flex min-h-[46px] w-full items-center gap-[14px] rounded-xl px-4 py-[13px] text-left text-base font-medium text-ink-inverse hover:bg-white/7',
+          expanded && 'bg-white/7 font-semibold text-white')}>
+        <img alt="" src={expanded ? group.icon.active : group.icon.normal} className="h-5 w-5 shrink-0" />
+        <span className="min-w-0 flex-1">{group.label}</span>
+        {group.cashStatus && cashStateKnown && <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-medium', cashOpen ? 'bg-green-500/15 text-[#4ade80]' : 'bg-slate-500/20 text-slate-300')}>{cashOpen ? 'Abierta' : 'Cerrada'}</span>}
+        {!expanded && <GroupBadge group={group} counts={counts} />}
+        <img alt="" src={expanded ? chevronUp : chevronDown} className="h-[18px] w-[18px] shrink-0" />
+      </button>
+      {expanded && <div id={`sidebar-group-${group.id}`} className="ml-[26px] flex border-l-2 border-[#2a3245] pl-2.5">
+        <div className="flex min-w-0 flex-1 flex-col gap-1 py-1">{group.children.map(child => renderItem(child, true))}</div>
+      </div>}
+    </div>;
+  }
 
-      <aside
-        className={cn(
-          'fixed inset-y-0 left-0 z-40 flex h-full w-72 flex-shrink-0 flex-col border-r border-white/10 bg-slate-950 text-white transition-transform duration-200 ease-in-out',
-          'lg:static lg:translate-x-0',
-          isOpen ? 'translate-x-0' : '-translate-x-full',
-        )}
-      >
-        <div className="flex items-start justify-between gap-3 border-b border-white/10 px-6 py-6">
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-white">
-              Sistema de operaciones
-            </h1>
-
-            <p className="mt-1 text-sm text-slate-400">
-              {user ? formatRoles(user.roles) : 'Panel administrativo'}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar menú"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-slate-300 hover:bg-white/10 hover:text-white lg:hidden"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <nav className="sidebar-nav-scroll flex-1 space-y-1 overflow-y-auto p-4">
-          {visibleNavItems.map(({ to, label, icon: Icon }) => {
-            const showBadge =
-              showPendingPaymentsBadge &&
-              to === paths.operations &&
-              pendingPaymentsCount !== null &&
-              pendingPaymentsCount > 0;
-
-            return (
-              <NavLink
-                key={to}
-                to={to}
-                onClick={onClose}
-                className={({ isActive }) =>
-                  cn(
-                    'flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200',
-                    isActive
-                      ? `
-        bg-gradient-to-r
-        from-blue-600
-        to-blue-500
-        text-white
-        shadow-lg
-        shadow-blue-500/20
-      `
-                      : `
-        text-slate-300
-        hover:bg-white/10
-        hover:text-white
-      `,
-                  )
-                }
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                <span className="flex-1">{label}</span>
-                {showBadge && (
-                  <span
-                    title="Pagos pendientes de validación"
-                    className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-500 px-1.5 text-[11px] font-bold text-slate-950"
-                  >
-                    {pendingPaymentsCount}
-                  </span>
-                )}
-              </NavLink>
-            );
-          })}
-        </nav>
-
-        <div className="border-t border-white/10 p-4">
-          <button
-            onClick={logout}
-            className="
-flex
-w-full
-items-center
-gap-3
-rounded-xl
-px-4
-py-3
-text-sm
-font-medium
-text-red-400
-transition-all
-duration-200
-hover:bg-red-500/10
-hover:text-red-300
-"        >
-            <LogOut className="h-4 w-4" />
-            Cerrar sesión
-          </button>
-        </div>
-      </aside>
-    </>
-  );
+  return <>
+    {isOpen && <div onClick={onClose} aria-hidden="true" className="fixed inset-0 z-30 bg-slate-950/50 lg:hidden" />}
+    <aside className={cn('fixed inset-y-0 left-0 z-40 flex h-full w-[min(312px,90vw)] shrink-0 flex-col bg-navigation text-white transition-transform duration-200 ease-in-out lg:static lg:w-[312px] lg:translate-x-0',
+      isOpen ? 'translate-x-0' : '-translate-x-full')}>
+      <div className="flex items-start justify-between gap-2 border-b border-[#1e2435] px-7 pb-7 pt-8">
+        <div><h1 className="whitespace-nowrap text-[22px] font-bold leading-tight">Sistema de operaciones</h1>
+          <p className="mt-1.5 text-[15px] text-slate-400">{profile?.label ?? 'Panel administrativo'}</p></div>
+        <button type="button" aria-label="Cerrar menú" onClick={onClose} className="rounded-lg p-2 text-slate-300 lg:hidden"><X className="h-5 w-5" /></button>
+      </div>
+      <nav aria-label="Menú principal" className="sidebar-nav-scroll flex-1 space-y-1.5 overflow-y-auto px-4 py-6">
+        {entries.map((entry: NavEntry) => entry.kind === 'item' ? renderItem(entry) : renderGroup(entry))}
+      </nav>
+      <div className="border-t border-[#1e2435] px-8 pb-7 pt-6">
+        <button type="button" onClick={logout} className="flex items-center gap-3 text-base font-medium text-[#f87171] hover:text-red-300">
+          <img alt="" src={logoutIcon} className="h-5 w-5" />Cerrar sesión
+        </button>
+      </div>
+    </aside>
+  </>;
 }

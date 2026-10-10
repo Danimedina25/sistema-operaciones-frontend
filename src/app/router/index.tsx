@@ -64,8 +64,8 @@ export const router = createBrowserRouter([
         children: [
           { element: <RoleGuard allowedRoles={ROUTE_ACCESS.cheques} />, children: [{ path: paths.cheques, element: <ChequesPage /> }] },
           {
-            path: paths.dashboard,
-            element: <DashboardPage />,
+            element: <RoleGuard allowedRoles={ROUTE_ACCESS.dashboard} />,
+            children: [{ path: paths.dashboard, element: <DashboardPage /> }],
           },
           {
             element: <RoleGuard allowedRoles={ROUTE_ACCESS.cajaGeneral} />,

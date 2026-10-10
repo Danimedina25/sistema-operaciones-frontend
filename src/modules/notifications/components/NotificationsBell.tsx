@@ -5,24 +5,7 @@ import { useNotifications } from '@/modules/notifications/hooks/use-notification
 import { NotificationsDropdown } from '@/modules/notifications/components/NotificationsDropdown';
 import type { NotificationResponse } from '@/modules/notifications/types/notifications.types';
 import { IncomingNotificationAlert } from './IncomingNotificationAlert';
-
-function BellIcon() {
-  return (
-    <svg
-      className="h-5 w-5"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5" />
-      <path d="M9 17a3 3 0 0 0 6 0" />
-    </svg>
-  );
-}
+import bellIcon from '@/shared/assets/navigation/e7701.svg';
 
 export function NotificationsBell() {
   const navigate = useNavigate();
@@ -103,12 +86,12 @@ export function NotificationsBell() {
         aria-label={unreadCount > 0 ? `Notificaciones, ${unreadCount} sin leer` : 'Notificaciones'}
         aria-expanded={isOpen}
         onClick={() => setIsOpen((current) => !current)}
-        className={`relative rounded-xl border p-2 transition ${isOpen
+        className={`relative flex h-11 w-11 items-center justify-center rounded-xl border transition ${isOpen
           ? 'border-blue-200 bg-blue-50 text-blue-600'
           : 'border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900'
           }`}
       >
-        <BellIcon />
+        <img alt="" src={bellIcon} className="h-5 w-5" />
 
         {unreadCount > 0 ? (
           <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white ring-2 ring-white">

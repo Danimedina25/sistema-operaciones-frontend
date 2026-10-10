@@ -1,6 +1,7 @@
 import { Menu } from 'lucide-react';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { NotificationsBell } from '@/modules/notifications/components/NotificationsBell';
+import { getNavProfile } from './navigation';
 
 interface HeaderProps {
   onOpenSidebar: () => void;
@@ -8,9 +9,10 @@ interface HeaderProps {
 
 export function Header({ onOpenSidebar }: HeaderProps) {
   const { user } = useAuth();
+  const profile = getNavProfile(user?.roles);
 
   return (
-    <header className="sticky top-0 z-10 flex h-16 flex-shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 sm:px-6">
+    <header className="sticky top-0 z-10 flex h-20 flex-shrink-0 items-center justify-between gap-5 border-b border-[#e5e7eb] bg-white px-4 lg:px-10">
       <div className="flex min-w-0 items-center gap-3">
         <button
           type="button"
@@ -21,19 +23,19 @@ export function Header({ onOpenSidebar }: HeaderProps) {
           <Menu className="h-5 w-5" />
         </button>
 
-        <h2 className="truncate text-base font-semibold text-slate-900 sm:text-lg">
-          Panel administrativo
+        <h2 className="truncate text-lg font-semibold text-ink sm:text-xl">
+          {profile?.headerTitle ?? 'Panel administrativo'}
         </h2>
       </div>
 
-      <div className="flex shrink-0 items-center gap-2 sm:gap-4">
+      <div className="flex shrink-0 items-center gap-3 sm:gap-5">
         <NotificationsBell />
 
         <div className="hidden text-right sm:block">
-          <p className="text-sm font-semibold text-slate-900">
-            {user?.nombre ?? 'Usuario'}
+          <p className="text-base font-semibold text-ink">
+            {user?.nombre ?? profile?.label ?? 'Usuario'}
           </p>
-          <p className="text-xs text-slate-500">{user?.correo ?? ''}</p>
+          <p className="text-sm text-ink-muted">{user?.correo ?? ''}</p>
         </div>
       </div>
     </header>
