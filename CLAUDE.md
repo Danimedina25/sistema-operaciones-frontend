@@ -57,28 +57,31 @@ El flujo del dinero es:
 
 El backend valida los permisos en cada petición. El frontend solo muestra u oculta botones según esos mismos permisos.
 
-| Acción | Socio | J. Cajas | J. Cuentas | Gerente | Director |
-| --- | --- | --- | --- | --- | --- |
-| Crear operación | Sí | — | — | — | — |
-| Registrar pagos de ingreso faltantes | Sí | — | — | — | — |
-| Solicitar retorno | Sí | — | — | — | — |
-| Confirmar que el cliente recibió efectivo | Sí | — | — | — | — |
-| Validar pagos en efectivo y cheque | — | Sí | — | — | — |
-| Abrir / cerrar caja, entregar efectivo | — | Sí | — | — | — |
-| Enviar efectivo de Caja a una cuenta | — | Sí | — | — | — |
-| Confirmar retiros de cuentas a Caja | — | Sí | — | — | — |
-| Validar pagos bancarios | — | — | Sí | — | — |
-| Pagar retornos por transferencia | — | — | Sí | — | — |
-| Retirar a Caja General, transferir entre cuentas | — | — | Sí | — | — |
-| Confirmar envíos de Caja a cuentas | — | — | Sí | — | — |
-| Pagar comisiones | — | — | — | Sí | — |
-| Eliminar operación (solo pendiente de validación) | — | — | — | Sí | — |
-| Catálogos (clientes, socios N2/N3, cuentas) | Su red | — | Cuentas | Sí | Consulta |
-| Usuarios | — | — | — | Editar, desactivar | Crear, editar, desactivar, eliminar |
-| Configuración | — | — | — | Sí | Sí |
-| Reportes y bitácora | — | — | — | — | Sí |
+| Acción | Socio | J. Cajas | J. Cuentas | Aux. Cuentas | Gerente | Director |
+| --- | --- | --- | --- | --- | --- | --- |
+| Crear operación | Sí | — | — | — | — | — |
+| Registrar pagos de ingreso faltantes | Sí | — | — | — | — | — |
+| Solicitar retorno | Sí | — | — | — | — | — |
+| Confirmar que el cliente recibió efectivo | Sí | — | — | — | — | — |
+| Validar pagos en efectivo y cheque | — | Sí | — | — | — | — |
+| Abrir / cerrar caja, entregar efectivo | — | Sí | — | — | — | — |
+| Enviar efectivo de Caja a una cuenta | — | Sí | — | — | — | — |
+| Confirmar retiros de cuentas a Caja | — | Sí | — | — | — | — |
+| Validar pagos bancarios | — | — | Sí | Sí | — | — |
+| Pagar retornos por transferencia | — | — | Sí | Sí | — | — |
+| Retirar a Caja General, transferir entre cuentas | — | — | Sí | — | — | — |
+| Confirmar envíos de Caja a cuentas | — | — | Sí | — | — | — |
+| Pagar comisiones | — | — | — | — | Sí | — |
+| Regenerar comisiones | — | — | — | — | Sí | — |
+| Eliminar operación (solo pendiente de validación) | — | — | — | — | Sí | — |
+| Catálogos (clientes, socios N2/N3, cuentas) | Su red | — | Cuentas | — | Sí | Consulta |
+| Usuarios | — | — | — | — | Editar, desactivar | Crear, editar, desactivar, eliminar |
+| Configuración | — | — | — | — | Sí | Sí |
+| Reportes y bitácora | — | — | — | — | — | Sí |
 
-- La Auxiliar de Cuentas comparte pendientes y pantallas con la Jefa de Cuentas (confirmar permisos exactos).
+Administrador (ADMIN): superusuario técnico para soporte. Puede hacer todas las acciones, pero no aparece en los flujos de negocio y TODA acción suya se registra en la bitácora.
+
+- La Auxiliar de Cuentas comparte pendientes y pantallas con la Jefa de Cuentas, con las acciones limitadas a la tabla.
 - **Modo consulta**: misma pantalla, sin botones de acción, con la etiqueta "Solo consulta" junto al título y textos neutros (nunca "tu confirmación", "ciérrala").
 - Los socios de **nivel 1** son usuarios del sistema (Administración › Usuarios). Catálogos › Socios comerciales muestra solo **nivel 2 y 3**.
 
