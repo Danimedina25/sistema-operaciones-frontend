@@ -1,5 +1,44 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: "Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif;
+
+  --color-canvas: #f5f7fa;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #f8fafc;
+  --color-navigation: #050816;
+  --color-border-design: #e6e9ef;
+  --color-border-strong: #d9dee7;
+  --color-ink: #0f172a;
+  --color-ink-muted: #64748b;
+  --color-ink-inverse: #e2e8f0;
+  --color-brand: #3b6ef5;
+  --color-brand-soft: #eef3ff;
+  --color-brand-strong: #1e40af;
+  --color-success: #15803d;
+  --color-success-strong: #166534;
+  --color-success-soft: #dcfce7;
+  --color-danger: #dc2626;
+  --color-danger-strong: #b91c1c;
+  --color-danger-soft: #fee2e2;
+  --color-warning: #f59e0b;
+  --color-warning-soft: #fef3c7;
+  --color-request: #6d28d9;
+  --color-request-soft: #ede9fe;
+
+  --radius-control: 12px;
+  --radius-card: 16px;
+  --radius-compact: 8px;
+  --radius-pill: 999px;
+
+  --shadow-card: 0 2px 8px rgba(15, 23, 41, 0.05);
+  --shadow-brand: 0 4px 14px rgba(59, 110, 245, 0.35);
+  --shadow-drawer: -8px 0 32px rgba(0, 0, 0, 0.2);
+
+  --text-page-title: 26px;
+  --text-page-title--line-height: 1.2;
+}
+
 :root {
   color-scheme: light;
 }
@@ -11,7 +50,7 @@ body,
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  @apply bg-canvas font-sans text-ink antialiased;
 }
 
 button {
@@ -45,8 +84,8 @@ main textarea:focus,
 .modal-content input:not([type='checkbox']):not([type='radio']):not([type='file']):focus,
 .modal-content select:focus,
 .modal-content textarea:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 4px rgb(59 130 246 / 0.1);
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 4px rgb(59 110 245 / 0.1);
   outline: none;
 }
 

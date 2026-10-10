@@ -694,7 +694,7 @@ export function RealizeReturnPaymentForm({
                 />
             </div>
 
-            <Button
+            <Button variant="primary"
                 type="submit"
                 isLoading={isSubmitting}
                 className="w-full justify-center"

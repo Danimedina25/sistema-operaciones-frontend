@@ -244,7 +244,7 @@ export function CreateUserForm({
       )}
 
       <div className="flex justify-end border-t border-slate-200 pt-4">
-        <Button
+        <Button variant="primary"
           type="submit"
           isLoading={isSubmitting}
         >

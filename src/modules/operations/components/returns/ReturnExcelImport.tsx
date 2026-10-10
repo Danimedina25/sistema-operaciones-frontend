@@ -43,8 +43,8 @@ export function ReturnExcelImport({ onImport, disabled, currentTotal, available 
   }
   return <section className="space-y-3 rounded-xl border border-slate-200 p-4" aria-label="Importación de retornos">
     <div className="flex flex-wrap gap-3">
-      <Button type="button" disabled={disabled || busy} onClick={() => input.current?.click()}>Importar desde Excel</Button>
-      <Button type="button" disabled={disabled || busy} onClick={download}>Descargar plantilla</Button>
+      <Button variant="neutral" type="button" disabled={disabled || busy} onClick={() => input.current?.click()}>Importar desde Excel</Button>
+      <Button variant="neutral" type="button" disabled={disabled || busy} onClick={download}>Descargar plantilla</Button>
     </div>
     <input ref={input} type="file" accept=".xlsx" aria-label="Archivo Excel de retornos" className="sr-only" disabled={disabled || busy} onChange={e => void load(e.target.files?.[0])} />
     <p className="text-xs text-slate-500">Excel .xlsx, hasta 5 MB y 1,000 filas. Guarda cuenta, tarjeta y CLABE como texto. Importar no registra los retornos.</p>
@@ -78,11 +78,11 @@ export function ReturnExcelImport({ onImport, disabled, currentTotal, available 
         {preview.payments.flatMap(p => Object.entries(p.issues).map(([field, message]) => <li key={`${p.row}-${field}`}>Fila {p.row} · {FIELDS[field as Field][0]}: {message}</li>))}
       </ul>
       <div className="flex gap-3">
-        <Button type="button" disabled={disabled || busy || duplicateMapping || !preview.payments.length || !Object.keys(mapping).length} onClick={() => {
+        <Button variant="primary" type="button" disabled={disabled || busy || duplicateMapping || !preview.payments.length || !Object.keys(mapping).length} onClick={() => {
           if (applied.current) return;
           applied.current = true; onImport(preview.payments, sheet.name); setSheets([]);
         }}>Prellenar retornos</Button>
-        <Button type="button" onClick={() => setSheets([])}>Cancelar importación</Button>
+        <Button variant="neutral" type="button" onClick={() => setSheets([])}>Cancelar importación</Button>
       </div>
     </div>}
   </section>;

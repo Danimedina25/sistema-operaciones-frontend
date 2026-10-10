@@ -110,7 +110,7 @@ export function RegisterWithdrawalModal({ open, onClose, onSubmit }: {
             <button type="button" onClick={close} className="h-11 rounded-xl px-5 text-sm font-semibold text-slate-600 hover:bg-slate-100">
               Cancelar
             </button>
-            <Button type="submit" isLoading={busy}>Registrar retiro</Button>
+            <Button variant="primary" type="submit" isLoading={busy}>Registrar retiro</Button>
           </div>
         </fieldset>
         {error && <p role="alert" className="text-sm text-red-600">{error}</p>}

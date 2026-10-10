@@ -88,7 +88,7 @@ export function ClienteForm({
       </label>
 
       <div className="flex justify-end pt-2">
-        <Button type="submit" isLoading={isSubmitting}>
+        <Button variant="primary" type="submit" isLoading={isSubmitting}>
           {submitLabel}
         </Button>
       </div>

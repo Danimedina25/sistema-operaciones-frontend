@@ -95,7 +95,7 @@ export function CashDayForm(props: Props) {
         <p className="text-sm text-slate-600">Al cerrar se conserva el conteo y ya no se podrán registrar movimientos en este día.</p>
         {props.day.fecha !== fecha && <p className={noteWarning}>Esta caja quedó abierta del <strong>{formatCashDate(props.day.fecha)}</strong>. Desde entonces no se le pudo capturar ningún movimiento, así que el efectivo no debería haber cambiado. Ciérrala para poder abrir la de hoy.</p>}
       </>}
-      <Button disabled={props.busy || changed} className="w-full">{props.busy ? 'Guardando…' : props.mode === 'open' ? 'Abrir caja' : 'Cerrar caja con este conteo'}</Button>
+      <Button variant={props.mode === 'open' ? 'success' : 'destructive'} disabled={props.busy || changed} className="w-full">{props.busy ? 'Guardando…' : props.mode === 'open' ? 'Abrir caja' : 'Cerrar caja con este conteo'}</Button>
     </fieldset>
     {changed && <p role="alert" className="text-sm text-amber-700">La caja cambió durante el conteo. Vuelve a la pestaña de movimientos y abre nuevamente el cierre para revisar el saldo actualizado.</p>}
     {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
@@ -110,7 +110,7 @@ export function CashDayForm(props: Props) {
         {changed && <p role="alert" className="text-sm text-amber-700">La caja cambió durante el conteo. Vuelve para revisar el saldo actualizado.</p>}
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <button type="button" autoFocus onClick={() => setConfirmZero(false)} className={secondaryButton}>Volver a capturar</button>
-          <Button type="button" disabled={props.busy || changed} onClick={() => void save(true)}>Sí, registrar $0.00</Button>
+          <Button variant={props.mode === 'open' ? 'success' : 'destructive'} type="button" disabled={props.busy || changed} onClick={() => void save(true)}>Sí, registrar $0.00</Button>
         </div>
       </div>
     </Modal>

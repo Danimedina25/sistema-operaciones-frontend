@@ -563,7 +563,7 @@ export function EditReturnPaymentForm({
                 onRemoveExisting={() => setArchivoNominaUrl(null)}
             />
 
-            <Button
+            <Button variant="primary"
                 type="submit"
                 isLoading={isSubmitting}
                 className="w-full justify-center"

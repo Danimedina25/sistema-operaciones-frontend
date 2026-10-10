@@ -55,7 +55,7 @@ export function ReasonModal({ open, title, description, confirmLabel, onClose, o
         {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
         <div className="flex justify-end gap-3 border-t border-slate-200 pt-4">
           <button type="button" onClick={close} className="h-11 rounded-xl px-5 text-sm font-semibold text-slate-600 hover:bg-slate-100">Volver</button>
-          <Button type="submit" isLoading={busy} className="bg-red-600 hover:bg-red-700">{confirmLabel}</Button>
+          <Button variant="destructive" type="submit" isLoading={busy} className="bg-red-600 hover:bg-red-700">{confirmLabel}</Button>
         </div>
       </form>
     </Modal>

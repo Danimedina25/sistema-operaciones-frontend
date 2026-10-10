@@ -354,7 +354,7 @@ export function RegisterInstallmentForm({
         />
       </div>
 
-      <Button type="submit" isLoading={isSubmitting} className="w-full justify-center">
+      <Button variant="primary" type="submit" isLoading={isSubmitting} className="w-full justify-center">
         {resolveInstallmentSubmitLabel({ totals, importe, esEfectivo })}
       </Button>
     </form>

@@ -78,7 +78,7 @@ export function ConfirmWithdrawalModal({ withdrawal, onClose, onConfirm }: {
           {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
           <div className="flex justify-end gap-3 border-t border-slate-200 pt-4">
             <button type="button" onClick={close} className="h-11 rounded-xl px-5 text-sm font-semibold text-slate-600 hover:bg-slate-100">Volver</button>
-            <Button type="submit" isLoading={busy} disabled={!matches} className="bg-emerald-600 hover:bg-emerald-700">Confirmar entrada a caja</Button>
+            <Button variant="success" type="submit" isLoading={busy} disabled={!matches} className="bg-emerald-600 hover:bg-emerald-700">Confirmar entrada a caja</Button>
           </div>
         </form>
       ) : null}

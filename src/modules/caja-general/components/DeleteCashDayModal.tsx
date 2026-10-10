@@ -39,7 +39,7 @@ export function DeleteCashDayModal({ day, movementCount, isSubmitting, onClose, 
       </label>
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <button type="button" onClick={onClose} disabled={isSubmitting} className={secondaryButton}>Cancelar</button>
-        <Button type="button" disabled={!canDelete} onClick={() => void onConfirm(reason.trim())} className="bg-red-700 hover:bg-red-800">{isSubmitting ? 'Eliminando…' : 'Eliminar corte definitivamente'}</Button>
+        <Button variant="destructive" type="button" disabled={!canDelete} onClick={() => void onConfirm(reason.trim())} className="bg-red-700 hover:bg-red-800">{isSubmitting ? 'Eliminando…' : 'Eliminar corte definitivamente'}</Button>
       </div>
     </div> : null}
   </Modal>;

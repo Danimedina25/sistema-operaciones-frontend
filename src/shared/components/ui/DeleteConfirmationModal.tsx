@@ -92,7 +92,7 @@ export function DeleteConfirmationModal({
             Cancelar
           </button>
 
-          <Button
+          <Button variant="destructive"
             type="button"
             isLoading={isSubmitting}
             disabled={!canConfirm}

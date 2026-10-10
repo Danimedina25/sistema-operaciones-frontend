@@ -101,7 +101,7 @@ export default function ChequesPage() {
         </div>
 
         <div className="mt-4 flex justify-end">
-          <Button type="submit">Filtrar</Button>
+          <Button variant="neutral" type="submit">Filtrar</Button>
         </div>
       </form>
     </TableFilterSection>

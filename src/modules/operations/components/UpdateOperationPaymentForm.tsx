@@ -629,7 +629,7 @@ export function UpdateOperationPaymentForm({
       </div>
 
       <div className="sticky bottom-0 z-20 -mx-4 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0">
-        <Button
+        <Button variant="primary"
           type="submit"
           isLoading={isSubmitting}
           disabled={excedeSaldoDisponible}

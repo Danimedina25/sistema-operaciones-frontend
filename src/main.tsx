@@ -9,6 +9,7 @@ import {
 
 import { AppProviders } from '@/app/providers/AppProviders';
 
+import '@fontsource-variable/inter/wght.css';
 import '@/styles/index.css';
 
 const queryClient = new QueryClient();

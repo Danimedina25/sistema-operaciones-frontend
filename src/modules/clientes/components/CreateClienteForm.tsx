@@ -63,7 +63,7 @@ export function CreateClienteForm({
       </div>
 
       <div className="flex justify-end">
-        <Button type="submit" isLoading={isSubmitting}>
+        <Button variant="primary" type="submit" isLoading={isSubmitting}>
           Crear cliente
         </Button>
       </div>

@@ -190,7 +190,7 @@ export default function LoginPage() {
                   </a>
                 </div>
 
-                <Button
+                <Button variant="primary"
                   type="submit"
                   className="h-12 w-full rounded-2xl bg-slate-950 font-semibold shadow-lg shadow-slate-950/20 transition hover:-translate-y-0.5 hover:bg-slate-800"
                   isLoading={isSubmitting}

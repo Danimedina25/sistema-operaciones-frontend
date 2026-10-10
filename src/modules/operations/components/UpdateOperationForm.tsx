@@ -558,7 +558,7 @@ export function UpdateOperationForm({
       </div>
 
       <div className="sticky bottom-0 z-30 -mx-4 border-t border-slate-200 bg-white/95 px-4 py-3 shadow-[0_-8px_20px_rgba(15,23,42,0.08)] backdrop-blur sm:-mx-7 sm:px-7">
-        <Button
+        <Button variant="primary"
           type="submit"
           isLoading={isSubmitting}
           className="w-full justify-center"

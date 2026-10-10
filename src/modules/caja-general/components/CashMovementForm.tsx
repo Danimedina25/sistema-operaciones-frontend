@@ -64,7 +64,7 @@ export function CashMovementForm({ direction, day, busy, onSubmit }: {
       <DenominationFields value={counts} onChange={setCounts} />
 
       <div className="flex justify-end border-t border-slate-200 pt-4">
-        <Button disabled={busy || !Number.isFinite(totalCents) || totalCents <= 0}
+        <Button variant={incoming ? 'success' : 'destructive'} disabled={busy || !Number.isFinite(totalCents) || totalCents <= 0}
           className={incoming ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'}>
           {busy ? 'Guardando…' : `Registrar ${incoming ? 'entrada' : 'salida'}`}
         </Button>

@@ -135,9 +135,9 @@ async function openDeleteModal() {
 
 async function confirmDeletion() {
   await userEvent.type(screen.getByRole('textbox'), 'ELIMINAR');
-  const [confirm] = screen
-    .getAllByRole('button', { name: 'Eliminar definitivamente' })
-    .filter((button) => button.className.includes('bg-red-700'));
+  const confirm = within(screen.getByRole('dialog')).getByRole('button', {
+    name: 'Eliminar definitivamente',
+  });
   await userEvent.click(confirm);
   return confirm;
 }

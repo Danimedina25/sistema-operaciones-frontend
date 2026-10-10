@@ -342,7 +342,7 @@ export function CreateOperationForm({
           </div>
 
           <div className="col-span-3 mt-1 flex md:col-span-1 md:mt-0 md:justify-end">
-            <Button
+            <Button variant="primary"
               type="submit"
               isLoading={isSubmitting}
               disabled={

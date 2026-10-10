@@ -611,7 +611,7 @@ export function AddReturnPaymentForm({
       </div>
 
       <div className="w-full">
-        <Button
+        <Button variant="primary"
           type="submit"
           isLoading={isSubmitting}
           disabled={excedeSaldoPendiente}

@@ -814,7 +814,7 @@ export function RequestReturnForm({
           </button>
       }
 
-      <Button
+      <Button variant="primary"
         type="submit"
         isLoading={isSubmitting}
         disabled={excedeMonto || totalSolicitado <= 0}

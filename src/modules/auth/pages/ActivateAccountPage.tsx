@@ -113,7 +113,7 @@ export default function ActivateAccountPage() {
                 />
               </div>
 
-              <Button type="submit" className="w-full" isLoading={isSubmitting}>
+              <Button variant="primary" type="submit" className="w-full" isLoading={isSubmitting}>
                 Activar cuenta
               </Button>
             </form>
