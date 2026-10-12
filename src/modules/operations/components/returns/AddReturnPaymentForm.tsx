@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Input } from '@/shared/components/ui/Input';
 import { Button } from '@/shared/components/ui/Button';
+import { ActionDrawerFooter } from '@/shared/components/ui/ActionDrawer';
+import { FileUploadField } from './FileUploadField';
 
 interface SelectOption {
   id: number;
@@ -55,12 +57,6 @@ function formatCurrencyDisplay(value: number) {
   });
 }
 
-function isImageFile(file?: File | null) {
-  if (!file) return false;
-
-  return file.type.startsWith('image/');
-}
-
 export function AddReturnPaymentForm({
   isSubmitting,
   bankAccounts,
@@ -68,6 +64,7 @@ export function AddReturnPaymentForm({
   saldoPendiente,
   onSubmit,
 }: AddReturnPaymentFormProps) {
+  const formId = useId();
   const {
     register,
     handleSubmit,
@@ -86,8 +83,6 @@ export function AddReturnPaymentForm({
     mode: 'onChange',
   });
 
-  const [isDragging, setIsDragging] = useState(false);
-
   const montoRaw = useWatch({
     control,
     name: 'monto',
@@ -98,27 +93,14 @@ export function AddReturnPaymentForm({
     name: 'tipoPago',
   });
 
-  const comprobante = useWatch({
-    control,
-    name: 'comprobante',
-  });
-
   const isCash = tipoPago === 'EFECTIVO';
 
   const montoCapturado = parseCurrency(montoRaw);
   const excedeSaldoPendiente = montoCapturado > saldoPendiente;
   const excedente = excedeSaldoPendiente ? montoCapturado - saldoPendiente : 0;
   const faltanteDespuesDelRetorno = Math.max(saldoPendiente - montoCapturado, 0);
-  const [selectedPreviewUrl, setSelectedPreviewUrl] =
-    useState<string | null>(null);
-
   const [accountSearch, setAccountSearch] = useState('');
   const [showAccountOptions, setShowAccountOptions] = useState(false);
-  const cuentaOrigenId = useWatch({
-    control,
-    name: 'cuentaOrigenId',
-  });
-
   const filteredAccounts = useMemo(() => {
     const search = accountSearch.trim().toLowerCase();
 
@@ -130,37 +112,6 @@ export function AddReturnPaymentForm({
   }, [bankAccounts, accountSearch]);
 
 
-
-  const selectedFile =
-    comprobante instanceof FileList &&
-      comprobante.length > 0
-      ? comprobante[0]
-      : null;
-
-  const selectedReceiptIsImage =
-    isImageFile(selectedFile);
-
-  useEffect(() => {
-    if (
-      !selectedFile ||
-      !selectedReceiptIsImage
-    ) {
-      setSelectedPreviewUrl(null);
-      return;
-    }
-
-    const objectUrl =
-      URL.createObjectURL(selectedFile);
-
-    setSelectedPreviewUrl(objectUrl);
-
-    return () => {
-      URL.revokeObjectURL(objectUrl);
-    };
-  }, [
-    selectedFile,
-    selectedReceiptIsImage,
-  ]);
 
   const montoErrorMessage = useMemo(() => {
     if (errors.monto?.message) return errors.monto.message;
@@ -174,14 +125,8 @@ export function AddReturnPaymentForm({
     return undefined;
   }, [errors.monto?.message, excedeSaldoPendiente, saldoPendiente]);
 
-  function buildFileList(file: File): FileList {
-    const dataTransfer = new DataTransfer();
-    dataTransfer.items.add(file);
-    return dataTransfer.files;
-  }
-
   return (
-    <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+    <form id={formId} className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
       <div className="grid gap-3 rounded-xl bg-slate-50 p-4 text-sm md:grid-cols-3">
         <div>
           <span className="block text-slate-500">Monto total a devolver</span>
@@ -442,150 +387,9 @@ export function AddReturnPaymentForm({
                     : 'El comprobante es obligatorio';
                 },
               }}
-              render={({ field }) => (
-                <>
-                  {selectedFile ? (
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="flex items-start gap-4">
-                        <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
-                          {selectedPreviewUrl ? (
-                            <img
-                              src={selectedPreviewUrl}
-                              alt="Comprobante"
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <div className="px-2 text-center text-xs text-slate-500">
-                              PDF
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-slate-900">
-                            Comprobante seleccionado
-                          </p>
-
-                          <p className="mt-1 break-all text-xs text-slate-500">
-                            {selectedFile.name}
-                          </p>
-
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            {selectedPreviewUrl && (
-                              <a
-                                href={selectedPreviewUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="
-                    inline-flex
-                    items-center
-                    rounded-lg
-                    border
-                    border-slate-200
-                    bg-white
-                    px-3
-                    py-2
-                    text-xs
-                    font-medium
-                    text-slate-700
-                    hover:bg-slate-50
-                  "
-                              >
-                                Ver imagen
-                              </a>
-                            )}
-
-                            <label
-                              className="
-                  inline-flex
-                  cursor-pointer
-                  items-center
-                  rounded-lg
-                  bg-slate-900
-                  px-3
-                  py-2
-                  text-xs
-                  font-semibold
-                  text-white
-                  hover:bg-slate-800
-                "
-                            >
-                              Cambiar comprobante
-
-                              <input
-                                type="file"
-                                accept=".pdf,.jpg,.jpeg,.png,.webp"
-                                className="hidden"
-                                onChange={(event) => {
-                                  field.onChange(
-                                    event.target.files ?? undefined,
-                                  );
-
-                                  event.target.value = '';
-                                }}
-                              />
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <label
-                      onDragOver={(event) => {
-                        event.preventDefault();
-                        setIsDragging(true);
-                      }}
-                      onDragLeave={(event) => {
-                        event.preventDefault();
-                        setIsDragging(false);
-                      }}
-                      onDrop={(event) => {
-                        event.preventDefault();
-                        setIsDragging(false);
-
-                        const file =
-                          event.dataTransfer.files?.[0];
-
-                        if (!file) return;
-
-                        const fileList =
-                          buildFileList(file);
-
-                        field.onChange(fileList);
-                      }}
-                      className={`flex min-h-[170px] w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-6 text-center transition ${isDragging
-                        ? 'border-slate-900 bg-slate-50'
-                        : 'border-slate-300 bg-white hover:border-slate-400'
-                        }`}
-                    >
-                      <input
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png,.webp"
-                        className="hidden"
-                        onChange={(event) => {
-                          field.onChange(
-                            event.target.files ?? undefined,
-                          );
-
-                          event.target.value = '';
-                        }}
-                      />
-
-                      <p className="text-sm font-medium text-slate-700">
-                        Arrastra y suelta el comprobante aquí
-                      </p>
-
-                      <p className="mt-1 text-xs text-slate-500">
-                        o haz clic para seleccionar un archivo
-                      </p>
-
-                      <p className="mt-2 text-xs text-slate-400">
-                        PDF, JPG, JPEG, PNG o WEBP
-                      </p>
-                    </label>
-                  )}
-                </>
-              )}
+              render={({ field }) => <FileUploadField value={field.value} onChange={field.onChange}
+                inputId="comprobante-retorno" selectedLabel="Comprobante seleccionado"
+                dropHint="Arrastra o sube el comprobante" />}
             />
 
             {errors.comprobante ? (
@@ -610,9 +414,10 @@ export function AddReturnPaymentForm({
         </div>
       </div>
 
+      <ActionDrawerFooter>
       <div className="w-full">
         <Button variant="primary"
-          type="submit"
+          type="submit" form={formId}
           isLoading={isSubmitting}
           disabled={excedeSaldoPendiente}
           className="w-full justify-center"
@@ -620,6 +425,7 @@ export function AddReturnPaymentForm({
           Registrar retorno
         </Button>
       </div>
+      </ActionDrawerFooter>
     </form>
   );
 }

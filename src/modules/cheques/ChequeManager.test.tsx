@@ -22,7 +22,7 @@ describe('shared cheque manager', () => {
     await screen.findByRole('option', { name: /Empresa — Bajío/ });
     fireEvent.change(screen.getByLabelText('Cuenta bancaria'), { target: { value: '8' } });
     await userEvent.upload(screen.getByLabelText(/Comprobante/), new File(['proof'], 'proof.pdf', { type: 'application/pdf' }));
-    const form = screen.getByRole('button', { name: 'Confirmar acción' }).closest('form')!;
+    const form = (screen.getByRole('button', { name: 'Confirmar acción' }) as HTMLButtonElement).form!;
     // jsdom file validity does not track user-event's uploaded FileList.
     fireEvent.submit(form);
     await screen.findByRole('alert');
@@ -44,7 +44,7 @@ describe('shared cheque manager', () => {
     expect(screen.queryByRole('option', { name: 'Confirmar efectivo recibido' })).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText(/Acción/), { target: { value: 'ASIGNAR_COBRO_EFECTIVO' } });
     fireEvent.change(screen.getByLabelText(/Fecha efectiva/), { target: { value: '2026-09-20' } });
-    fireEvent.submit(screen.getByRole('button', { name: 'Confirmar acción' }).closest('form')!);
+    fireEvent.submit((screen.getByRole('button', { name: 'Confirmar acción' }) as HTMLButtonElement).form!);
     await waitFor(() => expect(mocks.command).toHaveBeenCalledTimes(1));
     expect(mocks.command.mock.calls[0][1]).toMatchObject({ accion: 'ASIGNAR_COBRO_EFECTIVO', version: 1 });
     expect(mocks.upload).not.toHaveBeenCalled();

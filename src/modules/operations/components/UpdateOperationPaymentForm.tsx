@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Input } from '@/shared/components/ui/Input';
 import { Button } from '@/shared/components/ui/Button';
+import { ActionDrawerFooter } from '@/shared/components/ui/ActionDrawer';
+import { FileUploadField } from './returns/FileUploadField';
 import { BankCombobox } from '@/shared/components/ui/BankCombobox';
 import { formatDate } from '@/shared/utils/weeks';
 import { PaymentOperationResponse, OperationPaymentResponse } from '../types/operations.types.ts';
@@ -85,12 +87,6 @@ function isImageUrl(url?: string | null) {
   return /\.(jpg|jpeg|png|webp|gif)$/i.test(url.split('?')[0]);
 }
 
-function isImageFile(file?: File | null) {
-  if (!file) return false;
-
-  return file.type.startsWith('image/');
-}
-
 export function UpdateOperationPaymentForm({
   isSubmitting,
   bankAccounts,
@@ -98,6 +94,7 @@ export function UpdateOperationPaymentForm({
   payment,
   onSubmit,
 }: UpdateOperationPaymentFormProps) {
+  const formId = useId();
   const {
     register,
     handleSubmit,
@@ -124,13 +121,6 @@ export function UpdateOperationPaymentForm({
     control,
     name: 'monto',
   });
-
-  const comprobante = useWatch({
-    control,
-    name: 'comprobante',
-  });
-
-  const [selectedPreviewUrl, setSelectedPreviewUrl] = useState<string | null>(null);
 
   const [accountSearch, setAccountSearch] = useState('');
   const [showAccountOptions, setShowAccountOptions] = useState(false);
@@ -162,27 +152,7 @@ export function UpdateOperationPaymentForm({
     }
   }, [cuentaDestinoId, bankAccounts]);
 
-  const selectedFile =
-    comprobante?.length
-      ? comprobante[0]
-      : null;
-
   const currentReceiptIsImage = isImageUrl(payment.comprobanteUrl);
-  const selectedReceiptIsImage = isImageFile(selectedFile);
-
-  useEffect(() => {
-    if (!selectedFile || !selectedReceiptIsImage) {
-      setSelectedPreviewUrl(null);
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(selectedFile);
-    setSelectedPreviewUrl(objectUrl);
-
-    return () => {
-      URL.revokeObjectURL(objectUrl);
-    };
-  }, [selectedFile, selectedReceiptIsImage]);
 
   const tipoPago = useWatch({
     control,
@@ -253,7 +223,7 @@ export function UpdateOperationPaymentForm({
   };
 
   return (
-    <form className="space-y-6" onSubmit={handleSubmit(handleSubmitForm)}>
+    <form id={formId} className="space-y-6" onSubmit={handleSubmit(handleSubmitForm)}>
       <input type="hidden" {...register('cuentaDestinoId', {
         validate: (value, values) => !['TRANSFERENCIA', 'DEPOSITO'].includes(values.tipoPago)
           || (Number.isInteger(Number(value)) && Number(value) > 0)
@@ -504,106 +474,22 @@ export function UpdateOperationPaymentForm({
                     : 'El comprobante es obligatorio';
                 },
               }}
-              render={({ field }) => (
-                <>
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-                      <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
-                        {selectedPreviewUrl ? (
-                          <img
-                            src={selectedPreviewUrl}
-                            alt="Nuevo comprobante"
-                            className="h-full w-full object-cover"
-                          />
-                        ) : currentReceiptIsImage ? (
-                          <img
-                            src={`${payment.comprobanteUrl}?t=${payment.updatedAt ?? Date.now()}`}
-                            alt="Comprobante actual"
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <div className="px-2 text-center text-xs text-slate-500">
-                            PDF
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-slate-900">
-                          {selectedFile
-                            ? 'Nuevo comprobante seleccionado'
-                            : 'Comprobante actual'}
-                        </p>
-
-                        <p className="mt-1 break-all text-xs text-slate-500">
-                          {selectedFile
-                            ? selectedFile.name
-                            : 'Comprobante guardado'}
-                        </p>
-
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          <a
-                            href={
-                              selectedPreviewUrl ??
-                              `${payment.comprobanteUrl}?t=${payment.updatedAt ?? Date.now()}`
-                            }
-                            target="_blank"
-                            rel="noreferrer"
-                            className="
-    inline-flex
-    h-9
-    items-center
-    justify-center
-    rounded-lg
-    border
-    border-slate-300
-    bg-white
-    px-4
-    text-xs
-    font-medium
-    text-slate-700
-    shadow-sm
-    transition
-    hover:bg-slate-50
-  "
-                          >
-                            Ver comprobante
-                          </a>
-
-                          <label
-                            className="
-                            inline-flex
-                            cursor-pointer
-                            items-center
-                            rounded-lg
-                            bg-slate-900
-                            px-3
-                            py-2
-                            text-xs
-                            font-semibold
-                            text-white
-                            hover:bg-slate-800
-                          "
-                          >
-                            Cambiar comprobante
-
-                            <input
-                              type="file"
-                              accept=".pdf,.jpg,.jpeg,.png,.webp"
-                              className="hidden"
-                              onChange={(event) => {
-                                field.onChange(
-                                  event.target.files ?? undefined,
-                                );
-                              }}
-                            />
-                          </label>
-                        </div>
-                      </div>
+              render={({ field }) => <div className="space-y-3">
+                {payment.comprobanteUrl && !field.value?.length && (
+                  <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    {currentReceiptIsImage && <img src={payment.comprobanteUrl} alt="Comprobante actual"
+                      className="size-16 shrink-0 rounded-lg object-cover" />}
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-800">Comprobante actual</p>
+                      <a href={payment.comprobanteUrl} target="_blank" rel="noreferrer"
+                        className="text-xs font-medium text-[#3b6ef5]">Ver comprobante</a>
                     </div>
                   </div>
-                </>
-              )}
+                )}
+                <FileUploadField inputId="cambiar-comprobante-pago" value={field.value}
+                  onChange={field.onChange} selectedLabel="Nuevo comprobante seleccionado"
+                  dropHint="Arrastra o sube un nuevo comprobante" />
+              </div>}
             />
 
             {errors.comprobante ? (
@@ -628,16 +514,16 @@ export function UpdateOperationPaymentForm({
         </div>
       </div>
 
-      <div className="sticky bottom-0 z-20 -mx-4 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0">
+      <ActionDrawerFooter>
         <Button variant="primary"
-          type="submit"
+          type="submit" form={formId}
           isLoading={isSubmitting}
           disabled={excedeSaldoDisponible}
           className="w-full justify-center"
         >
           Guardar cambios
         </Button>
-      </div>
+      </ActionDrawerFooter>
     </form>
   );
 }

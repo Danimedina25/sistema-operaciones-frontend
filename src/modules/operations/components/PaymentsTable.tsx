@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { PaymentStatusBadge } from '@/modules/operations/components/PaymentStatusBadge';
 import {
@@ -22,7 +22,9 @@ import {
 } from '@/shared/utils/whatsapp-message';
 import { buildOperationDetailPath } from '@/routes/paths';
 import { RowActionsMenu } from '@/shared/components/ui/RowActionsMenu';
-import { CircleDollarSign, ClipboardCopy, Check, FileCheck2, MessageCircle, Plus, ReceiptText, X } from 'lucide-react';
+import { ActionDrawer } from '@/shared/components/ui/ActionDrawer';
+import { ReceiptUploadField } from '@/shared/components/ui/ReceiptUploadField';
+import { CircleDollarSign, ClipboardCopy, Check, FileCheck2, MessageCircle, Plus, ReceiptText } from 'lucide-react';
 import { DenominationFields } from '@/modules/caja-general/components/DenominationFields';
 import { countCents, currency, emptyCounts } from '@/modules/caja-general/utils/cash-amounts';
 import type { CashCounts } from '@/modules/caja-general/types/caja-general.types';
@@ -59,12 +61,6 @@ interface PaymentsTableProps {
 }
 
 type PaymentActionType = 'VALIDATE' | 'REJECT';
-
-function isImageFile(file?: File | null) {
-  if (!file) return false;
-
-  return file.type.startsWith('image/');
-}
 
 function isImageUrl(url: string) {
   const path = url.split('?')[0].toLowerCase();
@@ -133,25 +129,8 @@ export function PaymentsTable({
   const [cashCountsError, setCashCountsError] = useState('');
   const [validationReceipt, setValidationReceipt] = useState<File | null>(null);
   const [validationReceiptError, setValidationReceiptError] = useState('');
-  const [validationReceiptPreviewUrl, setValidationReceiptPreviewUrl] =
-    useState<string | null>(null);
   const [chequePaymentId, setChequePaymentId] = useState<number | null>(null);
   const [viewingPaymentId, setViewingPaymentId] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (!validationReceipt || !isImageFile(validationReceipt)) {
-      setValidationReceiptPreviewUrl(null);
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(validationReceipt);
-
-    setValidationReceiptPreviewUrl(objectUrl);
-
-    return () => {
-      URL.revokeObjectURL(objectUrl);
-    };
-  }, [validationReceipt]);
 
   const isAdmin = hasRole(['ADMIN']);
   const isJefaCajas = hasRole(['JEFA_CAJAS']);
@@ -850,37 +829,19 @@ export function PaymentsTable({
       </div>
 
       {reviewingPayment ? (
-        <div className="fixed inset-0 z-50">
-          <button
-            type="button"
-            aria-label="Cerrar panel de revisión"
-            onClick={closeReviewDrawer}
-            className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
-          />
-
-          <div className="absolute right-0 top-0 flex h-full w-full max-w-2xl flex-col bg-white shadow-2xl shadow-slate-950/20">
-            <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
-                  Revisar comprobante
-                </p>
-                <h4 className="mt-1 text-lg font-semibold text-slate-900">
-                  {formatCurrency(reviewingPayment.monto)} · {paymentTypeLabels[reviewingPayment.tipoPago]}
-                </h4>
-              </div>
-
-              <button
-                type="button"
-                onClick={closeReviewDrawer}
-                disabled={isConfirmingAction}
-                aria-label="Cerrar"
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
+        <ActionDrawer open eyebrow="Validar pago de ingreso"
+          title={`${formatCurrency(reviewingPayment.monto)} · ${paymentTypeLabels[reviewingPayment.tipoPago]}`}
+          subtitle={operationId ? `Operación #${operationId}${clienteNombre ? ` · ${clienteNombre}` : ''}` : undefined}
+          onClose={() => { if (!isConfirmingAction) closeReviewDrawer(); }}
+          footer={activeAction ? <div className="flex gap-3">
+            <button type="button" onClick={resetReviewFormState} disabled={isConfirmingAction}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 disabled:opacity-50">Volver</button>
+            <button type="button" onClick={() => void handleConfirmAction()} disabled={isConfirmingAction}
+              className={`min-h-11 flex-1 rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 ${isRejectAction ? 'bg-rose-600' : 'bg-[#3b6ef5]'}`}>
+              {confirmButtonText}
+            </button>
+          </div> : undefined}>
+            <div className="space-y-5">
               <div>
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold text-slate-700">
@@ -1032,135 +993,10 @@ export function PaymentsTable({
                     </div>
                   ) : null}
 
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Comprobante de validación <span className="text-rose-600">*</span>
-                  </label>
-
-                  <label
-                    className={`
-        flex
-        min-h-[130px]
-        w-full
-        cursor-pointer
-        flex-col
-        items-center
-        justify-center
-        rounded-xl
-        border-2
-        border-dashed
-        px-4
-        py-6
-        text-center
-        transition
-        ${validationReceiptError
-                        ? 'border-rose-400 bg-rose-50'
-                        : 'border-slate-300 bg-white hover:border-slate-400'
-                      }
-      `}
-                  >
-                    <input
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png,.webp"
-                      className="hidden"
-                      disabled={isConfirmingAction}
-                      onChange={(event) => {
-                        const file = event.target.files?.[0] ?? null;
-
-                        setValidationReceipt(file);
-                        setValidationReceiptError('');
-
-                        event.target.value = '';
-                      }}
-                    />
-
-                    {validationReceipt ? (
-                      <div className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                        <div className="flex items-start gap-4">
-                          <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
-                            {validationReceiptPreviewUrl ? (
-                              <img
-                                src={validationReceiptPreviewUrl}
-                                alt="Comprobante de validación"
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <div className="px-2 text-center text-xs text-slate-500">
-                                PDF
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="min-w-0 flex-1 text-left">
-                            <p className="text-sm font-semibold text-slate-900">
-                              Comprobante seleccionado
-                            </p>
-
-                            <p className="mt-1 break-all text-xs text-slate-500">
-                              {validationReceipt.name}
-                            </p>
-
-                            <div className="mt-3 flex flex-wrap gap-2">
-                              {validationReceiptPreviewUrl ? (
-                                <a
-                                  href={validationReceiptPreviewUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="
-                inline-flex
-                items-center
-                rounded-lg
-                border
-                border-slate-200
-                bg-white
-                px-3
-                py-2
-                text-xs
-                font-medium
-                text-slate-700
-                hover:bg-slate-50
-              "
-                                >
-                                  Ver imagen
-                                </a>
-                              ) : null}
-
-                              <span
-                                className="
-              inline-flex
-              items-center
-              rounded-lg
-              bg-slate-900
-              px-3
-              py-2
-              text-xs
-              font-semibold
-              text-white
-            "
-                              >
-                                Cambiar comprobante
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <p className="text-sm font-medium text-slate-700">
-                          Haz clic para seleccionar el comprobante
-                        </p>
-
-                        <p className="mt-2 text-xs text-slate-400">
-                          PDF, JPG, JPEG, PNG o WEBP
-                        </p>
-                      </>
-                    )}
-                  </label>
-
-                  {validationReceiptError ? (
-                    <p className="mt-2 text-sm text-rose-600">
-                      {validationReceiptError}
-                    </p>
-                  ) : null}
+                  <ReceiptUploadField label="Comprobante de validación *" file={validationReceipt}
+                    onChange={next => { setValidationReceipt(next); setValidationReceiptError(''); }}
+                    disabled={isConfirmingAction} />
+                  {validationReceiptError && <p role="alert" className="mt-2 text-sm text-rose-600">{validationReceiptError}</p>}
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -1266,33 +1102,7 @@ export function PaymentsTable({
                 </div>
               )}
             </div>
-
-            {activeAction ? (
-              <div className="flex flex-col-reverse gap-3 border-t border-slate-200 px-6 py-4 sm:flex-row sm:justify-end">
-                <button
-                  type="button"
-                  onClick={resetReviewFormState}
-                  disabled={isConfirmingAction}
-                  className="inline-flex rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Volver
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => void handleConfirmAction()}
-                  disabled={isConfirmingAction}
-                  className={`inline-flex rounded-lg px-4 py-2 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-50 ${isRejectAction
-                    ? 'bg-rose-600 hover:bg-rose-700'
-                    : 'bg-emerald-600 hover:bg-emerald-700'
-                    }`}
-                >
-                  {confirmButtonText}
-                </button>
-              </div>
-            ) : null}
-          </div>
-        </div>
+        </ActionDrawer>
       ) : null}
 
       {viewingPayment?.comprobanteValidacionUrl ? (

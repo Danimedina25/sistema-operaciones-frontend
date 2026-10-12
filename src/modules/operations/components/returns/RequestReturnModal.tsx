@@ -1,6 +1,6 @@
 // components/returns/RequestReturnModal.tsx
 
-import { Modal } from '@/shared/components/ui/Modal';
+import { ActionDrawer } from '@/shared/components/ui/ActionDrawer';
 import { PaymentOperationResponse, ReturnPaymentResponse } from '../../types/operations.types.ts';
 import { RequestReturnForm, RequestReturnFormValues } from './RequestReturnForm';
 
@@ -28,7 +28,9 @@ export function RequestReturnModal({
     const isEdit = !!returnPayments?.length;
 
     return (
-        <Modal open={open} title={isEdit ? 'Editar solicitud de retorno' : 'Solicitar retorno'} onClose={onClose}>
+        <ActionDrawer open={open} eyebrow={isEdit ? 'Editar solicitud de retorno' : 'Solicitar retorno'}
+            title={operation ? `Operación #${operation.id} · ${operation.clienteNombre}` : isEdit ? 'Editar solicitud de retorno' : 'Solicitar retorno'}
+            onClose={onClose}>
             {operation === null ? (
                 <div className="py-8 text-center text-sm text-slate-500">
                     Cargando formulario...
@@ -51,6 +53,6 @@ export function RequestReturnModal({
                     }}
                 />
             )}
-        </Modal>
+        </ActionDrawer>
     );
 }

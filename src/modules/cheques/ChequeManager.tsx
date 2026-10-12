@@ -1,8 +1,10 @@
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { X } from 'lucide-react';
 import { useAuth } from '@/modules/auth/store/auth.context';
+import { ActionDrawer, ActionDrawerFooter } from '@/shared/components/ui/ActionDrawer';
+import { ReceiptUploadField } from '@/shared/components/ui/ReceiptUploadField';
+import { formatDate, formatDateTime } from '@/shared/format';
 import { cajaGeneralApi } from '@/modules/caja-general/api/caja-general.api';
 import { DenominationFields } from '@/modules/caja-general/components/DenominationFields';
 import { emptyCounts, currency } from '@/modules/caja-general/utils/cash-amounts';
@@ -35,58 +37,25 @@ export function ChequeManager({ paymentId, onClose, onChanged }: { paymentId: nu
   const cheque = useQuery({ queryKey: ['cheques', 'payment', paymentId], queryFn: () => chequesApi.byPayment(paymentId), retry: false });
   const data = cheque.data;
 
-  return <div className="fixed inset-0 z-50">
-    <button
-      type="button"
-      aria-label="Cerrar gestión del cheque"
-      onClick={onClose}
-      className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
-    />
-
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Gestionar cheque"
-      className="absolute right-0 top-0 flex h-full w-full max-w-2xl flex-col bg-white shadow-2xl shadow-slate-950/20"
-    >
-      <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
-        <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Gestionar cheque</p>
-          <h4 className="mt-1 truncate text-lg font-semibold text-slate-900">
-            {data ? `${data.numeroCheque || 'Sin número'} · ${currency(data.monto)} ${data.moneda}` : 'Cheque recibido'}
-          </h4>
-          {data ? (
-            <span className={`mt-2 inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${data.estado ? STATE_BADGE[data.estado] : 'border-slate-200 bg-slate-100 text-slate-600'}`}>
-              {data.estado ? chequeLabels[data.estado] : 'Pendiente de conciliación'}
-            </span>
-          ) : null}
-        </div>
-
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Cerrar"
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-
-      <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
-        {cheque.isPending && <p className="text-sm text-slate-500">Cargando cheque…</p>}
-        {cheque.isError && (
-          <div role="alert" className={alertBanner}>
-            <p>No se pudo consultar el cheque. {getApiErrorMessage(cheque.error)}</p>
-            <button type="button" onClick={() => void cheque.refetch()} className="mt-1 font-semibold underline">Reintentar</button>
-          </div>
-        )}
-        {data && <ChequeDetail key={`${data.id}-${data.version}`} cheque={data} onChanged={onChanged} />}
-      </div>
+  return <ActionDrawer open ariaLabel="Gestionar cheque" eyebrow="Gestionar cheque"
+    title={data ? `${data.numeroCheque || 'Sin número'} · ${currency(data.monto)} ${data.moneda}` : 'Cheque recibido'}
+    onClose={onClose}>
+    <div className="space-y-5">
+      {data && <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${data.estado ? STATE_BADGE[data.estado] : 'border-slate-200 bg-slate-100 text-slate-600'}`}>
+        {data.estado ? chequeLabels[data.estado] : 'Pendiente de conciliación'}
+      </span>}
+      {cheque.isPending && <p className="text-sm text-slate-500">Cargando cheque…</p>}
+      {cheque.isError && <div role="alert" className={alertBanner}>
+        <p>No se pudo consultar el cheque. {getApiErrorMessage(cheque.error)}</p>
+        <button type="button" onClick={() => void cheque.refetch()} className="mt-1 font-semibold underline">Reintentar</button>
+      </div>}
+      {data && <ChequeDetail key={`${data.id}-${data.version}`} cheque={data} onChanged={onChanged} />}
     </div>
-  </div>;
+  </ActionDrawer>;
 }
 
 function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () => void | Promise<void> }) {
+  const formId = useId();
   const { hasRole, user } = useAuth();
   const client = useQueryClient();
   const allowed = allowedChequeActions(cheque, hasRole);
@@ -146,7 +115,7 @@ function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () =>
       <p><span className="font-medium">Banco emisor:</span> {cheque.bancoEmisor}</p>
       <p><span className="font-medium">Emisor:</span> {cheque.emisor}</p>
       <p><span className="font-medium">Beneficiario:</span> {cheque.beneficiario}</p>
-      <p><span className="font-medium">Fecha de recepción:</span> {cheque.fechaRecepcion}</p>
+      <p><span className="font-medium">Fecha de recepción:</span> {formatDateTime(cheque.fechaRecepcion)}</p>
       <p><span className="font-medium">Destino:</span> {cheque.estado === 'PENDIENTE_COBRO_EFECTIVO' ? 'Caja General · pendiente de recepción' : cheque.destinoCobro === 'EFECTIVO' ? 'Caja General' : cheque.cuentaDestinoEtiqueta ?? 'Por definir'}</p>
     </div>
 
@@ -159,7 +128,7 @@ function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () =>
       <p role="alert" className={alertBanner}>Este cheque histórico requiere conciliación antes de registrar movimientos.</p>
     )}
 
-    {allowed.length > 0 && !completed && <form className="space-y-4" onSubmit={async e => { e.preventDefault(); if (submitting.current) return; submitting.current = true; setError(''); try { await mutation.mutateAsync(); } catch { /* rendered by onError */ } finally { submitting.current = false; } }}>
+    {allowed.length > 0 && !completed && <form id={formId} className="space-y-4" onSubmit={async e => { e.preventDefault(); if (submitting.current) return; submitting.current = true; setError(''); try { await mutation.mutateAsync(); } catch { /* rendered by onError */ } finally { submitting.current = false; } }}>
       <fieldset disabled={locked} className="space-y-4">
         <div>
           <label htmlFor="cheque-action" className={fieldLabel}>Acción <span className="text-rose-600">*</span></label>
@@ -188,7 +157,7 @@ function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () =>
             {cash.isPending ? <p className="text-sm text-slate-500">Consultando caja…</p>
               : cash.isError ? <p role="alert" className={alertBanner}>No se pudo consultar Caja General. <button type="button" onClick={() => void cash.refetch()} className="font-semibold underline">Reintentar</button></p>
                 : !cash.data || cash.data.closedAt ? <p role="alert" className={alertBanner}>Debes abrir Caja General antes de recibir el efectivo.</p>
-                  : <p className="text-sm text-slate-600">Caja abierta: {cash.data.fecha}</p>}
+                  : <p className="text-sm text-slate-600">Caja abierta: {formatDate(cash.data.fecha)}</p>}
             <DenominationFields value={counts} onChange={setCounts} disabled={locked} />
           </>}
 
@@ -198,12 +167,8 @@ function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () =>
               <textarea id="cheque-reason" rows={4} className={fieldControl} required={requiresReason} value={reason} onChange={e => setReason(e.target.value)} />
             </div>
           )}
-          {requiresProof && (
-            <div>
-              <label htmlFor="cheque-proof" className={fieldLabel}>Comprobante <span className="text-rose-600">*</span></label>
-              <input id="cheque-proof" className={`${fieldControl} file:mr-3 file:rounded-lg file:border-0 file:bg-slate-200 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-slate-700`} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" required onChange={e => setFile(e.target.files?.[0] ?? null)} />
-            </div>
-          )}
+          {requiresProof && <ReceiptUploadField label="Comprobante *" file={file}
+            onChange={setFile} disabled={locked} dropHint="Arrastra o sube el comprobante" />}
         </>}
       </fieldset>
 
@@ -212,13 +177,15 @@ function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () =>
         <p className="text-xs text-slate-500">La solicitud conserva sus datos para reintentar sin duplicar el movimiento. Consulta el estado actualizado antes de iniciar otra acción.</p>
       )}
 
+      <ActionDrawerFooter>
       <button
-        type="submit"
+        type="submit" form={formId}
         disabled={!action || mutation.isPending || (action === 'CONFIRMAR_COBRO_EFECTIVO' && (cash.isPending || cash.isError || !cash.data || !!cash.data.closedAt))}
         className={`inline-flex h-11 w-full items-center justify-center rounded-xl text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 ${requiresReason ? 'bg-rose-600 hover:bg-rose-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
       >
         {mutation.isPending ? 'Guardando…' : pendingCommand.current ? 'Reintentar solicitud' : 'Confirmar acción'}
       </button>
+      </ActionDrawerFooter>
     </form>}
 
     {completed && (
@@ -233,7 +200,7 @@ function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () =>
         <ul className="mt-2 space-y-2">
           {cheque.historial.map(h => (
             <li key={h.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-              <p className="font-medium text-slate-900">{h.accion} · {h.fecha}</p>
+              <p className="font-medium text-slate-900">{actionLabels[h.accion as ChequeAction] ?? h.accion.replace(/_/g, ' ').toLocaleLowerCase('es-MX')} · {formatDateTime(h.fecha)}</p>
               <p className="text-xs text-slate-500">{h.usuarioNombre}</p>
               {h.motivo && <p className="mt-1 text-xs text-slate-600">{h.motivo}</p>}
               {h.comprobanteUrl && <a className={`${linkStyle} mt-1 inline-block`} href={h.comprobanteUrl} target="_blank" rel="noreferrer">Ver comprobante</a>}

@@ -1,4 +1,4 @@
-import { Modal } from '@/shared/components/ui/Modal';
+import { ActionDrawer } from '@/shared/components/ui/ActionDrawer';
 
 import { ReturnPaymentResponse } from '../../types/operations.types.ts';
 import { RealizeReturnPaymentForm, RealizeReturnPaymentFormValues } from './RealizeReturnPaymentForm.js';
@@ -45,7 +45,7 @@ export function RealizeReturnPaymentModal({
         !!returnPayment?.fechaHoraRecoleccionEfectivo;
 
     return (
-        <Modal open={open} title={
+        <ActionDrawer open={open} title={
             isEditingCashPickup
                 ? 'Editar fecha y hora de recolección'
                 : esRetornoEnEfectivo
@@ -69,6 +69,6 @@ export function RealizeReturnPaymentModal({
                     }}
                 />
             )}
-        </Modal>
+        </ActionDrawer>
     );
 }

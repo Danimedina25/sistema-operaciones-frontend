@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Button } from '@/shared/components/ui/Button';
+import { ActionDrawerFooter } from '@/shared/components/ui/ActionDrawer';
 import { paymentTypeLabels } from '@/modules/operations/constants/operations.constants';
 import { formatCurrency } from '@/modules/operations/utils/operation-formatters';
 import {
@@ -52,6 +53,7 @@ export function RegisterInstallmentForm({
   onAmountChange,
   hideSummary = false,
 }: RegisterInstallmentFormProps) {
+  const formId = useId();
   const totals = resolveReturnRequestTotals(returnRequest);
   const esEfectivo = isCashReturnMethod(returnRequest.tipoPago);
   const esRetiroSinTarjeta = returnRequest.tipoPago === 'RETIRO_SIN_TARJETA';
@@ -94,7 +96,7 @@ export function RegisterInstallmentForm({
   }, [bankAccounts, accountSearch]);
 
   return (
-    <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+    <form id={formId} className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
       {!hideSummary ? (
         <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <h3 className="mb-3 text-sm font-semibold text-slate-900">Solicitud seleccionada</h3>
@@ -354,9 +356,11 @@ export function RegisterInstallmentForm({
         />
       </div>
 
-      <Button variant="primary" type="submit" isLoading={isSubmitting} className="w-full justify-center">
+      <ActionDrawerFooter>
+      <Button variant="primary" type="submit" form={formId} isLoading={isSubmitting} className="w-full justify-center">
         {resolveInstallmentSubmitLabel({ totals, importe, esEfectivo })}
       </Button>
+      </ActionDrawerFooter>
     </form>
   );
 }

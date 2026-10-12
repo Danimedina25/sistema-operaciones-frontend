@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { paths } from '@/routes/paths';
 import { Modal } from '@/shared/components/ui/Modal';
+import { ActionDrawer } from '@/shared/components/ui/ActionDrawer';
 import { OperationDetailContainer } from '../components/OperationDetailContainer';
 import { AddOperationPaymentForm } from '../components/AddOperationPaymentForm';
 import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts';
@@ -330,7 +331,7 @@ export default function OperationDetailPage() {
         }}
       />
 
-      <Modal
+      <ActionDrawer
         open={isAddPaymentModalOpen}
         title="Registrar pago de ingreso"
         onClose={() => {
@@ -350,9 +351,9 @@ export default function OperationDetailPage() {
             onSubmit={(values) => submitAddOperationPayment(selectedOperation.id, values)}
           />
         )}
-      </Modal>
+      </ActionDrawer>
 
-      <Modal
+      <ActionDrawer
         open={isEditPaymentModalOpen}
         title="Editar pago de ingreso"
         onClose={() => {
@@ -379,7 +380,7 @@ export default function OperationDetailPage() {
             }
           />
         )}
-      </Modal>
+      </ActionDrawer>
 
       <RequestReturnModal
         open={isAddReturnModalOpen}
@@ -392,7 +393,7 @@ export default function OperationDetailPage() {
         onSubmit={submitRequestReturnPayment}
       />
 
-      <Modal
+      <ActionDrawer
         open={isEditReturnModalOpen}
         title="Editar solicitud de retorno"
         onClose={() => {
@@ -410,7 +411,7 @@ export default function OperationDetailPage() {
             onSubmit={submitUpdateRequestReturnPayment}
           />
         )}
-      </Modal>
+      </ActionDrawer>
 
       <ReturnPaymentModal
         open={!!selectedReturnRequest}

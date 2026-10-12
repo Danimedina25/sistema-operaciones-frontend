@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
+import { ActionDrawerFooter } from '@/shared/components/ui/ActionDrawer';
 import { Input } from '@/shared/components/ui/Input';
 import { ReturnDestinationAccountSuggestion, ReturnPaymentResponse } from '../../types/operations.types.ts';
 import { ReturnPaymentType } from '@/shared/utils/form.utils.js';
@@ -146,6 +147,7 @@ export function RequestReturnForm({
   initialPayments,
   onSubmit,
 }: RequestReturnFormProps) {
+  const formId = useId();
   const [pagos, setPagos] = useState<ReturnPaymentItem[]>(() => {
     if (initialPayments?.length) {
       return initialPayments.map(mapPaymentToForm);
@@ -444,7 +446,7 @@ export function RequestReturnForm({
   }
 
   return (
-    <form className="space-y-6" onSubmit={handleSubmit}>
+    <form id={formId} className="space-y-6" onSubmit={handleSubmit}>
       <div data-testid="return-live-summary" className="sticky top-0 z-50 -mx-4 -mt-4 grid grid-cols-2 gap-3 rounded-b-2xl border-b border-slate-200 bg-white px-4 py-3 text-sm shadow-lg before:absolute before:inset-x-0 before:-top-10 before:h-10 before:bg-white sm:-mx-7 sm:-mt-7 sm:px-5 sm:py-4 md:grid-cols-4">
         <div>
           <span className="block text-slate-500">Cliente</span>
@@ -814,8 +816,9 @@ export function RequestReturnForm({
           </button>
       }
 
+      <ActionDrawerFooter>
       <Button variant="primary"
-        type="submit"
+        type="submit" form={formId}
         isLoading={isSubmitting}
         disabled={excedeMonto || totalSolicitado <= 0}
         className="w-full justify-center"
@@ -824,6 +827,7 @@ export function RequestReturnForm({
           ? 'Actualizar solicitud'
           : 'Crear solicitud de retorno'}
       </Button>
+      </ActionDrawerFooter>
     </form>
   );
 }

@@ -1,7 +1,8 @@
 // EditReturnPaymentForm.tsx
 
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { Button } from '@/shared/components/ui/Button';
+import { ActionDrawerFooter } from '@/shared/components/ui/ActionDrawer';
 import { Input } from '@/shared/components/ui/Input';
 import { formatCurrencyDisplay, normalizeCurrencyInput, onlyNumbers, parseCurrency, ReturnPaymentType } from '@/shared/utils/form.utils.js';
 import { BankCombobox } from '@/shared/components/ui/BankCombobox';
@@ -80,6 +81,7 @@ export function EditReturnPaymentForm({
     isSubmitting,
     onSubmit,
 }: EditReturnPaymentFormProps) {
+  const formId = useId();
     const [form, setForm] = useState<FormState>(
         () => mapPaymentToForm(payment),
     );
@@ -280,7 +282,7 @@ export function EditReturnPaymentForm({
         form.tipoPago === 'DEPOSITO';
 
     return (
-        <form
+        <form id={formId}
             className="space-y-6"
             onSubmit={handleSubmit}
         >
@@ -563,13 +565,15 @@ export function EditReturnPaymentForm({
                 onRemoveExisting={() => setArchivoNominaUrl(null)}
             />
 
+      <ActionDrawerFooter>
             <Button variant="primary"
-                type="submit"
+                type="submit" form={formId}
                 isLoading={isSubmitting}
                 className="w-full justify-center"
             >
                 Actualizar solicitud
             </Button>
+      </ActionDrawerFooter>
         </form>
     );
 }

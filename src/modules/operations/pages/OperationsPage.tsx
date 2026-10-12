@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Modal } from '@/shared/components/ui/Modal';
+import { ActionDrawer } from '@/shared/components/ui/ActionDrawer';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { useUrlFilters } from '@/shared/hooks/use-url-filters';
 import { CreateOperationForm } from '@/modules/operations/components/CreateOperationForm';
@@ -457,7 +458,7 @@ export default function OperationsPage() {
         )}
       </Modal>
 
-      <Modal
+      <ActionDrawer
         open={isAddPaymentModalOpen}
         title="Registrar pago de ingreso"
         onClose={() => {
@@ -481,7 +482,7 @@ export default function OperationsPage() {
             }
           />
         )}
-      </Modal>
+      </ActionDrawer>
 
       <DeleteConfirmationModal
         open={Boolean(operationToDelete)}

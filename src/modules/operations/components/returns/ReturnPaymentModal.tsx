@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { History, PlusCircle } from 'lucide-react';
-import { Modal } from '@/shared/components/ui/Modal';
+import { ActionDrawer } from '@/shared/components/ui/ActionDrawer';
 import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import {
@@ -207,7 +207,7 @@ export function ReturnPaymentModal({
   );
 
   return (
-    <Modal open={open} title={title} onClose={onClose}>
+    <ActionDrawer open={open} title={title} onClose={onClose}>
       {returnRequest === null ? (
         <div className="py-8 text-center text-sm text-slate-500">Cargando...</div>
       ) : isCashManage ? (
@@ -265,6 +265,6 @@ export function ReturnPaymentModal({
           ) : null}
         </div>
       )}
-    </Modal>
+    </ActionDrawer>
   );
 }
