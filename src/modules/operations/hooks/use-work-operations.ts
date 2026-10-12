@@ -4,7 +4,7 @@ import { getMyOperations, getOperations, getOperationsWithRequestedReturns } fro
 import type { OperationsFilters } from '../types/operations.types.ts';
 import { applyWorkQueue } from '../utils/staff-work';
 
-export function useWorkOperations(filters: OperationsFilters, page = 0, returns = false, enabled = true) {
+export function useWorkOperations(filters: OperationsFilters, page = 0, returns = false, enabled = true, refreshPolicy: 'work' | 'manual' = 'work') {
   const { user, hasRole } = useAuth();
   const effective = applyWorkQueue(filters);
   const mode = returns ? 'returns' : hasRole(['SOCIO_COMERCIAL']) && !filters.workQueue ? 'my' : 'all';
@@ -13,6 +13,8 @@ export function useWorkOperations(filters: OperationsFilters, page = 0, returns 
     queryFn: () => returns ? getOperationsWithRequestedReturns(page, 10, effective)
       : mode === 'my' ? getMyOperations(page, 10, effective) : getOperations(page, 10, effective),
     enabled,
-    refetchInterval: 30_000,
+    refetchInterval: refreshPolicy === 'work' ? 30_000 : false,
+    refetchOnWindowFocus: refreshPolicy === 'work',
+    staleTime: refreshPolicy === 'manual' ? 60_000 : 0,
   });
 }

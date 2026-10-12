@@ -262,6 +262,20 @@ export async function getStalledOperations(
   return response.data.data;
 }
 
+export async function searchStalledOperations(
+  search: string,
+  page: number,
+  pageSize: number,
+  thresholdHours?: number,
+): Promise<PageResponse<PaymentOperationResponse>> {
+  const params = new URLSearchParams({ search, page: String(page), size: String(pageSize) });
+  if (thresholdHours !== undefined) params.set('thresholdHours', String(thresholdHours));
+  const response = await api.get<OperationsPageApiResponse>(
+    `${OPERATIONS_BASE_PATH}/stalled/search?${params.toString()}`,
+  );
+  return response.data.data;
+}
+
 export async function getOperationById(
   id: number,
 ): Promise<PaymentOperationResponse> {

@@ -22,7 +22,7 @@ export function NotificationsBell() {
     submitMarkAllAsRead,
     lastIncomingNotification,
     setLastIncomingNotification,
-  } = useNotifications({ limit: 10 });
+  } = useNotifications({ limit: 10, listEnabled: isOpen });
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

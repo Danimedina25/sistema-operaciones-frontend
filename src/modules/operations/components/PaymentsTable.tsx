@@ -6,10 +6,7 @@ import {
   paymentTypeLabels,
   type PaymentRejectReasonCode,
 } from '@/modules/operations/constants/operations.constants';
-import {
-  formatCurrency,
-  formatDate,
-} from '@/modules/operations/utils/operation-formatters';
+import { formatMoney as formatCurrency, formatDate } from '@/shared/format';
 import { buildRejectReasonText } from '@/modules/operations/utils/reject-reason';
 import { OperationPaymentResponse, PaymentType } from '../types/operations.types.ts';
 import { ValidationReceiptViewerModal } from './ValidationReceiptViewerModal';
@@ -22,9 +19,10 @@ import {
 } from '@/shared/utils/whatsapp-message';
 import { buildOperationDetailPath } from '@/routes/paths';
 import { RowActionsMenu } from '@/shared/components/ui/RowActionsMenu';
+import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
 import { ActionDrawer } from '@/shared/components/ui/ActionDrawer';
 import { ReceiptUploadField } from '@/shared/components/ui/ReceiptUploadField';
-import { CircleDollarSign, ClipboardCopy, Check, FileCheck2, MessageCircle, Plus, ReceiptText } from 'lucide-react';
+import { FileCheck2, MessageCircle, Plus, ReceiptText } from 'lucide-react';
 import { DenominationFields } from '@/modules/caja-general/components/DenominationFields';
 import { countCents, currency, emptyCounts } from '@/modules/caja-general/utils/cash-amounts';
 import type { CashCounts } from '@/modules/caja-general/types/caja-general.types';
@@ -470,6 +468,26 @@ export function PaymentsTable({
     );
   }
 
+  function paymentActions(payment: OperationPaymentResponse): ReactNode {
+    return <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
+      <a href={payment.comprobanteUrl} target="_blank" rel="noreferrer"
+        className="inline-flex min-h-9 items-center rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50">Ver</a>
+      <RowActionsMenu triggerLabel="" ariaLabel="Más opciones" triggerClassName="min-w-9 justify-center px-2">
+        {renderViewOptions(payment)}
+        <button type="button" onClick={() => void handleCopyPaymentData(payment)}
+          className="block w-full px-4 py-3 text-left text-sm text-slate-700 hover:bg-slate-50">
+          {copiedPaymentId === payment.id ? 'Copiado' : 'Copiar datos del comprobante'}
+        </button>
+        <div className="border-t border-slate-100 px-4 py-2 text-left text-xs text-slate-500">
+          <p>Registrado: {formatDate(payment.fechaPago)}</p>
+          <p>Validación: {formatDate(payment.fechaValidacion)}</p>
+          {payment.observaciones && <p className="break-words">{payment.observaciones}</p>}
+        </div>
+      </RowActionsMenu>
+      <div className="flex flex-wrap justify-end gap-1">{renderRowActions(payment)}</div>
+    </div>;
+  }
+
   return (
     <>
       {chequePaymentId !== null && <ChequeManager paymentId={chequePaymentId} onClose={() => setChequePaymentId(null)} />}
@@ -484,35 +502,30 @@ export function PaymentsTable({
     shadow-slate-950/[0.06]
   "
       >
-        <div className="bg-gradient-to-r from-slate-950 to-slate-800 px-4 py-5 text-white sm:px-6">
+        <div className="border-b border-slate-100 bg-white px-4 py-3 sm:px-6">
           <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div className="text-left">
-              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-blue-300"><FileCheck2 className="h-4 w-4" /> Ingresos</p>
-              <h3 className="mt-1 text-xl font-bold tracking-tight text-white">Pagos y comprobantes</h3>
-              <p className="mt-1 text-sm text-slate-400">Registro, conciliación y validación de ingresos.</p>
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600"><FileCheck2 className="h-4 w-4" /> Ingresos</p>
+              <h3 className="mt-1 text-base font-semibold text-slate-900">Pagos y comprobantes</h3>
+              <p className="mt-1 text-xs text-slate-500">Registro, conciliación y validación de ingresos.</p>
             </div>
 
             <div className="flex w-full flex-col items-stretch gap-2 md:w-auto md:items-end">
               <div
                 className="
-    rounded-2xl
-    border
-    border-white/10
-    bg-white/5
-    px-4
-    py-3
+    rounded-lg border border-slate-200 bg-slate-50 px-3 py-2
   "
               >
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                   Pendiente de registro en ingreso
                 </p>
 
-                <p className="mt-1 text-lg font-bold tabular-nums text-amber-300">
+                <p className="mt-1 text-lg font-bold tabular-nums text-amber-700">
                   {formatCurrency(montoPendientePorRegistrar ?? 0)}
                 </p>
 
                 {montoPendientePorRegistrar === 0 && (
-                  <p className="mt-1 text-xs font-medium text-emerald-300">
+                  <p className="mt-1 text-xs font-medium text-emerald-700">
                     No hay más pagos de ingreso por registrar
                   </p>
                 )}
@@ -551,281 +564,32 @@ export function PaymentsTable({
           </div>
         </div>
 
-        <div className="hidden overflow-x-auto md:block">
-          <table className="min-w-full border-separate border-spacing-0">
-            <thead className="sticky top-0 z-[1] bg-slate-100">
-              <tr className="text-left text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
-                <th className="px-4 py-3 font-medium">Monto</th>
-                <th className="px-4 py-3 font-medium">Tipo</th>
-                <th className="px-4 py-3 font-medium">Cuenta destino</th>
-                <th className="px-4 py-3 font-medium">Observaciones</th>
-                <th className="px-4 py-3 font-medium">Fecha registro</th>
-                <th className="px-4 py-3 font-medium">Fecha comprobante</th>
-                <th className="px-4 py-3 font-medium">Antigüedad</th>
-                <th className="px-4 py-3 font-medium">Validado por</th>
-                <th className="px-4 py-3 font-medium">Fecha validación</th>
-                <th className="px-4 py-3 font-medium">Estatus</th>
-                <th className="px-4 py-3 font-medium">Opciones</th>
-                <th className="px-4 py-3 font-medium">Acciones</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {visiblePayments.map((payment) => {
-                return (
-                  <tr
-                    key={payment.id}
-                    className="
-                    border-t
-                    border-slate-100
-                    text-sm
-                    transition-colors
-                    hover:bg-blue-50/40
-                    "
-                  >
-                    <td className="whitespace-nowrap px-4 py-4">
-                      <span className="inline-flex items-center gap-2 font-bold tabular-nums text-slate-950"><CircleDollarSign className="h-4 w-4 text-emerald-600" />
-                        {formatCurrency(payment.monto)}
-                      </span>
-                    </td>
-
-                    <td className="px-4 py-4 text-slate-600">
-                      {paymentTypeLabels[payment.tipoPago]}
-                      {payment.tipoPago === 'CHEQUE' && <p className="mt-1 text-xs text-slate-500">{payment.chequeEstado ? chequeLabels[payment.chequeEstado] : 'Requiere conciliación'}</p>}
-                    </td>
-
-                    <td className="px-4 py-4">
-                      <div className="space-y-1">
-                        <p className="font-semibold text-slate-900">
-                          {payment.cuentaDestinoBanco ?? '-'}
-                        </p>
-
-                        <p className="max-w-[180px] text-xs leading-5 text-slate-400">
-                          {payment.cuentaDestinoTitular}
-                        </p>
-                      </div>
-                    </td>
-
-                    <td className="max-w-[220px] px-4 py-4 text-slate-600">
-                      <p className="truncate">
-                        {payment.observaciones ?? '-'}
-                      </p>
-                    </td>
-
-                    <td className="px-4 py-4 text-slate-600">
-                      {formatDate(payment.fechaPago)}
-                    </td>
-
-                    <td className="px-4 py-4 text-slate-600">
-                      {formatDate(payment.fechaComprobante)}
-                    </td>
-
-                    <td className="px-4 py-4">
-                      {BANK_PAYMENT_TYPES.includes(payment.tipoPago) ? (
-                        <AgingBadge
-                          effectiveDate={payment.fechaComprobante}
-                          createdAt={payment.createdAt}
-                        />
-                      ) : (
-                        <span className="text-xs text-slate-400">—</span>
-                      )}
-                    </td>
-
-                    <td className="px-4 py-4 text-slate-600">
-                      {payment.validadoPorNombre ?? '-'}
-                    </td>
-
-                    <td className="px-4 py-4 text-slate-600">
-                      {formatDate(payment.fechaValidacion)}
-                    </td>
-
-                    <td className="px-4 py-4">
-                      <PaymentStatusBadge status={payment.estatus} />
-                    </td>
-
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-2">
-                        <RowActionsMenu triggerLabel="Ver opciones">
-                          {renderViewOptions(payment)}
-                        </RowActionsMenu>
-
-                        <button
-                          type="button"
-                          title="Copiar datos del comprobante"
-                          onClick={() => void handleCopyPaymentData(payment)}
-                          className="
-      inline-flex
-      h-9
-      w-9
-      items-center
-      justify-center
-      rounded-xl
-      border
-      border-slate-200
-      bg-slate-50
-      text-slate-600
-      shadow-sm
-      transition-all
-      hover:border-slate-300 hover:bg-white
-      hover:-translate-y-0.5
-    "
-                        >
-                          {copiedPaymentId === payment.id ? (
-                            <Check className="h-4 w-4 text-emerald-600" />
-                          ) : (
-                            <ClipboardCopy className="h-4 w-4" />
-                          )}
-                        </button>
-                      </div>
-                    </td>
-
-                    <td className="px-4 py-4">
-                      <div className="flex flex-wrap gap-2">
-                        {renderRowActions(payment)}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Móvil: tarjetas apiladas */}
-        <div className="space-y-3 p-3 min-[375px]:p-4 md:hidden">
-          {visiblePayments.map((payment) => {
-            const { isProcessing, canEdit, canManageCheque, canReview, canNotify, hasActions } =
-              getPaymentActionFlags(payment);
-
-            return (
-              <div
-                key={payment.id}
-                className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-950/5 min-[375px]:p-4"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <span className="inline-flex items-center gap-1.5 text-lg font-bold tabular-nums text-slate-950">
-                      <CircleDollarSign className="h-4 w-4 shrink-0 text-emerald-600" />
-                      {formatCurrency(payment.monto)}
-                    </span>
-                    <div className="mt-1 text-xs font-medium text-slate-500">
-                      {paymentTypeLabels[payment.tipoPago]}
-                      {payment.tipoPago === 'CHEQUE' && <p className="mt-1 text-xs text-slate-500">{payment.chequeEstado ? chequeLabels[payment.chequeEstado] : 'Requiere conciliación'}</p>}
-                    </div>
-                  </div>
-
-                  <div className="flex max-w-full shrink-0 items-center gap-2">
-                    <PaymentStatusBadge status={payment.estatus} />
-                    <button
-                      type="button"
-                      title="Copiar datos del comprobante"
-                      onClick={() => void handleCopyPaymentData(payment)}
-                      aria-label="Copiar datos del comprobante"
-                      className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-white"
-                    >
-                      {copiedPaymentId === payment.id ? (
-                        <Check className="h-4 w-4 text-emerald-600" />
-                      ) : (
-                        <ClipboardCopy className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs text-slate-600">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wide text-slate-400">Cuenta destino</p>
-                    <p className="font-medium text-slate-900">{payment.cuentaDestinoBanco ?? '-'}</p>
-                    <p className="text-slate-400">{payment.cuentaDestinoTitular ?? '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wide text-slate-400">Fecha comprobante</p>
-                    <p>{formatDate(payment.fechaComprobante)}</p>
-                  </div>
-                </div>
-
-                <details className="group mt-3 rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600">
-                  <summary className="min-h-8 cursor-pointer select-none py-1 font-semibold text-slate-700 marker:text-slate-400">
-                    Ver más detalles
-                  </summary>
-                  <div className="grid grid-cols-2 gap-x-3 gap-y-3 border-t border-slate-200 pt-3">
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wide text-slate-400">Antigüedad</p>
-                      {BANK_PAYMENT_TYPES.includes(payment.tipoPago) ? (
-                        <AgingBadge effectiveDate={payment.fechaComprobante} createdAt={payment.createdAt} />
-                      ) : (
-                        <span className="text-slate-400">—</span>
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wide text-slate-400">Fecha registro</p>
-                      <p>{formatDate(payment.fechaPago)}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wide text-slate-400">Validado por</p>
-                      <p className="break-words">{payment.validadoPorNombre ?? '-'}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wide text-slate-400">Fecha validación</p>
-                      <p>{formatDate(payment.fechaValidacion)}</p>
-                    </div>
-                    {payment.observaciones ? (
-                      <div className="col-span-2">
-                        <p className="text-[10px] uppercase tracking-wide text-slate-400">Observaciones</p>
-                        <p className="break-words">{payment.observaciones}</p>
-                      </div>
-                    ) : null}
-                  </div>
-                </details>
-
-                <div className="mt-4 flex flex-col gap-2 min-[360px]:flex-row min-[360px]:items-center">
-                  {canReview ? (
-                    <button
-                      type="button"
-                      disabled={isProcessing}
-                      onClick={() =>
-                        canManageCheque
-                          ? setChequePaymentId(payment.id)
-                          : openReviewDrawer(payment.id)
-                      }
-                      className="min-h-[44px] flex-1 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {isProcessing ? 'Procesando...' : 'Revisar'}
-                    </button>
-                  ) : canEdit ? (
-                    <button
-                      type="button"
-                      onClick={() => onEditPayment?.(payment.id)}
-                      className="min-h-[44px] flex-1 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
-                    >
-                      Editar pago
-                    </button>
-                  ) : canNotify ? (
-                    <button
-                      type="button"
-                      onClick={() => handleNotifyPaymentStatus(payment)}
-                      className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
-                    >
-                      <MessageCircle className="h-4 w-4" />
-                      Avisar
-                    </button>
-                  ) : (
-                    <span className="flex-1 text-xs text-slate-400">
-                      {hasActions ? '' : 'Sin acciones'}
-                    </span>
-                  )}
-
-                  <RowActionsMenu triggerLabel="Más" triggerClassName="min-h-[44px] justify-center" menuClassName="w-64 max-w-[calc(100vw-1rem)]">
-                    {renderViewOptions(payment)}
-                    <div className="flex flex-wrap gap-2 border-t border-slate-100 p-2">
-                      {renderRowActions(payment)}
-                    </div>
-                  </RowActionsMenu>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <DataTable
+          columns={[
+            { key: 'amount', header: 'Monto', width: '132px', cell: (payment: OperationPaymentResponse) => <span className="font-semibold tabular-nums text-slate-900">{formatCurrency(payment.monto)}</span> },
+            { key: 'type', header: 'Tipo', width: '128px', cell: (payment: OperationPaymentResponse) => <span>{paymentTypeLabels[payment.tipoPago]}{payment.tipoPago === 'CHEQUE' && <span className="block text-xs text-slate-500">{payment.chequeEstado ? chequeLabels[payment.chequeEstado] : 'Requiere conciliación'}</span>}</span> },
+            { key: 'account', header: 'Cuenta destino', cell: (payment: OperationPaymentResponse) => <span className="block min-w-0 truncate" title={`${payment.cuentaDestinoBanco ?? '—'} · ${payment.cuentaDestinoTitular ?? ''}`}>{payment.cuentaDestinoBanco ?? '—'}<span className="block truncate text-xs text-slate-500">{payment.cuentaDestinoTitular}</span></span> },
+            { key: 'date', header: 'Fecha comprobante', width: '132px', cell: (payment: OperationPaymentResponse) => formatDate(payment.fechaComprobante) },
+            { key: 'status', header: 'Estatus', kind: 'status', width: '162px', cell: (payment: OperationPaymentResponse) => <span><PaymentStatusBadge status={payment.estatus} />{payment.validadoPorNombre && <span className="mt-1 block text-xs text-slate-500">por {payment.validadoPorNombre}</span>}</span> },
+            { key: 'actions', header: 'Acciones', kind: 'actions', align: 'right', width: '250px', cell: (payment: OperationPaymentResponse) => paymentActions(payment) },
+          ] satisfies DataTableColumn<OperationPaymentResponse>[]}
+          rows={visiblePayments}
+          getRowKey={(payment) => payment.id}
+          emptyTitle="Sin pagos de ingreso"
+          mobile={{
+            title: (payment) => <>{formatCurrency(payment.monto)} · {paymentTypeLabels[payment.tipoPago]}</>,
+            status: (payment) => <PaymentStatusBadge status={payment.estatus} />,
+            fields: [
+              { key: 'account', label: 'Cuenta destino', value: (payment) => payment.cuentaDestinoBanco ?? '—' },
+              { key: 'date', label: 'Fecha comprobante', value: (payment) => formatDate(payment.fechaComprobante) },
+              { key: 'registered', label: 'Registrado', value: (payment) => formatDate(payment.fechaPago) },
+              { key: 'validated', label: 'Validado por', value: (payment) => payment.validadoPorNombre ?? '—' },
+              { key: 'age', label: 'Antigüedad', value: (payment) => BANK_PAYMENT_TYPES.includes(payment.tipoPago) ? <AgingBadge effectiveDate={payment.fechaComprobante} createdAt={payment.createdAt} /> : '—' },
+              { key: 'observations', label: 'Observaciones', value: (payment) => payment.observaciones || '—' },
+            ],
+            actions: paymentActions,
+          }}
+        />
       </div>
 
       {reviewingPayment ? (

@@ -100,7 +100,7 @@ export default function OperationDetailPage() {
   const {
     accounts: bankAccountsCatalog,
     isLoading: isLoadingBankAccounts,
-  } = useBankAccounts();
+  } = useBankAccounts({ enabled: isAddPaymentModalOpen || isEditPaymentModalOpen });
 
   const bankAccounts = useMemo(
     () =>

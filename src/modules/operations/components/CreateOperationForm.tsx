@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { Plus, Trash2 } from 'lucide-react';
 import { Input } from '@/shared/components/ui/Input';
 import { Button } from '@/shared/components/ui/Button';
+import { ReceiptUploadField } from '@/shared/components/ui/ReceiptUploadField';
 import { BankCombobox } from '@/shared/components/ui/BankCombobox';
 import { ClienteCombobox } from '@/shared/components/ui/ClienteCombobox';
 import { formatDate } from '@/shared/utils/weeks';
@@ -33,10 +34,6 @@ interface CreateOperationFormProps {
   currentLevelOneCommission: number;
   canAssignLevelOne: boolean;
   onSubmit: (values: CreateOperationFormValues) => Promise<void>;
-}
-
-function isImageFile(file: File) {
-  return file.type.startsWith('image/');
 }
 
 function normalizeCurrencyInput(value: string) {
@@ -68,13 +65,6 @@ function parseCurrency(value: unknown) {
 
   const parsed = Number(value.replace(/,/g, ''));
   return Number.isNaN(parsed) ? 0 : parsed;
-}
-
-function formatCurrencyDisplay(value: number) {
-  return value.toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
 }
 
 export function CreateOperationForm({
@@ -154,11 +144,6 @@ export function CreateOperationForm({
     name: 'pagos',
   });
 
-  const montoTotalRaw = useWatch({
-    control,
-    name: 'montoTotal',
-  });
-
   const pagos = useWatch({
     control,
     name: 'pagos',
@@ -184,64 +169,12 @@ export function CreateOperationForm({
     });
   }, [pagos, bankAccounts]);
 
-  const montoTotal = parseCurrency(montoTotalRaw);
-
-  const totalPagos = useMemo<number>(() => {
-    return pagos.reduce<number>((acc, pago) => {
-      return acc + parseCurrency(pago?.monto);
-    }, 0);
-  }, [pagos]);
-
-  const saldoDisponible = Math.max(montoTotal - totalPagos, 0);
-  const excedeMontoTotal = totalPagos > montoTotal;
-  const excedente = excedeMontoTotal ? totalPagos - montoTotal : 0;
-
   const nivelesRedComercialRaw = useWatch({
     control,
     name: 'nivelesRedComercial',
   });
 
   const nivelesRedComercial = Number(nivelesRedComercialRaw) || 1;
-
-  const porcentajeComisionOficinaRaw = useWatch({
-    control,
-    name: 'porcentajeComisionOficina',
-  });
-
-  const porcentajeComisionSocioRaw = useWatch({
-    control,
-    name: 'porcentajeComisionSocio',
-  });
-
-  const porcentajeComisionSocioNivel2Raw = useWatch({
-    control,
-    name: 'porcentajeComisionSocioNivel2',
-  });
-
-  const porcentajeComisionSocioNivel3Raw = useWatch({
-    control,
-    name: 'porcentajeComisionSocioNivel3',
-  });
-
-  const comisionPreview = useMemo(() => {
-    const oficina = Number(porcentajeComisionOficinaRaw) || 0;
-    const nivel1 = Number(porcentajeComisionSocioRaw) || 0;
-    const nivel2 = nivelesRedComercial >= 2 ? Number(porcentajeComisionSocioNivel2Raw) || 0 : 0;
-    const nivel3 = nivelesRedComercial >= 3 ? Number(porcentajeComisionSocioNivel3Raw) || 0 : 0;
-    const total = oficina + nivel1 + nivel2 + nivel3;
-
-    return {
-      total,
-      monto: (montoTotal * total) / 100,
-    };
-  }, [
-    porcentajeComisionOficinaRaw,
-    porcentajeComisionSocioRaw,
-    porcentajeComisionSocioNivel2Raw,
-    porcentajeComisionSocioNivel3Raw,
-    nivelesRedComercial,
-    montoTotal,
-  ]);
 
   const socioComercialNivel2Id = useWatch({
     control,
@@ -279,14 +212,6 @@ export function CreateOperationForm({
     await trigger('pagos');
   };
 
-  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
-
-  function buildFileList(file: File): FileList {
-    const dataTransfer = new DataTransfer();
-    dataTransfer.items.add(file);
-    return dataTransfer.files;
-  }
-
   function onInvalid(formErrors: Record<string, unknown>) {
     const fieldLabels: Record<string, string> = {
       socioComercialId: 'Socio comercial nivel 1',
@@ -315,54 +240,7 @@ export function CreateOperationForm({
   }
 
   return (
-    <form className="space-y-4 pb-0" onSubmit={handleSubmit(onSubmit, onInvalid)}>
-      <div className="sticky top-0 z-50 -mx-4 -mt-4 rounded-b-2xl border-b border-slate-200 bg-white px-4 py-3 shadow-lg before:absolute before:inset-x-0 before:-top-10 before:h-10 before:bg-white sm:-mx-7 sm:-mt-7 sm:px-5 sm:py-4">
-        <div className="relative grid grid-cols-3 items-start gap-2 text-xs sm:gap-4 sm:text-sm md:grid-cols-4 md:items-center">
-          <div className="text-center">
-            <span className="block text-slate-500">Monto total requerido</span>
-            <span className="text-base font-semibold text-slate-900">
-              ${formatCurrencyDisplay(montoTotal)}
-            </span>
-          </div>
-
-          <div className="text-center">
-            <span className="block text-slate-500">Suma de comprobantes</span>
-            <span className={excedeMontoTotal ? 'text-base font-semibold text-red-600' : 'text-base font-semibold text-slate-900'}>
-              ${formatCurrencyDisplay(totalPagos)}
-            </span>
-          </div>
-
-          <div className="text-center">
-            <span className="block text-slate-500">
-              {excedeMontoTotal ? 'Excedente' : 'Faltante'}
-            </span>
-            <span className={(excedeMontoTotal || saldoDisponible > 0) ? 'text-base font-semibold text-red-600' : 'text-base font-semibold text-slate-700'}>
-              ${formatCurrencyDisplay(excedeMontoTotal ? excedente : saldoDisponible)}
-            </span>
-          </div>
-
-          <div className="col-span-3 mt-1 flex md:col-span-1 md:mt-0 md:justify-end">
-            <Button variant="primary"
-              type="submit"
-              isLoading={isSubmitting}
-              disabled={
-                excedeMontoTotal ||
-                !!errors.pagos?.message
-              }
-              className="w-full md:w-auto"
-            >
-              Registrar
-            </Button>
-          </div>
-        </div>
-
-        {excedeMontoTotal ? (
-          <div className="relative mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            La suma de los comprobantes excede el monto total de la operación por $
-            {formatCurrencyDisplay(excedente)}.
-          </div>
-        ) : null}
-      </div>
+    <form className="space-y-5" onSubmit={handleSubmit(onSubmit, onInvalid)}>
       <div className="mt-6 rounded-2xl border border-slate-200 p-4 sm:p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h3 className="text-base font-semibold text-slate-900">
@@ -513,13 +391,6 @@ export function CreateOperationForm({
                 ) : null}
               </div>
 
-              <div className="md:col-span-2 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                Comisión total estimada:{' '}
-                <span className="font-semibold text-slate-900">
-                  {comisionPreview.total.toFixed(2)}%
-                </span>{' '}
-                (${formatCurrencyDisplay(comisionPreview.monto)})
-              </div>
             </>
           )}
         </div>
@@ -714,19 +585,12 @@ export function CreateOperationForm({
             const comprobante =
               pagos[index]?.comprobante;
 
-            const selectedFile =
-              comprobante instanceof FileList &&
-                comprobante.length > 0
+            const selectedFile = comprobante instanceof File
+              ? comprobante
+              : comprobante instanceof FileList && comprobante.length > 0
                 ? comprobante[0]
                 : null;
 
-            const previewUrl =
-              selectedFile &&
-                isImageFile(selectedFile)
-                ? URL.createObjectURL(
-                  selectedFile,
-                )
-                : null;
             const tipoPagoActual = pagos[index]?.tipoPago;
 
             return (
@@ -962,206 +826,19 @@ export function CreateOperationForm({
 
                   <div className="space-y-4">
                     <div>
-                      <label className="mb-2 block text-sm font-medium text-slate-700">
-                        Imagen del comprobante
-                      </label>
-
-                      {selectedFile ? (
-
-                        <div className="space-y-3">
-
-                          {previewUrl ? (
-                            <img
-                              src={previewUrl}
-                              alt="Comprobante"
-                              className="
-          h-56
-          w-full
-          rounded-2xl
-          border
-          border-slate-200
-          object-cover
-        "
-                            />
-                          ) : (
-                            <div
-                              className="
-          flex
-          h-32
-          items-center
-          justify-center
-          rounded-2xl
-          border
-          border-slate-200
-          bg-slate-50
-          text-sm
-          text-slate-600
-        "
-                            >
-                              {selectedFile.name}
-                            </div>
-                          )}
-
-                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                            <div className="min-w-0 flex-1">
-                              <p
-                                className="truncate text-sm font-medium text-slate-900"
-                                title={selectedFile.name}
-                              >
-                                {selectedFile.name}
-                              </p>
-
-                              <p className="text-xs text-slate-500">
-                                Archivo seleccionado
-                              </p>
-                            </div>
-
-                            <label
-                              className="
-      shrink-0
-      cursor-pointer
-      rounded-xl
-      border
-      border-slate-200
-      bg-white
-      px-4
-      py-2
-      text-sm
-      font-medium
-      whitespace-nowrap
-      text-slate-700
-      transition
-      hover:bg-slate-50
-    "
-                            >
-                              Cambiar archivo
-
-                              <input
-                                type="file"
-                                accept=".pdf,.jpg,.jpeg,.png,.webp"
-                                className="hidden"
-                                onChange={(event) => {
-
-                                  setValue(
-                                    `pagos.${index}.comprobante`,
-                                    event.target.files ??
-                                    undefined,
-                                    {
-                                      shouldValidate: true,
-                                      shouldDirty: true,
-                                      shouldTouch: true,
-                                    },
-                                  );
-
-                                  void trigger('pagos');
-                                }}
-                              />
-                            </label>
-                          </div>
-
-                        </div>
-
-                      ) : (
-
-                        <label
-                          onDragOver={(event) => {
-                            event.preventDefault();
-                            setDraggingIndex(index);
-                          }}
-                          onDragLeave={(event) => {
-                            event.preventDefault();
-
-                            if (
-                              draggingIndex === index
-                            ) {
-                              setDraggingIndex(null);
-                            }
-                          }}
-                          onDrop={(event) => {
-                            event.preventDefault();
-
-                            setDraggingIndex(null);
-
-                            const file =
-                              event.dataTransfer.files?.[0];
-
-                            if (!file) {
-                              return;
-                            }
-
-                            const fileList =
-                              buildFileList(file);
-
-                            setValue(
-                              `pagos.${index}.comprobante`,
-                              fileList,
-                              {
-                                shouldValidate: true,
-                                shouldDirty: true,
-                                shouldTouch: true,
-                              },
-                            );
-
-                            void trigger('pagos');
-                          }}
-                          className={`
-      flex
-      min-h-[170px]
-      w-full
-      cursor-pointer
-      flex-col
-      items-center
-      justify-center
-      rounded-2xl
-      border-2
-      border-dashed
-      px-4
-      py-6
-      text-center
-      transition
-      ${draggingIndex === index
-                              ? 'border-blue-500 bg-blue-50'
-                              : 'border-slate-300 bg-slate-50 hover:border-slate-400'
-                            }
-    `}
-                        >
-
-                          <input
-                            type="file"
-                            accept=".pdf,.jpg,.jpeg,.png,.webp"
-                            className="hidden"
-                            onChange={(event) => {
-
-                              setValue(
-                                `pagos.${index}.comprobante`,
-                                event.target.files ??
-                                undefined,
-                                {
-                                  shouldValidate: true,
-                                  shouldDirty: true,
-                                  shouldTouch: true,
-                                },
-                              );
-
-                              void trigger('pagos');
-                            }}
-                          />
-
-                          <p className="text-sm font-semibold text-slate-700">
-                            Arrastra y suelta el comprobante
-                          </p>
-
-                          <p className="mt-1 text-xs text-slate-500">
-                            o haz clic para seleccionarlo
-                          </p>
-
-                          <p className="mt-3 text-xs text-slate-400">
-                            PDF, JPG, PNG o WEBP
-                          </p>
-
-                        </label>
-
-                      )}
+                      <ReceiptUploadField
+                        label="Comprobante de ingreso"
+                        file={selectedFile}
+                        inputId={`new-operation-proof-${index}`}
+                        onChange={(file) => {
+                          setValue(`pagos.${index}.comprobante`, file ?? undefined, {
+                            shouldValidate: true,
+                            shouldDirty: true,
+                            shouldTouch: true,
+                          });
+                          void trigger('pagos');
+                        }}
+                      />
 
                       {pagoErrors?.comprobante ? (
                         <p className="mt-1 text-xs text-red-600">
@@ -1222,6 +899,11 @@ export function CreateOperationForm({
         <Plus className="h-4 w-4" />
         Agregar otro pago
       </button>
+      <div className="flex flex-wrap justify-end gap-3 border-t border-slate-200 pt-5">
+        <Button variant="primary" type="submit" isLoading={isSubmitting} disabled={Boolean(errors.pagos?.message)}>
+          Registrar operación
+        </Button>
+      </div>
     </form>
   );
 }

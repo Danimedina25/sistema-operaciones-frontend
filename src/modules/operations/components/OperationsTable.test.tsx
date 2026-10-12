@@ -43,6 +43,7 @@ function buildOperation(estatus: OperationStatus): PaymentOperationResponse {
     montoComisionTotal: 0,
     montoTotalDevolverCliente: 0,
     montoSolicitadoRetorno: 0,
+    saldoPendientePorSolicitar: 0,
     montoRetornado: 0,
     saldoPendienteRetornar: 0,
     numeroRetornosSolicitados: 0,

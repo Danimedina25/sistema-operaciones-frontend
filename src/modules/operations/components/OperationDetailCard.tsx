@@ -1,16 +1,14 @@
 import { operationStatusLabels } from '@/modules/operations/constants/operations.constants';
 import {
-  formatCurrency,
-  formatDate,
   isOperationEditableStatus,
 } from '@/modules/operations/utils/operation-formatters';
+import { formatMoney as formatCurrency, formatDate } from '@/shared/format';
 import { PaymentOperationResponse } from '../types/operations.types.ts';
 import { OperationStatusBadge } from './OperationStatusBadge.js';
 import { useMarkOperationAsInvoiced } from '../hooks/use-mark-operations-as-invoiced.js';
 import { useLocation } from 'react-router-dom';
 import { paths } from '@/routes/paths.js';
 import { useAuth } from '@/modules/auth/store/auth.context';
-import { ProgressBar } from '@/shared/components/ui/ProgressBar';
 import { useWhatsAppLink } from '@/shared/hooks/use-whatsapp-link';
 import { buildOperationShareMessage } from '@/shared/utils/whatsapp-message';
 import { BriefcaseBusiness, CalendarDays, CircleDollarSign, MessageCircle, ReceiptText, TrendingDown } from 'lucide-react';
@@ -142,14 +140,11 @@ export function OperationDetailCard({
             <h2 className="mt-4 break-words text-xl font-bold tracking-tight sm:text-2xl md:text-3xl">
               {operation.clienteNombre}
             </h2>
-            <div className="mt-3 grid grid-cols-[auto_1fr] items-start gap-2 text-sm">
-              <BriefcaseBusiness className="mt-0.5 h-4 w-4 text-slate-400" />
-              <div className="min-w-0">
-                <p className="text-xs text-slate-400">Socio comercial</p>
-                <p className="mt-0.5 break-words font-medium leading-5 text-slate-200">
-                  {operation.socioComercialNombre}
-                </p>
-              </div>
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+              <BriefcaseBusiness className="h-4 w-4" /> Red:
+              <span className="rounded-full border border-blue-400/40 bg-blue-500/20 px-2.5 py-1 text-white">Nivel 1 · {operation.socioComercialNombre}</span>
+              {operation.socioComercialNivel2Nombre && <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-white">Nivel 2 · {operation.socioComercialNivel2Nombre}</span>}
+              {operation.socioComercialNivel3Nombre && <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-white">Nivel 3 · {operation.socioComercialNivel3Nombre}</span>}
             </div>
           </div>
 
@@ -178,24 +173,14 @@ export function OperationDetailCard({
         <div className="mt-5 grid grid-cols-2 gap-2 sm:mt-6 sm:gap-3 xl:grid-cols-4">
           <SummaryItem label="Monto de la operación" value={formatCurrency(operation.montoTotal)} variant="dark" />
           <SummaryItem label="Ingreso validado" value={formatCurrency(operation.montoValidado)} variant="dark" />
-          <SummaryItem label="Pendiente por validar" value={formatCurrency(operation.saldoPendientePorValidar)} variant="dark" />
           <SummaryItem label="Retorno al cliente" value={formatCurrency(operation.montoTotalDevolverCliente)} variant="dark" />
-        </div>
-
-        <div className="mt-5 rounded-xl border border-white/10 bg-white/5 p-3 sm:mt-6 sm:rounded-2xl sm:p-4">
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-            Avance de la operación
-          </p>
-          <ProgressBar
-            total={operation.montoTotal}
-            registered={operation.montoRegistrado}
-            validated={operation.montoValidado}
-            variant="dark"
-          />
+          <SummaryItem label="Pendiente por retornar" value={formatCurrency(operation.saldoPendienteRetornar)} variant="dark" />
         </div>
       </div>
 
-      <div className="p-4 sm:p-6 md:p-8">
+      <details className="border-t border-slate-200 p-4 sm:px-6">
+        <summary className="cursor-pointer text-sm font-medium text-slate-600">Más información de la operación</summary>
+        <div className="pt-5">
 
       {canReviewCommission &&
         operation.nivelesRedComercial >= 2 &&
@@ -397,9 +382,7 @@ export function OperationDetailCard({
                     ? 'Porcentaje total descontado al cliente'
                     : 'Porcentaje total a descontar al cliente'
                 }
-                value={`${operation.porcentajeComisionOficinaTotal +
-                  operation.porcentajeComisionRedTotal
-                  }%`}
+                value={`${operation.porcentajeComisionTotal}%`}
               />
 
               <SummaryItem
@@ -431,10 +414,7 @@ export function OperationDetailCard({
                     ? 'Total descontado al cliente'
                     : 'Total a descontar al cliente'
                 }
-                value={formatCurrency(
-                  operation.montoComisionOficinaTotal +
-                  operation.montoComisionRedTotal,
-                )}
+                value={formatCurrency(operation.montoComisionTotal)}
                 variant="dark"
               />
             </div>
@@ -480,7 +460,8 @@ export function OperationDetailCard({
           </p>
         </div>
       )}
-      </div>
+        </div>
+      </details>
     </div>
   );
 }

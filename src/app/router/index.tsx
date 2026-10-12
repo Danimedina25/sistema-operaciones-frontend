@@ -24,6 +24,7 @@ import ClientesPage from '@/modules/clientes/pages/ClientesPage';
 import BankAccountsPage from '@/modules/bank-accounts/pages/BankAccountsPage';
 
 import OperationsPage from '@/modules/operations/pages/OperationsPage';
+import NewOperationPage from '@/modules/operations/pages/NewOperationPage';
 import OperationDetailPage from '@/modules/operations/pages/OperationDetailPage';
 
 import ReturnsForRequestPage from '@/modules/operations/pages/ReturnsForRequestPage';
@@ -158,6 +159,10 @@ export const router = createBrowserRouter([
                 element: <OperationsPage />,
               },
             ],
+          },
+          {
+            element: <RoleGuard allowedRoles={ROUTE_ACCESS.operationCreate} />,
+            children: [{ path: paths.operationCreate, element: <NewOperationPage /> }],
           },
           {
             element: <RoleGuard allowedRoles={ROUTE_ACCESS.bankAccounts} />,

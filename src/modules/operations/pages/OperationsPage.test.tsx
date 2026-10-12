@@ -17,6 +17,9 @@ const mocks = vi.hoisted(() => ({
   setCurrentPage: vi.fn(),
   operations: [] as PaymentOperationResponse[],
   currentPage: 0,
+  bankEnabled: [] as boolean[],
+  clientsEnabled: [] as boolean[],
+  partnersEnabled: [] as boolean[],
 }));
 
 vi.mock('@/modules/auth/store/auth.context', () => ({
@@ -63,13 +66,22 @@ vi.mock('../hooks/use-update-operation.js', () => ({
   useUpdateOperation: () => ({ isSubmitting: false, submitUpdateOperation: vi.fn() }),
 }));
 vi.mock('@/modules/bank-accounts/hooks/use-bank-accounts', () => ({
-  useBankAccounts: () => ({ accounts: [], isLoading: false }),
+  useBankAccounts: ({ enabled }: { enabled?: boolean } = {}) => {
+    mocks.bankEnabled.push(enabled ?? true);
+    return { accounts: [], isLoading: false };
+  },
 }));
 vi.mock('@/modules/clientes/hooks/use-clientes.js', () => ({
-  useClientes: () => ({ clientes: [], isLoading: false }),
+  useClientes: ({ enabled }: { enabled?: boolean } = {}) => {
+    mocks.clientsEnabled.push(enabled ?? true);
+    return { clientes: [], isLoading: false };
+  },
 }));
 vi.mock('@/modules/socioscomerciales/hooks/use-commercial-partners.js', () => ({
-  useCommercialPartners: () => ({ commercialPartners: [], isLoading: false }),
+  useCommercialPartners: ({ enabled }: { enabled?: boolean } = {}) => {
+    mocks.partnersEnabled.push(enabled ?? true);
+    return { commercialPartners: [], isLoading: false };
+  },
 }));
 vi.mock('@/modules/configuraciones/hooks/use-configuracion-general', () => ({
   useConfiguracionGeneral: () => ({ configuracionGeneral: null }),
@@ -106,6 +118,7 @@ function buildOperation(id: number): PaymentOperationResponse {
     montoComisionTotal: 0,
     montoTotalDevolverCliente: 0,
     montoSolicitadoRetorno: 0,
+    saldoPendientePorSolicitar: 0,
     montoRetornado: 0,
     saldoPendienteRetornar: 0,
     numeroRetornosSolicitados: 0,
@@ -148,7 +161,20 @@ beforeEach(() => {
   mocks.roles = ['ADMIN'];
   mocks.operations = [buildOperation(42)];
   mocks.currentPage = 0;
+  mocks.bankEnabled = [];
+  mocks.clientsEnabled = [];
+  mocks.partnersEnabled = [];
   mocks.deleteOperation.mockResolvedValue(undefined);
+});
+
+it('no carga catálogos de formularios al abrir el listado del Socio', () => {
+  mocks.roles = ['SOCIO_COMERCIAL'];
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  render(<QueryClientProvider client={client}><MemoryRouter><OperationsPage /></MemoryRouter></QueryClientProvider>);
+  expect(mocks.bankEnabled.length).toBeGreaterThan(0);
+  expect(mocks.bankEnabled.every((enabled) => !enabled)).toBe(true);
+  expect(mocks.clientsEnabled.every((enabled) => !enabled)).toBe(true);
+  expect(mocks.partnersEnabled.every((enabled) => !enabled)).toBe(true);
 });
 
 it.each(['SOCIO_COMERCIAL', 'ADMIN'])('usa encabezado ligero con Nueva operación azul para %s', (role) => {

@@ -1,20 +1,18 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Modal } from '@/shared/components/ui/Modal';
 import { ActionDrawer } from '@/shared/components/ui/ActionDrawer';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { useUrlFilters } from '@/shared/hooks/use-url-filters';
-import { CreateOperationForm } from '@/modules/operations/components/CreateOperationForm';
 import { OperationsFilters } from '@/modules/operations/components/OperationsFilters';
 import { OperationsTable } from '@/modules/operations/components/OperationsTable';
-import { useCreateOperation } from '@/modules/operations/hooks/use-create-operation';
 import { useOperations } from '@/modules/operations/hooks/use-operations';
-import { getStalledOperations } from '@/modules/operations/api/operations.api';
+import { searchStalledOperations } from '@/modules/operations/api/operations.api';
 import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts';
 import { AddOperationPaymentForm } from '@/modules/operations/components/AddOperationPaymentForm';
 import { useAddOperationPayment } from '@/modules/operations/hooks/use-add-operation-payment';
-import { buildOperationDetailPath } from '@/routes/paths';
+import { buildOperationDetailPath, paths } from '@/routes/paths';
 import {
   OperationsFilters as OperationsFiltersType,
   PaymentOperationResponse,
@@ -25,7 +23,6 @@ import { useUpdateOperation } from '../hooks/use-update-operation.js';
 import { UpdateOperationForm } from '../components/UpdateOperationForm.js';
 import { useAuth } from '@/modules/auth/store/auth.context.js';
 import { useCommercialPartners } from '@/modules/socioscomerciales/hooks/use-commercial-partners.js';
-import { useConfiguracionGeneral } from '@/modules/configuraciones/hooks/use-configuracion-general';
 import { useCommercialLevelOneUsers } from '@/modules/users/hooks/use-commercial-level-one-users';
 import { SearchFilterBar, type ActiveFilter } from '@/shared/components/ui/SearchFilterBar';
 import { Tabs } from '@/shared/components/ui/Tabs';
@@ -61,6 +58,8 @@ export default function OperationsPage() {
   const isManager = hasRole(['GERENTE']);
   const [listView, setListView] = useState<'all' | 'pending' | 'stalled'>('all');
   const [stalledPage, setStalledPage] = useState(0);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [stalledSearch, setStalledSearch] = useState('');
   // Cuentas solo trabaja ingresos bancarios; efectivo es responsabilidad de cajas.
   const hideCashPaymentType =
     hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS']) && !hasRole(['JEFA_CAJAS']);
@@ -78,7 +77,13 @@ export default function OperationsPage() {
     paymentTypes: hideCashPaymentType && savedFilters.paymentTypes === 'EFECTIVO'
       ? '' : savedFilters.paymentTypes,
   }), [savedFilters, hideCashPaymentType]);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setStalledSearch(filters.search.trim());
+      setStalledPage(0);
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [filters.search]);
   const [isAddPaymentModalOpen, setIsAddPaymentModalOpen] = useState(false);
   const [selectedOperation, setSelectedOperation] = useState<PaymentOperationResponse | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -88,10 +93,8 @@ export default function OperationsPage() {
     useState<PaymentOperationResponse | null>(null);
 
   const canCreateOperation = hasRole(['SOCIO_COMERCIAL', 'ADMIN']);
-  const canReadConfiguracionGeneral = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
   const showPaymentTypeFilter = !hasRole(['SOCIO_COMERCIAL']);
 
-  const canAssignLevelOne = hasRole(['ADMIN']);
   const showSocioFilter = hasRole(['GERENTE', 'DIRECCION', 'ADMIN']);
   const queryFilters = useMemo<OperationsFiltersType>(() =>
     isManager && listView === 'pending'
@@ -102,14 +105,14 @@ export default function OperationsPage() {
   const {
     commercialLevelOneUsers,
     isLoading: isLoadingLevelOneUsers,
-  } = useCommercialLevelOneUsers({ enabled: canAssignLevelOne || showSocioFilter });
+  } = useCommercialLevelOneUsers({ enabled: showSocioFilter && (filtersOpen || Boolean(filters.socioComercialId)) });
   const canEditOperations = hasRole([
     'ADMIN',
     'GERENTE',
     'DIRECCION',
     'SOCIO_COMERCIAL',
   ]);
-  const needsOperationCatalogs = canCreateOperation || canEditOperations;
+  const needsOperationCatalogs = canEditOperations && isEditModalOpen;
 
   const {
     clientes: clientesCatalog,
@@ -129,13 +132,8 @@ export default function OperationsPage() {
     commercialPartners: commercialPartnersCatalog,
   } = useCommercialPartners({ enabled: needsOperationCatalogs });
 
-  const { configuracionGeneral } = useConfiguracionGeneral({
-    enabled: canCreateOperation && canReadConfiguracionGeneral,
-  });
 
-  const commercialPartners = useMemo(() => {
-    return commercialPartnersCatalog.filter((partner) => partner.activo);
-  }, [commercialPartnersCatalog]);
+  const commercialPartners = useMemo(() => commercialPartnersCatalog.filter((partner) => partner.activo), [commercialPartnersCatalog]);
 
   const {
     operations,
@@ -149,21 +147,19 @@ export default function OperationsPage() {
     processingOperationId,
     handleActivate,
     handleDeactivate,
-  } = useOperations(queryFilters);
+  } = useOperations(queryFilters, !(isManager && listView === 'stalled'));
 
   const stalledQuery = useQuery({
-    queryKey: ['operations-list-stalled', user?.userId, stalledPage],
-    queryFn: () => getStalledOperations(stalledPage, 10),
+    queryKey: ['operations-list-stalled-search', user?.userId, stalledPage, stalledSearch],
+    queryFn: () => searchStalledOperations(stalledSearch, stalledPage, 10),
     enabled: isManager && listView === 'stalled',
+    refetchOnWindowFocus: false,
+    staleTime: 60_000,
   });
   const showingStalled = isManager && listView === 'stalled';
   const stalledRows = stalledQuery.data?.content ?? [];
-  const stalledSearch = filters.search.trim().toLocaleLowerCase('es-MX');
   const visibleOperations = showingStalled
-    ? stalledRows.filter((operation) => !stalledSearch ||
-        String(operation.id).includes(stalledSearch) ||
-        operation.clienteNombre.toLocaleLowerCase('es-MX').includes(stalledSearch) ||
-        operation.socioComercialNombre.toLocaleLowerCase('es-MX').includes(stalledSearch))
+    ? stalledRows
     : operations;
   const visiblePage = showingStalled ? stalledPage : currentPage;
   const visibleTotalPages = showingStalled ? stalledQuery.data?.totalPages ?? 0 : totalPages;
@@ -248,7 +244,7 @@ export default function OperationsPage() {
   const {
     accounts: bankAccountsCatalog,
     isLoading: isLoadingBankAccounts,
-  } = useBankAccounts();
+  } = useBankAccounts({ enabled: isAddPaymentModalOpen || (filtersOpen && !showingStalled) || Boolean(filters.cuentaDestinoId) });
 
   const bankAccounts = useMemo(() => {
     return bankAccountsCatalog
@@ -302,21 +298,13 @@ export default function OperationsPage() {
     onRemove: () => setFilters({ ...filters, activo: 'ACTIVE' }),
   });
 
-  const { isSubmitting, submitCreateOperation } = useCreateOperation({
-    onSuccess: async (operationId) => {
-      setIsCreateModalOpen(false);
-      await fetchOperations(currentPage);
-      navigate(buildOperationDetailPath(operationId));
-    },
-  });
-
   return (
     <div className="space-y-3">
       <PageHeader
         title="Operaciones"
         className="flex-row flex-wrap items-center justify-between gap-3 [&>div:last-child]:ml-auto"
         actions={canCreateOperation ? (
-          <Button type="button" variant="primary" onClick={() => setIsCreateModalOpen(true)}>
+          <Button type="button" variant="primary" onClick={() => navigate(paths.operationCreate)}>
             Nueva operación
           </Button>
         ) : undefined}
@@ -333,8 +321,9 @@ export default function OperationsPage() {
         <SearchFilterBar
           search={filters.search}
           onSearchChange={(search) => setFilters({ ...filters, search })}
-          searchPlaceholder={showingStalled ? 'Buscar en esta página de detenidas' : 'Buscar folio, cliente o socio comercial'}
+          searchPlaceholder="Buscar folio, cliente o socio comercial"
           activeFilters={showingStalled ? [] : activeFilters}
+          onFiltersOpenChange={setFiltersOpen}
           leading={isManager ? <Tabs
             label="Vistas de operaciones"
             options={[{ value: 'stalled', label: 'Detenidas' }, { value: 'pending', label: 'Por validar' }, { value: 'all', label: 'Todas' }]}
@@ -346,9 +335,9 @@ export default function OperationsPage() {
               if (value !== 'all') setFilters({ ...filters, status: 'ALL', search: '' });
             }}
           /> : undefined}
-          filters={showingStalled
-            ? <p className="text-sm text-slate-600">La búsqueda revisa los resultados de esta página. Cambia de página para revisar más operaciones detenidas.</p>
-            : <OperationsFilters
+          filters={showingStalled ? (
+            <p className="text-sm text-slate-600">La búsqueda revisa todas las operaciones detenidas antes de paginar.</p>
+          ) : <OperationsFilters
             filters={filters}
             onChange={setFilters}
             showEstatusFilter={!isManager || listView === 'all'}
@@ -365,8 +354,8 @@ export default function OperationsPage() {
           operations={visibleOperations}
           isLoading={visibleIsLoading}
           stalledView={showingStalled}
-          emptyTitle={showingStalled && stalledSearch ? 'Sin coincidencias en esta página' : undefined}
-          emptyDescription={showingStalled && stalledSearch ? 'Prueba otra búsqueda o revisa las demás páginas.' : undefined}
+          emptyTitle={showingStalled && stalledSearch ? 'Sin coincidencias' : undefined}
+          emptyDescription={showingStalled && stalledSearch ? 'Prueba otra búsqueda.' : undefined}
           currentPage={visiblePage}
           totalPages={visibleTotalPages}
           totalElements={visibleTotalElements}
@@ -397,37 +386,6 @@ export default function OperationsPage() {
           />
         </div>
       </section>
-
-      <Modal
-        open={isCreateModalOpen}
-        title="Nueva operación"
-        onClose={() => setIsCreateModalOpen(false)}
-      >
-        {isLoadingBankAccounts || isLoadingClientes || (canAssignLevelOne && isLoadingLevelOneUsers) ? (
-          <div className="py-8 text-center text-sm text-slate-500">
-            Cargando cuentas bancarias...
-          </div>
-        ) : (
-          <CreateOperationForm
-            isSubmitting={isSubmitting}
-            bankAccounts={bankAccounts}
-            clientes={clientes}
-            commercialPartners={commercialPartners}
-            porcentajeComisionOficinaDefault={
-              configuracionGeneral?.porcentajeComisionOficina ?? 1.5
-            }
-            levelOneUsers={commercialLevelOneUsers.map((item) => ({
-              id: item.id,
-              nombre: item.nombre,
-              porcentajeComision: item.commercialSettings?.porcentajeComision ?? 0,
-            }))}
-            currentLevelOneId={canAssignLevelOne ? 0 : (user?.userId ?? 0)}
-            currentLevelOneCommission={user?.porcentajeComision ?? 0}
-            canAssignLevelOne={canAssignLevelOne}
-            onSubmit={submitCreateOperation}
-          />
-        )}
-      </Modal>
 
       <Modal
         open={isEditModalOpen}

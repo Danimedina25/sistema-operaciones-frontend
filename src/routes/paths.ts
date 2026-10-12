@@ -20,6 +20,7 @@ export const paths = {
   mycomercialpartners: '/socioscomerciales',
 
   operations: '/operaciones',
+  operationCreate: '/operaciones/nueva',
   operationDetail: '/operaciones/:operationId',
 
   returnsforrequest: '/retornos-por-solicitar',

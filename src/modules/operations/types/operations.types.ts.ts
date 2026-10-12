@@ -255,6 +255,7 @@ export interface PaymentOperationResponse {
 
   // NUEVOS CAMPOS
   montoSolicitadoRetorno: number;
+  saldoPendientePorSolicitar: number;
   montoRetornado: number;
   saldoPendienteRetornar: number;
 

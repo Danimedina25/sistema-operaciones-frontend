@@ -15,19 +15,22 @@ import { emitNotificationReceived } from '@/modules/notifications/services/notif
 interface UseNotificationsOptions {
   limit?: number;
   enabled?: boolean;
+  listEnabled?: boolean;
 }
 
 export function useNotifications(options?: UseNotificationsOptions) {
   const limit = options?.limit ?? 10;
   const enabled = options?.enabled ?? true;
+  const listEnabled = options?.listEnabled ?? true;
 
   const { token, isAuthenticated, user } = useAuth();
 
   const limitRef = useRef(limit);
+  const countRequestedFor = useRef<number | null>(null);
 
   const [notifications, setNotifications] = useState<NotificationResponse[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(listEnabled);
   const [isMarkingAllAsRead, setIsMarkingAllAsRead] = useState(false);
   const [processingNotificationId, setProcessingNotificationId] =
     useState<number | null>(null);
@@ -39,9 +42,8 @@ export function useNotifications(options?: UseNotificationsOptions) {
   }, [limit]);
 
   const loadNotifications = useCallback(async () => {
-    if (!enabled || !isAuthenticated) {
+    if (!enabled || !isAuthenticated || !listEnabled) {
       setNotifications([]);
-      setUnreadCount(0);
       setIsLoading(false);
       return;
     }
@@ -49,19 +51,30 @@ export function useNotifications(options?: UseNotificationsOptions) {
     try {
       setIsLoading(true);
 
-      const [latest, unread] = await Promise.all([
-        getLatestNotifications(limitRef.current),
-        getUnreadNotificationsCount(),
-      ]);
-
+      const latest = await getLatestNotifications(limitRef.current);
       setNotifications(latest);
-      setUnreadCount(unread.unreadCount);
     } catch (error) {
       toast.error(getApiErrorMessage(error));
     } finally {
       setIsLoading(false);
     }
-  }, [enabled, isAuthenticated]);
+  }, [enabled, isAuthenticated, listEnabled]);
+
+  useEffect(() => {
+    if (!enabled || !isAuthenticated) {
+      countRequestedFor.current = null;
+      setUnreadCount(0);
+      return;
+    }
+    if (!user?.userId || countRequestedFor.current === user.userId) return;
+    countRequestedFor.current = user.userId;
+    void getUnreadNotificationsCount()
+      .then((response) => setUnreadCount(response.unreadCount))
+      .catch((error) => {
+        countRequestedFor.current = null;
+        toast.error(getApiErrorMessage(error));
+      });
+  }, [enabled, isAuthenticated, user?.userId]);
 
   useEffect(() => {
     void loadNotifications();

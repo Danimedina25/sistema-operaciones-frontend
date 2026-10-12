@@ -10,11 +10,11 @@ import {
   OperationsFilters,
 } from '../types/operations.types.ts';
 
-export function useOperations(filters: OperationsFilters) {
+export function useOperations(filters: OperationsFilters, enabled = true) {
   const [pagination, setPagination] = useState({ filters, page: 0 });
   const currentPage = pagination.filters === filters ? pagination.page : 0;
   const setCurrentPage = (page: number) => setPagination({ filters, page });
-  const query = useWorkOperations(filters, currentPage);
+  const query = useWorkOperations(filters, currentPage, false, enabled, 'manual');
   const operations = query.data?.content ?? [];
   const isLoading = query.isFetching;
   const totalPages = query.data?.totalPages ?? 0;

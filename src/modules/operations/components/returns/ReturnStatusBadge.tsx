@@ -1,41 +1,21 @@
-import { cn } from "@/shared/lib/cn";
-import { STATUS_BADGE_CLASS } from '@/shared/components/ui/status-badge-styles';
+import { StatusBadge, type StatusTone } from '@/shared/components/ui/StatusBadge';
 import type { ReturnPaymentStatus } from '../../types/operations.types.ts';
 
-interface ReturnStatusBadgeProps {
-  status: ReturnPaymentStatus;
-}
-
-const LABELS: Record<ReturnPaymentStatus, string> = {
+const labels: Record<ReturnPaymentStatus, string> = {
   SOLICITADO: 'Solicitado',
   EN_RECOLECCION: 'En recolección',
   ENTREGADO: 'Entregado',
   PARCIALMENTE_RETORNADO: 'Parcialmente retornado',
   RETORNADO: 'Retornado',
 };
+const tones: Record<ReturnPaymentStatus, StatusTone> = {
+  SOLICITADO: 'request',
+  EN_RECOLECCION: 'pending',
+  ENTREGADO: 'active',
+  PARCIALMENTE_RETORNADO: 'pending',
+  RETORNADO: 'success',
+};
 
-export function ReturnStatusBadge({ status }: ReturnStatusBadgeProps) {
-  return (
-    <span
-      className={cn(
-        STATUS_BADGE_CLASS,
-        status === 'RETORNADO' &&
-          'border-emerald-200 bg-emerald-50 text-emerald-700',
-
-        status === 'PARCIALMENTE_RETORNADO' &&
-          'border-teal-200 bg-teal-50 text-teal-700',
-
-        status === 'ENTREGADO' &&
-          'border-indigo-200 bg-indigo-50 text-indigo-700',
-
-        status === 'EN_RECOLECCION' &&
-          'border-blue-200 bg-blue-50 text-blue-700',
-
-        status === 'SOLICITADO' &&
-          'border-amber-200 bg-amber-50 text-amber-700',
-      )}
-    >
-      {LABELS[status] ?? status}
-    </span>
-  );
+export function ReturnStatusBadge({ status }: { status: ReturnPaymentStatus }) {
+  return <StatusBadge tone={tones[status]} className="whitespace-nowrap">{labels[status]}</StatusBadge>;
 }

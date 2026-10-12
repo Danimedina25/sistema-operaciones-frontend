@@ -3,10 +3,7 @@
 import { type ReactNode } from 'react';
 import { BanknoteArrowDown, Paperclip, Plus } from 'lucide-react';
 import { paymentTypeLabels } from '@/modules/operations/constants/operations.constants';
-import {
-  formatCurrency,
-  formatDate,
-} from '@/modules/operations/utils/operation-formatters';
+import { formatMoney as formatCurrency, formatDate } from '@/shared/format';
 import {
   isCashReturnMethod,
   resolveRegisterInstallmentAvailability,
@@ -19,6 +16,7 @@ import {
 } from '../../types/operations.types.ts';
 import { ReturnStatusBadge } from './ReturnStatusBadge.js';
 import { useAuth } from '@/modules/auth/store/auth.context.js';
+import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
 
 interface ReturnPaymentsTableProps {
   returns: ReturnPaymentResponse[];
@@ -173,6 +171,10 @@ export function ReturnPaymentsTable({
             Editar solicitud
           </button>
         )}
+        {returnPayment.archivoNominaUrl && <a href={returnPayment.archivoNominaUrl} target="_blank" rel="noreferrer"
+          className="inline-flex items-center justify-center gap-1 text-xs font-medium text-emerald-700 hover:underline">
+          <Paperclip className="h-3.5 w-3.5" /> Descargar nómina
+        </a>}
       </div>
     );
   }
@@ -189,7 +191,7 @@ export function ReturnPaymentsTable({
           />
         </div>
         <p className="mt-1 text-xs text-slate-500">
-          {pct.toFixed(1)}% · {totals.numeroParcialidades} parcialidad(es)
+          {formatCurrency(totals.montoRetornado)} de {formatCurrency(totals.montoSolicitado)} retornado
         </p>
       </div>
     );
@@ -197,26 +199,26 @@ export function ReturnPaymentsTable({
 
   return (
     <div className="overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white shadow-xl shadow-slate-950/[0.06]">
-      <div className="bg-gradient-to-r from-slate-950 to-slate-800 px-4 py-5 text-white sm:px-6">
+      <div className="border-b border-slate-100 bg-white px-4 py-3 sm:px-6">
         <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
           <div className="text-left">
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">
               <BanknoteArrowDown className="h-4 w-4" /> Egresos
             </p>
-            <h3 className="mt-1 text-xl font-bold tracking-tight text-white">Retornos al cliente</h3>
-            <p className="mt-1 text-sm text-slate-400">
+            <h3 className="mt-1 text-base font-semibold text-slate-900">Retornos al cliente</h3>
+            <p className="mt-1 text-xs text-slate-500">
               Seguimiento de solicitudes y sus parcialidades.
             </p>
           </div>
 
           <div className="grid w-full grid-cols-1 items-start gap-3 md:w-auto md:grid-cols-[1fr_1fr] md:gap-10">
-            <div className="rounded-xl border border-white/10 bg-white/5 px-5 py-3">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
                 Pendiente por solicitar
               </p>
               <p
                 className={`mt-1 text-lg font-bold tabular-nums ${
-                  hasPendingAmountToRequest ? 'text-cyan-300' : 'text-slate-500'
+                  hasPendingAmountToRequest ? 'text-blue-600' : 'text-slate-500'
                 }`}
               >
                 {formatCurrency(montoPendientePorSolicitar ?? 0)}
@@ -231,24 +233,24 @@ export function ReturnPaymentsTable({
                     <Plus className="h-3.5 w-3.5" /> Solicitar retorno
                   </button>
                 ) : requestStatusMessage ? (
-                  <p className="text-xs font-medium text-slate-400">{requestStatusMessage}</p>
+                  <p className="text-xs font-medium text-slate-500">{requestStatusMessage}</p>
                 ) : null}
               </div>
             </div>
 
-            <div className="rounded-xl border border-white/10 bg-white/5 px-5 py-3">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
                 Pendiente por retornar
               </p>
               <p
                 className={`mt-1 text-lg font-bold tabular-nums ${
-                  hasPendingAmountToPay ? 'text-amber-300' : 'text-slate-500'
+                  hasPendingAmountToPay ? 'text-amber-700' : 'text-slate-500'
                 }`}
               >
                 {formatCurrency(montoPendientePorRetornar ?? 0)}
               </p>
               <div className="mt-1 flex min-h-[28px] items-center">
-                <p className="text-xs font-medium text-slate-400">{paymentStatusMessage}</p>
+                <p className="text-xs font-medium text-slate-500">{paymentStatusMessage}</p>
               </div>
             </div>
           </div>
@@ -270,132 +272,32 @@ export function ReturnPaymentsTable({
         </div>
       ) : (
         <>
-          {/* Desktop */}
-          <div className="hidden overflow-x-auto md:block">
-            <table className="min-w-full border-separate border-spacing-0">
-              <thead className="bg-slate-100">
-                <tr className="text-left text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
-                  <th className="px-4 py-3 font-medium">Folio</th>
-                  <th className="px-4 py-3 font-medium">Método</th>
-                  <th className="px-4 py-3 font-medium">Solicitado</th>
-                  <th className="px-4 py-3 font-medium">Retornado</th>
-                  <th className="px-4 py-3 font-medium">Pendiente</th>
-                  <th className="px-4 py-3 font-medium">Avance</th>
-                  <th className="px-4 py-3 font-medium">Estatus</th>
-                  <th className="px-4 py-3 font-medium">Fecha solicitud</th>
-                  <th className="px-4 py-3 font-medium">Nómina</th>
-                  <th className="px-4 py-3 font-medium">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleReturns.map((returnPayment) => {
-                  const totals = resolveReturnRequestTotals(returnPayment);
-                  return (
-                    <tr
-                      key={returnPayment.id}
-                      className="border-t border-slate-100 text-sm transition hover:bg-cyan-50/40"
-                    >
-                      <td className="px-4 py-4 font-semibold text-slate-900">
-                        #{returnPayment.id}
-                      </td>
-                      <td className="px-4 py-4 text-slate-600">
-                        {paymentTypeLabels[returnPayment.tipoPago]}
-                      </td>
-                      <td className="px-4 py-4 font-semibold tabular-nums text-slate-950">
-                        {formatCurrency(totals.montoSolicitado)}
-                      </td>
-                      <td className="px-4 py-4 tabular-nums text-emerald-700">
-                        {formatCurrency(totals.montoRetornado)}
-                      </td>
-                      <td className="px-4 py-4 tabular-nums text-amber-700">
-                        {formatCurrency(totals.montoPendiente)}
-                      </td>
-                      <td className="px-4 py-4">{renderProgress(returnPayment)}</td>
-                      <td className="px-4 py-4">
-                        <ReturnStatusBadge status={returnPayment.estatus} />
-                      </td>
-                      <td className="px-4 py-4 text-slate-600">
-                        {returnPayment.fechaSolicitud
-                          ? formatDate(returnPayment.fechaSolicitud)
-                          : '-'}
-                      </td>
-                      <td className="px-4 py-4">
-                        {returnPayment.archivoNominaUrl ? (
-                          <a
-                            href={returnPayment.archivoNominaUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            title="Descargar archivo de nóminas"
-                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 transition hover:bg-emerald-100"
-                          >
-                            <Paperclip className="h-4 w-4" />
-                          </a>
-                        ) : (
-                          <span className="text-xs text-slate-400">-</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-4">{renderRowActions(returnPayment)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Móvil */}
-          <div className="space-y-3 px-3 pb-4 pt-3 md:hidden">
-            {visibleReturns.map((returnPayment) => {
-              const totals = resolveReturnRequestTotals(returnPayment);
-              return (
-                <div
-                  key={returnPayment.id}
-                  className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-900">
-                        #{returnPayment.id} · {paymentTypeLabels[returnPayment.tipoPago]}
-                      </p>
-                      <p className="mt-0.5 text-lg font-bold tabular-nums text-slate-950">
-                        {formatCurrency(totals.montoSolicitado)}
-                      </p>
-                    </div>
-                    <ReturnStatusBadge status={returnPayment.estatus} />
-                  </div>
-
-                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-600">
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wide text-slate-400">Retornado</p>
-                      <p className="font-semibold text-emerald-700">
-                        {formatCurrency(totals.montoRetornado)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wide text-slate-400">Pendiente</p>
-                      <p className="font-semibold text-amber-700">
-                        {formatCurrency(totals.montoPendiente)}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-3">{renderProgress(returnPayment)}</div>
-
-                  {returnPayment.archivoNominaUrl ? (
-                    <a
-                      href={returnPayment.archivoNominaUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700"
-                    >
-                      <Paperclip className="h-3.5 w-3.5" /> Descargar archivo de nóminas
-                    </a>
-                  ) : null}
-
-                  <div className="mt-4">{renderRowActions(returnPayment)}</div>
-                </div>
-              );
-            })}
-          </div>
+          <DataTable
+            columns={[
+              { key: 'folio', header: 'Folio', width: '64px', cell: (request: ReturnPaymentResponse) => <span className="font-semibold text-slate-900">#{request.id}</span> },
+              { key: 'method', header: 'Método', width: '128px', cell: (request: ReturnPaymentResponse) => paymentTypeLabels[request.tipoPago] },
+              { key: 'requested', header: 'Solicitado', width: '126px', cell: (request: ReturnPaymentResponse) => <span className="font-semibold tabular-nums text-slate-900">{formatCurrency(resolveReturnRequestTotals(request).montoSolicitado)}</span> },
+              { key: 'progress', header: 'Avance', cell: renderProgress },
+              { key: 'pending', header: 'Pendiente', width: '118px', cell: (request: ReturnPaymentResponse) => <span className="font-semibold tabular-nums text-amber-700">{formatCurrency(resolveReturnRequestTotals(request).montoPendiente)}</span> },
+              { key: 'status', header: 'Estatus', kind: 'status', width: '170px', cell: (request: ReturnPaymentResponse) => <ReturnStatusBadge status={request.estatus} /> },
+              { key: 'actions', header: 'Acciones', kind: 'actions', align: 'right', width: '166px', cell: renderRowActions },
+            ] satisfies DataTableColumn<ReturnPaymentResponse>[]}
+            rows={visibleReturns}
+            getRowKey={(request) => request.id}
+            emptyTitle="Sin solicitudes de retorno"
+            mobile={{
+              title: (request) => <>#{request.id} · {paymentTypeLabels[request.tipoPago]}</>,
+              status: (request) => <ReturnStatusBadge status={request.estatus} />,
+              fields: [
+                { key: 'requested', label: 'Solicitado', value: (request) => formatCurrency(resolveReturnRequestTotals(request).montoSolicitado) },
+                { key: 'returned', label: 'Retornado', value: (request) => formatCurrency(resolveReturnRequestTotals(request).montoRetornado) },
+                { key: 'pending', label: 'Pendiente', value: (request) => formatCurrency(resolveReturnRequestTotals(request).montoPendiente) },
+                { key: 'date', label: 'Fecha de solicitud', value: (request) => request.fechaSolicitud ? formatDate(request.fechaSolicitud) : '—' },
+              ],
+              extra: renderProgress,
+              actions: renderRowActions,
+            }}
+          />
         </>
       )}
     </div>

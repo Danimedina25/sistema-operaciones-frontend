@@ -4,10 +4,10 @@ import { getApiErrorMessage } from '@/shared/utils/errors';
 import toast from 'react-hot-toast';
 import type { BankAccountResponse } from '@/modules/bank-accounts/types/bank-accounts.types';
 
-export function useBankAccounts() {
+export function useBankAccounts({ enabled = true }: { enabled?: boolean } = {}) {
   const [accounts, setAccounts] = useState<BankAccountResponse[]>([]);
   const [account, setAccount] = useState<BankAccountResponse>();
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(enabled);
 
   const loadBankAccounts = useCallback(async () => {
     try {
@@ -35,8 +35,8 @@ export function useBankAccounts() {
   }, []);
 
   useEffect(() => {
-    void loadBankAccounts();
-  }, [loadBankAccounts]);
+    if (enabled) void loadBankAccounts();
+  }, [enabled, loadBankAccounts]);
 
   return {
     accounts,

@@ -110,8 +110,8 @@ También permanecen [src/index.css](../src/index.css) y [src/App.css](../src/App
 8. **Rutas y documentos no siempre equivalen a funcionalidad activa:** hay rutas definidas sin pantalla registrada y páginas no montadas. Confirmar uso real antes de basar navegación nueva en el nombre de un archivo.
 9. **Datos de sesión y caché:** Axios usa token persistido, React Query cachea solicitudes y notificaciones usan WebSocket. Cambiar permisos, contadores o navegación requiere invalidación y tratamiento de 401/403 coherentes.
 10. **Pendiente — zona horaria de datos existentes:** Verificar si las fechas guardadas (ej. folio 41: 05:11:49) están en hora de la oficina o en UTC. Revisar antes de rediseñar pantallas que muestran hora (caja, cortes, detalle).
-11. **Pendiente — búsqueda en Detenidas:** En Detenidas, la búsqueda solo revisa la página actual; al hacer la pantalla de Operaciones, la búsqueda debe ser del lado del servidor para no esconder resultados.
-12. **Pendiente — Optimizar solicitudes de `/operaciones` (Fase 3, junto con la pantalla de Operaciones):** Cargar catálogos de clientes, socios comerciales y cuentas bancarias al abrir los formularios que los necesitan; cargar el listado de notificaciones al abrir la campana; definir una política explícita de actualización de operaciones. Medir solicitudes y remontajes por rol para evitar cargas repetidas o innecesarias.
+11. **Resuelto en Etapa 2 — búsqueda en Detenidas:** `GET /api/operations/stalled/search` filtra en el servidor antes de paginar; el listado usa el total real de resultados.
+12. **Resuelto en Etapa 2 — solicitudes de `/operaciones`:** Clientes, socios y cuentas bancarias se cargan al abrir el formulario o filtro que los necesita; el listado de notificaciones se carga al abrir la campana. La lista de operaciones se actualiza al entrar y tras acciones explícitas, sin intervalo ni recarga por foco; las demás colas de trabajo conservan su política previa. El conteo de notificaciones sigue al montar para mantener la insignia de la campana.
 
 ## Borrador de `CLAUDE.md`
 

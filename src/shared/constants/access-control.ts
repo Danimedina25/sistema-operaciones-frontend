@@ -34,6 +34,7 @@ export const ROUTE_ACCESS = {
     'JEFA_CUENTAS',
     'AUXILIAR_CUENTAS',
   ],
+  operationCreate: ['SOCIO_COMERCIAL', 'ADMIN'],
   bankAccounts: ['ADMIN', 'GERENTE', 'DIRECCION', 'JEFA_CUENTAS', 'AUXILIAR_CUENTAS'],
   comisionessocios: ['ADMIN', 'GERENTE', 'DIRECCION'],
   configuraciones: ['ADMIN', 'GERENTE', 'DIRECCION'],

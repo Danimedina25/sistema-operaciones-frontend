@@ -16,6 +16,7 @@ interface SearchFilterBarProps {
   activeFilters?: readonly ActiveFilter[];
   leading?: ReactNode;
   className?: string;
+  onFiltersOpenChange?: (open: boolean) => void;
 }
 
 export function SearchFilterBar({
@@ -26,6 +27,7 @@ export function SearchFilterBar({
   activeFilters = [],
   leading,
   className,
+  onFiltersOpenChange,
 }: SearchFilterBarProps) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
@@ -49,7 +51,10 @@ export function SearchFilterBar({
           type="button"
           aria-expanded={open}
           aria-controls={panelId}
-          onClick={() => setOpen((current) => !current)}
+          onClick={() => setOpen((current) => {
+            onFiltersOpenChange?.(!current);
+            return !current;
+          })}
           className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 hover:bg-slate-50"
         >
           <ListFilter aria-hidden="true" className="h-4 w-4" />

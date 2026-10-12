@@ -1,56 +1,14 @@
-import { cn } from '@/shared/lib/cn';
-import { STATUS_BADGE_CLASS } from '@/shared/components/ui/status-badge-styles';
-import {
-  paymentStatusLabels,
-} from '@/modules/operations/constants/operations.constants';
+import { StatusBadge, type StatusTone } from '@/shared/components/ui/StatusBadge';
+import { paymentStatusLabels } from '@/modules/operations/constants/operations.constants';
+import type { PaymentStatus } from '../types/operations.types.ts';
 
-import {
-  PaymentStatus,
-} from '../types/operations.types.ts';
+const tones: Record<PaymentStatus, StatusTone> = {
+  VALIDADA: 'success',
+  RECHAZADA: 'danger',
+  PENDIENTE_VALIDACION: 'pending',
+  EN_PROCESO: 'active',
+};
 
-interface PaymentStatusBadgeProps {
-  status: PaymentStatus;
-}
-
-export function PaymentStatusBadge({
-  status,
-}: PaymentStatusBadgeProps) {
-
-  return (
-    <span
-      className={cn(
-        STATUS_BADGE_CLASS,
-        'tracking-wide',
-        status === 'VALIDADA' &&
-          `
-          border-emerald-200
-          bg-emerald-50
-          text-emerald-700
-          `,
-
-        status === 'RECHAZADA' &&
-          `
-          border-rose-200
-          bg-rose-50
-          text-rose-700
-          `,
-
-        status === 'PENDIENTE_VALIDACION' &&
-          `
-          border-amber-200
-          bg-amber-50
-          text-amber-700
-          `,
-
-        status === 'EN_PROCESO' &&
-          `
-          border-blue-200
-          bg-blue-50
-          text-blue-700
-          `,
-      )}
-    >
-      {paymentStatusLabels[status]}
-    </span>
-  );
+export function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
+  return <StatusBadge tone={tones[status]} className="whitespace-nowrap">{paymentStatusLabels[status]}</StatusBadge>;
 }

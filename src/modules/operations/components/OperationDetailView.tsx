@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowDown, ArrowLeft, Landmark, Trash2 } from 'lucide-react';
+import { ArrowLeft, Trash2 } from 'lucide-react';
 import { OperationDetailCard } from '@/modules/operations/components/OperationDetailCard';
 import { PaymentsTable } from '@/modules/operations/components/PaymentsTable';
 import {
@@ -9,6 +9,7 @@ import {
 import { ReturnPaymentsTable } from './returns/ReturnPaymentsTable.js';
 import { useAuth } from '@/modules/auth/store/auth.context.js';
 import type { CashCounts } from '@/modules/caja-general/types/caja-general.types';
+import { Tabs } from '@/shared/components/ui/Tabs';
 
 interface OperationDetailViewProps {
   operation: PaymentOperationResponse;
@@ -76,32 +77,12 @@ export function OperationDetailView({
 }: OperationDetailViewProps) {
   const paymentsSectionRef = useRef<HTMLDivElement | null>(null);
   const returnsSectionRef = useRef<HTMLDivElement | null>(null);
-  const [showScrollDownButton, setShowScrollDownButton] = useState(true);
+  const [activeTab, setActiveTab] = useState<'income' | 'returns'>(scrollToReturns ? 'returns' : 'income');
   const { user } = useAuth();
 
   useEffect(() => {
-    const returnsElement = returnsSectionRef.current;
-
-    if (!returnsElement) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setShowScrollDownButton(!entry.isIntersecting);
-      },
-      {
-        threshold: 0.15,
-      },
-    );
-
-    observer.observe(returnsElement);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [operation.id]);
-
-  useEffect(() => {
     if (!scrollToPayments) return;
+    setActiveTab('income');
 
     const timeoutId = window.setTimeout(() => {
       paymentsSectionRef.current?.scrollIntoView({
@@ -115,6 +96,7 @@ export function OperationDetailView({
 
   useEffect(() => {
     if (!scrollToReturns) return;
+    setActiveTab('returns');
 
     const timeoutId = window.setTimeout(() => {
       returnsSectionRef.current?.scrollIntoView({
@@ -126,10 +108,7 @@ export function OperationDetailView({
     return () => window.clearTimeout(timeoutId);
   }, [scrollToReturns, operation.id]);
 
-  const montoPendientePorSolicitar = Math.max(
-    operation.montoTotalDevolverCliente - operation.montoSolicitadoRetorno,
-    0,
-  );
+  const montoPendientePorSolicitar = operation.saldoPendientePorSolicitar;
 
   const montoPendientePorRetornar = operation.saldoPendienteRetornar
   return (
@@ -155,10 +134,6 @@ export function OperationDetailView({
             </button>
           )}
 
-          <div className="hidden items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 sm:flex">
-            <Landmark className="h-4 w-4" />
-            Vista financiera
-          </div>
         </div>
       </div>
 
@@ -169,7 +144,12 @@ export function OperationDetailView({
         onOperationUpdated={onOperationUpdated}
       />
 
-      <div ref={paymentsSectionRef} className="scroll-mt-20">
+      <div className="rounded-xl border border-slate-200 bg-white px-4 pt-2 shadow-sm">
+        <Tabs variant="method" label="Secciones de la operación" value={activeTab} onChange={setActiveTab}
+          options={[{ value: 'income', label: 'Ingresos', count: operation.pagos.length }, { value: 'returns', label: 'Retornos', count: returns.length }]} />
+      </div>
+
+      <div ref={paymentsSectionRef} className={activeTab === 'income' ? 'scroll-mt-20' : 'hidden'}>
         <PaymentsTable
           payments={operation.pagos}
           operationId={operation.id}
@@ -200,7 +180,7 @@ export function OperationDetailView({
         />
       </div>
 
-      <div ref={returnsSectionRef} className="scroll-mt-20">
+      <div ref={returnsSectionRef} className={activeTab === 'returns' ? 'scroll-mt-20' : 'hidden'}>
         <ReturnPaymentsTable
           returns={returns}
           montoPendientePorRetornar={montoPendientePorRetornar}
@@ -226,45 +206,6 @@ export function OperationDetailView({
         />
       </div>
 
-      {showScrollDownButton && (
-        <button
-          type="button"
-          onClick={() => {
-            returnsSectionRef.current?.scrollIntoView({
-              behavior: 'smooth',
-              block: 'start',
-            });
-          }}
-          className="
-fixed
-bottom-6
-right-6
-z-40
-inline-flex
-h-14
-w-14
-items-center
-justify-center
-rounded-2xl
-border
-border-slate-700
-bg-slate-900
-text-white
-shadow-xl
-shadow-slate-950/20
-backdrop-blur
-transition-all
-duration-200
-hover:scale-105
-hover:bg-slate-900
-active:scale-95
-"
-          aria-label="Ir a retornos"
-          title="Ir a retornos"
-        >
-          <ArrowDown className="h-5 w-5" />
-        </button>
-      )}
     </div>
   );
 }
