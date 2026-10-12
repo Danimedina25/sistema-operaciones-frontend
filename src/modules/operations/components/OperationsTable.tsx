@@ -1,20 +1,14 @@
 import type { ReactNode } from 'react';
 import { OperationStatusBadge } from '@/modules/operations/components/OperationStatusBadge';
-import { StatusBadge } from '@/shared/components/ui/StatusBadge';
-import {
-  formatCurrency,
-  formatDate,
-  isOperationEditableStatus,
-} from '@/modules/operations/utils/operation-formatters';
+import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
+import { formatDate, formatElapsedSince, formatMoney } from '@/shared/format';
+import { isOperationEditableStatus } from '@/modules/operations/utils/operation-formatters';
 import { PaymentOperationResponse } from '../types/operations.types.ts';
 import { useMarkOperationAsInvoiced } from '../hooks/use-mark-operations-as-invoiced.js';
 import { useAuth } from '@/modules/auth/store/auth.context.js';
 import { ProgressBar } from '@/shared/components/ui/ProgressBar';
 import { RowActionsMenu } from '@/shared/components/ui/RowActionsMenu';
-
-// Columna "Activo" oculta temporalmente; el toggle activar/desactivar sigue disponible
-// en el menú de acciones. Cambiar a true para volver a mostrarla.
-const SHOW_ACTIVE_COLUMN = false;
+import { Button } from '@/shared/components/ui/Button';
 
 interface OperationsTableProps {
   operations: PaymentOperationResponse[];
@@ -22,6 +16,9 @@ interface OperationsTableProps {
   totalPages: number;
   totalElements: number;
   isLoading?: boolean;
+  stalledView?: boolean;
+  emptyTitle?: string;
+  emptyDescription?: string;
   onPageChange: (page: number) => void;
   onViewDetail: (id: number, scrollToPayments?: boolean) => void;
   onAddPayment: (id: number) => void;
@@ -36,6 +33,9 @@ interface OperationsTableProps {
 export function OperationsTable({
   operations,
   isLoading = false,
+  stalledView = false,
+  emptyTitle,
+  emptyDescription,
   onViewDetail,
   onAddPayment,
   onOperationUpdated,
@@ -142,229 +142,84 @@ export function OperationsTable({
     );
   }
 
-  if (!isLoading && operations.length === 0) {
+  function folio(operation: PaymentOperationResponse) {
+    const needsCommissionReview = canReviewCommission &&
+      operation.nivelesRedComercial >= 2 &&
+      isOperationEditableStatus(operation.estatus);
     return (
-      <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
-        No hay operaciones registradas con los filtros seleccionados.
-      </div>
+      <span className={needsCommissionReview
+        ? 'inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-amber-500 text-xs font-semibold text-amber-800'
+        : 'text-xs font-medium text-slate-600'}>
+        {operation.id}
+      </span>
     );
   }
 
-  if (isLoading) {
-    return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-sm shadow-slate-950/5">
-        Cargando operaciones...
-      </div>
-    );
-  }
+  const clientCell = (operation: PaymentOperationResponse) => (
+    <div className="min-w-0">
+      <p className="truncate font-semibold text-slate-900" title={operation.clienteNombre}>{operation.clienteNombre}</p>
+      {!isSocioComercial && <p className="mt-0.5 truncate text-xs text-slate-500" title={`Socio: ${operation.socioComercialNombre}`}>Socio: {operation.socioComercialNombre}</p>}
+    </div>
+  );
+  const viewButton = (operation: PaymentOperationResponse) => (
+    <Button type="button" variant="neutral" onClick={() => onViewDetail(operation.id)}>Ver</Button>
+  );
+  const actionsCell = (operation: PaymentOperationResponse) => (
+    <div className="flex items-center justify-end gap-1 whitespace-nowrap">
+      {viewButton(operation)}
+      <RowActionsMenu triggerLabel="" ariaLabel="Más opciones" triggerClassName="min-w-10 shrink-0 justify-center px-2">{renderActions(operation)}</RowActionsMenu>
+    </div>
+  );
+  const commonColumns: DataTableColumn<PaymentOperationResponse>[] = [
+    { key: 'folio', header: 'Folio', cell: folio, width: '64px' },
+    { key: 'client', header: 'Cliente', cell: clientCell },
+  ];
+  const columns: DataTableColumn<PaymentOperationResponse>[] = stalledView
+    ? [
+        ...commonColumns,
+        { key: 'updated', header: 'Último cambio', cell: (operation) => formatDate(operation.updatedAt), width: '120px' },
+        { key: 'amount', header: 'Monto', cell: (operation) => <span className="font-semibold tabular-nums text-slate-900">{formatMoney(operation.montoTotal)}</span>, width: '112px' },
+        { key: 'status', header: 'Estatus', cell: (operation) => <OperationStatusBadge status={operation.estatus} />, kind: 'status', width: '218px' },
+        { key: 'elapsed', header: 'Sin avanzar', cell: (operation) => <span className="font-medium text-red-600">{formatElapsedSince(operation.updatedAt)}</span>, width: '110px' },
+        { key: 'actions', header: 'Acciones', cell: actionsCell, kind: 'actions', align: 'right', width: '148px' },
+      ]
+    : [
+        ...commonColumns,
+        { key: 'created', header: 'Creada', cell: (operation) => formatDate(operation.createdAt), width: '112px' },
+        { key: 'amount', header: 'Monto', cell: (operation) => <span className="font-semibold tabular-nums text-slate-900">{formatMoney(operation.montoTotal)}</span>, width: '112px' },
+        { key: 'income', header: 'Ingreso validado', cell: (operation) => <ProgressBar total={operation.montoTotal} registered={operation.montoRegistrado} validated={operation.montoValidado} compact />, width: '150px' },
+        { key: 'status', header: 'Estatus', cell: (operation) => <OperationStatusBadge status={operation.estatus} />, kind: 'status', width: '218px' },
+        { key: 'actions', header: 'Acciones', cell: actionsCell, kind: 'actions', align: 'right', width: '148px' },
+      ];
 
   return (
-    <>
-      {/* Desktop / tablet ancho: tabla completa */}
-      <div className="hidden overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/5 md:block">
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead className="bg-slate-100">
-              <tr className="text-left text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
-                <th className="px-4 py-3 font-medium text-center">Folio</th>
-                <th className="px-4 py-3 font-medium text-center">Cliente primario</th>
-                <th className="px-4 py-3 font-medium text-center">Socio comercial</th>
-                <th className="px-4 py-3 font-medium text-center">Fecha de creación</th>
-                <th className="px-4 py-3 font-medium text-center">Última actualización</th>
-                <th className="px-4 py-3 font-medium text-center">Monto total</th>
-                <th className="px-4 py-3 font-medium text-center">Monto ingresado</th>
-                <th className="px-4 py-3 font-medium text-center">Monto retornado</th>
-                <th className="px-4 py-3 font-medium text-center">Estatus</th>
-                {SHOW_ACTIVE_COLUMN && (
-                  <th className="px-4 py-3 font-medium text-center">Activo</th>
-                )}
-                <th className="px-4 py-3 font-medium text-center">Acciones</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {operations.map((operation) => {
-                const showCommissionReviewMark =
-                  canReviewCommission &&
-                  operation.nivelesRedComercial >= 2 &&
-                  isOperationEditableStatus(operation.estatus);
-
-                return (
-                  <tr
-                    key={operation.id}
-                    className="border-t border-slate-200 text-sm transition-colors hover:bg-blue-50/40"
-                  >
-                    <td className="px-4 py-4 font-medium text-slate-900">
-                      <div
-                        className={
-                          showCommissionReviewMark
-                            ? 'mt-1 inline-flex h-6 w-6 items-center justify-center rounded-full border-2 border-amber-500 text-xs font-semibold text-amber-800'
-                            : 'mt-1 text-xs font-normal text-slate-400'
-                        }
-                      >
-                        {operation.id}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 font-medium text-slate-900">
-                      <div>{operation.clienteNombre}</div>
-                    </td>
-
-                    <td className="px-4 py-4 text-slate-600">
-                      {operation.socioComercialNombre}
-                    </td>
-
-                    <td className="px-4 py-4 text-slate-600">
-                      {formatDate(operation.createdAt)}
-                    </td>
-
-                    <td className="px-4 py-4 text-slate-600">
-                      {operation.updatedAt &&
-                      operation.createdAt &&
-                      new Date(operation.updatedAt).getTime() !==
-                        new Date(operation.createdAt).getTime()
-                        ? formatDate(operation.updatedAt)
-                        : 'Sin cambios posteriores'}
-                    </td>
-
-                    <td className="px-4 py-4 text-slate-600">
-                      {formatCurrency(operation.montoTotal)}
-                    </td>
-
-                    <td className="min-w-[160px] px-4 py-4 text-slate-600">
-                      <div>
-                        {operation.pagos.length} pago
-                        {operation.pagos.length === 1 ? '' : 's'} registrado
-                        {operation.pagos.length === 1 ? '' : 's'}
-                      </div>
-                      <ProgressBar
-                        className="mt-2"
-                        total={operation.montoTotal}
-                        registered={operation.montoRegistrado}
-                        validated={operation.montoValidado}
-                      />
-                    </td>
-
-                    <td className="px-4 py-4 text-slate-600">
-                      <div className="mt-1 text-xs text-slate-400">
-                        {formatCurrency(operation.montoRetornado)}
-                      </div>
-                    </td>
-
-                    <td className="px-4 py-4">
-                      <div className="flex justify-center">
-                        <OperationStatusBadge status={operation.estatus} />
-                      </div>
-                    </td>
-
-                    {SHOW_ACTIVE_COLUMN && (
-                      <td className="px-4 py-4">
-                        <div className="flex justify-center">
-                          <StatusBadge active={operation.activo} />
-                        </div>
-                      </td>
-                    )}
-
-                    <td className="px-4 py-4 text-right">
-                      <RowActionsMenu>{renderActions(operation)}</RowActionsMenu>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Móvil: tarjetas apiladas */}
-      <div className="space-y-3 md:hidden">
-        {operations.map((operation) => {
-          const showCommissionReviewMark =
-            canReviewCommission &&
-            operation.nivelesRedComercial >= 2 &&
-            isOperationEditableStatus(operation.estatus);
-
-          return (
-            <div
-              key={operation.id}
-              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-950/5"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={
-                        showCommissionReviewMark
-                          ? 'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-amber-500 text-xs font-semibold text-amber-800'
-                          : 'text-xs font-normal text-slate-400'
-                      }
-                    >
-                      #{operation.id}
-                    </span>
-                    {SHOW_ACTIVE_COLUMN && <StatusBadge active={operation.activo} />}
-                  </div>
-                  <p className="mt-1 truncate text-sm font-semibold text-slate-900">
-                    {operation.clienteNombre}
-                  </p>
-                  <p className="truncate text-xs text-slate-500">
-                    {operation.socioComercialNombre}
-                  </p>
-                </div>
-                <OperationStatusBadge status={operation.estatus} />
-              </div>
-
-              <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs text-slate-600">
-                <div>
-                  <p className="text-[10px] uppercase tracking-wide text-slate-400">Monto total</p>
-                  <p className="font-medium text-slate-900">{formatCurrency(operation.montoTotal)}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-wide text-slate-400">Monto retornado</p>
-                  <p className="font-medium text-slate-900">{formatCurrency(operation.montoRetornado)}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-wide text-slate-400">Creación</p>
-                  <p>{formatDate(operation.createdAt)}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-wide text-slate-400">Última actualización</p>
-                  <p>
-                    {operation.updatedAt &&
-                    operation.createdAt &&
-                    new Date(operation.updatedAt).getTime() !==
-                      new Date(operation.createdAt).getTime()
-                      ? formatDate(operation.updatedAt)
-                      : 'Sin cambios'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-3">
-                <p className="text-[10px] uppercase tracking-wide text-slate-400">
-                  {operation.pagos.length} pago{operation.pagos.length === 1 ? '' : 's'} registrado
-                  {operation.pagos.length === 1 ? '' : 's'}
-                </p>
-                <ProgressBar
-                  className="mt-1"
-                  total={operation.montoTotal}
-                  registered={operation.montoRegistrado}
-                  validated={operation.montoValidado}
-                />
-              </div>
-
-              <div className="mt-4 flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => onViewDetail(operation.id)}
-                  className="min-h-[44px] flex-1 rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white transition hover:bg-slate-800"
-                >
-                  Ver detalle
-                </button>
-                <RowActionsMenu triggerLabel="Más">{renderActions(operation)}</RowActionsMenu>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </>
+    <DataTable
+      columns={columns}
+      rows={operations}
+      getRowKey={(operation) => operation.id}
+      isLoading={isLoading}
+      loadingLabel="Cargando operaciones..."
+      emptyTitle={emptyTitle ?? (stalledView ? 'No hay operaciones detenidas' : 'No hay operaciones con estos filtros')}
+      emptyDescription={emptyDescription ?? (stalledView
+        ? 'Las operaciones detenidas aparecerán aquí cuando requieran seguimiento.'
+        : 'Prueba con otros filtros o busca un folio o cliente.')}
+      mobile={{
+        title: (operation) => <>{folio(operation)} <span className="ml-1">{operation.clienteNombre}</span></>,
+        subtitle: isSocioComercial ? undefined : (operation) => `Socio: ${operation.socioComercialNombre}`,
+        status: (operation) => <OperationStatusBadge status={operation.estatus} />,
+        fields: [
+          { key: 'amount', label: 'Monto', value: (operation) => formatMoney(operation.montoTotal) },
+          { key: 'returned', label: 'Monto retornado', value: (operation) => formatMoney(operation.montoRetornado) },
+          { key: 'created', label: 'Creada', value: (operation) => formatDate(operation.createdAt) },
+          { key: 'updated', label: 'Último cambio', value: (operation) => formatDate(operation.updatedAt) },
+          ...(stalledView ? [{ key: 'elapsed', label: 'Sin avanzar', value: (operation: PaymentOperationResponse) => formatElapsedSince(operation.updatedAt) }] : []),
+        ],
+        extra: (operation) => <ProgressBar total={operation.montoTotal} registered={operation.montoRegistrado} validated={operation.montoValidado} />,
+        actions: (operation) => <>
+          {viewButton(operation)}
+          <RowActionsMenu triggerLabel="" ariaLabel="Más opciones" triggerClassName="min-w-11 justify-center px-2">{renderActions(operation)}</RowActionsMenu>
+        </>,
+      }}
+    />
   );
 }

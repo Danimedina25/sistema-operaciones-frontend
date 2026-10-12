@@ -247,13 +247,13 @@ export async function markOperationAsInvoiced(
 export async function getStalledOperations(
   page: number,
   pageSize: number,
-  thresholdHours: number,
+  thresholdHours?: number,
 ): Promise<PageResponse<PaymentOperationResponse>> {
   const params = new URLSearchParams();
 
   params.append('page', String(page));
   params.append('size', String(pageSize));
-  params.append('thresholdHours', String(thresholdHours));
+  if (thresholdHours !== undefined) params.append('thresholdHours', String(thresholdHours));
 
   const response = await api.get<OperationsPageApiResponse>(
     `${OPERATIONS_BASE_PATH}/stalled?${params.toString()}`,

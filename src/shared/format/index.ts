@@ -82,6 +82,19 @@ export function formatDateTime(value: DateInput): string {
     : EMPTY;
 }
 
+/** Tiempo transcurrido entre horas de la oficina, incluso si el backend envía LocalDateTime. */
+export function formatElapsedSince(value: DateInput, now: Date = new Date()): string {
+  const start = parseDateParts(value);
+  const end = parseDateParts(now);
+  if (!start || !end) return EMPTY;
+  const toMinutes = ({ year, month, day, hour, minute }: DateParts) =>
+    Date.UTC(year, month - 1, day, hour, minute) / 60_000;
+  const minutes = toMinutes(end) - toMinutes(start);
+  if (minutes < 0) return EMPTY;
+  const hours = Math.floor(minutes / 60);
+  return hours < 24 ? `${hours} h` : `${Math.floor(hours / 24)} días`;
+}
+
 export function formatMoney(value: number | null | undefined): string {
   if (value == null || !Number.isFinite(value)) return EMPTY;
   return `${value < 0 ? '−' : ''}$${decimal.format(Math.abs(value))}`;

@@ -1,4 +1,5 @@
 import { cn } from '@/shared/lib/cn';
+import { formatMoney } from '@/shared/format';
 
 interface ProgressBarProps {
   /** Monto total de la operación. */
@@ -10,6 +11,7 @@ interface ProgressBarProps {
   /** Usa 'dark' cuando la barra se muestra sobre un fondo oscuro. */
   variant?: 'light' | 'dark';
   className?: string;
+  compact?: boolean;
 }
 
 function toPercent(part: number, total: number): number {
@@ -28,10 +30,25 @@ export function ProgressBar({
   validated,
   variant = 'light',
   className,
+  compact = false,
 }: ProgressBarProps) {
   const registeredPercent = toPercent(registered, total);
   const validatedPercent = toPercent(validated, total);
   const isDark = variant === 'dark';
+
+  if (compact) {
+    return (
+      <div className={cn('flex min-w-0 items-center gap-2', className)}
+        title={`Validado: ${formatMoney(validated)} · Registrado: ${formatMoney(registered)}`}>
+        <div role="progressbar" aria-label="Avance de validación de la operación"
+          aria-valuenow={Math.round(validatedPercent)} aria-valuemin={0} aria-valuemax={100}
+          className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-slate-200">
+          <div className="h-full rounded-full bg-emerald-500" style={{ width: `${validatedPercent}%` }} />
+        </div>
+        <span className="shrink-0 text-xs font-semibold tabular-nums text-slate-600">{Math.round(validatedPercent)}%</span>
+      </div>
+    );
+  }
 
   return (
     <div className={cn('w-full', className)}>

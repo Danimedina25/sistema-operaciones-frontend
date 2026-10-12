@@ -1,6 +1,5 @@
-import { OperationStatus } from "../types/operations.types.ts";
-import { cn } from '@/shared/lib/cn';
-import { STATUS_BADGE_CLASS } from '@/shared/components/ui/status-badge-styles';
+import { StatusBadge, type StatusTone } from '@/shared/components/ui/StatusBadge';
+import type { OperationStatus } from '../types/operations.types.ts';
 
 interface OperationStatusBadgeProps {
   status: OperationStatus;
@@ -8,59 +7,26 @@ interface OperationStatusBadgeProps {
   className?: string;
 }
 
-const statusStyles: Record<OperationStatus, string> = {
-  PENDIENTE_VALIDACION: 'bg-amber-100 text-amber-800',
-  INGRESO_PARCIAL: 'bg-blue-100 text-blue-800',
-  VALIDADA: 'bg-emerald-100 text-emerald-800',
-  RECHAZADA: 'bg-red-100 text-red-800',
-
-  RETORNO_PARCIAL_SOLICITADO: 'bg-orange-100 text-orange-800',
-  RETORNO_TOTAL_SOLICITADO: 'bg-orange-100 text-orange-800',
-
-  RETORNO_PARCIAL_ENTREGADO: 'bg-cyan-100 text-cyan-800',
-
-  RETORNADA: 'bg-teal-100 text-teal-800',
-
-  COMPLETADA: 'bg-slate-200 text-slate-800',
-};
-
-const statusLabels: Record<OperationStatus, string> = {
-  PENDIENTE_VALIDACION: 'Pendiente validación',
-  INGRESO_PARCIAL: 'Ingreso parcial',
-  VALIDADA: 'Validada',
-  RECHAZADA: 'Rechazada',
-
-  RETORNO_PARCIAL_SOLICITADO: 'Retorno parcial solicitado',
-  RETORNO_TOTAL_SOLICITADO: 'Retorno total solicitado',
-
-  RETORNO_PARCIAL_ENTREGADO: 'Retorno parcial entregado',
-
-  RETORNADA: 'Finalizado',
-
-  COMPLETADA: 'Finalizado',
+const statusPresentation: Record<OperationStatus, { label: string; tone: StatusTone }> = {
+  PENDIENTE_VALIDACION: { label: 'Pendiente validación', tone: 'pending' },
+  INGRESO_PARCIAL: { label: 'Ingreso parcial', tone: 'pending' },
+  VALIDADA: { label: 'Validada', tone: 'success' },
+  RECHAZADA: { label: 'Rechazada', tone: 'danger' },
+  RETORNO_PARCIAL_SOLICITADO: { label: 'Retorno parcial solicitado', tone: 'request' },
+  RETORNO_TOTAL_SOLICITADO: { label: 'Retorno total solicitado', tone: 'request' },
+  RETORNO_PARCIAL_ENTREGADO: { label: 'Retorno parcial entregado', tone: 'info' },
+  RETORNADA: { label: 'Finalizado', tone: 'success' },
+  COMPLETADA: { label: 'Finalizado', tone: 'success' },
 };
 
 export function OperationStatusBadge({
   status,
   isReturn,
-  className = '',
+  className,
 }: OperationStatusBadgeProps) {
-  const isPendingReturnRequest =
-    isReturn && status === 'VALIDADA';
+  const presentation = isReturn && status === 'VALIDADA'
+    ? { label: 'Retorno por solicitar', tone: 'request' as const }
+    : statusPresentation[status];
 
-  const label = isPendingReturnRequest
-    ? 'Retorno por solicitar'
-    : statusLabels[status];
-
-  const style = isPendingReturnRequest
-    ? 'bg-violet-100 text-violet-800'
-    : statusStyles[status];
-
-  return (
-    <span
-      className={cn(STATUS_BADGE_CLASS, 'font-bold', style, className)}
-    >
-      {label}
-    </span>
-  );
+  return <StatusBadge tone={presentation.tone} className={`whitespace-nowrap ${className ?? ''}`}>{presentation.label}</StatusBadge>;
 }

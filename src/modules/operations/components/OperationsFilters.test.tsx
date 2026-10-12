@@ -28,3 +28,17 @@ it('muestra ocho estatus y vuelve a todos al desmarcar el seleccionado', async (
   expect(screen.getByRole('status')).toHaveTextContent('ALL');
   expect(group.queryAllByRole('button', { pressed: true })).toHaveLength(0);
 });
+
+it('limpia el periodo sin imponer un filtro de fecha que esconda pendientes', async () => {
+  function Harness() {
+    const [filters, setFilters] = useState<Filters>({
+      operationId: 0, search: '', status: 'ALL', dateFilter: 'THIS_MONTH',
+      startDate: '', endDate: '', activo: 'ACTIVE', paymentTypes: '', paymentStatus: '',
+      returnStatuses: '', cuentaDestinoId: 0, banco: '', socioComercialId: 0,
+    });
+    return <><OperationsFilters filters={filters} onChange={setFilters} /><output>{filters.dateFilter || 'SIN_PERIODO'}</output></>;
+  }
+  render(<Harness />);
+  await userEvent.click(screen.getByRole('button', { name: 'Limpiar filtros' }));
+  expect(screen.getByRole('status')).toHaveTextContent('SIN_PERIODO');
+});

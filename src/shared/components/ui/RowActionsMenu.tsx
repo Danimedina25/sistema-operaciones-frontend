@@ -6,6 +6,7 @@ import { cn } from '@/shared/lib/cn';
 interface RowActionsMenuProps {
   children: ReactNode;
   triggerLabel?: string;
+  ariaLabel?: string;
   triggerClassName?: string;
   menuClassName?: string;
   triggerDisabled?: boolean;
@@ -28,6 +29,7 @@ interface MenuPosition {
 export function RowActionsMenu({
   children,
   triggerLabel = 'Opciones',
+  ariaLabel,
   triggerClassName,
   menuClassName,
   triggerDisabled = false,
@@ -103,6 +105,7 @@ export function RowActionsMenu({
       <button
         ref={triggerRef}
         type="button"
+        aria-label={ariaLabel}
         disabled={triggerDisabled}
         onClick={() => setIsOpen((prev) => !prev)}
         className={cn(

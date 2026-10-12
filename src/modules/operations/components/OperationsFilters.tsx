@@ -3,7 +3,6 @@ import {
   OPERATIONS_QUICK_PAYMENT_TYPE_FILTERS,
   operationStatusLabels,
 } from '@/modules/operations/constants/operations.constants';
-import { Input } from '@/shared/components/ui/Input';
 import { DateRangeCalendarField } from '@/shared/components/ui/DateRangeCalendarField';
 import { QuickFilters } from '@/shared/components/dashboard/QuickFilters';
 import { maskAccountNumber } from '@/shared/utils/account-formatting';
@@ -83,7 +82,7 @@ export function OperationsFilters({
       operationId: 0,
       search: '',
       status: 'ALL',
-      dateFilter: 'THIS_MONTH',
+      dateFilter: '',
       startDate: '',
       endDate: '',
       activo: 'ACTIVE',
@@ -221,24 +220,7 @@ export function OperationsFilters({
         </div>
       )}
 
-      <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-[1fr_12rem]">
-        <div className="min-w-0">
-          <label className="mb-1 block text-xs font-medium text-slate-600">
-            Buscar
-          </label>
-          <Input
-            placeholder="Folio, Cliente o Socio comercial"
-            value={filters.search}
-            className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
-            onChange={(e) =>
-              onChange({
-                ...filters,
-                search: e.target.value,
-              })
-            }
-          />
-        </div>
-
+      <div className="max-w-xs">
         <div className="min-w-0">
           <label className="mb-1 block text-xs font-medium text-slate-600">
             Estado

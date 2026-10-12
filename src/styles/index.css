@@ -1,5 +1,23 @@
 @import "tailwindcss";
 
+.responsive-data-table {
+  container-type: inline-size;
+}
+
+.responsive-data-table__table {
+  display: none;
+}
+
+@container (min-width: 1000px) {
+  .responsive-data-table__table {
+    display: block;
+  }
+
+  .responsive-data-table__cards {
+    display: none;
+  }
+}
+
 @theme {
   --font-sans: "Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif;
 

@@ -151,6 +151,29 @@ beforeEach(() => {
   mocks.deleteOperation.mockResolvedValue(undefined);
 });
 
+it.each(['SOCIO_COMERCIAL', 'ADMIN'])('usa encabezado ligero con Nueva operación azul para %s', (role) => {
+  mocks.roles = [role];
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  render(<QueryClientProvider client={client}><MemoryRouter><OperationsPage /></MemoryRouter></QueryClientProvider>);
+
+  const title = screen.getByRole('heading', { level: 1, name: 'Operaciones' });
+  const header = title.closest('header');
+  const create = within(header!).getByRole('button', { name: 'Nueva operación' });
+  expect(header).not.toHaveClass('bg-white', 'shadow-sm');
+  expect(header).toHaveClass('flex-row', 'flex-wrap', 'justify-between', '[&>div:last-child]:ml-auto');
+  expect(create).toHaveClass('bg-brand');
+  expect(screen.queryByText('Gestiona operaciones y registra comprobantes')).not.toBeInTheDocument();
+});
+
+it('mantiene Nueva operación oculta para Gerente', () => {
+  mocks.roles = ['GERENTE'];
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  render(<QueryClientProvider client={client}><MemoryRouter><OperationsPage /></MemoryRouter></QueryClientProvider>);
+
+  expect(screen.getByRole('heading', { level: 1, name: 'Operaciones' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Nueva operación' })).not.toBeInTheDocument();
+});
+
 it('el modal muestra folio, cliente, monto y la advertencia de permanencia', async () => {
   await openDeleteModal();
 

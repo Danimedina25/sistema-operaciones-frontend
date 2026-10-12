@@ -30,6 +30,16 @@ beforeEach(() => {
 });
 
 describe('Sidebar', () => {
+  it('permite expandir y contraer el menú de iconos y conserva los nombres accesibles', async () => {
+    show('/operaciones');
+    const sidebar = screen.getByRole('complementary');
+    expect(sidebar).toHaveClass('lg:max-xl:w-[76px]');
+    expect(screen.getByRole('link', { name: 'Operaciones' })).toHaveAttribute('title', 'Operaciones');
+    await userEvent.click(screen.getByRole('button', { name: 'Expandir menú' }));
+    expect(sidebar).not.toHaveClass('lg:max-xl:w-[76px]');
+    await userEvent.click(screen.getByRole('button', { name: 'Contraer menú' }));
+    expect(sidebar).toHaveClass('lg:max-xl:w-[76px]');
+  });
   it('abre Caja por ruta activa y selecciona solo Entradas de efectivo', () => {
     show('/operaciones?workQueue=CASH_INCOME&dateFilter=');
     expect(screen.getByRole('button', { name: /Caja.*Abierta/ })).toHaveAttribute('aria-expanded', 'true');

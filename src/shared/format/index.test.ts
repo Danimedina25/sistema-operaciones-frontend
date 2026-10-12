@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatAccount, formatDate, formatDateTime, formatMoney, formatPercent } from './index';
+import { formatAccount, formatDate, formatDateTime, formatElapsedSince, formatMoney, formatPercent } from './index';
 
 describe('fechas de la oficina', () => {
   it('usa las doce abreviaturas fijas, sin punto', () => {
@@ -27,6 +27,12 @@ describe('fechas de la oficina', () => {
     expect(formatDate(null)).toBe('—');
     expect(formatDateTime(undefined)).toBe('—');
     expect(formatDate('2026-02-30')).toBe('—');
+  });
+
+  it('calcula el tiempo sin avanzar en la zona de la oficina', () => {
+    const now = new Date('2026-10-03T06:00:00Z');
+    expect(formatElapsedSince('2026-10-02T23:00:00', now)).toBe('1 h');
+    expect(formatElapsedSince('2026-10-01T00:00:00', now)).toBe('2 días');
   });
 });
 

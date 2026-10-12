@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Pagination } from '@/shared/components/ui/Pagination';
@@ -8,6 +9,7 @@ import { OperationsFilters } from '@/modules/operations/components/OperationsFil
 import { OperationsTable } from '@/modules/operations/components/OperationsTable';
 import { useCreateOperation } from '@/modules/operations/hooks/use-create-operation';
 import { useOperations } from '@/modules/operations/hooks/use-operations';
+import { getStalledOperations } from '@/modules/operations/api/operations.api';
 import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts';
 import { AddOperationPaymentForm } from '@/modules/operations/components/AddOperationPaymentForm';
 import { useAddOperationPayment } from '@/modules/operations/hooks/use-add-operation-payment';
@@ -24,10 +26,14 @@ import { useAuth } from '@/modules/auth/store/auth.context.js';
 import { useCommercialPartners } from '@/modules/socioscomerciales/hooks/use-commercial-partners.js';
 import { useConfiguracionGeneral } from '@/modules/configuraciones/hooks/use-configuracion-general';
 import { useCommercialLevelOneUsers } from '@/modules/users/hooks/use-commercial-level-one-users';
-import { CollapsibleFilterSection } from '@/shared/components/ui/CollapsibleFilterSection';
+import { SearchFilterBar, type ActiveFilter } from '@/shared/components/ui/SearchFilterBar';
+import { Tabs } from '@/shared/components/ui/Tabs';
+import { formatAccount, formatDate, formatMoney } from '@/shared/format';
+import { operationStatusLabels } from '@/modules/operations/constants/operations.constants';
 import { DeleteConfirmationModal } from '@/shared/components/ui/DeleteConfirmationModal';
+import { PageHeader } from '@/shared/components/layout/PageHeader';
+import { Button } from '@/shared/components/ui/Button';
 import { useDeleteOperation } from '../hooks/use-delete-operation';
-import { formatCurrency } from '../utils/operation-formatters';
 
 const initialFilters: OperationsFiltersType = {
   workQueue: '',
@@ -35,7 +41,7 @@ const initialFilters: OperationsFiltersType = {
   operationId: 0,
   search: '',
   status: 'ALL',
-  dateFilter: 'THIS_MONTH',
+  dateFilter: '',
   startDate: '',
   endDate: '',
   activo: 'ACTIVE',
@@ -51,13 +57,16 @@ export default function OperationsPage() {
   const navigate = useNavigate();
 
   const { hasRole, user } = useAuth();
+  const isManager = hasRole(['GERENTE']);
+  const [listView, setListView] = useState<'all' | 'pending' | 'stalled'>('all');
+  const [stalledPage, setStalledPage] = useState(0);
   // Cuentas solo trabaja ingresos bancarios; efectivo es responsabilidad de cajas.
   const hideCashPaymentType =
     hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS']) && !hasRole(['JEFA_CAJAS']);
   // Nueva clave: el caché anterior puede contener filtros impuestos por el rol.
   const { filters: savedFilters, setFilters } = useUrlFilters<OperationsFiltersType>(
     initialFilters,
-    `table-filters:operations:v2:${user?.userId ?? 'anonymous'}`,
+    `table-filters:operations:v3:${user?.userId ?? 'anonymous'}`,
   );
   // Compatibilidad con enlaces y caché del antiguo select de comprobantes.
   const filters = useMemo<OperationsFiltersType>(() => ({
@@ -83,6 +92,12 @@ export default function OperationsPage() {
 
   const canAssignLevelOne = hasRole(['ADMIN']);
   const showSocioFilter = hasRole(['GERENTE', 'DIRECCION', 'ADMIN']);
+  const queryFilters = useMemo<OperationsFiltersType>(() =>
+    isManager && listView === 'pending'
+      ? { ...filters, status: 'PENDIENTE_VALIDACION' }
+      : filters,
+  [filters, isManager, listView]);
+
   const {
     commercialLevelOneUsers,
     isLoading: isLoadingLevelOneUsers,
@@ -105,7 +120,7 @@ export default function OperationsPage() {
       onSuccess: async () => {
         setIsEditModalOpen(false);
         setOperationToEdit(null);
-        await fetchOperations(currentPage);
+        await refreshVisibleOperations();
       },
     });
 
@@ -133,28 +148,54 @@ export default function OperationsPage() {
     processingOperationId,
     handleActivate,
     handleDeactivate,
-  } = useOperations(filters);
+  } = useOperations(queryFilters);
+
+  const stalledQuery = useQuery({
+    queryKey: ['operations-list-stalled', user?.userId, stalledPage],
+    queryFn: () => getStalledOperations(stalledPage, 10),
+    enabled: isManager && listView === 'stalled',
+  });
+  const showingStalled = isManager && listView === 'stalled';
+  const stalledRows = stalledQuery.data?.content ?? [];
+  const stalledSearch = filters.search.trim().toLocaleLowerCase('es-MX');
+  const visibleOperations = showingStalled
+    ? stalledRows.filter((operation) => !stalledSearch ||
+        String(operation.id).includes(stalledSearch) ||
+        operation.clienteNombre.toLocaleLowerCase('es-MX').includes(stalledSearch) ||
+        operation.socioComercialNombre.toLocaleLowerCase('es-MX').includes(stalledSearch))
+    : operations;
+  const visiblePage = showingStalled ? stalledPage : currentPage;
+  const visibleTotalPages = showingStalled ? stalledQuery.data?.totalPages ?? 0 : totalPages;
+  const visibleTotalElements = showingStalled ? stalledQuery.data?.totalElements ?? 0 : totalElements;
+  const visibleIsLoading = showingStalled ? stalledQuery.isLoading : isLoading;
+  const visibleError = showingStalled ? stalledQuery.error : operationsError;
+
+  async function refreshVisibleOperations(): Promise<void> {
+    if (showingStalled) await stalledQuery.refetch();
+    else await fetchOperations(currentPage);
+  }
 
   const { isDeleting, submitDeleteOperation } = useDeleteOperation({
     onSuccess: async () => {
       // Si se eliminó el último registro de la página, la actual queda vacía.
-      if (operations.length === 1 && currentPage > 0) {
-        setCurrentPage(currentPage - 1);
+      if (visibleOperations.length === 1 && visiblePage > 0) {
+        if (showingStalled) setStalledPage(visiblePage - 1);
+        else setCurrentPage(visiblePage - 1);
         return;
       }
-      await fetchOperations(currentPage);
+      await refreshVisibleOperations();
     },
     // El rechazo habitual es que el estatus cambió: hay que releer el listado
     // para que la acción deje de ofrecerse sobre datos viejos.
     onRejected: async () => {
-      await fetchOperations(currentPage);
+      await refreshVisibleOperations();
     },
   });
 
   const canReviewCommission = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
   const hasOperationsNeedingCommissionReview =
     canReviewCommission &&
-    operations.some(
+    visibleOperations.some(
       (op) => op.nivelesRedComercial >= 2 && isOperationEditableStatus(op.estatus),
     );
 
@@ -173,12 +214,12 @@ export default function OperationsPage() {
       onSuccess: async () => {
         setIsAddPaymentModalOpen(false);
         setSelectedOperation(null);
-        await fetchOperations(currentPage);
+        await refreshVisibleOperations();
       },
     });
 
   function handleOpenAddPayment(operationId: number) {
-    const operation = operations.find((item) => item.id === operationId);
+    const operation = visibleOperations.find((item) => item.id === operationId);
 
     if (!operation) {
       return;
@@ -189,7 +230,7 @@ export default function OperationsPage() {
   }
 
   function handleOpenEditOperation(operationId: number) {
-    const operation = operations.find((item) => item.id === operationId);
+    const operation = visibleOperations.find((item) => item.id === operationId);
 
     if (!operation) return;
 
@@ -217,6 +258,49 @@ export default function OperationsPage() {
       }));
   }, [bankAccountsCatalog]);
 
+  const activeFilters: ActiveFilter[] = [];
+  if (filters.status !== 'ALL') activeFilters.push({
+    key: 'status', label: operationStatusLabels[filters.status],
+    onRemove: () => setFilters({ ...filters, status: 'ALL' }),
+  });
+  const dateFilterLabels: Record<string, string> = {
+    TODAY: 'Hoy', THIS_WEEK: 'Esta semana', THIS_MONTH: 'Este mes', LAST_MONTH: 'Mes pasado',
+  };
+  if (filters.dateFilter) activeFilters.push({
+    key: 'dateFilter', label: `Periodo: ${dateFilterLabels[filters.dateFilter] ?? filters.dateFilter}`,
+    onRemove: () => setFilters({ ...filters, dateFilter: '' }),
+  });
+  if (filters.startDate || filters.endDate) activeFilters.push({
+    key: 'dateRange', label: `Fecha: ${formatDate(filters.startDate)} – ${formatDate(filters.endDate)}`,
+    onRemove: () => setFilters({ ...filters, startDate: '', endDate: '' }),
+  });
+  const paymentTypeLabels: Record<string, string> = {
+    EFECTIVO: 'Efectivo', CHEQUE: 'Cheque', TRANSFERENCIA: 'Transferencia', DEPOSITO: 'Depósito',
+  };
+  if (filters.paymentTypes) activeFilters.push({
+    key: 'paymentTypes', label: `Ingreso: ${filters.paymentTypes.split(',').map((type) => paymentTypeLabels[type] ?? type).join(', ')}`,
+    onRemove: () => setFilters({ ...filters, paymentTypes: '' }),
+  });
+  if (filters.banco) activeFilters.push({
+    key: 'bank', label: `Banco: ${filters.banco}`,
+    onRemove: () => setFilters({ ...filters, banco: '', cuentaDestinoId: 0 }),
+  });
+  if (filters.cuentaDestinoId) activeFilters.push({
+    key: 'account', label: `Cuenta: ${(() => {
+      const account = bankAccountsCatalog.find((item) => item.id === filters.cuentaDestinoId);
+      return account ? formatAccount(account.banco, account.numeroCuenta) : 'seleccionada';
+    })()}`,
+    onRemove: () => setFilters({ ...filters, cuentaDestinoId: 0 }),
+  });
+  if (filters.socioComercialId) activeFilters.push({
+    key: 'partner', label: `Socio: ${commercialLevelOneUsers.find((socio) => socio.id === filters.socioComercialId)?.nombre ?? filters.socioComercialId}`,
+    onRemove: () => setFilters({ ...filters, socioComercialId: 0 }),
+  });
+  if (filters.activo !== 'ACTIVE') activeFilters.push({
+    key: 'active', label: filters.activo === 'ALL' ? 'Todas las operaciones' : 'Inactivas',
+    onRemove: () => setFilters({ ...filters, activo: 'ACTIVE' }),
+  });
+
   const { isSubmitting, submitCreateOperation } = useCreateOperation({
     onSuccess: async (operationId) => {
       setIsCreateModalOpen(false);
@@ -227,94 +311,65 @@ export default function OperationsPage() {
 
   return (
     <div className="space-y-3">
-      <div className="rounded-2xl bg-white p-4 shadow-sm">
-        {/* Móvil: título arriba, botón de ancho completo debajo */}
-        <div className="flex flex-col gap-3 sm:hidden">
-          <div className="text-center">
-            <h1 className="text-lg font-semibold text-slate-900">
-              Operaciones
-            </h1>
-            <p className="text-xs text-slate-500">
-              Gestiona operaciones y registra comprobantes
-            </p>
-          </div>
+      <PageHeader
+        title="Operaciones"
+        className="flex-row flex-wrap items-center justify-between gap-3 [&>div:last-child]:ml-auto"
+        actions={canCreateOperation ? (
+          <Button type="button" variant="primary" onClick={() => setIsCreateModalOpen(true)}>
+            Nueva operación
+          </Button>
+        ) : undefined}
+      />
 
-          {canCreateOperation && (
-            <button
-              type="button"
-              onClick={() => setIsCreateModalOpen(true)}
-              className="min-h-[44px] w-full rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
-            >
-              Nueva operación
-            </button>
-          )}
-        </div>
-
-        {/* sm+: título centrado con el botón balanceado a los lados */}
-        <div className="hidden sm:flex sm:items-center sm:justify-between">
-          <div className="flex-1">
-            {canCreateOperation && (
-              <button
-                type="button"
-                onClick={() => setIsCreateModalOpen(true)}
-                className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
-              >
-                Nueva operación
-              </button>
-            )}
-          </div>
-
-          <div className="flex-1 text-center">
-            <h1 className="text-lg font-semibold text-slate-900">
-              Operaciones
-            </h1>
-            <p className="text-xs text-slate-500">
-              Gestiona operaciones y registra comprobantes
-            </p>
-          </div>
-
-          <div className="flex-1" />
-        </div>
-      </div>
-
-      <CollapsibleFilterSection
-        key={user?.userId ?? 'anonymous'}
-        storageKey={`table-filters:operations:expanded:${user?.userId ?? 'anonymous'}`}
-      >
-        <OperationsFilters
-          filters={filters}
-          onChange={setFilters}
-          showPaymentTypeFilter={showPaymentTypeFilter && !filters.workQueue}
-          hideCashPaymentType={hideCashPaymentType}
-          bankAccounts={bankAccountsCatalog}
-          showSocioFilter={showSocioFilter}
-          socios={commercialLevelOneUsers}
-        />
-      </CollapsibleFilterSection>
-
-      <section className="rounded-2xl bg-white p-4 shadow-sm">
-        <div className="mb-5">
-          <h2 className="text-lg font-semibold text-slate-900">
-            Listado de operaciones
-          </h2>
-
-          {hasOperationsNeedingCommissionReview && (
-            <div className="mt-3 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        {hasOperationsNeedingCommissionReview && (
+            <div className="m-4 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
               <p className="text-sm font-medium text-amber-800">
                 Hay operaciones en este listado con 2 o 3 niveles de socios comerciales (marcadas con el folio en círculo). Revisa si conviene personalizar los porcentajes de comisión al editarlas.
               </p>
             </div>
           )}
-        </div>
+        <SearchFilterBar
+          search={filters.search}
+          onSearchChange={(search) => setFilters({ ...filters, search })}
+          searchPlaceholder={showingStalled ? 'Buscar en esta página de detenidas' : 'Buscar folio, cliente o socio comercial'}
+          activeFilters={showingStalled ? [] : activeFilters}
+          leading={isManager ? <Tabs
+            label="Vistas de operaciones"
+            options={[{ value: 'stalled', label: 'Detenidas' }, { value: 'pending', label: 'Por validar' }, { value: 'all', label: 'Todas' }]}
+            value={listView}
+            onChange={(value) => {
+              setListView(value);
+              setStalledPage(0);
+              setCurrentPage(0);
+              if (value !== 'all') setFilters({ ...filters, status: 'ALL', search: '' });
+            }}
+          /> : undefined}
+          filters={showingStalled
+            ? <p className="text-sm text-slate-600">La búsqueda revisa los resultados de esta página. Cambia de página para revisar más operaciones detenidas.</p>
+            : <OperationsFilters
+            filters={filters}
+            onChange={setFilters}
+            showEstatusFilter={!isManager || listView === 'all'}
+            showPaymentTypeFilter={showPaymentTypeFilter && !filters.workQueue}
+            hideCashPaymentType={hideCashPaymentType}
+            bankAccounts={bankAccountsCatalog}
+            showSocioFilter={showSocioFilter}
+            socios={commercialLevelOneUsers}
+          />}
+        />
 
-        {operationsError && <p role="alert" className="mb-3 text-sm text-rose-700">No se pudo cargar el listado. <button type="button" className="underline" onClick={() => void fetchOperations(currentPage)}>Reintentar</button></p>}
-        {!operationsError && <OperationsTable
-          operations={operations}
-          isLoading={isLoading}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalElements={totalElements}
-          onPageChange={setCurrentPage}
+        {visibleError && <p role="alert" className="p-4 text-sm text-rose-700">No se pudo cargar el listado. <button type="button" className="underline" onClick={() => void refreshVisibleOperations()}>Reintentar</button></p>}
+        {!visibleError && <OperationsTable
+          operations={visibleOperations}
+          isLoading={visibleIsLoading}
+          stalledView={showingStalled}
+          emptyTitle={showingStalled && stalledSearch ? 'Sin coincidencias en esta página' : undefined}
+          emptyDescription={showingStalled && stalledSearch ? 'Prueba otra búsqueda o revisa las demás páginas.' : undefined}
+          currentPage={visiblePage}
+          totalPages={visibleTotalPages}
+          totalElements={visibleTotalElements}
+          onPageChange={showingStalled ? setStalledPage : setCurrentPage}
           onViewDetail={(id, scrollToPayments = false) => {
             navigate(buildOperationDetailPath(id), {
               state: {
@@ -324,20 +379,20 @@ export default function OperationsPage() {
           }}
           onAddPayment={handleOpenAddPayment}
           onEditOperation={handleOpenEditOperation}
-          onOperationUpdated={() => fetchOperations(currentPage)}
-          onActivateOperation={handleActivate}
-          onDeactivateOperation={handleDeactivate}
+          onOperationUpdated={refreshVisibleOperations}
+          onActivateOperation={async (id) => { await handleActivate(id); if (showingStalled) await stalledQuery.refetch(); }}
+          onDeactivateOperation={async (id) => { await handleDeactivate(id); if (showingStalled) await stalledQuery.refetch(); }}
           onDeleteOperation={setOperationToDelete}
           togglingOperationId={processingOperationId}
         />}
 
-        <div className="mt-5">
+        <div className="p-4">
           <Pagination
-            currentPage={currentPage + 1}
-            totalPages={totalPages}
-            totalElements={totalElements}
-            isLoading={isLoading}
-            onPageChange={(page) => setCurrentPage(page - 1)}
+            currentPage={visiblePage + 1}
+            totalPages={visibleTotalPages}
+            totalElements={visibleTotalElements}
+            isLoading={visibleIsLoading}
+            onPageChange={(page) => showingStalled ? setStalledPage(page - 1) : setCurrentPage(page - 1)}
           />
         </div>
       </section>
@@ -455,7 +510,7 @@ export default function OperationsPage() {
               <div className="flex justify-between gap-4">
                 <dt className="text-slate-500">Monto total</dt>
                 <dd className="font-medium">
-                  {formatCurrency(operationToDelete.montoTotal)}
+                  {formatMoney(operationToDelete.montoTotal)}
                 </dd>
               </div>
             </dl>
