@@ -6,7 +6,7 @@ import { Sidebar } from './Sidebar';
 
 const mocks = vi.hoisted(() => ({
   roles: ['JEFA_CAJAS'] as string[],
-  counts: { cashIncome: 3 as number | null, bankIncome: 5 as number | null, commissions: 4 as number | null },
+  counts: { cashIncome: 3 as number | null, cashOutflow: 2 as number | null, bankIncome: 5 as number | null, commissions: 4 as number | null },
   cashOpen: true,
   cashStateKnown: true,
 }));
@@ -24,7 +24,7 @@ function show(path: string) {
 
 beforeEach(() => {
   mocks.roles = ['JEFA_CAJAS'];
-  mocks.counts = { cashIncome: 3, bankIncome: 5, commissions: 4 };
+  mocks.counts = { cashIncome: 3, cashOutflow: 2, bankIncome: 5, commissions: 4 };
   mocks.cashOpen = true;
   mocks.cashStateKnown = true;
 });
@@ -41,21 +41,22 @@ describe('Sidebar', () => {
     expect(sidebar).toHaveClass('lg:max-xl:w-[76px]');
   });
   it('abre Caja por ruta activa y selecciona solo Entradas de efectivo', () => {
-    show('/operaciones?workQueue=CASH_INCOME&dateFilter=');
+    show('/caja/entradas');
     expect(screen.getByRole('button', { name: /Caja.*Abierta/ })).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByRole('link', { name: /Entradas de efectivo/ })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: 'Operaciones' })).not.toHaveAttribute('aria-current');
     expect(screen.getByRole('link', { name: /Entradas de efectivo/ })).toHaveTextContent('3');
   });
 
-  it('conserva Cheques y Entregas de hoy dentro de Caja y no suma tareas incompletas', async () => {
+  it('suma una vez los pagos y solicitudes y conserva las rutas viejas fuera del menú', async () => {
     show('/operaciones');
     const group = screen.getByRole('button', { name: /Caja.*Abierta/ });
     expect(group).toHaveAttribute('aria-expanded', 'false');
-    expect(within(group).queryByText('3')).toBeNull();
+    expect(within(group).getByText('5')).toBeInTheDocument();
     await userEvent.click(group);
-    expect(screen.getByRole('link', { name: 'Cheques por cobrar' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Entregas de hoy' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Cheques por cobrar' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Entregas de hoy' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Salidas de efectivo/ })).toHaveTextContent('2');
     expect(screen.queryByRole('link', { name: 'Pendientes del equipo' })).toBeNull();
   });
 

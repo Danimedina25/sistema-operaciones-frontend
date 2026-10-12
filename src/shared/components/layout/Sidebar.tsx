@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Clock3, PanelLeftClose, PanelLeftOpen, X } from 'lucide-react';
-import { ChequeIcon } from '@/shared/components/icons/ChequeIcon';
+import { PanelLeftClose, PanelLeftOpen, X } from 'lucide-react';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { cn } from '@/shared/lib/cn';
 import chevronDown from '@/shared/assets/navigation/49590.svg';
@@ -16,8 +15,8 @@ interface SidebarProps { isOpen: boolean; onClose: () => void }
 type Counts = ReturnType<typeof useNavigationState>['counts'];
 
 function GroupBadge({ group, counts }: { group: NavGroup; counts: Counts }) {
-  // Salidas no tiene aún un contador por solicitud. No mostramos una suma incompleta.
-  if (group.children.some(child => child.id === 'cash-returns' || child.id === 'bank-returns')) return null;
+  // La salida bancaria todavía no dispone de contador por solicitud.
+  if (group.children.some(child => child.id === 'bank-returns')) return null;
   const badgeChildren = group.children.filter(child => child.badge);
   if (!badgeChildren.length || badgeChildren.some(child => counts[child.badge!] === null)) return null;
   const total = badgeChildren.reduce((sum, child) => sum + (counts[child.badge!] ?? 0), 0);
@@ -56,9 +55,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         compactCentered,
         active ? 'bg-brand font-semibold text-white shadow-brand' : nested ? 'text-[#a7b0c2] hover:bg-white/7 hover:text-white' : 'font-medium text-ink-inverse hover:bg-white/7 hover:text-white',
         item.cashAction && !active && (cashOpen ? 'text-[#f87171]' : 'text-[#4ade80]'))}>
-      {item.id === 'cheques' ? <ChequeIcon className={cn('shrink-0', nested ? 'h-4 w-4' : 'h-5 w-5')} />
-        : item.id === 'cash-deliveries' ? <Clock3 className={cn('shrink-0', nested ? 'h-4 w-4' : 'h-5 w-5')} />
-          : <img alt="" src={glyph} className={cn('shrink-0', nested ? 'h-4 w-4' : 'h-5 w-5')} />}
+      <img alt="" src={glyph} className={cn('shrink-0', nested ? 'h-4 w-4' : 'h-5 w-5')} />
       <span className={cn('min-w-0 flex-1', compactHidden)}>{label}</span>
       {badge !== null && badge > 0 && <span className={compactHidden}><Badge count={badge} active={active} /></span>}
     </Link>;

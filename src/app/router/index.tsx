@@ -1,5 +1,7 @@
 import ChequesPage from '@/modules/cheques/ChequesPage';
 import CajaGeneralPage from '@/modules/caja-general/pages/CajaGeneralPage';
+import CashIncomePage from '@/modules/caja-general/pages/CashIncomePage';
+import CashOutflowPage from '@/modules/caja-general/pages/CashOutflowPage';
 import MyPendingPage from '@/modules/operations/pages/MyPendingPage';
 import TeamPendingPage from '@/modules/operations/pages/TeamPendingPage';
 import { createBrowserRouter } from 'react-router-dom';
@@ -72,6 +74,8 @@ export const router = createBrowserRouter([
             element: <RoleGuard allowedRoles={ROUTE_ACCESS.cajaGeneral} />,
             children: [{ path: paths.cajaGeneral, element: <CajaGeneralPage /> }],
           },
+          { element: <RoleGuard allowedRoles={ROUTE_ACCESS.cashIncome} />, children: [{ path: paths.cashIncome, element: <CashIncomePage /> }] },
+          { element: <RoleGuard allowedRoles={ROUTE_ACCESS.cashOutflow} />, children: [{ path: paths.cashOutflow, element: <CashOutflowPage /> }] },
           {
             element: <RoleGuard allowedRoles={ROUTE_ACCESS.corte} />,
             children: [

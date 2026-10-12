@@ -54,8 +54,9 @@ export default function OperationDetailPage() {
     Boolean(location.state?.scrollToReturns) ||
     searchParams.get('scrollToReturns') === 'true';
   const requestedAction = searchParams.get('action');
-  const initialAction = requestedAction === 'register-payment' || requestedAction === 'request-return'
+  const initialAction = requestedAction === 'register-payment' || requestedAction === 'request-return' || requestedAction === 'review-payment' || requestedAction === 'manage-return'
     ? requestedAction : undefined;
+  const initialTargetId = Number(searchParams.get(initialAction === 'review-payment' ? 'paymentId' : 'returnRequestId')) || undefined;
   const isReturnsForRequestDetail = location.pathname.startsWith(paths.returnsforrequest);
   const isReturnPaymentDetail = location.pathname.startsWith(paths.returnsforpayment);
   const isReturnsRequestedDetail = location.pathname.startsWith(paths.returnsRequested);
@@ -137,6 +138,7 @@ export default function OperationDetailPage() {
     await queryClient.invalidateQueries({ queryKey: ['operation-returns', parsedOperationId] });
     await queryClient.invalidateQueries({ queryKey: ['return-operation', parsedOperationId] });
     await queryClient.invalidateQueries({ queryKey: ['return-request-summary'] });
+    await queryClient.invalidateQueries({ queryKey: ['cash-work'] });
     setRefreshKey((prev) => prev + 1);
   }
 
@@ -252,6 +254,7 @@ export default function OperationDetailPage() {
         scrollToPayments={scrollToPayments}
         scrollToReturns={scrollToReturns}
         initialAction={initialAction}
+        initialTargetId={initialTargetId}
         onInitialActionHandled={() => navigate(location.pathname, {
           replace: true,
           state: { scrollToPayments, scrollToReturns },

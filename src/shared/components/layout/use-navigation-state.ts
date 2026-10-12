@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { cajaGeneralApi } from '@/modules/caja-general/api/caja-general.api';
+import { cashWorkApi } from '@/modules/caja-general/api/cash-work.api';
 import { getSummaryByBeneficiary } from '@/modules/comisionessocioscomerciales/api/commercial-partner-commissions.api';
 import { getOperations } from '@/modules/operations/api/operations.api';
 import type { OperationsFilters } from '@/modules/operations/types/operations.types.ts';
@@ -30,9 +31,9 @@ export function useNavigationState(role: RoleName | undefined) {
   const isBank = role === 'JEFA_CUENTAS' || role === 'AUXILIAR_CUENTAS';
   const isManager = role === 'GERENTE';
   const commissionWeek = previousWeekInOffice(new Date());
-  const cashIncome = useQuery({
-    queryKey: ['navigation', user?.userId, 'CASH_INCOME'],
-    queryFn: () => getOperations(0, 1, { ...pendingFilters, workQueue: 'CASH_INCOME' }),
+  const cashWork = useQuery({
+    queryKey: ['cash-work', 'summary'],
+    queryFn: cashWorkApi.summary,
     enabled: isCash,
     refetchInterval: 30_000,
   });
@@ -57,7 +58,8 @@ export function useNavigationState(role: RoleName | undefined) {
 
   return {
     counts: {
-      cashIncome: cashIncome.data?.totalElements ?? null,
+      cashIncome: cashWork.data?.income.count ?? null,
+      cashOutflow: cashWork.data?.outflow.count ?? null,
       bankIncome: bankIncome.data?.totalElements ?? null,
       commissions: commissions.data?.socios.filter(socio => socio.totalPendientes > 0 && socio.totalComisionesPendientes > 0).length ?? null,
     },

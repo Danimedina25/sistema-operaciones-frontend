@@ -19,6 +19,7 @@ vi.mock('@/modules/cash-withdrawals/api', () => ({
 vi.mock('@/modules/auth/store/auth.context', () => ({
   useAuth: () => ({ user: { userId: 1 }, hasRole: () => true }),
 }));
+vi.mock('../api/cash-work.api', () => ({ cashWorkApi: { summary: async () => ({ withdrawals: { count: 1, amount: 300 } }) } }));
 
 const withdrawal: BankCashWithdrawal = {
   id: 5, registradoEn: '2026-09-29T10:15:00', bankAccountId: 4, cuenta: 'Operaciones SA — BANORTE — 00001111',
@@ -42,7 +43,7 @@ beforeEach(() => {
 describe('Retiros por confirmar', () => {
   it('lista cada retiro con su cuenta, forma, beneficiario y monto', async () => {
     mount();
-    const row = (await screen.findByText('Retiro sin tarjeta (RST)')).closest('tr') as HTMLElement;
+    const row = (await within(await screen.findByRole('table')).findByText('Retiro sin tarjeta (RST)')).closest('tr') as HTMLElement;
     expect(row).toHaveTextContent('BANORTE');
     expect(row).toHaveTextContent('Operaciones SA');
     expect(row).toHaveTextContent('Caja General');
@@ -53,7 +54,7 @@ describe('Retiros por confirmar', () => {
 
   it('confirma sólo cuando el desglose suma exactamente el monto', async () => {
     mount();
-    fireEvent.click(await screen.findByRole('button', { name: 'Confirmar' }));
+    fireEvent.click(within(await screen.findByRole('table')).getByRole('button', { name: 'Confirmar' }));
     const dialog = screen.getByRole('dialog');
     const submit = within(dialog).getByRole('button', { name: 'Confirmar entrada a caja' });
     expect(submit).toBeDisabled();
@@ -73,7 +74,7 @@ describe('Retiros por confirmar', () => {
 
   it('rechaza con motivo obligatorio', async () => {
     mount();
-    fireEvent.click(await screen.findByRole('button', { name: 'Rechazar' }));
+    fireEvent.click(within(await screen.findByRole('table')).getByRole('button', { name: 'Rechazar' }));
     const dialog = screen.getByRole('dialog');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Rechazar retiro' }));
     expect(within(dialog).getByRole('alert')).toHaveTextContent('motivo');
@@ -86,10 +87,10 @@ describe('Retiros por confirmar', () => {
 
   it('sin la caja de hoy abierta no se puede confirmar, pero sí rechazar', async () => {
     mount(true, null);
-    expect(await screen.findByRole('button', { name: 'Confirmar' })).toBeDisabled();
+    expect(within(await screen.findByRole('table')).getByRole('button', { name: 'Confirmar' })).toBeDisabled();
     expect(screen.getByText(/caja de hoy abierta/)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Rechazar' }));
+    fireEvent.click(within(screen.getByRole('table')).getByRole('button', { name: 'Rechazar' }));
     const dialog = screen.getByRole('dialog');
     fireEvent.change(within(dialog).getByLabelText('Motivo'), { target: { value: 'Monto con centavos incorrectos' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Rechazar retiro' }));
@@ -98,7 +99,7 @@ describe('Retiros por confirmar', () => {
 
   it('quien sólo consulta ve la bandeja sin acciones', async () => {
     mount(false);
-    await screen.findByText('Retiro sin tarjeta (RST)');
+    await within(await screen.findByRole('table')).findByText('Retiro sin tarjeta (RST)');
     expect(screen.queryByRole('button', { name: 'Confirmar' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Rechazar' })).not.toBeInTheDocument();
   });
@@ -107,12 +108,12 @@ describe('Retiros por confirmar', () => {
     pending.mockResolvedValue([]);
     mount();
     await waitFor(() => expect(pending).toHaveBeenCalled());
-    expect(screen.queryByText('Retiros por confirmar')).not.toBeInTheDocument();
+    expect(screen.getByText('Sin retiros por confirmar')).toBeInTheDocument();
   });
   it('explica por qué no se puede confirmar un retiro con centavos que no son .00 ni .50', async () => {
     pending.mockResolvedValue([{ ...withdrawal, monto: 30000.78 }]);
     mount();
-    fireEvent.click(await screen.findByRole('button', { name: 'Confirmar' }));
+    fireEvent.click(within(await screen.findByRole('table')).getByRole('button', { name: 'Confirmar' }));
     const dialog = screen.getByRole('dialog');
     expect(within(dialog).getByRole('alert')).toHaveTextContent('no se puede confirmar');
     expect(within(dialog).queryByLabelText('Cantidad de $100.00')).not.toBeInTheDocument();

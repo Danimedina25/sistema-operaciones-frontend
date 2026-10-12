@@ -45,7 +45,7 @@ import adminUsersActive from '@/shared/assets/navigation/d9857.svg';
 export interface NavIcon { normal: string; active: string }
 export interface NavItem {
   kind: 'item'; id: string; label: string; to: string; access: RouteAccessKey;
-  icon: NavIcon; badge?: 'cashIncome' | 'bankIncome' | 'commissions';
+  icon: NavIcon; badge?: 'cashIncome' | 'cashOutflow' | 'bankIncome' | 'commissions';
   cashAction?: boolean;
 }
 export interface NavGroup {
@@ -72,10 +72,8 @@ const cashEntries: NavEntry[] = [
   pending,
   group('cash', 'Caja', icon(vault, vaultActive), [
     item('cash-cut', 'Corte', paths.cajaGeneral, 'cajaGeneral', icon(scroll, scrollActive)),
-    item('cash-income', 'Entradas de efectivo', `${paths.operations}?workQueue=CASH_INCOME&dateFilter=`, 'operations', icon(down, downActive), { badge: 'cashIncome' }),
-    item('cheques', 'Cheques por cobrar', paths.cheques, 'cheques', icon(scroll, scrollActive)),
-    item('cash-returns', 'Salidas de efectivo', `${paths.returnsforpayment}?workQueue=CASH_RETURNS&dateFilter=`, 'returnsforpayment', icon(up, upActive)),
-    item('cash-deliveries', 'Entregas de hoy', paths.todayCashDeliveries, 'todayCashDeliveries', icon(scroll, scrollActive)),
+    item('cash-income', 'Entradas de efectivo', paths.cashIncome, 'cashIncome', icon(down, downActive), { badge: 'cashIncome' }),
+    item('cash-returns', 'Salidas de efectivo', paths.cashOutflow, 'cashOutflow', icon(up, upActive), { badge: 'cashOutflow' }),
     item('cash-session', 'Abrir/Cerrar caja', `${paths.cajaGeneral}?nav=cash-session`, 'cajaGeneral', icon(unlock, unlockActive), { cashAction: true }),
   ], true),
   operations,

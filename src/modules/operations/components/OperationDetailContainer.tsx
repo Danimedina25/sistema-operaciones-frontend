@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { OperationDetailView } from '@/modules/operations/components/OperationDetailView';
 import { useOperationDetail } from '@/modules/operations/hooks/use-operation-detail';
 import { useValidatePayment } from '../hooks/use-validate-payment';
@@ -19,7 +20,8 @@ interface OperationDetailContainerProps {
   onManageReturn?: (returnRequest: ReturnPaymentResponse) => void;
   scrollToPayments?: boolean;
   scrollToReturns?: boolean;
-  initialAction?: 'register-payment' | 'request-return';
+  initialAction?: 'register-payment' | 'request-return' | 'review-payment' | 'manage-return';
+  initialTargetId?: number;
   onInitialActionHandled?: () => void;
   onEditPayment: (operation: PaymentOperationResponse, paymentId: number) => void;
   onEditReturn?: (
@@ -39,12 +41,14 @@ export function OperationDetailContainer({
   scrollToPayments = false,
   scrollToReturns = false,
   initialAction,
+  initialTargetId,
   onInitialActionHandled,
   onEditPayment,
   onEditReturn,
   onDeleteOperation,
 }: OperationDetailContainerProps) {
   const { hasRole } = useAuth();
+  const queryClient = useQueryClient();
 
   const canViewFinancialDetails = !hasRole(['SOCIO_COMERCIAL', 'JEFA_CUENTAS', 'AUXILIAR_CUENTAS', 'JEFA_CAJAS']);
   const canViewOperationExtras = !hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS', 'JEFA_CAJAS']);
@@ -57,7 +61,7 @@ export function OperationDetailContainer({
   const handledInitialAction = useRef(false);
 
   useEffect(() => {
-    if (!operation || !initialAction || handledInitialAction.current) return;
+    if (!operation || !initialAction || initialAction === 'review-payment' || initialAction === 'manage-return' || handledInitialAction.current) return;
     handledInitialAction.current = true;
     if (initialAction === 'register-payment' && operation.saldoPendientePorRegistrar > 0) onAddPayment(operation);
     if (initialAction === 'request-return' && canRequestReturn && operation.saldoPendientePorSolicitar > 0) {
@@ -72,10 +76,20 @@ export function OperationDetailContainer({
     refetch: refetchReturns,
   } = useReturnsByOperationId(operationId);
 
+  useEffect(() => {
+    if (initialAction !== 'manage-return' || !initialTargetId || !returns.length || handledInitialAction.current) return;
+    const target = returns.find(item => item.id === initialTargetId);
+    if (!target) return;
+    handledInitialAction.current = true;
+    onManageReturn?.(target);
+    onInitialActionHandled?.();
+  }, [initialAction, initialTargetId, returns, onManageReturn, onInitialActionHandled]);
+
   const { processingPaymentId: validatingPaymentId, submitValidatePayment } =
     useValidatePayment({
       onSuccess: async () => {
         await fetchOperation();
+        await queryClient.invalidateQueries({ queryKey: ['cash-work'] });
       },
     });
 
@@ -83,6 +97,7 @@ export function OperationDetailContainer({
     useRejectPayment({
       onSuccess: async () => {
         await fetchOperation();
+        await queryClient.invalidateQueries({ queryKey: ['cash-work'] });
       },
     });
 
@@ -176,6 +191,8 @@ export function OperationDetailContainer({
       }}
       scrollToPayments={scrollToPayments}
       scrollToReturns={scrollToReturns}
+      initialReviewPaymentId={initialAction === 'review-payment' ? initialTargetId : undefined}
+      onInitialReviewHandled={onInitialActionHandled}
       onEditReturn={onEditReturn}
       onDeleteOperation={
         canDeleteOperation &&

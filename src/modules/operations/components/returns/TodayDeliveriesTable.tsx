@@ -1,10 +1,9 @@
 import { MessageCircle } from 'lucide-react';
 import { DeliverySemaphoreBadge } from '@/shared/components/dashboard/DeliverySemaphoreBadge';
-import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
 import { useWhatsAppLink } from '@/shared/hooks/use-whatsapp-link';
 import { buildDeliveryNoticeMessage } from '@/shared/utils/whatsapp-message';
-import { paymentTypeLabels } from '@/modules/operations/constants/operations.constants';
-import { formatCurrency, formatDateTime } from '@/modules/operations/utils/operation-formatters';
+import { formatDateTime, formatMoney } from '@/shared/format';
 import type { ReturnInstallment } from '@/modules/operations/types/operations.types.ts';
 
 interface TodayDeliveriesTableProps {
@@ -12,129 +11,43 @@ interface TodayDeliveriesTableProps {
   onMarkAsDelivered: (installment: ReturnInstallment) => void;
 }
 
-function getAuthorizedRecipient(delivery: ReturnInstallment): string {
-  const names = [
-    delivery.autorizadoParaRecibir1,
-    delivery.autorizadoParaRecibir2,
-    delivery.autorizadoParaRecibir3,
-  ].filter(Boolean);
-
-  if (names.length > 0) return names.join(', ');
-
-  return delivery.socioComercialNombre ?? '-';
+function authorizedRecipient(delivery: ReturnInstallment): string {
+  return [delivery.autorizadoParaRecibir1, delivery.autorizadoParaRecibir2, delivery.autorizadoParaRecibir3]
+    .filter(Boolean).join(', ') || delivery.socioComercialNombre || '—';
 }
 
 export function TodayDeliveriesTable({ deliveries, onMarkAsDelivered }: TodayDeliveriesTableProps) {
   const { openWhatsApp } = useWhatsAppLink();
-
-  if (deliveries.length === 0) {
-    return (
-      <EmptyState
-        title="Sin entregas programadas para hoy"
-        description="Las recolecciones de efectivo y retiro sin tarjeta de hoy aparecerán aquí."
-      />
-    );
-  }
-
-  function handleNotifyViaWhatsApp(delivery: ReturnInstallment) {
-    const message = buildDeliveryNoticeMessage({
-      operationId: delivery.operationId,
-      scheduledAtLabel: delivery.fechaHoraRecoleccion
-        ? formatDateTime(delivery.fechaHoraRecoleccion)
-        : '-',
-      deliveryTypeLabel: paymentTypeLabels[delivery.tipoPago],
-    });
-
-    openWhatsApp(message, delivery.socioComercialTelefono);
-  }
-
-  return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="overflow-x-auto">
-        <table className="min-w-full border-separate border-spacing-0">
-          <thead className="bg-slate-100">
-            <tr className="text-left text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
-              <th className="min-w-[110px] px-4 py-3 font-medium">Hora</th>
-              <th className="min-w-[130px] px-4 py-3 font-medium">Operación</th>
-              <th className="min-w-[170px] px-4 py-3 font-medium">Socio o cliente autorizado</th>
-              <th className="min-w-[110px] px-4 py-3 font-medium">Monto</th>
-              <th className="min-w-[130px] px-4 py-3 font-medium">Tipo</th>
-              <th className="min-w-[160px] px-4 py-3 font-medium">Estado</th>
-              <th className="min-w-[260px] px-4 py-3 font-medium">Acciones</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {deliveries.map((delivery) => {
-              // La jefa de cajas puede cerrar la entrega en cualquier momento
-              // (PROGRAMADA o ENTREGADA), sin esperar a que el socio confirme
-              // primero — solo si ella todavía no la ha cerrado.
-              const canAct =
-                (delivery.estatus === 'PROGRAMADA' || delivery.estatus === 'ENTREGADA') &&
-                !delivery.cerradoPorJefa;
-
-              return (
-                <tr
-                  key={delivery.id}
-                  className="border-t border-slate-100 text-sm transition hover:bg-blue-50/40"
-                >
-                  <td className="whitespace-nowrap px-4 py-4 font-semibold text-slate-900">
-                    {delivery.fechaHoraRecoleccion
-                      ? formatDateTime(delivery.fechaHoraRecoleccion)
-                      : '-'}
-                  </td>
-
-                  <td className="px-4 py-4 text-slate-600">
-                    <p className="font-medium text-slate-900">#{delivery.operationId}</p>
-                    {delivery.clienteNombre ? (
-                      <p className="text-xs text-slate-500">{delivery.clienteNombre}</p>
-                    ) : null}
-                  </td>
-
-                  <td className="px-4 py-4 text-slate-600">{getAuthorizedRecipient(delivery)}</td>
-
-                  <td className="whitespace-nowrap px-4 py-4 font-bold tabular-nums text-slate-950">
-                    {formatCurrency(delivery.monto)}
-                  </td>
-
-                  <td className="px-4 py-4 text-slate-600">{paymentTypeLabels[delivery.tipoPago]}</td>
-
-                  <td className="px-4 py-4">
-                    <DeliverySemaphoreBadge
-                      estatus={delivery.estatus}
-                      scheduledAt={delivery.fechaHoraRecoleccion}
-                    />
-                  </td>
-
-                  <td className="px-4 py-4">
-                    {canAct ? (
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleNotifyViaWhatsApp(delivery)}
-                          className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100"
-                        >
-                          <MessageCircle className="h-3.5 w-3.5" />
-                          Avisar por WhatsApp
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onMarkAsDelivered(delivery)}
-                          className="inline-flex min-h-[40px] items-center rounded-lg bg-indigo-600 px-3 text-xs font-medium text-white transition hover:bg-indigo-700"
-                        >
-                          Marcar como entregado
-                        </button>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-slate-400">Sin acciones</span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+  const status = (row: ReturnInstallment) => <DeliverySemaphoreBadge estatus={row.estatus} scheduledAt={row.fechaHoraRecoleccion} />;
+  const actions = (row: ReturnInstallment) => {
+    const canAct = (row.estatus === 'PROGRAMADA' || row.estatus === 'ENTREGADA') && !row.cerradoPorJefa;
+    if (!canAct) return <span className="text-xs text-slate-400">Sin acciones</span>;
+    return <div className="flex flex-wrap justify-end gap-2">
+      <button type="button" onClick={() => openWhatsApp(buildDeliveryNoticeMessage({
+        operationId: row.operationId,
+        scheduledAtLabel: row.fechaHoraRecoleccion ? formatDateTime(row.fechaHoraRecoleccion) : '—',
+        deliveryTypeLabel: row.tipoPago === 'RETIRO_SIN_TARJETA' ? 'Retiro sin tarjeta' : 'Efectivo',
+      }), row.socioComercialTelefono)}
+        className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2 text-xs font-medium text-emerald-700">
+        <MessageCircle className="h-3.5 w-3.5" /> Avisar
+      </button>
+      <button type="button" onClick={() => onMarkAsDelivered(row)} className="min-h-9 rounded-lg bg-[#3b6ef5] px-2 text-xs font-medium text-white">Marcar entregado</button>
+    </div>;
+  };
+  const columns: DataTableColumn<ReturnInstallment>[] = [
+    { key: 'time', header: 'Hora', width: '15%', cell: row => row.fechaHoraRecoleccion ? formatDateTime(row.fechaHoraRecoleccion) : '—' },
+    { key: 'operation', header: 'Operación', width: '18%', cell: row => <span><strong className="block">#{row.operationId}</strong><small className="block truncate" title={row.clienteNombre ?? ''}>{row.clienteNombre}</small></span> },
+    { key: 'recipient', header: 'Autorizado', width: '17%', cell: authorizedRecipient },
+    { key: 'amount', header: 'Monto', width: '12%', cell: row => <strong className="whitespace-nowrap">{formatMoney(row.monto)}</strong> },
+    { key: 'status', header: 'Estatus', kind: 'status', width: '14%', cell: status },
+    { key: 'actions', header: 'Acciones', kind: 'actions', width: '24%', cell: actions },
+  ];
+  return <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+    <DataTable columns={columns} rows={deliveries} getRowKey={row => row.id}
+      mobile={{ title: row => `Operación #${row.operationId}`, subtitle: row => row.clienteNombre, status,
+        fields: [{ key: 'time', label: 'Hora', value: row => row.fechaHoraRecoleccion ? formatDateTime(row.fechaHoraRecoleccion) : '—' },
+          { key: 'recipient', label: 'Autorizado', value: authorizedRecipient },
+          { key: 'amount', label: 'Monto', value: row => formatMoney(row.monto) }], actions }}
+      emptyTitle="Sin entregas programadas para hoy" emptyDescription="Las recolecciones de efectivo y retiro sin tarjeta de hoy aparecerán aquí." />
+  </div>;
 }

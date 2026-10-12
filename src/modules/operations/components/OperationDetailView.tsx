@@ -44,6 +44,8 @@ interface OperationDetailViewProps {
   onOperationUpdated?: () => void | Promise<void>;
   scrollToPayments?: boolean;
   scrollToReturns?: boolean;
+  initialReviewPaymentId?: number;
+  onInitialReviewHandled?: () => void;
   onEditPayment?: (paymentId: number) => void;
   onEditReturn?: (
     returnPayment: ReturnPaymentResponse,
@@ -71,6 +73,8 @@ export function OperationDetailView({
   onOperationUpdated,
   scrollToPayments = false,
   scrollToReturns = false,
+  initialReviewPaymentId,
+  onInitialReviewHandled,
   onEditPayment,
   onEditReturn,
   onDeleteOperation,
@@ -177,6 +181,8 @@ export function OperationDetailView({
           onReleasePayment={onReleasePayment}
           montoPendientePorRegistrar={operation.saldoPendientePorRegistrar}
           processingPaymentId={processingPaymentId}
+          initialReviewPaymentId={initialReviewPaymentId}
+          onInitialReviewHandled={onInitialReviewHandled}
         />
       </div>
 

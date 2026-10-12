@@ -8,11 +8,13 @@ const mocks = vi.hoisted(() => ({
   getOperations: vi.fn(),
   getSummaryByBeneficiary: vi.fn(),
   latest: vi.fn(),
+  cashSummary: vi.fn(),
 }));
 vi.mock('@/modules/auth/store/auth.context', () => ({ useAuth: () => ({ user: { userId: 17 } }) }));
 vi.mock('@/modules/operations/api/operations.api', () => ({ getOperations: mocks.getOperations }));
 vi.mock('@/modules/comisionessocioscomerciales/api/commercial-partner-commissions.api', () => ({ getSummaryByBeneficiary: mocks.getSummaryByBeneficiary }));
 vi.mock('@/modules/caja-general/api/caja-general.api', () => ({ cajaGeneralApi: { latest: mocks.latest } }));
+vi.mock('@/modules/caja-general/api/cash-work.api', () => ({ cashWorkApi: { summary: mocks.cashSummary } }));
 
 function Wrapper({ children }: PropsWithChildren) {
   const [client] = useState(() => new QueryClient({ defaultOptions: { queries: { retry: false } } }));
@@ -22,16 +24,18 @@ function Wrapper({ children }: PropsWithChildren) {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.getOperations.mockResolvedValue({ totalElements: 3 });
+  mocks.cashSummary.mockResolvedValue({ income: { count: 3 }, outflow: { count: 2 } });
   mocks.latest.mockResolvedValue({ closedAt: null });
   mocks.getSummaryByBeneficiary.mockResolvedValue({ socios: [] });
 });
 
 describe('contadores del menú', () => {
-  it('consulta ingresos de Caja sin filtro de fecha ni salidas duplicadas', async () => {
+  it('consulta ingresos y salidas por unidades de trabajo sin duplicarlas', async () => {
     const { result } = renderHook(() => useNavigationState('JEFA_CAJAS'), { wrapper: Wrapper });
     await waitFor(() => expect(result.current.counts.cashIncome).toBe(3));
-    expect(mocks.getOperations).toHaveBeenCalledTimes(1);
-    expect(mocks.getOperations.mock.calls[0][2]).toMatchObject({ workQueue: 'CASH_INCOME', dateFilter: '' });
+    expect(result.current.counts.cashOutflow).toBe(2);
+    expect(mocks.cashSummary).toHaveBeenCalledTimes(1);
+    expect(mocks.getOperations).not.toHaveBeenCalled();
     expect(result.current.counts.bankIncome).toBeNull();
     expect(result.current.cashOpen).toBe(true);
     expect(mocks.getSummaryByBeneficiary).not.toHaveBeenCalled();

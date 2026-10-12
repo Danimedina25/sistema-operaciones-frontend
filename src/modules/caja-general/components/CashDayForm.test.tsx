@@ -12,7 +12,7 @@ describe('Formulario de apertura y cierre', () => {
     const submit = vi.fn().mockResolvedValue(undefined);
     render(<CashDayForm mode="close" day={{ ...day, saldoActual: 0 }} busy={false} onSubmit={submit} />);
     fireEvent.click(screen.getByRole('button', { name: 'Cerrar caja con este conteo' }));
-    expect(screen.getByRole('dialog')).toHaveTextContent('2026-09-14');
+    expect(screen.getByRole('dialog')).toHaveTextContent('14 sep 2026');
     expect(screen.getByRole('dialog')).toHaveTextContent('$0.00');
     expect(submit).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Volver a capturar' }));
@@ -45,7 +45,7 @@ describe('Formulario de apertura y cierre', () => {
     expect(screen.getByLabelText('Saldo inicial')).toHaveAttribute('readonly');
     expect(screen.getByLabelText('Cantidad de $50.00')).toHaveValue(2);
     expect(screen.getByLabelText('Cantidad de $50.00')).toBeDisabled();
-    expect(screen.getByText(/Saldo y denominaciones heredados/)).toHaveTextContent('2026-09-14');
+    expect(screen.getByText(/Saldo y denominaciones heredados/)).toHaveTextContent('14 sep 2026');
 
     fireEvent.click(screen.getByRole('button', { name: 'Abrir caja' }));
 

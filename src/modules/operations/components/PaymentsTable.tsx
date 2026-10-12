@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { PaymentStatusBadge } from '@/modules/operations/components/PaymentStatusBadge';
 import {
@@ -56,6 +56,8 @@ interface PaymentsTableProps {
   montoPendientePorRegistrar?: number | null;
   onAddPayment?: () => void;
   onEditPayment?: (paymentId: number) => void;
+  initialReviewPaymentId?: number;
+  onInitialReviewHandled?: () => void;
 }
 
 type PaymentActionType = 'VALIDATE' | 'REJECT';
@@ -79,7 +81,9 @@ export function PaymentsTable({
   processingPaymentId = null,
   montoPendientePorRegistrar = null,
   onAddPayment,
-  onEditPayment
+  onEditPayment,
+  initialReviewPaymentId,
+  onInitialReviewHandled,
 }: PaymentsTableProps) {
   const { hasRole } = useAuth();
   const { openWhatsApp } = useWhatsAppLink();
@@ -197,6 +201,16 @@ export function PaymentsTable({
     setReviewingPaymentId(paymentId);
     resetReviewFormState();
   };
+
+  const initialReviewHandled = useRef(false);
+  useEffect(() => {
+    if (!initialReviewPaymentId || initialReviewHandled.current) return;
+    const payment = visiblePayments.find(item => item.id === initialReviewPaymentId);
+    if (!payment || payment.tipoPago !== 'EFECTIVO' || !canValidatePaymentType(payment.tipoPago)) return;
+    initialReviewHandled.current = true;
+    openReviewDrawer(payment.id);
+    onInitialReviewHandled?.();
+  }, [initialReviewPaymentId, visiblePayments, onInitialReviewHandled]);
 
   const handleCopyPaymentData = async (payment: OperationPaymentResponse) => {
     const text = [

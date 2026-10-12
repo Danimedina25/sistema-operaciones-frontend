@@ -10,6 +10,8 @@ export const paths = {
   bankBalances: '/corte/saldos',
   bankMovements: '/corte/movimientos',
   cajaGeneral: '/caja-general',
+  cashIncome: '/caja/entradas',
+  cashOutflow: '/caja/salidas',
   cheques: '/cheques-por-cobrar',
 
   users: '/usuarios',

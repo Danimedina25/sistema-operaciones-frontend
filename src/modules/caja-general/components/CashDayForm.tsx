@@ -11,7 +11,7 @@ import {
 import { DenominationFields } from './DenominationFields';
 import { countCents, currency, emptyCounts, parseCents, validateCashAmount } from '../utils/cash-amounts';
 import type { CashDay, CloseCashDay, OpenCashDay } from '../types/caja-general.types';
-import { formatDate } from '@/shared/utils/weeks';
+import { officeToday } from '@/shared/utils/period';
 import { formatCashDate } from '../utils/cash-dates';
 /** El campo canónico del sistema, con el margen que pide ir dentro de un `<label>`. */
 export const cashInput = `mt-1 ${fieldControl}`;
@@ -20,7 +20,7 @@ type Props = { busy: boolean } & (
   { mode: 'close'; day: CashDay; onSubmit: (value: CloseCashDay) => Promise<unknown> }
 );
 export function CashDayForm(props: Props) {
-  const fecha = formatDate(new Date());
+  const fecha = officeToday();
   const [amount, setAmount] = useState(props.mode === 'open' ? String(props.previous?.saldoContado ?? 0) : '0');
   const inheritsPreviousClose = props.mode === 'open' && props.previous !== null;
   // El cierre arranca con el desglose esperado, para revisarlo contra el conteo real en vez

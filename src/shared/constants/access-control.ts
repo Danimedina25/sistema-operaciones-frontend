@@ -17,6 +17,8 @@ export const ROUTE_ACCESS = {
   bankBalances: ['ADMIN', 'JEFA_CUENTAS', 'GERENTE', 'DIRECCION', 'AUXILIAR_CUENTAS'],
   bankMovements: ['ADMIN', 'JEFA_CUENTAS', 'GERENTE', 'DIRECCION', 'AUXILIAR_CUENTAS'],
   cajaGeneral: ['ADMIN', 'JEFA_CAJAS', 'GERENTE', 'DIRECCION'],
+  cashIncome: ['ADMIN', 'JEFA_CAJAS', 'GERENTE', 'DIRECCION'],
+  cashOutflow: ['ADMIN', 'JEFA_CAJAS', 'GERENTE', 'DIRECCION'],
   users: ['ADMIN', 'GERENTE', 'DIRECCION'],
   clientes: ['ADMIN', 'GERENTE', 'DIRECCION', 'SOCIO_COMERCIAL'],
   mycomercialpartners: ['ADMIN', 'GERENTE', 'DIRECCION', 'SOCIO_COMERCIAL'],

@@ -1,4 +1,6 @@
 import { render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { PropsWithChildren } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { OperationDetailContainer } from './OperationDetailContainer';
 import type { OperationStatus, PaymentOperationResponse } from '../types/operations.types.ts';
@@ -58,6 +60,7 @@ function renderContainer(roles: string[], estatus: OperationStatus) {
   mocks.roles = roles;
   mocks.estatus = estatus;
 
+  const client = new QueryClient();
   render(
     <OperationDetailContainer
       operationId={42}
@@ -66,6 +69,7 @@ function renderContainer(roles: string[], estatus: OperationStatus) {
       onEditPayment={vi.fn()}
       onDeleteOperation={vi.fn()}
     />,
+    { wrapper: ({ children }: PropsWithChildren) => <QueryClientProvider client={client}>{children}</QueryClientProvider> },
   );
 }
 
@@ -101,7 +105,8 @@ it('abre una sola vez la acción inicial de registrar pago del Socio', () => {
   mocks.roles = ['SOCIO_COMERCIAL'];
   const onAddPayment = vi.fn();
   const props = { operationId: 42, onBack: vi.fn(), onAddPayment, onEditPayment: vi.fn(), initialAction: 'register-payment' as const };
-  const view = render(<OperationDetailContainer {...props} />);
+  const client = new QueryClient();
+  const view = render(<OperationDetailContainer {...props} />, { wrapper: ({ children }: PropsWithChildren) => <QueryClientProvider client={client}>{children}</QueryClientProvider> });
   expect(onAddPayment).toHaveBeenCalledTimes(1);
   view.rerender(<OperationDetailContainer {...props} />);
   expect(onAddPayment).toHaveBeenCalledTimes(1);

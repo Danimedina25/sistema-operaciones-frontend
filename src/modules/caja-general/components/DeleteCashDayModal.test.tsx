@@ -16,7 +16,7 @@ describe('DeleteCashDayModal', () => {
   it('muestra la información y exige confirmación exacta y motivo', () => {
     const onConfirm = vi.fn();
     render(<DeleteCashDayModal day={day} movementCount={4} isSubmitting={false} onClose={vi.fn()} onConfirm={onConfirm} />);
-    expect(screen.getByRole('dialog')).toHaveTextContent('2026-09-15');
+    expect(screen.getByRole('dialog')).toHaveTextContent('15 sep 2026');
     expect(screen.getByRole('dialog')).toHaveTextContent('4');
     const button = screen.getByRole('button', { name: 'Eliminar corte definitivamente' });
     expect(button).toBeDisabled();

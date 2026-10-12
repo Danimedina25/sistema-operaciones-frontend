@@ -7,6 +7,7 @@ vi.mock('../components/StaffPendingSummaryCards', () => ({
   StaffPendingSummaryCards: ({ dateFilter, startDate, endDate }: { dateFilter: string; startDate: string; endDate: string }) =>
     <output aria-label="periodo-de-pendientes">{`${dateFilter}:${startDate}:${endDate}`}</output>,
 }));
+vi.mock('@/modules/auth/store/auth.context', () => ({ useAuth: () => ({ hasRole: () => false }) }));
 
 it('muestra pendientes de todas las fechas sin selector que pueda ocultarlos', () => {
   window.sessionStorage.setItem('table-filters:my-pending:v2:user:1', JSON.stringify({ dateFilter: 'THIS_MONTH' }));
