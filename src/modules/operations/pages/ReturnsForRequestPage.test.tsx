@@ -8,12 +8,14 @@ vi.mock('../hooks/returns/use-operation-returns', () => ({ useOperationsAvailabl
 vi.mock('../hooks/returns/use-request-return-payment', () => ({ useRequestReturnPayment: () => ({}) }));
 beforeEach(() => {
   window.sessionStorage.clear();
+  window.localStorage.clear();
   mocks.query.mockReset().mockReturnValue({ data: { content: [], totalPages: 0, totalElements: 0 } });
 });
 it.each([
   ['dateFilter=LAST_MONTH&startDate=&endDate=', { dateFilter: 'LAST_MONTH', startDate: '', endDate: '' }],
   ['dateFilter=&startDate=2026-07-03&endDate=2026-07-19', { dateFilter: '', startDate: '2026-07-03', endDate: '2026-07-19' }],
   ['dateFilter=&startDate=&endDate=', { dateFilter: '', startDate: '', endDate: '' }],
+  ['dateFilter=THIS_MONTH&startDate=2026-10-01&endDate=2026-10-11', { dateFilter: '', startDate: '', endDate: '' }],
 ])('consulta retornos por solicitar con las fechas de la URL: %s', (query, period) => {
   window.sessionStorage.setItem('table-filters:returns-for-request:v2:user:1', JSON.stringify({ dateFilter: 'TODAY', search: 'viejo' }));
   render(<MemoryRouter initialEntries={[`/retornos-por-solicitar?${query}`]}><ReturnsForRequestPage /></MemoryRouter>);

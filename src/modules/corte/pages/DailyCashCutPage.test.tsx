@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import DailyCashCutPage from './DailyCashCutPage';
-import { todayIso } from '../hooks/use-bank-movements';
+import { officeToday, shiftDay } from '@/shared/utils/period';
 import { paths } from '@/routes/paths';
 
 const fetchDailyCut = vi.fn();
@@ -113,34 +113,45 @@ describe('DailyCashCutPage', () => {
   it('usa el calendario de la cabecera como periodo de los movimientos', async () => {
     mount(paths.bankMovements);
 
-    const today = todayIso();
+    const today = officeToday();
     // En modo Día el periodo es un solo día: desde y hasta coinciden.
     await waitFor(() => expect(searchBankMovements).toHaveBeenLastCalledWith(
       expect.objectContaining({ desde: today, hasta: today }), 0, 20,
     ));
 
-    fireEvent.change(screen.getByLabelText('Fecha de movimientos'), { target: { value: '2026-09-15' } });
+    const initialRequests = searchBankMovements.mock.calls.length;
+    fireEvent.click(screen.getByRole('button', { name: /Periodo del corte:/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ayer' }));
+    expect(searchBankMovements).toHaveBeenCalledTimes(initialRequests);
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar' }));
+    const yesterday = shiftDay(today, -1);
     await waitFor(() => expect(searchBankMovements).toHaveBeenLastCalledWith(
-      expect.objectContaining({ desde: '2026-09-15', hasta: '2026-09-15' }), 0, 20,
+      expect.objectContaining({ desde: yesterday, hasta: yesterday }), 0, 20,
     ));
   });
 
   it('ofrece Día y Rango de fechas en movimientos, pero no en saldos', async () => {
     mount(paths.bankMovements);
+    fireEvent.click(screen.getByRole('button', { name: /Periodo del corte:/ }));
     expect(tab('Día')).toBeInTheDocument();
-    expect(tab('Rango de fechas')).toBeInTheDocument();
+    expect(tab('Rango')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
 
     // Los saldos son una foto a una fecha puntual: un rango no significa nada ahí.
     fireEvent.click(tab('Saldos bancarios'));
     await screen.findByRole('heading', { name: 'Saldos bancarios' });
-    expect(screen.queryByRole('button', { name: 'Rango de fechas' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Periodo del corte:/ }));
+    expect(screen.queryByRole('button', { name: 'Rango' })).toBeNull();
   });
 
   it('no deja consultar movimientos futuros desde el calendario', async () => {
     mount(paths.bankMovements);
 
-    const fecha = await screen.findByLabelText('Fecha de movimientos');
-    expect(fecha).toHaveAttribute('max', todayIso());
+    fireEvent.click(screen.getByRole('button', { name: /Periodo del corte:/ }));
+    const tomorrow = shiftDay(officeToday(), 1);
+    const tomorrowButton = document.querySelector<HTMLButtonElement>(`[data-day="${tomorrow}"] button`);
+    if (tomorrowButton) expect(tomorrowButton).toBeDisabled();
+    else expect(document.querySelector<HTMLButtonElement>('.rdp-button_next')).toBeDisabled();
   });
   it('vuelve a consultar los saldos cuando Caja confirma un retiro', async () => {
     mount(paths.bankBalances);

@@ -1,11 +1,12 @@
 import { useTableUrlFilters } from '@/shared/hooks/use-table-filters';
+import { useDefaultAllDatesMigration } from '@/shared/hooks/use-default-all-dates-migration';
 import { PendingDateFilters } from '../components/PendingDateFilters';
 import { StaffPendingSummaryCards } from '../components/StaffPendingSummaryCards';
 import type { SocioPendingSummaryParams } from '../hooks/use-socio-pending-summary';
 import type { SupervisedRole } from '../utils/staff-work';
 
 type TeamPendingFilters = SocioPendingSummaryParams & { supervisedRole: SupervisedRole };
-const defaults: TeamPendingFilters = { supervisedRole: 'JEFA_CAJAS', dateFilter: 'THIS_MONTH', startDate: '', endDate: '' };
+const defaults: TeamPendingFilters = { supervisedRole: 'JEFA_CAJAS', dateFilter: '', startDate: '', endDate: '' };
 const options: Array<{ value: SupervisedRole; label: string }> = [
   { value: 'JEFA_CAJAS', label: 'Jefa de Cajas' },
   { value: 'JEFA_CUENTAS', label: 'Jefa de Cuentas' },
@@ -13,7 +14,8 @@ const options: Array<{ value: SupervisedRole; label: string }> = [
 ];
 
 export default function TeamPendingPage() {
-  const { filters, setFilters } = useTableUrlFilters(defaults);
+  const { filters: savedFilters, setFilters } = useTableUrlFilters(defaults);
+  const filters = useDefaultAllDatesMigration(savedFilters, setFilters);
   const dates = { dateFilter: filters.dateFilter, startDate: filters.startDate, endDate: filters.endDate };
   return <div className="space-y-3">
     <header className="rounded-2xl bg-white p-4 shadow-sm">

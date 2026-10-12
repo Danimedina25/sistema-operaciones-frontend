@@ -27,6 +27,23 @@ it.each(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS'] as RoleName[])('muestra la misma co
   const url = new URL(screen.getByRole('status').textContent!, 'http://test');
   expect(url.pathname).toBe('/retornos-por-pagar'); expect(url.searchParams.get('workQueue')).toBe('BANK_RETURNS'); expect(url.searchParams.get('dateFilter')).toBe('LAST_MONTH');
 });
+it('cuenta toda la cola sin fechas y abre una lista con el mismo filtro', async () => {
+  mocks.roles = ['JEFA_CUENTAS'];
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  render(<QueryClientProvider client={client}><MemoryRouter>
+    <StaffPendingSummaryCards dateFilter="" startDate="" endDate="" /><Location />
+  </MemoryRouter></QueryClientProvider>);
+  await userEvent.click(screen.getByRole('button', { name: 'Mostrar' }));
+  await waitFor(() => expect(mocks.operations).toHaveBeenCalledWith(0, 10,
+    expect.objectContaining({ workQueue: 'BANK_INCOME', dateFilter: '', startDate: '', endDate: '' })));
+  expect(screen.getByRole('button', { name: /Operaciones con ingresos bancarios por validar.*3/ })).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: /Operaciones con ingresos bancarios por validar/ }));
+  const url = new URL(screen.getByRole('status').textContent!, 'http://test');
+  expect(url.pathname).toBe('/operaciones');
+  expect(url.searchParams.get('dateFilter')).toBe('');
+  expect(url.searchParams.get('startDate')).toBe('');
+  expect(url.searchParams.get('endDate')).toBe('');
+});
 it('combina cajas y cuentas sin duplicar tarjetas y separa entregas del período', async () => {
   mocks.roles = ['JEFA_CAJAS', 'JEFA_CUENTAS', 'AUXILIAR_CUENTAS']; mount();
   await userEvent.click(screen.getByRole('button', { name: 'Mostrar' }));

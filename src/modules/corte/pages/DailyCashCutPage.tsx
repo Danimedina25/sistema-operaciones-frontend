@@ -10,11 +10,11 @@ import type {
 } from '@/modules/corte/types/corte.types';
 import { useDailyCashCut } from '../hooks/use-daily-cash-cut';
 import { formatDate } from '@/modules/operations/utils/operation-formatters';
-import { formatDate as toISODate } from '@/shared/utils/weeks';
+import { officeToday, selectionFromDates } from '@/shared/utils/period';
 import { maskAccountNumber } from '@/shared/utils/account-formatting';
 import { paths } from '@/routes/paths';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
-import { PeriodDateField, PeriodModeToggle } from '@/shared/components/ui/PeriodFilter';
+import { PeriodSelector } from '@/shared/components/ui/PeriodSelector';
 import { BankMovementsSection } from '../components/BankMovementsSection';
 import { BankTransferModal } from '../components/BankTransferModal';
 import { RegisterWithdrawalModal } from '../components/RegisterWithdrawalModal';
@@ -29,10 +29,6 @@ import { useAuth } from '@/modules/auth/store/auth.context';
 import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, Banknote, Building2, CalendarDays, Landmark, LoaderCircle, Scale, Search } from 'lucide-react';
-
-function todayISO() {
-    return toISODate(new Date());
-}
 
 function formatCurrency(value?: number | null) {
     return new Intl.NumberFormat('es-MX', {
@@ -84,14 +80,12 @@ export default function DailyCashCutPage() {
     };
     const { filters, setFilters } = useTableFilters('table-filters:daily-cash-cut', {
         dateMode: 'daily' as DateMode,
-        fecha: todayISO(),
-        startDate: todayISO(),
-        endDate: todayISO(),
+        fecha: officeToday(),
+        startDate: officeToday(),
+        endDate: officeToday(),
         bankSearch: '',
     });
     const { dateMode, fecha, startDate, endDate, bankSearch } = filters;
-    const setDateMode = (dateMode: DateMode) => setFilters((current) => ({ ...current, dateMode }));
-    const setFecha = (fecha: string) => setFilters((current) => ({ ...current, fecha }));
     const setBankSearch = (bankSearch: string) => setFilters((current) => ({ ...current, bankSearch }));
 
     const {
@@ -99,10 +93,8 @@ export default function DailyCashCutPage() {
         rangeCut,
         isLoadingDailyCut,
         isLoadingRangeCut,
-        isRegisteringCut,
         fetchDailyCut,
         fetchRangeCut,
-        submitRegisterDailyCutByDate,
         bankBalancesGrouped,
         isLoadingBankBalances,
         fetchBankBalancesGrouped,
@@ -112,7 +104,6 @@ export default function DailyCashCutPage() {
     const isBankBalancesView = mainView === 'bankBalances';
     const isBankMovementsView = mainView === 'bankMovements';
     const isDailyMode = dateMode === 'daily';
-    const isRangeMode = dateMode === 'range';
 
     const currentData = useMemo<
         DailyCashCutResponse | CashCutRangeResponse | null
@@ -295,9 +286,15 @@ export default function DailyCashCutPage() {
                                         Transferencia entre cuentas
                                     </button>
                                 ) : null}
-                                {isBankBalancesView ? null : (
-                                    <PeriodModeToggle mode={dateMode} onChange={setDateMode} />
-                                )}
+                                <PeriodSelector allowAll={false} allowRange={!isBankBalancesView} label="Periodo del corte"
+                                    value={{ ...selectionFromDates(isDailyMode || isBankBalancesView ? fecha : startDate,
+                                        isDailyMode || isBankBalancesView ? fecha : endDate),
+                                        mode: isDailyMode || isBankBalancesView ? 'day' : 'range' }}
+                                    onApply={selection => setFilters(current => ({ ...current,
+                                        dateMode: selection.mode === 'range' && !isBankBalancesView ? 'range' : 'daily',
+                                        fecha: selection.mode === 'day' ? selection.startDate : current.fecha,
+                                        startDate: selection.startDate, endDate: selection.endDate,
+                                    }))} />
                             </div>
                         )}
                     />
@@ -314,27 +311,6 @@ export default function DailyCashCutPage() {
                     />
 
                     <WithdrawalsInTransit canCancel={canRegisterBankMovements} />
-
-                    <PeriodDateField
-                        id="corte-fecha"
-                        mode={isBankBalancesView ? 'daily' : dateMode}
-                        dailyLabel={isBankBalancesView
-                            ? 'Fecha de saldos'
-                            : isBankMovementsView
-                                ? 'Fecha de movimientos'
-                                : 'Fecha del corte'}
-                        fecha={fecha}
-                        startDate={startDate}
-                        endDate={endDate}
-                        /* No hay movimientos por venir; el corte sí admite consultar cualquier fecha. */
-                        maxDate={isBankMovementsView ? todayISO() : undefined}
-                        onFechaChange={setFecha}
-                        onRangeChange={({ startDate: start, endDate: end }) => {
-                            setFilters((current) => ({ ...current, startDate: start, endDate: end }));
-                            fetchRangeCut(start, end);
-                        }}
-                    />
-
 
                     {isBankMovementsView ? (
                         <BankMovementsSection

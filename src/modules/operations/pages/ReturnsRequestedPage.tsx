@@ -10,13 +10,14 @@ import {
 import { buildReturnsRequestedDetailPath } from '@/routes/paths';
 import { ReturnsRequestedTable } from '../components/returns/ReturnsRequestedTable';
 import { useTableUrlFilters } from '@/shared/hooks/use-table-filters';
+import { useDefaultAllDatesMigration } from '@/shared/hooks/use-default-all-dates-migration';
 
 
 const initialFilters: OperationsFiltersType = {
   operationId: 0,
   search: '',
   status: 'ALL',
-  dateFilter: 'THIS_MONTH',
+  dateFilter: '',
   startDate: '',
   endDate: '',
   activo: 'ACTIVE',
@@ -33,14 +34,14 @@ const PAGE_SIZE = 10;
 export default function ReturnsRequestedPage() {
   const navigate = useNavigate();
 
-  const { filters, setFilters } = useTableUrlFilters<OperationsFiltersType>(initialFilters);
+  const { filters: savedFilters, setFilters } = useTableUrlFilters<OperationsFiltersType>(initialFilters);
+  const filters = useDefaultAllDatesMigration(savedFilters, setFilters);
 
   const [currentPage, setCurrentPage] = useState(0);
 
   const {
     data,
     isLoading,
-    refetch,
   } = useOperationsWithRequestedReturns(currentPage, PAGE_SIZE, filters);
 
   const operations = data?.content ?? [];

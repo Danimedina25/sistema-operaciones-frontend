@@ -2,13 +2,15 @@ import { StaffPendingSummaryCards } from '../components/StaffPendingSummaryCards
 import { SocioPendingSummaryCards } from '../components/SocioPendingSummaryCards';
 import type { SocioPendingSummaryParams } from '../hooks/use-socio-pending-summary';
 import { useTableFilters } from '@/shared/hooks/use-table-filters';
+import { useDefaultAllDatesMigration } from '@/shared/hooks/use-default-all-dates-migration';
 import { PendingDateFilters } from '../components/PendingDateFilters';
 
 const defaults: SocioPendingSummaryParams = {
-  dateFilter: 'THIS_MONTH', startDate: '', endDate: '',
+  dateFilter: '', startDate: '', endDate: '',
 };
 export default function MyPendingPage() {
-  const { filters, setFilters } = useTableFilters('table-filters:my-pending', defaults);
+  const { filters: savedFilters, setFilters } = useTableFilters('table-filters:my-pending', defaults);
+  const filters = useDefaultAllDatesMigration(savedFilters, setFilters);
 
   return (
     <div className="space-y-3">

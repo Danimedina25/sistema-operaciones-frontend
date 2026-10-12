@@ -15,13 +15,14 @@ import { useRequestReturnPayment } from '../hooks/returns/use-request-return-pay
 import { RequestReturnModal } from '../components/returns/RequestReturnModal';
 import { useTableCacheKey } from '@/shared/hooks/use-table-filters';
 import { useUrlFilters } from '@/shared/hooks/use-url-filters';
+import { useDefaultAllDatesMigration } from '@/shared/hooks/use-default-all-dates-migration';
 
 
 const initialFilters: OperationsFiltersType = {
   operationId: 0,
   search: '',
   status: 'ALL',
-  dateFilter: 'THIS_MONTH',
+  dateFilter: '',
   startDate: '',
   endDate: '',
   activo: 'ACTIVE',
@@ -39,7 +40,8 @@ export default function ReturnsForRequestPage() {
   const navigate = useNavigate();
 
   const cacheKey = useTableCacheKey('table-filters:returns-for-request');
-  const { filters, setFilters } = useUrlFilters(initialFilters, cacheKey);
+  const { filters: savedFilters, setFilters } = useUrlFilters(initialFilters, cacheKey);
+  const filters = useDefaultAllDatesMigration(savedFilters, setFilters);
 
   const [currentPage, setCurrentPage] = useState(0);
 

@@ -3,12 +3,12 @@ import {
   OPERATIONS_QUICK_PAYMENT_TYPE_FILTERS,
   operationStatusLabels,
 } from '@/modules/operations/constants/operations.constants';
-import { DateRangeCalendarField } from '@/shared/components/ui/DateRangeCalendarField';
+import { PeriodSelector } from '@/shared/components/ui/PeriodSelector';
 import { QuickFilters } from '@/shared/components/dashboard/QuickFilters';
 import { maskAccountNumber } from '@/shared/utils/account-formatting';
+import { selectionFromDateFilters } from '@/shared/utils/period';
 import type { BankAccountResponse } from '@/modules/bank-accounts/types/bank-accounts.types';
 import {
-  OperationDateFilter,
   OperationStatus,
   OperationsFilters as OperationsFiltersType,
 } from '../types/operations.types.ts';
@@ -32,13 +32,6 @@ interface OperationsFiltersProps {
 
 const operationStatuses = (Object.keys(operationStatusLabels) as OperationStatus[])
   .filter((status) => status !== 'COMPLETADA');
-
-const quickFilters: Array<{ value: OperationDateFilter; label: string }> = [
-  { value: 'TODAY', label: 'Hoy' },
-  { value: 'THIS_WEEK', label: 'Esta semana' },
-  { value: 'THIS_MONTH', label: 'Este mes' },
-  { value: 'LAST_MONTH', label: 'Mes pasado' },
-];
 
 export function OperationsFilters({
   filters,
@@ -68,15 +61,6 @@ export function OperationsFilters({
     [activeBankAccounts, filters.banco],
   );
 
-  function handleQuickFilterChange(value: OperationDateFilter) {
-    onChange({
-      ...filters,
-      dateFilter: filters.dateFilter === value ? '' : value,
-      startDate: '',
-      endDate: '',
-    });
-  }
-
   function handleClearFilters() {
     onChange({
       operationId: 0,
@@ -101,22 +85,8 @@ export function OperationsFilters({
         <legend className="px-1 text-xs font-semibold text-slate-700">{showEstatusFilter ? 'Fechas y estatus' : 'Fechas'}</legend>
         <div className="grid min-w-0 gap-4 md:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] md:items-end">
           <div className="min-w-0">
-            <label className="mb-1 block text-xs font-medium text-slate-600">Rango de fechas</label>
-            <DateRangeCalendarField
-              startDate={filters.startDate}
-              endDate={filters.endDate}
-              onChange={({ startDate, endDate }) =>
-                onChange({ ...filters, startDate, endDate, dateFilter: '' })
-              }
-            />
-          </div>
-          <div className="min-w-0">
-            <p className="mb-1 text-xs font-medium text-slate-600">Filtros rápidos de fecha</p>
-            <QuickFilters
-              options={quickFilters}
-              value={filters.dateFilter}
-              onChange={handleQuickFilterChange}
-            />
+            <PeriodSelector label="Periodo de operaciones" value={selectionFromDateFilters(filters)}
+              onApply={({ startDate, endDate }) => onChange({ ...filters, dateFilter: '', startDate, endDate })} />
           </div>
           {showEstatusFilter && (
             <fieldset className="min-w-0 md:col-span-2">

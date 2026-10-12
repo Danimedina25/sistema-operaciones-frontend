@@ -75,6 +75,18 @@ export function formatDate(value: DateInput): string {
   return parts ? dateLabel(parts) : EMPTY;
 }
 
+/** Periodos con un solo año/mes se abrevian sin perder el formato de la oficina. */
+export function formatPeriod(startDate: string, endDate: string): string {
+  if (!startDate || !endDate) return 'Todas las fechas';
+  const start = parseDateParts(startDate);
+  const end = parseDateParts(endDate);
+  if (!start || !end) return EMPTY;
+  if (startDate === endDate) return dateLabel(start);
+  if (start.year === end.year && start.month === end.month) return `${start.day} – ${dateLabel(end)}`;
+  if (start.year === end.year) return `${start.day} ${MONTHS[start.month - 1]} – ${dateLabel(end)}`;
+  return `${dateLabel(start)} – ${dateLabel(end)}`;
+}
+
 export function formatDateTime(value: DateInput): string {
   const parts = parseDateParts(value);
   return parts

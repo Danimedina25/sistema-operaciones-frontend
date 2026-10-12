@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+.period-calendar .rdp-root {
+  --rdp-accent-color: #3b6ef5;
+  --rdp-accent-background-color: #eef3ff;
+  --rdp-day_button-height: 38px;
+  --rdp-day_button-width: 38px;
+  color: #0f172a;
+}
+
 .responsive-data-table {
   container-type: inline-size;
 }
