@@ -5,7 +5,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { DeleteConfirmationModal } from '@/shared/components/ui/DeleteConfirmationModal';
-import { TableFilterSection } from '@/shared/components/ui/TableFilterSection';
+import { PageHeader } from '@/shared/components/layout/PageHeader';
+import { Button } from '@/shared/components/ui/Button';
 
 import { CommercialPartnersFilters } from '@/modules/socioscomerciales/components/CommercialPartnersFilters';
 import { CommercialPartnersTable } from '@/modules/socioscomerciales/components/CommercialPartnersTable';
@@ -103,32 +104,10 @@ export default function CommercialPartnersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-2xl bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">
-            Socios comerciales
-          </h1>
+      <PageHeader title="Socios comerciales" actions={<Button type="button" onClick={() => setIsCreateModalOpen(true)}>Nuevo socio comercial</Button>} />
 
-          <p className="mt-2 text-sm text-slate-500">
-            Administra socios comerciales y sus cuentas bancarias.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setIsCreateModalOpen(true)}
-          className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
-        >
-          Nuevo socio comercial
-        </button>
-      </div>
-
-      <TableFilterSection>
-        <CommercialPartnersFilters
-          filters={filters}
-          onChange={setFilters}
-        />
-      </TableFilterSection>
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <CommercialPartnersFilters filters={filters} onChange={setFilters} />
 
       {isLoading ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
@@ -145,15 +124,16 @@ export default function CommercialPartnersPage() {
             onDelete={setDeletingPartner}
           />
 
-          <Pagination
+          <div className="p-4"><Pagination
             currentPage={currentPage}
             totalPages={totalPages}
             totalElements={filteredPartners.length}
             isLoading={isLoading}
             onPageChange={setCurrentPage}
-          />
+          /></div>
         </>
       )}
+      </div>
 
       <Modal
         open={isCreateModalOpen}

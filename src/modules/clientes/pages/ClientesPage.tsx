@@ -3,7 +3,8 @@ import { CanAccess } from '@/shared/components/CanAccess';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { DeleteConfirmationModal } from '@/shared/components/ui/DeleteConfirmationModal';
-import { TableFilterSection } from '@/shared/components/ui/TableFilterSection';
+import { PageHeader } from '@/shared/components/layout/PageHeader';
+import { Button } from '@/shared/components/ui/Button';
 import { useClientes } from '@/modules/clientes/hooks/use-clientes';
 import { useCreateCliente } from '@/modules/clientes/hooks/use-create-cliente';
 import { useUpdateCliente } from '@/modules/clientes/hooks/use-update-cliente';
@@ -101,30 +102,12 @@ export default function ClientesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-2xl bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">
-           {user?.roles.includes('SOCIO_COMERCIAL') ? 'Mis' : ''} Clientes
-          </h1>
-          <p className="mt-2 text-sm text-slate-500">
-            Administra clientes, niveles de socios comerciales y porcentajes de comisión.
-          </p>
-        </div>
+      <PageHeader title="Clientes" actions={<CanAccess roles={['ADMIN', 'GERENTE', 'SOCIO_COMERCIAL']}>
+        <Button type="button" onClick={() => setIsCreateModalOpen(true)}>Nuevo cliente</Button>
+      </CanAccess>} />
 
-        <CanAccess roles={['ADMIN', 'GERENTE',  'SOCIO_COMERCIAL']}>
-          <button
-            type="button"
-            onClick={() => setIsCreateModalOpen(true)}
-            className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
-          >
-            Nuevo cliente
-          </button>
-        </CanAccess>
-      </div>
-
-      <TableFilterSection>
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <ClientesFilters filters={filters} onChange={setFilters} />
-      </TableFilterSection>
 
       {isLoading ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
@@ -141,15 +124,16 @@ export default function ClientesPage() {
             onDelete={setDeletingCliente}
           />
 
-          <Pagination
+          <div className="p-4"><Pagination
             currentPage={currentPage}
             totalPages={totalPages}
             totalElements={filteredClientes.length}
             isLoading={isLoading}
             onPageChange={setCurrentPage}
-          />
+          /></div>
         </>
       )}
+      </div>
 
       <Modal
         open={isCreateModalOpen}

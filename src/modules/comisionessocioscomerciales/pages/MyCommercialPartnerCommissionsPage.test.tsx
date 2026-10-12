@@ -20,6 +20,7 @@ it('consulta las fechas del acceso y muestra solo comisiones pendientes, ignoran
   window.sessionStorage.setItem('table-filters:my-commissions:v2:user:1', JSON.stringify({ startDate: '2026-01-01', endDate: '2026-01-07' }));
   render(<MemoryRouter initialEntries={['/mis-comisiones?startDate=2026-08-01&endDate=2026-08-31&commissionStatus=GENERADA']}><MyCommercialPartnerCommissionsPage /></MemoryRouter>);
   await waitFor(() => expect(mocks.fetchCommissions).toHaveBeenCalledWith({ startDate: '2026-08-01', endDate: '2026-08-31' }));
-  expect(screen.getByRole('combobox', { name: 'Estatus de comisión' })).toHaveValue('GENERADA');
+  expect(screen.getByRole('tablist', { name: 'Estatus de comisión' })).toBeInTheDocument();
+  expect(screen.getByRole('tab', { name: 'Pendientes' })).toHaveAttribute('aria-selected', 'true');
   expect(screen.getByRole('status')).toHaveTextContent(/^1$/);
 });

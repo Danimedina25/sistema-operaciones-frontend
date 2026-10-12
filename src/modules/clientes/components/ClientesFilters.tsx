@@ -1,49 +1,17 @@
-import type { ClientesFilters as ClientesFiltersType } from '@/modules/clientes/utils/clientes-filters';
-import { Input } from '@/shared/components/ui/Input';
+import { SearchFilterBar } from '@/shared/components/ui/SearchFilterBar';
+import type { ClientesFilters as Values } from '@/modules/clientes/utils/clientes-filters';
 
-interface ClientesFiltersProps {
-  filters: ClientesFiltersType;
-  onChange: (next: ClientesFiltersType) => void;
-}
+interface Props { filters: Values; onChange: (next: Values) => void }
 
-export function ClientesFilters({ filters, onChange }: ClientesFiltersProps) {
-  return (
-    <div className="grid grid-cols-1 gap-4 rounded-2xl border border-slate-200 bg-white p-4 md:grid-cols-2">
-      <div>
-        <label className="mb-2 block text-sm font-medium text-slate-700">
-          Buscar
-        </label>
-        <Input
-          placeholder="Buscar por nombre"
-          value={filters.search}
-          onChange={(e) =>
-            onChange({
-              ...filters,
-              search: e.target.value,
-            })
-          }
-        />
-      </div>
-
-      <div>
-        <label className="mb-2 block text-sm font-medium text-slate-700">
-          Estado
-        </label>
-        <select
-          className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
-          value={filters.status}
-          onChange={(e) =>
-            onChange({
-              ...filters,
-              status: e.target.value as ClientesFiltersType['status'],
-            })
-          }
-        >
-          <option value="ALL">Todos</option>
-          <option value="ACTIVE">Activos</option>
-          <option value="INACTIVE">Inactivos</option>
-        </select>
-      </div>
-    </div>
-  );
+export function ClientesFilters({ filters, onChange }: Props) {
+  const statusLabel = filters.status === 'ACTIVE' ? 'Activos' : filters.status === 'INACTIVE' ? 'Inactivos' : 'Todos';
+  return <SearchFilterBar search={filters.search} onSearchChange={(search) => onChange({ ...filters, search })}
+    searchPlaceholder="Buscar cliente" leading={<span className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">{statusLabel}</span>}
+    activeFilters={filters.status !== 'ACTIVE' ? [{ key: 'status', label: statusLabel, onRemove: () => onChange({ ...filters, status: 'ACTIVE' }) }] : []}
+    filters={<label className="block max-w-xs text-xs font-semibold text-slate-700">Estado
+      <select value={filters.status} onChange={(event) => onChange({ ...filters, status: event.target.value as Values['status'] })}
+        className="mt-2 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm">
+        <option value="ACTIVE">Activos</option><option value="INACTIVE">Inactivos</option><option value="ALL">Todos</option>
+      </select>
+    </label>} />;
 }

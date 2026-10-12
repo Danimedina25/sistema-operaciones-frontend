@@ -30,6 +30,7 @@ export function useMyWeeklyCommissions() {
 
   const [isLoading, setIsLoading] =
     useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchCommissions = useCallback(async (
     params: Params,
@@ -38,6 +39,7 @@ export function useMyWeeklyCommissions() {
     try {
 
       setIsLoading(true);
+      setError(null);
 
       const response =
         await getMyWeeklyCommissions(
@@ -50,9 +52,10 @@ export function useMyWeeklyCommissions() {
 
     } catch (error) {
 
-      toast.error(
-        getApiErrorMessage(error),
-      );
+      const message = getApiErrorMessage(error);
+      setCommissions(null);
+      setError(message);
+      toast.error(message);
 
     } finally {
 
@@ -72,6 +75,7 @@ export function useMyWeeklyCommissions() {
   return {
     commissions,
     isLoading,
+    error,
     fetchCommissions,
     clearCommissions,
   };

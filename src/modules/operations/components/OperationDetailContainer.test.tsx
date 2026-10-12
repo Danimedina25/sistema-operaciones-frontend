@@ -19,7 +19,7 @@ vi.mock('@/modules/auth/store/auth.context', () => ({
 
 vi.mock('../hooks/use-operation-detail', () => ({
   useOperationDetail: () => ({
-    operation: { id: 42, estatus: mocks.estatus, pagos: [] } as unknown as PaymentOperationResponse,
+    operation: { id: 42, estatus: mocks.estatus, pagos: [], saldoPendientePorRegistrar: 100, saldoPendientePorSolicitar: 100 } as unknown as PaymentOperationResponse,
     isLoading: false,
     error: null,
     fetchOperation: vi.fn(),
@@ -95,4 +95,14 @@ describe('acción de eliminar en el detalle', () => {
       expect(screen.getByRole('status')).toHaveTextContent('sin-eliminar');
     },
   );
+});
+
+it('abre una sola vez la acción inicial de registrar pago del Socio', () => {
+  mocks.roles = ['SOCIO_COMERCIAL'];
+  const onAddPayment = vi.fn();
+  const props = { operationId: 42, onBack: vi.fn(), onAddPayment, onEditPayment: vi.fn(), initialAction: 'register-payment' as const };
+  const view = render(<OperationDetailContainer {...props} />);
+  expect(onAddPayment).toHaveBeenCalledTimes(1);
+  view.rerender(<OperationDetailContainer {...props} />);
+  expect(onAddPayment).toHaveBeenCalledTimes(1);
 });

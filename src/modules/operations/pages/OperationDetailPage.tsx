@@ -53,6 +53,9 @@ export default function OperationDetailPage() {
   const scrollToReturns =
     Boolean(location.state?.scrollToReturns) ||
     searchParams.get('scrollToReturns') === 'true';
+  const requestedAction = searchParams.get('action');
+  const initialAction = requestedAction === 'register-payment' || requestedAction === 'request-return'
+    ? requestedAction : undefined;
   const isReturnsForRequestDetail = location.pathname.startsWith(paths.returnsforrequest);
   const isReturnPaymentDetail = location.pathname.startsWith(paths.returnsforpayment);
   const isReturnsRequestedDetail = location.pathname.startsWith(paths.returnsRequested);
@@ -248,6 +251,11 @@ export default function OperationDetailPage() {
         operationId={parsedOperationId}
         scrollToPayments={scrollToPayments}
         scrollToReturns={scrollToReturns}
+        initialAction={initialAction}
+        onInitialActionHandled={() => navigate(location.pathname, {
+          replace: true,
+          state: { scrollToPayments, scrollToReturns },
+        })}
         backLabel={backLabel}
         onBack={() => {
           if (isReturnsForRequestDetail) return navigate(paths.returnsforrequest);

@@ -1,218 +1,59 @@
+import { useEffect, useState } from 'react';
+import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTableCacheKey } from '@/shared/hooks/use-table-filters';
 import { useUrlFilters } from '@/shared/hooks/use-url-filters';
-import {
-    useEffect, useState,
-} from 'react';
-
-import {
-    CommissionFilters,
-} from '../components/CommissionFilters';
-import { TableFilterSection } from '@/shared/components/ui/TableFilterSection';
-
-import {
-    CommissionSummaryCardsSkeleton,
-} from '../components/CommissionSummaryCardsSkeleton';
-
-import {
-    CommissionOperationsTableSkeleton,
-} from '../components/CommissionOperationsTableSkeleton';
-
-import {
-    EmptyCommissionsState,
-} from '../components/EmptyCommissionsState';
-
-
-import {
-    useMyWeeklyCommissions,
-} from '../hooks/use-my-weekly-commissions';
+import { PageHeader } from '@/shared/components/layout/PageHeader';
+import { Tabs } from '@/shared/components/ui/Tabs';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { formatPeriod } from '@/shared/format';
+import { officeToday, shiftDay } from '@/shared/utils/period';
+import { getWeeksOfYear } from '@/shared/utils/weeks';
+import { useMyWeeklyCommissions } from '../hooks/use-my-weekly-commissions';
 import { MyCommissionsTable } from '../components/MyCommissionsTable';
 import { MyCommissionsSummaryCards } from '../components/MyCommissionsSummaryCards';
+import { CommissionSummaryCardsSkeleton } from '../components/CommissionSummaryCardsSkeleton';
 
-function getDefaultDates() {
-
-    const today = new Date();
-
-    const currentDay =
-        today.getDay();
-
-    const lastSaturday =
-        new Date(today);
-
-    lastSaturday.setDate(
-        today.getDate()
-        - currentDay
-        - 1,
-    );
-
-    const lastSunday =
-        new Date(lastSaturday);
-
-    lastSunday.setDate(
-        lastSaturday.getDate()
-        - 6,
-    );
-
-    const formatDate = (
-        date: Date,
-    ) =>
-        `${date.getFullYear()}-${String(
-            date.getMonth() + 1,
-        ).padStart(2, '0')}-${String(
-            date.getDate(),
-        ).padStart(2, '0')}`;
-
-    return {
-        startDate:
-            formatDate(
-                lastSunday,
-            ),
-
-        endDate:
-            formatDate(
-                lastSaturday,
-            ),
-    };
+function weekAt(day: string) {
+  const [year, month, date] = day.split('-').map(Number);
+  const sunday = shiftDay(day, -new Date(Date.UTC(year, month - 1, date)).getUTCDay());
+  return { startDate: sunday, endDate: shiftDay(sunday, 6) };
 }
 
+function lastCompletedWeek() { return weekAt(shiftDay(weekAt(officeToday()).startDate, -1)); }
+
 export default function MyCommercialPartnerCommissionsPage() {
+  const [defaults] = useState(() => ({ ...lastCompletedWeek(), commissionStatus: 'ALL' }));
+  const cacheKey = useTableCacheKey('table-filters:my-commissions');
+  const { filters, setFilters } = useUrlFilters(defaults, cacheKey);
+  const { commissions, isLoading, error, fetchCommissions } = useMyWeeklyCommissions();
+  useEffect(() => { void fetchCommissions({ startDate: filters.startDate, endDate: filters.endDate }); }, [fetchCommissions, filters.startDate, filters.endDate]);
 
-    const [defaultDates] = useState(() => ({ ...getDefaultDates(), commissionStatus: 'ALL' }));
-    const cacheKey = useTableCacheKey('table-filters:my-commissions');
-    const { filters, setFilters } = useUrlFilters(defaultDates, cacheKey);
+  const current = weekAt(officeToday());
+  const week = getWeeksOfYear(Number(filters.startDate.slice(0, 4))).find((item) => item.startDate === filters.startDate);
+  const updateWeek = (day: string) => setFilters({ ...filters, ...weekAt(day) });
+  const operations = commissions?.operaciones.filter((operation) => filters.commissionStatus === 'ALL' || operation.myCommissionStatus === filters.commissionStatus) ?? [];
 
-    const {
-        commissions,
-        isLoading,
-        fetchCommissions,
-    } =
-        useMyWeeklyCommissions();
-
-    useEffect(() => {
-
-        void fetchCommissions(
-            { startDate: filters.startDate, endDate: filters.endDate },
-        );
-
-    }, [fetchCommissions, filters.startDate, filters.endDate]);
-
-    return (
-        <div className="space-y-3">
-
-            {/* HEADER */}
-
-            <div className="rounded-2xl bg-white p-4 shadow-sm">
-
-                <h1 className="text-lg font-semibold text-slate-900">
-                    Mis comisiones
-                </h1>
-
-                <p className="text-sm text-slate-500">
-                    Consulta tus ganancias
-                    generadas y las
-                    comisiones de tu red
-                    comercial.
-                </p>
-
-            </div>
-
-            {/* FILTROS */}
-
-            <TableFilterSection title="Semana de comisiones">
-                <CommissionFilters
-                    filters={
-                        filters
-                    }
-                    onChange={
-                        (dates) => setFilters({ ...filters, ...dates })
-                    }
-                    onSubmit={
-                        fetchCommissions
-                    }
-                    isLoading={
-                        isLoading
-                    }
-                />
-            </TableFilterSection>
-
-            {/* RESUMEN */}
-
-            <section className="rounded-2xl bg-white p-4 shadow-sm">
-
-                <div className="mb-5">
-
-                    <h2 className="text-lg font-semibold text-slate-900">
-                        Resumen
-                    </h2>
-
-                </div>
-
-                {isLoading
-                    || !commissions ? (
-
-                    <CommissionSummaryCardsSkeleton />
-
-                ) : (
-
-                    <MyCommissionsSummaryCards
-                        summary={commissions}
-                    />
-
-                )}
-
-            </section>
-
-            {/* TABLA */}
-
-            <section className="rounded-2xl bg-white p-4 shadow-sm">
-
-                <div className="mb-5">
-                    <label className="mb-2 block text-sm text-slate-600">
-                        Estatus de comisión
-                        <select
-                            className="ml-2 rounded-lg border border-slate-300 px-3 py-2"
-                            value={filters.commissionStatus}
-                            onChange={(event) => setFilters({ ...filters, commissionStatus: event.target.value })}
-                        >
-                            <option value="ALL">Todas</option>
-                            <option value="GENERADA">Pendientes</option>
-                            <option value="PAGADA">Pagadas</option>
-                        </select>
-                    </label>
-                    <h2 className="text-lg font-semibold text-slate-900">
-                        Detalle de
-                        operaciones
-                    </h2>
-
-                </div>
-
-                {isLoading ? (
-
-                    <CommissionOperationsTableSkeleton />
-
-                ) : commissions?.operaciones
-                    ?.length ? (
-
-                    <MyCommissionsTable
-                        key={`${filters.startDate}:${filters.endDate}:${filters.commissionStatus}`}
-                        operations={
-                            commissions.operaciones.filter((operation) => filters.commissionStatus === 'ALL' || operation.myCommissionStatus === filters.commissionStatus)
-                        }
-                    />
-
-                ) : (
-
-                    <EmptyCommissionsState
-                        onResetFilters={() =>
-                            setFilters(
-                                defaultDates,
-                            )
-                        }
-                    />
-
-                )}
-
-            </section>
-
-        </div>
-    );
+  return <div className="space-y-5">
+    <PageHeader title="Mis comisiones" actions={<div className="flex flex-wrap items-center gap-2">
+      <button type="button" onClick={() => setFilters({ ...filters, ...current })} className="px-2 text-xs font-semibold text-blue-600 hover:underline">Ir a la semana actual</button>
+      <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white p-1">
+        <button type="button" aria-label="Semana anterior" onClick={() => updateWeek(shiftDay(filters.startDate, -7))} className="rounded-md p-2 hover:bg-slate-50"><ChevronLeft className="h-4 w-4" /></button>
+        <div className="flex min-w-[155px] items-center justify-center gap-2 px-2 text-center text-xs"><CalendarDays className="h-4 w-4 text-slate-500" /><span><strong className="block text-slate-800">{week ? `Semana ${week.weekNumber}` : 'Periodo'}</strong><span className="text-slate-500">{formatPeriod(filters.startDate, filters.endDate)}</span></span></div>
+        <button type="button" aria-label="Semana siguiente" disabled={filters.startDate >= current.startDate} onClick={() => updateWeek(shiftDay(filters.startDate, 7))} className="rounded-md p-2 hover:bg-slate-50 disabled:opacity-40"><ChevronRight className="h-4 w-4" /></button>
+      </div>
+    </div>} />
+    {isLoading ? <CommissionSummaryCardsSkeleton /> : commissions ? <MyCommissionsSummaryCards summary={commissions} /> : null}
+    {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">No se pudieron cargar las comisiones. <button type="button" className="font-semibold underline" onClick={() => void fetchCommissions({ startDate: filters.startDate, endDate: filters.endDate })}>Reintentar</button></p>}
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
+        <h2 className="text-sm font-semibold text-slate-900">Operaciones de la semana</h2>
+        <Tabs label="Estatus de comisión" value={filters.commissionStatus} onChange={(commissionStatus) => setFilters({ ...filters, commissionStatus })}
+          options={[{ value: 'ALL', label: 'Todas' }, { value: 'GENERADA', label: 'Pendientes' }, { value: 'PAGADA', label: 'Pagadas' }]} />
+      </div>
+      {isLoading ? <p role="status" className="p-8 text-center text-sm text-slate-500">Cargando comisiones...</p>
+        : error ? <EmptyState title="No se pudieron cargar las operaciones" description="Intenta de nuevo." className="border-0" />
+        : operations.length ? <MyCommissionsTable operations={operations} />
+          : <EmptyState title="No hay comisiones para esta semana" description="Cambia la semana o el estado para consultar otras operaciones." className="border-0" />}
+    </section>
+  </div>;
 }

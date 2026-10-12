@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { OperationDetailView } from '@/modules/operations/components/OperationDetailView';
 import { useOperationDetail } from '@/modules/operations/hooks/use-operation-detail';
 import { useValidatePayment } from '../hooks/use-validate-payment';
@@ -18,6 +19,8 @@ interface OperationDetailContainerProps {
   onManageReturn?: (returnRequest: ReturnPaymentResponse) => void;
   scrollToPayments?: boolean;
   scrollToReturns?: boolean;
+  initialAction?: 'register-payment' | 'request-return';
+  onInitialActionHandled?: () => void;
   onEditPayment: (operation: PaymentOperationResponse, paymentId: number) => void;
   onEditReturn?: (
     returnPayment: ReturnPaymentResponse,
@@ -35,6 +38,8 @@ export function OperationDetailContainer({
   onManageReturn,
   scrollToPayments = false,
   scrollToReturns = false,
+  initialAction,
+  onInitialActionHandled,
   onEditPayment,
   onEditReturn,
   onDeleteOperation,
@@ -49,6 +54,17 @@ export function OperationDetailContainer({
 
   const { operation, isLoading, error, fetchOperation } =
     useOperationDetail(operationId);
+  const handledInitialAction = useRef(false);
+
+  useEffect(() => {
+    if (!operation || !initialAction || handledInitialAction.current) return;
+    handledInitialAction.current = true;
+    if (initialAction === 'register-payment' && operation.saldoPendientePorRegistrar > 0) onAddPayment(operation);
+    if (initialAction === 'request-return' && canRequestReturn && operation.saldoPendientePorSolicitar > 0) {
+      onAddRequestReturnPayment?.(operation, operation.saldoPendientePorSolicitar);
+    }
+    onInitialActionHandled?.();
+  }, [operation, initialAction, canRequestReturn, onAddPayment, onAddRequestReturnPayment, onInitialActionHandled]);
 
   const {
     data: returns = [],

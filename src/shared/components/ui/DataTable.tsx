@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { EmptyState } from './EmptyState';
 
@@ -26,6 +26,7 @@ interface DataTableProps<Row> {
   rows: readonly Row[];
   getRowKey: (row: Row) => string | number;
   mobile: DataTableMobile<Row>;
+  expandedRow?: (row: Row) => ReactNode;
   emptyTitle: string;
   emptyDescription?: string;
   isLoading?: boolean;
@@ -37,6 +38,7 @@ export function DataTable<Row>({
   rows,
   getRowKey,
   mobile,
+  expandedRow,
   emptyTitle,
   emptyDescription,
   isLoading = false,
@@ -74,15 +76,19 @@ export function DataTable<Row>({
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
-              <tr key={getRowKey(row)} className="border-t border-slate-100 transition hover:bg-blue-50/40">
-                {columns.map((column) => (
-                  <td key={column.key} className={cn('min-w-0 px-3 py-3.5 align-middle text-slate-700 [overflow-wrap:anywhere]', column.align === 'right' && 'text-right', column.className)}>
-                    {column.cell(row)}
-                  </td>
-                ))}
-              </tr>
-            ))}
+            {rows.map((row) => {
+              const expanded = expandedRow?.(row);
+              return <Fragment key={getRowKey(row)}>
+                <tr className="border-t border-slate-100 transition hover:bg-blue-50/40">
+                  {columns.map((column) => (
+                    <td key={column.key} className={cn('min-w-0 px-3 py-3.5 align-middle text-slate-700 [overflow-wrap:anywhere]', column.align === 'right' && 'text-right', column.className)}>
+                      {column.cell(row)}
+                    </td>
+                  ))}
+                </tr>
+                {expanded && <tr className="border-t border-slate-100 bg-slate-50"><td colSpan={columns.length} className="px-3 py-4">{expanded}</td></tr>}
+              </Fragment>
+            })}
           </tbody>
         </table>
       </div>
