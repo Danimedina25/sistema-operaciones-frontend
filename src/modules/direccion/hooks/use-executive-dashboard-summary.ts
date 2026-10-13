@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getOperations, getOperationsWithRequestedReturns } from '@/modules/operations/api/operations.api';
 import { getPaidCommissions, getSummary } from '@/modules/comisionessocioscomerciales/api/commercial-partner-commissions.api';
-import { calculateDailyCashCut } from '@/modules/corte/api/corte.api';
-import { formatDate } from '@/shared/utils/weeks';
+import { getGeneralCut } from '@/modules/corte/api/general-cut.api';
+import { getOperatedMetrics } from '@/modules/gerente/api/management-metrics.api';
+import { officeToday } from '@/shared/utils/period';
 import type { OperationsFilters } from '@/modules/operations/types/operations.types.ts';
 import type { PeriodRange } from '@/modules/gerente/utils/period-range';
 
@@ -58,23 +59,19 @@ export function useExecutiveDashboardSummary(period: PeriodRange) {
         endDate: period.endDate,
       };
 
-      const [completed, returnsPending, commissionSummary, paidCommissions, dailyCut] =
+      const [completed, returnsPending, commissionSummary, paidCommissions, generalCut, operated] =
         await Promise.all([
           getOperations(0, 1, { ...periodFilters, status: 'COMPLETADA' }),
           getOperationsWithRequestedReturns(0, 1, periodFilters),
           getSummary({ startDate: period.startDate, endDate: period.endDate }),
           getPaidCommissions({ startDate: period.startDate, endDate: period.endDate }),
-          calculateDailyCashCut(formatDate(new Date())),
+          getGeneralCut(officeToday(), officeToday(), 0),
+          getOperatedMetrics(period.startDate, period.endDate),
         ]);
 
-      const volumenOperado = commissionSummary.operaciones.reduce(
-        (sum, operacion) => sum + operacion.montoOperacion,
-        0,
-      );
-
       setSummary({
-        volumenOperado,
-        saldoBancario: dailyCut.saldoFinal,
+        volumenOperado: operated.operatedAmount,
+        saldoBancario: generalCut.bankFinal,
         retornosPendientes: returnsPending.totalElements,
         comisionesPagadas: paidCommissions.totalPagadas,
         operacionesCompletadas: completed.totalElements,

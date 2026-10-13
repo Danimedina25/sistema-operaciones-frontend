@@ -96,7 +96,7 @@ const managementEntries: NavEntry[] = [
   operations,
   { ...commissions, badge: 'commissions' },
   group('money', 'Dinero', icon(wallet, walletActive), [
-    item('general-cut', 'Corte general', paths.corte, 'corte', icon(scroll, scrollActive)),
+    item('general-cut', 'Corte general', paths.generalCut, 'generalCut', icon(scroll, scrollActive)),
     balances,
   ]),
   group('catalogs', 'Catálogos', icon(book, bookActive), [clients, partners]),

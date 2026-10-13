@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CanAccess } from '@/shared/components/CanAccess';
+import { PageHeader } from '@/shared/components/layout/PageHeader';
+import { Button } from '@/shared/components/ui/Button';
+import { SearchFilterBar } from '@/shared/components/ui/SearchFilterBar';
 import { Modal } from '@/shared/components/ui/Modal';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { DeleteConfirmationModal } from '@/shared/components/ui/DeleteConfirmationModal';
-import { TableFilterSection } from '@/shared/components/ui/TableFilterSection';
 import { UserForm } from '@/modules/users/components/UserForm';
 import { UpdateUserEmailForm } from '@/modules/users/components/UpdateUserEmailForm';
-import { UsersFilters } from '@/modules/users/components/UsersFilters';
 import { UsersTable } from '@/modules/users/components/UsersTable';
 import { useCreateUser } from '@/modules/users/hooks/use-create-user';
 import { useUpdateUser } from '@/modules/users/hooks/use-update-user';
@@ -21,11 +22,13 @@ import {
 import { getTotalPages, paginateItems } from '@/shared/utils/pagination';
 import { CreateUserForm } from '../components/CreateUserForm';
 import { useTableFilters } from '@/shared/hooks/use-table-filters';
+import { roleLabels } from '@/shared/utils/role-labels';
+import type { RoleName } from '@/modules/auth/types/auth.types';
 
 const initialFilters: UsersFiltersType = {
   search: '',
   role: 'ALL',
-  status: 'ACTIVE',
+  status: 'ALL',
 };
 
 export default function UsersPage() {
@@ -94,28 +97,23 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-2xl bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Usuarios</h1>
-          <p className="mt-2 text-sm text-slate-500">
-            Administra usuarios, estado de acceso y activaciones del sistema.
-          </p>
-        </div>
+      <PageHeader title="Usuarios" actions={<CanAccess roles={['ADMIN']}><Button variant="primary" onClick={() => setIsCreateModalOpen(true)}>+ Nuevo usuario</Button></CanAccess>} />
 
-        <CanAccess roles={['ADMIN']}>
-          <button
-            type="button"
-            onClick={() => setIsCreateModalOpen(true)}
-            className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
-          >
-            Nuevo usuario
-          </button>
-        </CanAccess>
-      </div>
-
-      <TableFilterSection>
-        <UsersFilters filters={filters} onChange={setFilters} />
-      </TableFilterSection>
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <SearchFilterBar search={filters.search} onSearchChange={search => setFilters(current => ({ ...current, search }))}
+          searchPlaceholder="Buscar por nombre o correo"
+          activeFilters={[
+            ...(filters.role !== 'ALL' ? [{ key: 'role', label: `Rol: ${roleLabels[filters.role]}`, onRemove: () => setFilters(current => ({ ...current, role: 'ALL' })) }] : []),
+            ...(filters.status !== 'ALL' ? [{ key: 'status', label: filters.status === 'ACTIVE' ? 'Activos' : 'Inactivos', onRemove: () => setFilters(current => ({ ...current, status: 'ALL' })) }] : []),
+          ]}
+          filters={<div className="grid gap-3 sm:grid-cols-2">
+            <label className="text-sm font-medium text-slate-700">Rol<select aria-label="Filtrar por rol" value={filters.role} onChange={event => setFilters(current => ({ ...current, role: event.target.value as RoleName | 'ALL' }))} className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2">
+              <option value="ALL">Todos</option>{Object.entries(roleLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select></label>
+            <label className="text-sm font-medium text-slate-700">Estado<select aria-label="Filtrar por estado" value={filters.status} onChange={event => setFilters(current => ({ ...current, status: event.target.value as UsersFiltersType['status'] }))} className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2">
+              <option value="ALL">Todos</option><option value="ACTIVE">Activos</option><option value="INACTIVE">Inactivos</option>
+            </select></label>
+          </div>} />
 
       {isLoading ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
@@ -144,6 +142,7 @@ export default function UsersPage() {
 
         </>
       )}
+      </section>
 
       <Modal
         open={isCreateModalOpen}
@@ -180,11 +179,7 @@ export default function UsersPage() {
               porcentajeComision:
                 editingUser.commercialSettings?.porcentajeComision
             }}
-            //onSubmit={(values) => submitUpdateUser(editingUser, values)}
-            onSubmit={async (values) => {
-              console.log('VALUES DESDE USER PAGE:', values);
-              await submitUpdateUser(editingUser, values);
-            }}
+            onSubmit={(values) => submitUpdateUser(editingUser, values)}
             submitLabel="Guardar cambios"
           />
         ) : null}

@@ -56,7 +56,8 @@ export default function OperationsPage() {
 
   const { hasRole, user } = useAuth();
   const isManager = hasRole(['GERENTE']);
-  const [listView, setListView] = useState<'all' | 'pending' | 'stalled'>('all');
+  const [listView, setListView] = useState<'all' | 'pending' | 'stalled'>(() =>
+    isManager && new URLSearchParams(window.location.search).get('view') === 'stalled' ? 'stalled' : 'all');
   const [stalledPage, setStalledPage] = useState(0);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [stalledSearch, setStalledSearch] = useState('');
