@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PendingWithdrawalsInbox } from './PendingWithdrawalsInbox';
 import type { BankCashWithdrawal } from '@/modules/cash-withdrawals/types';
@@ -31,7 +32,7 @@ const withdrawal: BankCashWithdrawal = {
 
 function mount(canResolve = true, openDayId: number | null = 1) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(<QueryClientProvider client={client}><PendingWithdrawalsInbox canResolve={canResolve} openDayId={openDayId} /></QueryClientProvider>);
+  render(<MemoryRouter><QueryClientProvider client={client}><PendingWithdrawalsInbox canResolve={canResolve} openDayId={openDayId} /></QueryClientProvider></MemoryRouter>);
 }
 
 beforeEach(() => {
@@ -88,7 +89,7 @@ describe('Retiros por confirmar', () => {
   it('sin la caja de hoy abierta no se puede confirmar, pero sí rechazar', async () => {
     mount(true, null);
     expect(within(await screen.findByRole('table')).getByRole('button', { name: 'Confirmar' })).toBeDisabled();
-    expect(screen.getByText(/caja de hoy abierta/)).toBeInTheDocument();
+    expect(screen.getByText(/caja de hoy debe estar abierta/)).toBeInTheDocument();
 
     fireEvent.click(within(screen.getByRole('table')).getByRole('button', { name: 'Rechazar' }));
     const dialog = screen.getByRole('dialog');
@@ -108,7 +109,8 @@ describe('Retiros por confirmar', () => {
     pending.mockResolvedValue([]);
     mount();
     await waitFor(() => expect(pending).toHaveBeenCalled());
-    expect(screen.getByText('Sin retiros por confirmar')).toBeInTheDocument();
+    expect(screen.getByText('No hay retiros de cuentas bancarias por ingresar')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Corte →' })).toHaveAttribute('href', '/caja-general');
   });
   it('explica por qué no se puede confirmar un retiro con centavos que no son .00 ni .50', async () => {
     pending.mockResolvedValue([{ ...withdrawal, monto: 30000.78 }]);

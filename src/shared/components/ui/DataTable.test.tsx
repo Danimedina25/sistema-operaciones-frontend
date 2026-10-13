@@ -39,4 +39,10 @@ describe('DataTable', () => {
     expect(screen.getByText('No hay retornos por pagar')).toBeInTheDocument();
     expect(screen.getByText('Aparecerán cuando un socio los solicite.')).toBeInTheDocument();
   });
+
+  it('puede conservar el encabezado de columnas en el estado vacío', () => {
+    render(<DataTable columns={columns} rows={[]} getRowKey={(row) => row.id} mobile={mobile} emptyTitle="No hay retornos" showHeaderWhenEmpty />);
+    expect(screen.getAllByRole('columnheader')).toHaveLength(3);
+    expect(screen.getByText('No hay retornos')).toBeInTheDocument();
+  });
 });

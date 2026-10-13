@@ -85,7 +85,7 @@ export default function CajaGeneralPage() {
     ? canClose && closingDay ? 'close' : canStartAction && !day && !pendingDay ? 'open' : null
     : activePanel;
 
-  return <div className="space-y-3">
+  return <div className="mx-4 space-y-6 pt-2">
     <PageHeader
       title={sessionMode ? (closingDay || (latest.data && !latest.data.closedAt) ? 'Cerrar caja' : 'Abrir caja') : 'Corte de caja'}
       actions={!sessionMode ? <PeriodSelector allowAll={false} label="Periodo de caja"
@@ -103,34 +103,35 @@ export default function CajaGeneralPage() {
     {!sessionMode && <><section className="flex flex-col gap-7 rounded-2xl bg-slate-950 px-6 py-7 text-white shadow-lg shadow-slate-950/10 sm:px-8 lg:flex-row lg:items-end lg:justify-between">
       <div><p className="text-sm text-slate-400">Saldo disponible</p><p className="mt-1 text-4xl font-bold tabular-nums tracking-tight">{day ? currency(isOpen ? day.saldoActual : day.saldoContado ?? day.saldoActual) : '—'}</p></div>
       <div className="grid grid-cols-3 gap-5 sm:gap-9">
-        <div className="text-right"><p className="text-xs text-slate-400">Entradas del periodo</p><p className="mt-1 font-semibold tabular-nums text-emerald-300">{cutSummary.data ? currency(cutSummary.data.income) : '—'}</p></div>
-        <div className="text-right"><p className="text-xs text-slate-400">Salidas del periodo</p><p className="mt-1 font-semibold tabular-nums text-red-300">{cutSummary.data ? currency(cutSummary.data.outflow) : '—'}</p></div>
+        <div className="text-right"><p className="text-xs text-slate-400">Entradas del día</p><p className="mt-1 font-semibold tabular-nums text-emerald-300">{cutSummary.data ? currency(cutSummary.data.income) : '—'}</p></div>
+        <div className="text-right"><p className="text-xs text-slate-400">Salidas del día</p><p className="mt-1 font-semibold tabular-nums text-red-300">{cutSummary.data ? currency(cutSummary.data.outflow) : '—'}</p></div>
         <div className="text-right"><p className="text-xs text-slate-400">Movimientos</p><p className="mt-1 font-semibold tabular-nums">{cutSummary.data?.movements ?? '—'}</p></div>
       </div>
     </section>
 
-    <section className={`flex flex-col gap-4 rounded-2xl border border-l-4 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between ${isOpen ? 'border-slate-200 border-l-emerald-500' : 'border-slate-200 border-l-slate-400'}`}>
-      <div className="flex items-start gap-3">
-        <span className={`rounded-xl p-2.5 ${isOpen ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}><WalletCards className="h-5 w-5" /></span>
-        <div>
-          <p className="flex items-center gap-2 text-sm font-semibold text-slate-950">{filters.mode === 'daily' ? (viewingToday ? 'Caja de hoy' : `Caja del ${formatCashDate(filters.fecha)}`) : 'Último corte del periodo'} {isOpen && <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />} {day ? (isOpen ? 'Abierta' : 'Cerrada') : 'Sin corte'}</p>
-          <p className="mt-1 text-sm text-slate-500">{day
-            ? `Corte del día ${formatCashDate(day.fecha)} · ${isOpen ? `abierta a las ${openingTime(day.createdAt)} por ${day.abiertoPorNombre || `Usuario #${day.abiertoPor}`}` : 'sin sesión activa'} · saldo inicial ${currency(day.saldoInicial)}`
-            : 'Todavía no existe un corte de Caja General.'}</p>
+    <section className="rounded-2xl border border-slate-200 bg-white px-6 py-5 shadow-sm">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <span className={`rounded-xl p-2.5 ${isOpen ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}><WalletCards className="h-5 w-5" /></span>
+          <div>
+            <p className="text-sm font-semibold text-slate-950">{day ? (isOpen ? `${viewingToday ? 'Caja de hoy' : `Caja del ${formatCashDate(day.fecha)}`} abierta` : `${viewingToday ? 'Caja de hoy' : `Caja del ${formatCashDate(day.fecha)}`} cerrada`) : 'Sin corte de caja'}</p>
+            <p className="mt-1 text-sm text-slate-500">{day
+              ? `${isOpen ? `Sesión activa desde las ${openingTime(day.createdAt)}` : `Sesión cerrada a las ${openingTime(day.closedAt ?? undefined)}`} · saldo inicial ${currency(day.saldoInicial)}`
+              : 'Todavía no existe un corte de Caja General.'}</p>
+          </div>
         </div>
-      </div>
       {(canStartAction || (canClose && !isOpen)) && <button type="button" disabled={busy} title={closingDay ? 'Inicia el conteo final de la caja abierta' : 'Inicia una nueva sesión de caja'}
         onClick={() => setActivePanel(closingDay ? 'close' : 'open')}
         className={closingDay ? dangerOutlineButton : secondaryButton}>
         {closingDay ? (pendingDay && !isOpen ? `Cerrar caja del ${formatCashDate(pendingDay.fecha)}` : 'Cerrar caja') : 'Abrir caja'}
       </button>}
-    </section>
-
-    <div className="flex items-center gap-2 px-1 text-xs">
-      <span className={`flex items-center gap-2 font-medium ${day ? 'text-emerald-700' : 'text-slate-400'}`}><i className={`h-2 w-2 rounded-full ${day ? 'bg-emerald-500' : 'bg-slate-300'}`} />Apertura</span><i className="h-px w-10 bg-slate-300" />
-      <span className={`flex items-center gap-2 font-semibold ${isOpen && activePanel !== 'close' ? 'text-slate-950' : 'text-slate-400'}`}><i className={`h-2 w-2 rounded-full ${isOpen && activePanel !== 'close' ? 'bg-slate-950' : 'bg-slate-300'}`} />En operación</span><i className="h-px w-10 bg-slate-300" />
-      <span className={`flex items-center gap-2 font-semibold ${activePanel === 'close' || day?.closedAt ? 'text-slate-950' : 'text-slate-400'}`}><i className={`h-2 w-2 rounded-full ${activePanel === 'close' || day?.closedAt ? 'bg-slate-950' : 'bg-slate-300'}`} />Cierre</span>
-    </div></>}
+      </div>
+      <div className="mt-4 flex items-center gap-2 text-xs">
+        <span className={`flex items-center gap-2 font-medium ${day ? 'text-emerald-700' : 'text-slate-400'}`}><i className={`h-2 w-2 rounded-full ${day ? 'bg-emerald-500' : 'bg-slate-300'}`} />Apertura</span><i className="h-px w-10 bg-slate-300" />
+        <span className={`flex items-center gap-2 font-semibold ${isOpen && activePanel !== 'close' ? 'text-blue-700' : 'text-slate-400'}`}><i className={`h-2 w-2 rounded-full ${isOpen && activePanel !== 'close' ? 'bg-blue-500' : 'bg-slate-300'}`} />En operación</span><i className="h-px w-10 bg-slate-300" />
+        <span className={`flex items-center gap-2 font-semibold ${activePanel === 'close' || day?.closedAt ? 'text-slate-950' : 'text-slate-400'}`}><i className={`h-2 w-2 rounded-full ${activePanel === 'close' || day?.closedAt ? 'bg-slate-950' : 'bg-slate-300'}`} />Cierre</span>
+      </div>
+    </section></>}
 
     {latest.isPending && <p className={mutedText}>Cargando caja…</p>}
     {latest.isError && <p role="alert" className={noteDanger}>
@@ -167,11 +168,11 @@ export default function CajaGeneralPage() {
 
     {sessionMode && viewingToday && day?.closedAt && !pendingDay && <p className={noteNeutral}>La caja de hoy ya está cerrada. Consulta el conteo y los movimientos en Corte.</p>}
 
-    {!viewingToday && ledger.isSuccess && <p className={noteNeutral}>Modo consulta. Las fechas anteriores permiten revisar cortes y movimientos, sin abrir, cerrar ni registrar operaciones.</p>}
+    {!sessionMode && !viewingToday && ledger.isSuccess && !day && <p className={noteNeutral}>Modo consulta. Las fechas anteriores permiten revisar cortes y movimientos, sin abrir, cerrar ni registrar operaciones.</p>}
     {!canWrite && viewingToday && latest.isSuccess && <p className={noteNeutral}>Consulta de Caja General. Las aperturas, movimientos y cierres se registran por Jefa de Cajas o Administración.</p>}
 
-    {!sessionMode && <section className="space-y-4 pt-2">
-      <div><h2 className={sectionTitle}>Libro de movimientos</h2><p className={`mt-1 ${mutedText}`}>Consulta el flujo de efectivo y el saldo acumulado de cada corte.</p></div>
+    {!sessionMode && <section className="space-y-5 pt-1">
+      <h2 className={sectionTitle}>Libro de movimientos</h2>
       {!start || !end || start > end || end > today ? <p role="alert" className={noteWarning}>Selecciona un rango válido que no incluya fechas futuras.</p> : (
         <QueryState
           isLoading={ledger.isPending}
@@ -180,7 +181,7 @@ export default function CajaGeneralPage() {
           loadingLabel="Cargando movimientos…"
           errorTitle={ledger.isError ? getApiErrorMessage(ledger.error) : undefined}
         >
-          {ledger.isSuccess ? <CashLedgerTable ledger={ledger.data} canDelete={canDelete} onDelete={setDeleteTarget} /> : null}
+          {ledger.isSuccess ? <CashLedgerTable ledger={ledger.data} canDelete={canDelete} onDelete={setDeleteTarget} compact /> : null}
         </QueryState>
       )}
     </section>}

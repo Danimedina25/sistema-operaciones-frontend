@@ -60,17 +60,16 @@ export function CashDayForm(props: Props) {
   function submit(event: FormEvent) { event.preventDefault(); void save(); }
 
   const pending = props.pendingWithdrawals;
-  return <><form onSubmit={submit} className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.85fr)_minmax(300px,1fr)] lg:items-start">
+  return <><form onSubmit={submit} className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.96fr)_minmax(300px,1fr)] lg:items-start">
     <fieldset aria-label={props.mode === 'close' ? 'Conteo final' : 'Conteo inicial'} disabled={props.busy || changed || confirmZero} className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
       <h2 className="text-lg font-semibold text-slate-950">{props.mode === 'close' ? 'Conteo final' : 'Conteo inicial'}</h2>
-      <p className="mb-4 text-sm leading-5 text-slate-500">{props.mode === 'close'
+      <p className="mb-2.5 text-sm leading-5 text-slate-500">{props.mode === 'close'
         ? 'Ya viene prellenado con lo que debería haber en caja. Cuenta el efectivo y corrige solo lo que no coincida.'
         : props.previous
           ? `Ya viene prellenado con el conteo del último cierre (${formatCashDate(props.previous.fecha)}). Cuenta el efectivo y corrige solo lo que no coincida.`
           : 'Cuenta el efectivo y captura las cantidades para abrir la caja.'}</p>
       {hasNegativeExpected && <p role="alert" className={`mb-4 ${noteWarning}`}>Alguna denominación quedó en negativo. Se prellenó en cero; revisa el conteo con cuidado.</p>}
-      <CompactDenominationTables value={counts} onChange={setCounts} disabled={inheritsPreviousClose} />
-      {inheritsPreviousClose && <p className="mt-3 text-xs text-slate-500">El saldo y el conteo del último cierre se heredan sin cambios para la apertura.</p>}
+      <CompactDenominationTables value={counts} onChange={setCounts} />
     </fieldset>
 
     <div className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 lg:sticky lg:top-11">

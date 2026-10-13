@@ -40,12 +40,13 @@ function mount(onValidatePayment: ValidateHandler, overrides?: Partial<Operation
 }
 
 /**
- * Abre el panel de revisión y elige "Validar". La tabla se pinta dos veces —escritorio y
- * móvil—, así que hay un botón por vista y basta con el primero.
+ * Abre el panel de revisión. Efectivo entra directamente al formulario de validación;
+ * los pagos bancarios conservan su selector de acciones.
  */
 function openValidate() {
   fireEvent.click(screen.getAllByRole('button', { name: /revisar/i })[0]);
-  fireEvent.click(screen.getAllByRole('button', { name: 'Validar' })[0]);
+  const selectValidate = screen.queryAllByRole('button', { name: /^Validar$/ })[0];
+  if (selectValidate) fireEvent.click(selectValidate);
 }
 
 function attachReceipt() {
@@ -55,12 +56,24 @@ function attachReceipt() {
 }
 
 describe('Validación de un pago en efectivo', () => {
+  it('abre el panel sin duplicar la tabla al usarlo desde Entradas', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<QueryClientProvider client={client}><MemoryRouter>
+      <PaymentsTable reviewOnly payments={[payment()]} operationId={12} initialReviewPaymentId={44} onValidatePayment={vi.fn()} />
+    </MemoryRouter></QueryClientProvider>);
+
+    expect(await screen.findByRole('dialog', { name: /efectivo/i })).toBeInTheDocument();
+    expect(screen.queryByText('Pagos y comprobantes')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Validar ingreso' })).toBeInTheDocument();
+  });
+
   it('pide el desglose del efectivo recibido', () => {
     mount(vi.fn());
     openValidate();
 
-    expect(screen.getAllByText(/entra como efectivo a Caja General/)[0]).toBeInTheDocument();
+    expect(screen.getByText('Cuenta el efectivo recibido')).toBeInTheDocument();
     expect(screen.getAllByLabelText('Cantidad de $1,000.00')[0]).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Rechazar' })).toBeInTheDocument();
   });
 
   it('exige que el desglose sume exactamente el importe del pago', async () => {
@@ -70,19 +83,19 @@ describe('Validación de un pago en efectivo', () => {
     attachReceipt();
 
     // Sin desglose.
-    fireEvent.click(screen.getAllByRole('button', { name: /confirmar validación/i })[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Validar ingreso' }));
     expect((await screen.findAllByText('Captura el desglose del efectivo recibido.'))[0]).toBeInTheDocument();
     expect(onValidatePayment).not.toHaveBeenCalled();
 
     // Desglose que no cuadra: $1,000 contra un pago de $1,200.
     fireEvent.change(screen.getAllByLabelText('Cantidad de $1,000.00')[0], { target: { value: '1' } });
-    fireEvent.click(screen.getAllByRole('button', { name: /confirmar validación/i })[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Validar ingreso' }));
     expect((await screen.findAllByText('El desglose debe sumar exactamente el importe del pago.'))[0]).toBeInTheDocument();
     expect(onValidatePayment).not.toHaveBeenCalled();
 
     // Cuadrado: $1,000 + 2 × $100.
     fireEvent.change(screen.getAllByLabelText('Cantidad de $100.00')[0], { target: { value: '2' } });
-    fireEvent.click(screen.getAllByRole('button', { name: /confirmar validación/i })[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Validar ingreso' }));
 
     await waitFor(() => expect(onValidatePayment).toHaveBeenCalledWith(
       44,
@@ -96,7 +109,7 @@ describe('Validación de un pago en efectivo', () => {
     mount(onValidatePayment, { tipoPago: 'TRANSFERENCIA' });
     openValidate();
 
-    expect(screen.queryByText(/entra como efectivo a Caja General/)).not.toBeInTheDocument();
+    expect(screen.queryByText('Cuenta el efectivo recibido')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Cantidad de $1,000.00')).not.toBeInTheDocument();
 
     attachReceipt();
@@ -113,7 +126,7 @@ describe('Validación de un pago en efectivo', () => {
 
     fireEvent.change(screen.getAllByLabelText('Cantidad de $1,000.00')[0], { target: { value: '1' } });
     fireEvent.change(screen.getAllByLabelText('Cantidad de $100.00')[0], { target: { value: '2' } });
-    fireEvent.click(screen.getAllByRole('button', { name: /confirmar validación/i })[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Validar ingreso' }));
 
     expect(screen.getAllByText('El comprobante de validación es obligatorio.')[0]).toBeInTheDocument();
     expect(onValidatePayment).not.toHaveBeenCalled();

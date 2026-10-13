@@ -32,7 +32,7 @@ describe('Formulario de apertura y cierre', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Sí, registrar $0.00' }));
     await waitFor(() => expect(submit).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ saldoInicial: 0 })));
   });
-  it('hereda saldo y denominaciones del último corte y abre sin recapturarlos', async () => {
+  it('hereda saldo y denominaciones del último corte y permite revisar el conteo', async () => {
     const submit = vi.fn().mockResolvedValue(undefined);
     const previous = {
       ...day,
@@ -45,7 +45,7 @@ describe('Formulario de apertura y cierre', () => {
     expect(screen.getByLabelText('Saldo inicial')).toHaveValue('100');
     expect(screen.getByLabelText('Saldo inicial')).toHaveAttribute('readonly');
     expect(screen.getByLabelText('Cantidad de $50.00')).toHaveValue(2);
-    expect(screen.getByLabelText('Cantidad de $50.00')).toBeDisabled();
+    expect(screen.getByLabelText('Cantidad de $50.00')).toBeEnabled();
     expect(screen.getByText(/Ya viene prellenado con el conteo del último cierre/)).toHaveTextContent('14 sep 2026');
 
     fireEvent.click(screen.getByRole('button', { name: 'Abrir caja con este conteo' }));
@@ -53,6 +53,17 @@ describe('Formulario de apertura y cierre', () => {
     await waitFor(() => expect(submit).toHaveBeenCalledWith(expect.objectContaining({
       saldoInicial: 100,
       denominaciones: expect.objectContaining({ D50: 2, D100: 0 }),
+    })));
+  });
+  it('admite corregir las denominaciones heredadas si conservan el saldo del último cierre', async () => {
+    const submit = vi.fn().mockResolvedValue(undefined);
+    const previous = { ...day, closedAt: '2026-09-14T19:00:00', saldoContado: 100, cierre: { ...emptyCounts(), D50: 2 } };
+    render(<CashDayForm mode="open" previous={previous} busy={false} onSubmit={submit} />);
+    fireEvent.change(screen.getByLabelText('Cantidad de $50.00'), { target: { value: '0' } });
+    fireEvent.change(screen.getByLabelText('Cantidad de $100.00'), { target: { value: '1' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir caja con este conteo' }));
+    await waitFor(() => expect(submit).toHaveBeenCalledWith(expect.objectContaining({
+      saldoInicial: 100, denominaciones: expect.objectContaining({ D50: 0, D100: 1 }),
     })));
   });
   it('no permite confirmar cero si la caja cambió mientras el diálogo estaba abierto', () => {

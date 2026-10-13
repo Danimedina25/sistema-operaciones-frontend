@@ -277,10 +277,11 @@ function SummaryCard({ label, value, tone }: { label: string; value: number; ton
   );
 }
 
-export function CashLedgerTable({ ledger, canDelete = false, onDelete }: {
+export function CashLedgerTable({ ledger, canDelete = false, onDelete, compact = false }: {
   ledger: CashLedger;
   canDelete?: boolean;
   onDelete?: (day: CashLedger['dias'][number]) => void;
+  compact?: boolean;
 }) {
   if (ledger.dias.length === 0) {
     return <EmptyState title="Sin aperturas" description="No hay aperturas registradas en este periodo." />;
@@ -288,13 +289,13 @@ export function CashLedgerTable({ ledger, canDelete = false, onDelete }: {
 
   return <div className="space-y-6">{ledger.dias.map(day => {
     const movements = ledger.movimientos.filter(movement => movement.diaId === day.id);
-    // En centavos para no arrastrar el error de coma flotante al sumar importes.
-    const incoming = movements.filter(m => m.direccion === 'ENTRADA').reduce((sum, m) => sum + Math.round(m.monto * 100), 0) / 100;
-    const outgoing = movements.filter(m => m.direccion === 'SALIDA').reduce((sum, m) => sum + Math.round(m.monto * 100), 0) / 100;
+    // El resumen compacto usa exclusivamente los totales que devuelve el endpoint de corte.
+    const incoming = compact ? 0 : movements.filter(m => m.direccion === 'ENTRADA').reduce((sum, m) => sum + Math.round(m.monto * 100), 0) / 100;
+    const outgoing = compact ? 0 : movements.filter(m => m.direccion === 'SALIDA').reduce((sum, m) => sum + Math.round(m.monto * 100), 0) / 100;
 
     return (
       <section key={day.id} className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        {!compact && <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-3">
             <h3 className="text-base font-semibold text-slate-900">Corte del día {formatCashDate(day.fecha)}</h3>
             <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${day.closedAt ? 'bg-slate-100 text-slate-600' : 'bg-emerald-50 text-emerald-700'}`}>
@@ -306,13 +307,14 @@ export function CashLedgerTable({ ledger, canDelete = false, onDelete }: {
               Eliminar corte
             </button>
           )}
-        </div>
+        </div>}
+        {compact && canDelete && <button type="button" onClick={() => onDelete?.(day)} className={`${smallOutlineButton} border-red-200 text-red-700 hover:bg-red-50`}>Eliminar corte del {formatCashDate(day.fecha)}</button>}
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        {!compact && <div className="grid gap-3 sm:grid-cols-3">
           <SummaryCard label="Entradas del día" value={incoming} tone="entrada" />
           <SummaryCard label="Salidas del día" value={outgoing} tone="salida" />
           <SummaryCard label="Saldo acumulado" value={day.saldoActual} />
-        </div>
+        </div>}
 
         <div className={tableShell}>
           <ul>

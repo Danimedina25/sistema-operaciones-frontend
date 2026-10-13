@@ -9,11 +9,12 @@ import { BankPendingSummary } from '@/modules/corte/components/BankPendingSummar
 const allDates = { dateFilter: '' as const, startDate: '', endDate: '' };
 export default function MyPendingPage() {
   const { hasRole } = useAuth();
+  if (hasRole(['JEFA_CAJAS'])) return <div className="mx-4 pt-2"><CashPendingSummary /></div>;
   return (
     <div className="space-y-5">
       <PageHeader title="Mis pendientes" />
       <SocioPendingAccordion />
-      {hasRole(['JEFA_CAJAS']) ? <CashPendingSummary /> : hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS']) ? <BankPendingSummary /> : <StaffPendingSummaryCards {...allDates} />}
+      {hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS']) ? <BankPendingSummary /> : <StaffPendingSummaryCards {...allDates} />}
     </div>
   );
 }

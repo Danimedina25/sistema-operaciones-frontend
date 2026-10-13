@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from 'react';
+import { Fragment, type ComponentType, type ReactNode } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { EmptyState } from './EmptyState';
 
@@ -29,6 +29,8 @@ interface DataTableProps<Row> {
   expandedRow?: (row: Row) => ReactNode;
   emptyTitle: string;
   emptyDescription?: string;
+  emptyIcon?: ComponentType<{ className?: string }>;
+  showHeaderWhenEmpty?: boolean;
   isLoading?: boolean;
   loadingLabel?: string;
 }
@@ -41,6 +43,8 @@ export function DataTable<Row>({
   expandedRow,
   emptyTitle,
   emptyDescription,
+  emptyIcon,
+  showHeaderWhenEmpty = false,
   isLoading = false,
   loadingLabel = 'Cargando...',
 }: DataTableProps<Row>) {
@@ -58,7 +62,10 @@ export function DataTable<Row>({
     return <div className="p-8 text-center text-sm text-slate-500" role="status">{loadingLabel}</div>;
   }
   if (rows.length === 0) {
-    return <EmptyState title={emptyTitle} description={emptyDescription} className="rounded-t-none border-x-0 border-b-0" />;
+    return <>
+      {showHeaderWhenEmpty && <table className="w-full table-fixed text-left text-sm"><colgroup>{columns.map(column => <col key={column.key} style={column.width ? { width: column.width } : undefined} />)}</colgroup><thead className="bg-slate-50 text-[10px] font-semibold uppercase tracking-wider text-slate-500"><tr>{columns.map(column => <th key={column.key} scope="col" className={cn('px-3 py-3 font-semibold', column.align === 'right' && 'text-right')}>{column.header}</th>)}</tr></thead></table>}
+      <EmptyState title={emptyTitle} description={emptyDescription} icon={emptyIcon} className="rounded-t-none border-x-0 border-b-0" />
+    </>;
   }
 
   return (
