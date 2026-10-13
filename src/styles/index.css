@@ -3,8 +3,8 @@
 .period-calendar .rdp-root {
   --rdp-accent-color: #3b6ef5;
   --rdp-accent-background-color: #eef3ff;
-  --rdp-day_button-height: 38px;
-  --rdp-day_button-width: 38px;
+  --rdp-day_button-height: 36px;
+  --rdp-day_button-width: 36px;
   color: #0f172a;
 }
 
@@ -24,6 +24,11 @@
   .responsive-data-table__cards {
     display: none;
   }
+}
+
+@container (min-width: 680px) {
+  .responsive-data-table--compact .responsive-data-table__table { display: block; }
+  .responsive-data-table--compact .responsive-data-table__cards { display: none; }
 }
 
 @theme {

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { DayPicker } from 'react-day-picker';
 import { es } from 'date-fns/locale';
+import { differenceInCalendarDays } from 'date-fns';
 import 'react-day-picker/style.css';
 import { Button } from './Button';
 import { formatPeriod } from '@/shared/format';
@@ -60,6 +61,7 @@ export function PeriodSelector({
   const isValid = draft.mode === 'range' && !allowRange ? false : draft.mode === 'all'
     ? allowAll
     : Boolean(draft.startDate && draft.endDate && draft.startDate <= draft.endDate && draft.endDate <= today);
+  const draftDays = draft.startDate && draft.endDate ? differenceInCalendarDays(calendarDate(draft.endDate), calendarDate(draft.startDate)) + 1 : 0;
 
   useEffect(() => {
     if (!open) return;
@@ -118,20 +120,20 @@ export function PeriodSelector({
     {open && <>
       <div aria-hidden="true" onClick={() => setOpen(false)} className="fixed inset-0 z-40 bg-slate-950/30 sm:hidden" />
       <div role="dialog" aria-label="Seleccionar periodo"
-        className="fixed inset-x-3 top-1/2 z-50 max-h-[88vh] -translate-y-1/2 overflow-y-auto rounded-2xl border border-border-strong bg-white p-4 shadow-xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[360px] sm:max-h-[min(80vh,680px)] sm:translate-y-0">
-        <div className="mb-3 flex flex-wrap gap-2" role="group" aria-label="Tipo de periodo">
+        className="fixed inset-x-3 top-1/2 z-50 max-h-[88vh] -translate-y-1/2 overflow-y-auto rounded-2xl border border-border-strong bg-white p-4 shadow-xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[380px] sm:max-h-[min(80vh,680px)] sm:translate-y-0">
+        <div className={cn('mb-3 grid gap-1 rounded-lg bg-slate-100 p-1', allowAll ? 'grid-cols-3' : 'grid-cols-2')} role="group" aria-label="Tipo de periodo">
           {allowAll && <button type="button" aria-pressed={draft.mode === 'all'}
             onClick={() => setDraft({ mode: 'all', startDate: '', endDate: '' })}
             className={modeClass(draft.mode === 'all')}>Todas las fechas</button>}
           <button type="button" aria-pressed={draft.mode === 'day'} onClick={() => changeMode('day')}
-            className={modeClass(draft.mode === 'day')}>Día</button>
+            className={modeClass(draft.mode === 'day')}>Un día</button>
           {allowRange && <button type="button" aria-pressed={draft.mode === 'range'} onClick={() => changeMode('range')}
-            className={modeClass(draft.mode === 'range')}>Rango</button>}
+            className={modeClass(draft.mode === 'range')}>Rango de fechas</button>}
         </div>
-        <div className="mb-3 grid grid-cols-2 gap-1.5" role="group" aria-label="Atajos de periodo">
+        <div className="mb-3 flex flex-wrap gap-1.5" role="group" aria-label="Atajos de periodo">
           {shortcuts.map(({ preset, label: shortcutLabel }) => <button key={preset} type="button"
             aria-pressed={draft.preset === preset} onClick={() => choosePreset(preset)}
-            className={modeClass(draft.preset === preset)}>{shortcutLabel}</button>)}
+            className={presetClass(draft.preset === preset)}>{shortcutLabel}</button>)}
         </div>
         <div className="period-calendar flex justify-center border-t border-slate-100 pt-3">
           {draft.mode === 'range' ? <DayPicker locale={es} weekStartsOn={0} mode="range" month={month} onMonthChange={setMonth}
@@ -145,10 +147,10 @@ export function PeriodSelector({
               onSelect={date => date && setDraft({ mode: 'day', startDate: calendarISO(date), endDate: calendarISO(date) })}
               disabled={{ after: todayDate }} endMonth={todayDate} showOutsideDays />}
         </div>
-        <p className="mt-2 text-center text-sm font-medium text-slate-700">{formatPeriod(draft.startDate, draft.endDate)}</p>
-        <div className="mt-3 flex justify-end gap-2 border-t border-slate-100 pt-3">
-          <Button type="button" variant="neutral" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button type="button" disabled={!isValid} onClick={apply}>Aplicar</Button>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3">
+          <p className="text-xs font-medium text-slate-700">{formatPeriod(draft.startDate, draft.endDate)}{draftDays > 1 ? ` · ${draftDays} días` : ''}</p>
+          <div className="flex gap-2"><Button type="button" variant="neutral" className="h-9 px-3 text-xs" onClick={() => setOpen(false)}>Cancelar</Button>
+          <Button type="button" variant="dark" className="h-9 px-3 text-xs" disabled={!isValid} onClick={apply}>Aplicar</Button></div>
         </div>
       </div>
     </>}
@@ -156,6 +158,11 @@ export function PeriodSelector({
 }
 
 function modeClass(selected: boolean) {
-  return cn('min-h-9 rounded-lg border px-2 py-1.5 text-xs font-semibold transition focus-visible:outline-2 focus-visible:outline-brand',
-    selected ? 'border-brand bg-brand-soft text-brand' : 'border-border-strong bg-white text-slate-700 hover:bg-slate-50');
+  return cn('min-h-8 rounded-md px-2 py-1 text-xs font-semibold transition focus-visible:outline-2 focus-visible:outline-brand',
+    selected ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:bg-white/70');
+}
+
+function presetClass(selected: boolean) {
+  return cn('min-h-7 rounded-full border px-2 py-1 text-[11px] font-medium transition focus-visible:outline-2 focus-visible:outline-brand',
+    selected ? 'border-blue-200 bg-brand-soft text-brand' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50');
 }

@@ -15,10 +15,7 @@ import { cashWorkApi, type CashIncomeRow } from '../api/cash-work.api';
 import { cajaGeneralApi } from '../api/caja-general.api';
 import { PendingWithdrawalsInbox } from '../components/PendingWithdrawalsInbox';
 import { ChequeManager } from '@/modules/cheques/ChequeManager';
-import { PaymentsTable } from '@/modules/operations/components/PaymentsTable';
-import { getOperationById } from '@/modules/operations/api/operations.api';
-import { useValidatePayment } from '@/modules/operations/hooks/use-validate-payment';
-import { useRejectPayment } from '@/modules/operations/hooks/use-reject-payment';
+import { IncomePaymentReview } from '@/modules/operations/components/IncomePaymentReview';
 import { officeToday } from '@/shared/utils/period';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { Banknote, Check, ExternalLink, Landmark, ReceiptText } from 'lucide-react';
@@ -82,22 +79,6 @@ export default function CashIncomePage() {
       </div> : <PendingWithdrawalsInbox canResolve={canResolve} openDayId={openDayId} />}
     {section === 'payments' && <p className="text-sm text-slate-500">Los pagos ya validados aparecen en el libro de movimientos del <Link to="/caja-general" className="font-semibold text-blue-600 hover:underline">Corte →</Link></p>}
     {chequeId !== null && <ChequeManager paymentId={chequeId} onClose={() => setChequeId(null)} onChanged={async () => { await queryClient.invalidateQueries({ queryKey: ['cash-work'] }); }} />}
-    {reviewTarget && <CashPaymentReview operationId={reviewTarget.operationId} paymentId={reviewTarget.paymentId} onClose={() => setReviewTarget(null)} />}
+    {reviewTarget && <IncomePaymentReview operationId={reviewTarget.operationId} paymentId={reviewTarget.paymentId} workQueryKey="cash-work" onClose={() => setReviewTarget(null)} />}
   </div>;
-}
-
-function CashPaymentReview({ operationId, paymentId, onClose }: { operationId: number; paymentId: number; onClose: () => void }) {
-  const queryClient = useQueryClient();
-  const operation = useQuery({ queryKey: ['operation', operationId], queryFn: () => getOperationById(operationId) });
-  const refresh = async () => { await queryClient.invalidateQueries({ queryKey: ['cash-work'] }); };
-  const validation = useValidatePayment({ onSuccess: refresh });
-  const rejection = useRejectPayment({ onSuccess: refresh });
-  return <QueryState isLoading={operation.isPending} error={operation.error} onRetry={() => void operation.refetch()} loadingLabel="Abriendo pago…">
-    {operation.data && <PaymentsTable reviewOnly payments={operation.data.pagos} operationId={operationId}
-      clienteNombre={operation.data.clienteNombre} socioComercialNombre={operation.data.socioComercialNombre}
-      initialReviewPaymentId={paymentId} onInitialReviewHandled={onClose}
-      processingPaymentId={validation.processingPaymentId ?? rejection.processingPaymentId}
-      onValidatePayment={(id, receipt, counts) => validation.submitValidatePayment(operationId, id, receipt, counts)}
-      onRejectPayment={(id, reason) => rejection.submitRejectPayment(id, reason)} />}
-  </QueryState>;
 }

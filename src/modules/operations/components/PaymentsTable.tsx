@@ -206,7 +206,7 @@ export function PaymentsTable({
     if (payment?.tipoPago === 'CHEQUE') { setChequePaymentId(paymentId); return; }
     setReviewingPaymentId(paymentId);
     resetReviewFormState();
-    if (payment?.tipoPago === 'EFECTIVO') setActiveAction('VALIDATE');
+    if (payment) setActiveAction('VALIDATE');
   };
 
   const initialReviewHandled = useRef(false);
@@ -619,19 +619,26 @@ export function PaymentsTable({
           title={`${formatCurrency(reviewingPayment.monto)} · ${paymentTypeLabels[reviewingPayment.tipoPago]}`}
           subtitle={operationId ? `Operación #${operationId}${socioComercialNombre ? ` · Socio: ${socioComercialNombre}` : clienteNombre ? ` · ${clienteNombre}` : ''}` : undefined}
           onClose={() => { if (!isConfirmingAction) closeReviewDrawer(); }}
-          footer={activeAction ? <div className="flex gap-3">
-            <button type="button" onClick={() => { if (reviewingPayment.tipoPago === 'EFECTIVO') { setActiveAction(isRejectAction ? 'VALIDATE' : 'REJECT'); setRejectReasonError(''); } else resetReviewFormState(); }} disabled={isConfirmingAction}
-              className={`rounded-lg border px-4 py-2 text-sm font-medium disabled:opacity-50 ${reviewingPayment.tipoPago === 'EFECTIVO' && !isRejectAction ? 'border-red-300 bg-white text-red-700' : 'border-slate-300 bg-white text-slate-700'}`}>{reviewingPayment.tipoPago === 'EFECTIVO' && !isRejectAction ? 'Rechazar' : 'Volver'}</button>
+          footer={activeAction ? <div className="space-y-2"><div className="flex gap-3">
+            <button type="button" onClick={() => { setActiveAction(isRejectAction ? 'VALIDATE' : 'REJECT'); setRejectReasonError(''); }} disabled={isConfirmingAction}
+              className={`rounded-lg border px-4 py-2 text-sm font-medium disabled:opacity-50 ${!isRejectAction ? 'border-red-300 bg-white text-red-700' : 'border-slate-300 bg-white text-slate-700'}`}>{!isRejectAction ? 'Rechazar' : 'Volver'}</button>
             <button type="button" onClick={() => void handleConfirmAction()} disabled={isConfirmingAction}
-              className={`min-h-11 flex-1 rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 ${isRejectAction ? 'bg-rose-600' : reviewingPayment.tipoPago === 'EFECTIVO' ? 'bg-emerald-700' : 'bg-[#3b6ef5]'}`}>
-              {reviewingPayment.tipoPago === 'EFECTIVO' && !isRejectAction ? 'Validar ingreso' : confirmButtonText}
+              className={`min-h-11 flex-1 rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 ${isRejectAction ? 'bg-rose-600' : 'bg-emerald-700'}`}>
+              {!isRejectAction ? 'Validar ingreso' : confirmButtonText}
             </button>
+          </div>
+          {!isRejectAction && (reviewingPayment.tipoPago === 'TRANSFERENCIA' || reviewingPayment.tipoPago === 'DEPOSITO') && reviewingPayment.estatus === 'PENDIENTE_VALIDACION' && onMarkPaymentInProgress &&
+            <button type="button" disabled={isConfirmingAction} onClick={async () => { try { await onMarkPaymentInProgress(reviewingPayment.id); setReviewingPaymentId(null); resetReviewFormState(); if (initialReviewPaymentId) onInitialReviewHandled?.(); } catch { /* El hook muestra el error. */ } }}
+              className="min-h-10 w-full rounded-lg bg-blue-50 px-3 text-sm font-semibold text-blue-700 hover:bg-blue-100 disabled:opacity-50">Marcar en proceso</button>}
+          {!isRejectAction && reviewingPayment.estatus === 'EN_PROCESO' && onReleasePayment &&
+            <button type="button" disabled={isConfirmingAction} onClick={async () => { try { await onReleasePayment(reviewingPayment.id); setReviewingPaymentId(null); resetReviewFormState(); if (initialReviewPaymentId) onInitialReviewHandled?.(); } catch { /* El hook muestra el error. */ } }}
+              className="min-h-10 w-full rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">Liberar (volver a pendiente)</button>}
           </div> : undefined}>
             <div className="space-y-5">
               <div>
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold text-slate-700">
-                    {reviewingPayment.tipoPago === 'EFECTIVO' ? 'Comprobante del socio' : 'Comprobante de ingreso'}
+                    Comprobante del socio
                   </p>
 
                   <a
@@ -644,18 +651,18 @@ export function PaymentsTable({
                   </a>
                 </div>
 
-                <div className={`mt-2 flex items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 ${reviewingPayment.tipoPago === 'EFECTIVO' ? 'h-[150px]' : 'max-h-[420px]'}`}>
+                <div className={`mt-2 flex items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 ${reviewingPayment.tipoPago === 'EFECTIVO' ? 'h-[150px]' : 'h-[220px]'}`}>
                   {isImageUrl(reviewingPayment.comprobanteUrl) ? (
                     <img
                       src={reviewingPayment.comprobanteUrl}
                       alt="Comprobante de ingreso"
-                      className={`w-full object-contain ${reviewingPayment.tipoPago === 'EFECTIVO' ? 'max-h-[150px]' : 'max-h-[420px]'}`}
+                      className={`w-full object-contain ${reviewingPayment.tipoPago === 'EFECTIVO' ? 'max-h-[150px]' : 'max-h-[220px]'}`}
                     />
                   ) : (
                     <iframe
                       src={reviewingPayment.comprobanteUrl}
                       title="Comprobante de ingreso"
-                      className={`${reviewingPayment.tipoPago === 'EFECTIVO' ? 'h-[150px]' : 'h-[420px]'} w-full border-0`}
+                      className={`${reviewingPayment.tipoPago === 'EFECTIVO' ? 'h-[150px]' : 'h-[220px]'} w-full border-0`}
                     />
                   )}
                 </div>
@@ -667,22 +674,10 @@ export function PaymentsTable({
                   <p><span className="block text-xs text-slate-500">Entra a</span><strong>Caja General</strong></p>
                   <p><span className="block text-xs text-slate-500">Registró</span><strong>{reviewingPayment.registradoPorNombre}</strong></p>
                 </> : <>
-                <p>
-                  <span className="font-medium">Cuenta destino:</span>{' '}
-                  {reviewingPayment.cuentaDestinoBanco ?? '-'}
-                </p>
-                <p>
-                  <span className="font-medium">Titular:</span>{' '}
-                  {reviewingPayment.cuentaDestinoTitular ?? '-'}
-                </p>
-                <p>
-                  <span className="font-medium">Fecha comprobante:</span>{' '}
-                  {formatDate(reviewingPayment.fechaComprobante)}
-                </p>
-                <p>
-                  <span className="font-medium">Registrado por:</span>{' '}
-                  {reviewingPayment.registradoPorNombre}
-                </p>
+                <p><span className="block text-xs text-slate-500">Cuenta destino</span><strong>{reviewingPayment.cuentaDestinoBanco ?? '—'}</strong></p>
+                <p><span className="block text-xs text-slate-500">Titular</span><strong>{reviewingPayment.cuentaDestinoTitular ?? '—'}</strong></p>
+                <p><span className="block text-xs text-slate-500">Fecha comprobante</span><strong>{formatDate(reviewingPayment.fechaComprobante)}</strong></p>
+                <p><span className="block text-xs text-slate-500">Registró</span><strong>{reviewingPayment.registradoPorNombre}</strong></p>
                 {reviewingPayment.observaciones ? (
                   <p className="col-span-2">
                     <span className="font-medium">Observaciones:</span>{' '}
@@ -786,6 +781,7 @@ export function PaymentsTable({
 
                   <ReceiptUploadField label="Comprobante de validación *" file={validationReceipt}
                     onChange={next => { setValidationReceipt(next); setValidationReceiptError(''); }}
+                    dropHint={reviewingPayment.tipoPago === 'EFECTIVO' ? 'Subir comprobante' : 'Sube el movimiento del estado de cuenta'}
                     disabled={isConfirmingAction} />
                   {validationReceiptError && <p role="alert" className="mt-2 text-sm text-rose-600">{validationReceiptError}</p>}
                 </div>

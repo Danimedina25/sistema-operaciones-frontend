@@ -10,11 +10,12 @@ const allDates = { dateFilter: '' as const, startDate: '', endDate: '' };
 export default function MyPendingPage() {
   const { hasRole } = useAuth();
   if (hasRole(['JEFA_CAJAS'])) return <div className="mx-4 pt-2"><CashPendingSummary /></div>;
+  if (hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS'])) return <div className="mx-4 pt-2"><BankPendingSummary /></div>;
   return (
     <div className="space-y-5">
       <PageHeader title="Mis pendientes" />
       <SocioPendingAccordion />
-      {hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS']) ? <BankPendingSummary /> : <StaffPendingSummaryCards {...allDates} />}
+      <StaffPendingSummaryCards {...allDates} />
     </div>
   );
 }

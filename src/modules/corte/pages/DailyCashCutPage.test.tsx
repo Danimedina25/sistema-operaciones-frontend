@@ -130,8 +130,8 @@ describe('DailyCashCutPage', () => {
   it('ofrece Día y Rango de fechas en movimientos, pero no en saldos', async () => {
     mount(paths.bankMovements);
     fireEvent.click(screen.getByRole('button', { name: /Periodo del corte:/ }));
-    expect(tab('Día')).toBeInTheDocument();
-    expect(tab('Rango')).toBeInTheDocument();
+    expect(tab('Un día')).toBeInTheDocument();
+    expect(tab('Rango de fechas')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
 
     // Los saldos son una foto a una fecha puntual: un rango no significa nada ahí.
@@ -139,7 +139,7 @@ describe('DailyCashCutPage', () => {
     mount(paths.bankBalances);
     await screen.findByRole('heading', { name: 'Saldos bancarios' });
     fireEvent.click(screen.getByRole('button', { name: /Periodo del corte:/ }));
-    expect(screen.queryByRole('button', { name: 'Rango' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Rango de fechas' })).toBeNull();
   });
 
   it('no deja consultar movimientos futuros desde el calendario', async () => {

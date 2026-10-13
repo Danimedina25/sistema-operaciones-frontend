@@ -28,20 +28,20 @@ function payment(overrides: Partial<OperationPaymentResponse> = {}): OperationPa
 
 type ValidateHandler = (paymentId: number, comprobante: File, denominaciones?: CashCounts) => Promise<void> | void;
 
-function mount(onValidatePayment: ValidateHandler, overrides?: Partial<OperationPaymentResponse>) {
+function mount(onValidatePayment: ValidateHandler, overrides?: Partial<OperationPaymentResponse>, onMarkPaymentInProgress?: (paymentId: number) => Promise<void>) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={client}>
       <MemoryRouter>
-        <PaymentsTable payments={[payment(overrides)]} operationId={12} onValidatePayment={onValidatePayment} />
+        <PaymentsTable payments={[payment(overrides)]} operationId={12} onValidatePayment={onValidatePayment} onMarkPaymentInProgress={onMarkPaymentInProgress} />
       </MemoryRouter>
     </QueryClientProvider>,
   );
 }
 
 /**
- * Abre el panel de revisión. Efectivo entra directamente al formulario de validación;
- * los pagos bancarios conservan su selector de acciones.
+ * Abre el panel de revisión. Todos los pagos validables entran directamente
+ * al formulario de validación.
  */
 function openValidate() {
   fireEvent.click(screen.getAllByRole('button', { name: /revisar/i })[0]);
@@ -113,10 +113,20 @@ describe('Validación de un pago en efectivo', () => {
     expect(screen.queryByLabelText('Cantidad de $1,000.00')).not.toBeInTheDocument();
 
     attachReceipt();
-    fireEvent.click(screen.getAllByRole('button', { name: /confirmar validación/i })[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Validar ingreso' }));
 
     // El tercer argumento va vacío: ese pago no toca Caja General.
     await waitFor(() => expect(onValidatePayment).toHaveBeenCalledWith(44, expect.any(File), undefined));
+  });
+
+  it('conserva Marcar en proceso en el panel bancario', async () => {
+    const onMark = vi.fn().mockResolvedValue(undefined);
+    mount(vi.fn(), { tipoPago: 'TRANSFERENCIA' }, onMark);
+    openValidate();
+
+    expect(screen.getByRole('button', { name: 'Validar ingreso' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Marcar en proceso' }));
+    await waitFor(() => expect(onMark).toHaveBeenCalledWith(44));
   });
 
   it('sigue exigiendo el comprobante de validación', () => {

@@ -80,7 +80,7 @@ export function BankMovementsSection({ desde, hasta, showSummary = true }: { des
         <>
           {showSummary && <BankMovementsSummary totals={totals.data} isLoading={totals.isLoading} />}
 
-          <QueryState
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><QueryState
             isLoading={movements.isLoading}
             error={movements.error}
             isEmpty={content.length === 0}
@@ -91,14 +91,15 @@ export function BankMovementsSection({ desde, hasta, showSummary = true }: { des
           >
             <BankMovementsTable movements={content} />
           </QueryState>
+          <p className="border-t border-slate-100 px-4 py-3 text-xs text-slate-500">{movements.data?.totalElements ?? 0} movimientos en el periodo.</p></div>
 
-          <Pagination
+          {(movements.data?.totalPages ?? 0) > 1 && <Pagination
             currentPage={page + 1}
             totalPages={movements.data?.totalPages ?? 0}
             totalElements={movements.data?.totalElements ?? 0}
             isLoading={movements.isLoading}
             onPageChange={next => setPage(next - 1)}
-          />
+          />}
         </>
       )}
     </section>

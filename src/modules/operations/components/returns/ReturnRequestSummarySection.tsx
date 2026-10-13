@@ -1,4 +1,4 @@
-import { ClipboardList, Download, FileSpreadsheet, UserRound } from 'lucide-react';
+import { ClipboardList, Copy, Download, FileSpreadsheet, Landmark, UserRound } from 'lucide-react';
 import { paymentTypeLabels } from '@/modules/operations/constants/operations.constants';
 import {
   formatCurrency,
@@ -14,6 +14,7 @@ import { ReturnStatusBadge } from './ReturnStatusBadge';
 
 interface ReturnRequestSummarySectionProps {
   returnRequest: ReturnPaymentResponse;
+  bankManage?: boolean;
 }
 
 /**
@@ -22,6 +23,7 @@ interface ReturnRequestSummarySectionProps {
  */
 export function ReturnRequestSummarySection({
   returnRequest,
+  bankManage = false,
 }: ReturnRequestSummarySectionProps) {
   const totals = resolveReturnRequestTotals(returnRequest);
   const esEfectivo = isCashReturnMethod(returnRequest.tipoPago);
@@ -32,6 +34,17 @@ export function ReturnRequestSummarySection({
     returnRequest.autorizadoParaRecibirEfectivo2,
     returnRequest.autorizadoParaRecibirEfectivo3,
   ].filter((nombre): nombre is string => Boolean(nombre?.trim()));
+
+  if (bankManage && !esEfectivo) return <div className="space-y-4">
+    <section className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Transferir a</p>
+      <p className="mt-2 flex items-center gap-2 text-sm font-semibold text-slate-950"><Landmark className="h-4 w-4 text-slate-500" />{returnRequest.cuentaDestinoTitular ?? 'Titular sin registrar'}</p>
+      <p className="ml-6 text-xs text-slate-500">{returnRequest.cuentaDestinoBanco ?? 'Banco sin registrar'}</p>
+      {[['CLABE interbancaria', returnRequest.cuentaClabeCliente], ['Número de cuenta', returnRequest.cuentaDestinoCliente]].map(([label, value]) => value && <div key={label} className="mt-2 flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2"><span className="min-w-0"><span className="block text-[10px] text-slate-500">{label}</span><strong className="block break-all text-sm text-slate-950">{value}</strong></span><button type="button" aria-label={`Copiar ${label}`} onClick={() => void navigator.clipboard.writeText(value)} className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-blue-600"><Copy className="h-3.5 w-3.5" />Copiar</button></div>)}
+    </section>
+    <section className="text-xs"><div className="flex flex-wrap items-center justify-between gap-2"><span className="text-slate-500">Ya pagado {formatCurrency(totals.montoRetornado)} · {totals.numeroParcialidades} {totals.numeroParcialidades === 1 ? 'parcialidad' : 'parcialidades'}</span><strong className="text-amber-700">Pendiente {formatCurrency(totals.montoPendiente)}</strong></div><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full bg-emerald-500" style={{ width: `${pct}%` }} /></div></section>
+    {returnRequest.archivoNominaUrl && <a href={returnRequest.archivoNominaUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-700"><Download className="h-4 w-4" />Descargar archivo de nóminas</a>}
+  </div>;
 
   return (
     <div className="space-y-4">

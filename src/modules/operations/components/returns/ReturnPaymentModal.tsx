@@ -23,6 +23,7 @@ import {
 import { ReturnRequestSummarySection } from './ReturnRequestSummarySection';
 import { InstallmentHistoryTable } from './InstallmentHistoryTable';
 import { formatCurrency } from '../../utils/operation-formatters';
+import { paymentTypeLabels } from '../../constants/operations.constants';
 
 interface ReturnPaymentModalProps {
   open: boolean;
@@ -90,6 +91,7 @@ export function ReturnPaymentModal({
   const isManage = variant === 'manage';
   const isCashManage =
     isManage && !!returnRequest && isCashReturnMethod(returnRequest.tipoPago);
+  const isBankManage = isManage && !!returnRequest && !isCashReturnMethod(returnRequest.tipoPago);
 
   const bankAccounts = useMemo(
     () =>
@@ -158,13 +160,13 @@ export function ReturnPaymentModal({
 
   const registerFormSection =
     showRegisterSection && returnRequest ? (
-      <section className="rounded-2xl border border-slate-200 bg-white p-4">
-        <div className="mb-3 flex items-center gap-2">
+      <section className={isBankManage ? '' : 'rounded-2xl border border-slate-200 bg-white p-4'}>
+        {!isBankManage && <div className="mb-3 flex items-center gap-2">
           <PlusCircle className="h-5 w-5 text-emerald-600" />
           <h3 className="text-sm font-semibold text-slate-900">
             {registrarSectionTitle}
           </h3>
-        </div>
+        </div>}
 
         {availability.canRegister ? (
           <RegisterInstallmentForm
@@ -173,6 +175,8 @@ export function ReturnPaymentModal({
             bankAccounts={bankAccounts}
             isSubmitting={isSubmittingInstallment}
             hideSummary
+            compactBankPanel={isBankManage}
+            onCancel={onClose}
             onAmountChange={(amount) => setCashDraft({ requestId: returnRequest.id, amount })}
             onSubmit={(values) =>
               onSubmitInstallment(returnRequest.id, {
@@ -207,7 +211,7 @@ export function ReturnPaymentModal({
   );
 
   return (
-    <ActionDrawer open={open} title={title} onClose={onClose}>
+    <ActionDrawer open={open} title={isBankManage && returnRequest ? `Solicitud #${returnRequest.id} · ${paymentTypeLabels[returnRequest.tipoPago]}` : title} eyebrow={isBankManage ? 'Registrar retorno' : undefined} subtitle={isBankManage && returnRequest ? `Operación #${returnRequest.operationId} · ${returnRequest.clienteNombre ?? 'Cliente'} · Socio: ${returnRequest.socioComercialNombre ?? 'Socio comercial'}` : undefined} onClose={onClose}>
       {returnRequest === null ? (
         <div className="py-8 text-center text-sm text-slate-500">Cargando...</div>
       ) : isCashManage ? (
@@ -250,7 +254,7 @@ export function ReturnPaymentModal({
         </div>
       ) : (
         <div className="space-y-6">
-          <ReturnRequestSummarySection returnRequest={returnRequest} />
+          <ReturnRequestSummarySection returnRequest={returnRequest} bankManage={isBankManage} />
 
           {registerFormSection}
 

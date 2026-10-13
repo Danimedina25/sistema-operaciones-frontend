@@ -31,6 +31,7 @@ interface DataTableProps<Row> {
   emptyDescription?: string;
   emptyIcon?: ComponentType<{ className?: string }>;
   showHeaderWhenEmpty?: boolean;
+  compact?: boolean;
   isLoading?: boolean;
   loadingLabel?: string;
 }
@@ -45,6 +46,7 @@ export function DataTable<Row>({
   emptyDescription,
   emptyIcon,
   showHeaderWhenEmpty = false,
+  compact = false,
   isLoading = false,
   loadingLabel = 'Cargando...',
 }: DataTableProps<Row>) {
@@ -69,7 +71,7 @@ export function DataTable<Row>({
   }
 
   return (
-    <div className="responsive-data-table min-w-0 w-full">
+    <div className={cn('responsive-data-table min-w-0 w-full', compact && 'responsive-data-table--compact')}>
       <div className="responsive-data-table__table w-full">
         <table className="w-full table-fixed text-left text-sm">
           <colgroup>{columns.map((column) => <col key={column.key} style={column.width ? { width: column.width } : undefined} />)}</colgroup>

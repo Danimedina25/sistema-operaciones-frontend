@@ -8,6 +8,7 @@ import { DeleteConfirmationModal } from '@/shared/components/ui/DeleteConfirmati
 import { SearchFilterBar } from '@/shared/components/ui/SearchFilterBar';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { Button } from '@/shared/components/ui/Button';
+import { Plus } from 'lucide-react';
 import { formatMoney } from '@/shared/format';
 import { officeToday } from '@/shared/utils/period';
 import { calculateBankBalancesGrouped, calculateDailyCashCut } from '@/modules/corte/api/corte.api';
@@ -157,13 +158,13 @@ export default function BankAccountsPage() {
   }
 
   return (
-    <div className="space-y-5">
-      <PageHeader title="Cuentas bancarias y saldos" actions={canCreate ? <Button variant="primary" onClick={handleOpenCreate}>Nueva cuenta</Button> : undefined} />
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-xl bg-slate-950 p-5 text-white"><p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Saldo total en cuentas</p><p className="mt-2 text-2xl font-bold tabular-nums">{cutQuery.data ? formatMoney(cutQuery.data.saldoFinal) : '—'}</p><p className="mt-1 text-xs text-slate-400">Saldo confirmado del corte bancario</p></div>
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-amber-900"><p className="text-xs font-semibold uppercase tracking-wider">Retiros en tránsito</p><p className="mt-2 text-2xl font-bold tabular-nums">{transitQuery.data ? formatMoney(transitQuery.data.withdrawalsInTransit.amount) : '—'}</p><p className="mt-1 text-xs">{transitQuery.data?.withdrawalsInTransit.count ?? '—'} por confirmar en Caja General</p></div>
+    <div className="mx-4 space-y-6 pt-2">
+      <PageHeader title="Cuentas bancarias y saldos" actions={canCreate ? <Button variant="dark" className="h-10 rounded-xl px-4" onClick={handleOpenCreate}><Plus className="h-4 w-4" />Nueva cuenta</Button> : undefined} />
+      <div className="grid gap-5 md:grid-cols-2">
+        <div className="rounded-2xl bg-slate-950 px-6 py-5 text-white"><p className="text-xs font-semibold uppercase tracking-[.12em] text-slate-400">Saldo total en cuentas</p><p className="mt-2 text-3xl font-bold tabular-nums">{cutQuery.data ? formatMoney(cutQuery.data.saldoFinal) : '—'}</p><p className="mt-1 text-xs text-slate-400">Saldo confirmado del corte bancario</p></div>
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-6 py-5 text-amber-900"><p className="text-xs font-semibold uppercase tracking-[.12em] text-amber-700">Retiros en tránsito</p><p className="mt-2 text-3xl font-bold tabular-nums">{transitQuery.data ? formatMoney(transitQuery.data.withdrawalsInTransit.amount) : '—'}</p><p className="mt-1 text-xs text-amber-700">{transitQuery.data?.withdrawalsInTransit.count ?? '—'} {transitQuery.data?.withdrawalsInTransit.count === 1 ? 'retiro' : 'retiros'} por confirmar en Caja General</p></div>
       </div>
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white px-3 py-1 shadow-sm">
         <SearchFilterBar search={filters.search} onSearchChange={search => setFilters(current => ({ ...current, search }))}
           searchPlaceholder="Buscar por titular, número de cuenta o CLABE"
           activeFilters={filters.status !== 'ACTIVE' ? [{ key: 'status', label: filters.status === 'INACTIVE' ? 'Inactivas' : 'Todas', onRemove: () => setFilters(current => ({ ...current, status: 'ACTIVE' })) }] : []}
@@ -171,6 +172,8 @@ export default function BankAccountsPage() {
             <select aria-label="Mostrar cuentas" value={filters.status} onChange={event => setFilters(current => ({ ...current, status: event.target.value as BankAccountsFiltersType['status'] }))} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2"><option value="ACTIVE">Activas</option><option value="INACTIVE">Inactivas</option><option value="ALL">Todas</option></select>
           </label>} />
 
+      </div>
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm [&_td]:py-3">
       {isLoading ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm">
           Cargando cuentas bancarias...
@@ -190,14 +193,8 @@ export default function BankAccountsPage() {
             onDelete={setDeletingAccount}
             onViewMovements={setMovementsAccount}
           />
-
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalElements={filteredAccounts.length}
-            isLoading={isLoading}
-            onPageChange={setCurrentPage}
-          />
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 px-4 py-3 text-xs text-slate-500"><span>Mostrando {paginatedAccounts.length} de {filteredAccounts.length} cuentas</span><strong className="text-slate-900">Saldo total {cutQuery.data ? formatMoney(cutQuery.data.saldoFinal) : '—'} · {transitQuery.data ? formatMoney(transitQuery.data.withdrawalsInTransit.amount) : '—'} en tránsito</strong></div>
+          {totalPages > 1 && <Pagination currentPage={currentPage} totalPages={totalPages} totalElements={filteredAccounts.length} isLoading={isLoading} onPageChange={setCurrentPage} />}
         </>
       )}
       </div>

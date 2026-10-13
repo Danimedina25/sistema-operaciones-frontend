@@ -10,6 +10,7 @@ import { moneyInputToNumber, validateCashAmountInput } from '@/shared/utils/mone
 import { WITHDRAWAL_METHODS, type BankCashWithdrawal, type RegisterWithdrawal, type WithdrawalMethod } from '@/modules/cash-withdrawals/types';
 import { fitsAvailable, useAccountAvailability } from '../hooks/use-account-availability';
 import { AvailabilityHint } from './AvailabilityHint';
+import { formatMoney } from '@/shared/format';
 
 const selectClass = 'mt-1 flex h-11 w-full rounded-xl border border-slate-300 bg-white px-3.5 text-sm text-slate-900 shadow-sm outline-none transition hover:border-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10';
 
@@ -18,9 +19,10 @@ const selectClass = 'mt-1 flex h-11 w-full rounded-xl border border-slate-300 bg
  * la Jefa de Cajas lo recibe y lo confirma: hasta entonces el saldo del banco no baja, pero
  * ese dinero ya no está disponible para otra salida.
  */
-export function RegisterWithdrawalForm({ onClose, onSubmit }: {
+export function RegisterWithdrawalForm({ onClose, onSubmit, showSummary = false }: {
   onClose: () => void;
   onSubmit: (request: RegisterWithdrawal) => Promise<BankCashWithdrawal>;
+  showSummary?: boolean;
 }) {
   const { accounts, isLoading } = useBankAccounts();
   const [bankAccountId, setBankAccountId] = useState<number | null>(null);
@@ -70,11 +72,13 @@ export function RegisterWithdrawalForm({ onClose, onSubmit }: {
 
   return (
       <form onSubmit={submit} className="space-y-5">
-        <fieldset disabled={busy} className="space-y-5">
-          <p className="text-sm text-slate-600">
+        <fieldset disabled={busy} className={showSummary ? 'grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]' : 'space-y-5'}>
+          <div className={showSummary ? 'space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm' : 'space-y-5'}>
+          {showSummary && <h2 className="text-sm font-semibold text-slate-950">Datos del retiro</h2>}
+          {!showSummary && <p className="text-sm text-slate-600">
             Beneficiario: <strong className="text-slate-900">Caja General</strong>. El retiro queda en tránsito hasta que
             la Jefa de Cajas reciba y cuente el efectivo; al confirmarlo entra a la caja y baja el saldo de la cuenta.
-          </p>
+          </p>}
           <div className="grid gap-4 md:grid-cols-2">
             <BankAccountCombobox
               label="Cuenta de la que sale el efectivo"
@@ -91,7 +95,7 @@ export function RegisterWithdrawalForm({ onClose, onSubmit }: {
               </select>
             </label>
           </div>
-          {bankAccountId ? <AvailabilityHint availability={availability} amount={amount} /> : null}
+          {!showSummary && bankAccountId ? <AvailabilityHint availability={availability} amount={amount} /> : null}
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block text-sm font-medium text-slate-700">Monto
               <MoneyInput ariaLabel="Monto" value={monto} onChange={value => { setMonto(value); setError(''); }} className="mt-1" />
@@ -108,8 +112,18 @@ export function RegisterWithdrawalForm({ onClose, onSubmit }: {
             <button type="button" onClick={close} className="h-11 rounded-xl px-5 text-sm font-semibold text-slate-600 hover:bg-slate-100">
               Cancelar
             </button>
-            <Button variant="primary" type="submit" isLoading={busy}>Registrar retiro</Button>
+            <Button variant={showSummary ? 'dark' : 'primary'} type="submit" isLoading={busy}>Registrar retiro</Button>
           </div>
+          </div>
+          {showSummary && <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" aria-label="Resumen del retiro">
+            <h3 className="text-sm font-semibold text-slate-950">Resumen del retiro</h3>
+            <dl className="mt-5 space-y-3 text-sm">
+              <div className="flex justify-between gap-3"><dt className="text-slate-500">Saldo disponible en cuenta</dt><dd className="font-semibold tabular-nums text-slate-950">{availability.disponible === null ? '—' : formatMoney(availability.disponible)}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-slate-500">Monto del retiro</dt><dd className="font-semibold tabular-nums text-red-600">{amount === null ? '—' : `−${formatMoney(amount)}`}</dd></div>
+            </dl>
+            {bankAccountId && !fitsAvailable(availability, amount) && <p role="alert" className="mt-4 text-xs font-semibold text-red-700">Saldo insuficiente en la cuenta.</p>}
+            <p className="mt-4 text-xs text-amber-700">Queda en tránsito hasta que Caja General lo confirme.</p>
+          </aside>}
         </fieldset>
         {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
       </form>

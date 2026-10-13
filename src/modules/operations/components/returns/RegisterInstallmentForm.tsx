@@ -37,6 +37,8 @@ interface RegisterInstallmentFormProps {
   onAmountChange?: (amount: number) => void;
   /** Oculta el panel "Solicitud seleccionada" (lo muestra ReturnRequestSummarySection). */
   hideSummary?: boolean;
+  compactBankPanel?: boolean;
+  onCancel?: () => void;
 }
 
 function parseMonto(value: string): number {
@@ -52,6 +54,8 @@ export function RegisterInstallmentForm({
   onSubmit,
   onAmountChange,
   hideSummary = false,
+  compactBankPanel = false,
+  onCancel,
 }: RegisterInstallmentFormProps) {
   const formId = useId();
   const totals = resolveReturnRequestTotals(returnRequest);
@@ -88,6 +92,7 @@ export function RegisterInstallmentForm({
 
   const [accountSearch, setAccountSearch] = useState('');
   const [showAccountOptions, setShowAccountOptions] = useState(false);
+  const [showObservations, setShowObservations] = useState(false);
 
   const filteredAccounts = useMemo(() => {
     const search = accountSearch.trim().toLowerCase();
@@ -96,7 +101,7 @@ export function RegisterInstallmentForm({
   }, [bankAccounts, accountSearch]);
 
   return (
-    <form id={formId} className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+    <form id={formId} className={compactBankPanel ? 'space-y-5' : 'space-y-6'} onSubmit={handleSubmit(onSubmit)}>
       {!hideSummary ? (
         <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <h3 className="mb-3 text-sm font-semibold text-slate-900">Solicitud seleccionada</h3>
@@ -143,11 +148,13 @@ export function RegisterInstallmentForm({
         <label className="mb-2 block text-sm font-medium text-slate-700">
           Importe del retorno
         </label>
+        <div className="relative">
+        {compactBankPanel && <span aria-hidden className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500">$</span>}
         <input
           type="text"
           inputMode="decimal"
           placeholder="0.00"
-          className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
+          className={compactBankPanel ? 'h-11 w-full rounded-xl border border-blue-500 bg-white pl-7 pr-28 text-sm outline-none focus:border-blue-600' : 'h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900'}
           {...register('monto', {
             onChange: (event) => onAmountChange?.(parseMonto(event.target.value)),
             validate: (value) => {
@@ -159,10 +166,12 @@ export function RegisterInstallmentForm({
             },
           })}
         />
+        {compactBankPanel && <button type="button" onClick={() => { setValue('monto', String(totals.montoDisponible), { shouldValidate: true }); onAmountChange?.(totals.montoDisponible); }} className="absolute right-2 top-1/2 -translate-y-1/2 rounded bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-600">Pagar todo</button>}
+        </div>
         {errors.monto ? (
           <p className="mt-1 text-xs text-red-600">{errors.monto.message}</p>
         ) : !esEfectivo ? (
-          <p className="mt-1 text-xs text-slate-500">
+          <p className={compactBankPanel ? 'mt-1 text-xs text-emerald-700' : 'mt-1 text-xs text-slate-500'}>
             Pendiente después del retorno: {formatCurrency(pendienteDespues)}
           </p>
         ) : null}
@@ -336,7 +345,7 @@ export function RegisterInstallmentForm({
                 value={field.value}
                 onChange={field.onChange}
                 selectedLabel="Comprobante seleccionado"
-                dropHint="Arrastra y suelta el comprobante aquí"
+                dropHint={compactBankPanel ? 'Subir comprobante de pago' : 'Arrastra y suelta el comprobante aquí'}
               />
             )}
           />
@@ -346,7 +355,7 @@ export function RegisterInstallmentForm({
         </div>
       ) : null}
 
-      <div>
+      {(!compactBankPanel || showObservations) && <div>
         <label className="mb-2 block text-sm font-medium text-slate-700">Observaciones</label>
         <textarea
           rows={3}
@@ -354,12 +363,16 @@ export function RegisterInstallmentForm({
           className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-900"
           {...register('observaciones')}
         />
-      </div>
+      </div>}
+      {compactBankPanel && !showObservations && <button type="button" onClick={() => setShowObservations(true)} className="text-xs font-semibold text-blue-600">+ Agregar observación</button>}
 
       <ActionDrawerFooter>
-      <Button variant="primary" type="submit" form={formId} isLoading={isSubmitting} className="w-full justify-center">
-        {resolveInstallmentSubmitLabel({ totals, importe, esEfectivo })}
-      </Button>
+      <div className={compactBankPanel ? 'flex items-center gap-3' : ''}>
+        {compactBankPanel && <Button variant="neutral" type="button" onClick={onCancel} className="h-11 px-4">Cancelar</Button>}
+        <Button variant={compactBankPanel ? 'dark' : 'primary'} type="submit" form={formId} isLoading={isSubmitting} className={compactBankPanel ? 'flex-1 justify-center' : 'w-full justify-center'}>
+          {compactBankPanel ? 'Registrar retorno' : resolveInstallmentSubmitLabel({ totals, importe, esEfectivo })}
+        </Button>
+      </div>
       </ActionDrawerFooter>
     </form>
   );

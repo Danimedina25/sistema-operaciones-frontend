@@ -11,6 +11,7 @@ import type { BankTransfer, CreateBankTransfer } from '../types/bank-transfers.t
 import { validateTransferAmount } from '../utils/transfer-amount';
 import { fitsAvailable, useAccountAvailability } from '../hooks/use-account-availability';
 import { AvailabilityHint } from './AvailabilityHint';
+import { formatMoney } from '@/shared/format';
 
 /**
  * Transferencia entre cuentas propias. La cuenta beneficiaria excluye a la origen y la cuenta
@@ -18,9 +19,10 @@ import { AvailabilityHint } from './AvailabilityHint';
  * El UUID de la solicitud se conserva al reintentar la misma captura para que un doble clic
  * o un error de red no la registren dos veces.
  */
-export function BankTransferForm({ onClose, onSubmit }: {
+export function BankTransferForm({ onClose, onSubmit, showSummary = false }: {
   onClose: () => void;
   onSubmit: (request: CreateBankTransfer) => Promise<BankTransfer>;
+  showSummary?: boolean;
 }) {
   const { accounts, isLoading } = useBankAccounts();
   const [origenId, setOrigenId] = useState<number | null>(null);
@@ -33,7 +35,10 @@ export function BankTransferForm({ onClose, onSubmit }: {
 
   const destinos = useMemo(() => accounts.filter(account => account.id !== origenId), [accounts, origenId]);
   const availability = useAccountAvailability(origenId);
+  const destinationAvailability = useAccountAvailability(destinoId);
   const amount = validateTransferAmount(monto) ? null : moneyInputToNumber(monto);
+  const originAccount = accounts.find(account => account.id === origenId);
+  const destinationAccount = accounts.find(account => account.id === destinoId);
 
   function reset() {
     setOrigenId(null); setDestinoId(null); setMonto(''); setReferencia(''); setError('');
@@ -83,11 +88,13 @@ export function BankTransferForm({ onClose, onSubmit }: {
 
   return (
       <form onSubmit={submit} className="space-y-5">
-        <fieldset disabled={busy} className="space-y-5">
-          <p className="text-sm text-slate-600">
+        <fieldset disabled={busy} className={showSummary ? 'grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]' : 'space-y-5'}>
+          <div className={showSummary ? 'space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm' : 'space-y-5'}>
+          {showSummary && <h2 className="text-sm font-semibold text-slate-950">Datos de la transferencia</h2>}
+          {!showSummary && <p className="text-sm text-slate-600">
             El monto sale de la cuenta origen y entra a la beneficiaria en el mismo momento. Queda en el
             libro de movimientos de las dos cuentas.
-          </p>
+          </p>}
           <div className="grid gap-4 md:grid-cols-2">
             <BankAccountCombobox
               label="Cuenta origen"
@@ -108,7 +115,7 @@ export function BankTransferForm({ onClose, onSubmit }: {
               onlyActive
             />
           </div>
-          {origenId ? <AvailabilityHint availability={availability} amount={amount} /> : null}
+          {!showSummary && origenId ? <AvailabilityHint availability={availability} amount={amount} /> : null}
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block text-sm font-medium text-slate-700">Monto
               <MoneyInput ariaLabel="Monto" value={monto} onChange={setMonto} className="mt-1" />
@@ -128,8 +135,18 @@ export function BankTransferForm({ onClose, onSubmit }: {
             <button type="button" onClick={close} className="h-11 rounded-xl px-5 text-sm font-semibold text-slate-600 hover:bg-slate-100">
               Cancelar
             </button>
-            <Button variant="primary" type="submit" isLoading={busy}>Registrar transferencia</Button>
+            <Button variant={showSummary ? 'dark' : 'primary'} type="submit" isLoading={busy}>Registrar transferencia</Button>
           </div>
+          </div>
+          {showSummary && <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" aria-label="Resumen de la transferencia">
+            <h3 className="text-sm font-semibold text-slate-950">Resumen de la transferencia</h3>
+            <div className="mt-4 space-y-3 text-xs">
+              <div className="rounded-lg bg-slate-50 p-3"><p className="font-semibold uppercase tracking-wide text-slate-500">Origen</p><p className="mt-1 font-semibold text-slate-950">{originAccount ? `${originAccount.banco} · ${originAccount.titular}` : 'Selecciona una cuenta'}</p><p className="mt-1 text-slate-600">Saldo disponible: {availability.disponible === null ? '—' : formatMoney(availability.disponible)}</p></div>
+              <div className="rounded-lg bg-slate-50 p-3"><p className="font-semibold uppercase tracking-wide text-slate-500">Beneficiaria</p><p className="mt-1 font-semibold text-slate-950">{destinationAccount ? `${destinationAccount.banco} · ${destinationAccount.titular}` : 'Selecciona una cuenta'}</p><p className="mt-1 text-slate-600">Saldo actual: {destinationAvailability.saldo === null ? '—' : formatMoney(destinationAvailability.saldo)}</p></div>
+            </div>
+            {origenId && !fitsAvailable(availability, amount) && <p role="alert" className="mt-4 text-xs font-semibold text-red-700">Saldo insuficiente en la cuenta origen.</p>}
+            <p className="mt-3 text-xs text-slate-500">Los saldos resultantes se registran al confirmar la transferencia.</p>
+          </aside>}
         </fieldset>
         {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
       </form>

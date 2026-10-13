@@ -83,14 +83,14 @@ describe('BankAccountCombobox', () => {
     fireEvent.focus(input);
     fireEvent.keyDown(input, { key: 'ArrowDown' });
     fireEvent.keyDown(input, { key: 'Enter' });
-    expect(input).toHaveValue('Alfa — BBVA — 00011112222');
+    expect(input).toHaveValue('Alfa · BBVA · ••••2222');
 
     fireEvent.focus(input);
     fireEvent.change(input, { target: { value: 'Beta' } });
     fireEvent.keyDown(input, { key: 'Escape' });
 
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
-    expect(input).toHaveValue('Alfa — BBVA — 00011112222');
+    expect(input).toHaveValue('Alfa · BBVA · ••••2222');
     expect(onChange).toHaveBeenCalledTimes(1);
   });
 

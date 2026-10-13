@@ -10,6 +10,7 @@ import type {
 } from '@/modules/corte/types/corte.types';
 import { useDailyCashCut } from '../hooks/use-daily-cash-cut';
 import { formatDate } from '@/modules/operations/utils/operation-formatters';
+import { formatMoney } from '@/shared/format';
 import { officeToday, selectionFromDates } from '@/shared/utils/period';
 import { maskAccountNumber } from '@/shared/utils/account-formatting';
 import { paths } from '@/routes/paths';
@@ -30,12 +31,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, Banknote, Building2, CalendarDays, Landmark, LoaderCircle, Scale, Search } from 'lucide-react';
 
-function formatCurrency(value?: number | null) {
-    return new Intl.NumberFormat('es-MX', {
-        style: 'currency',
-        currency: 'MXN',
-    }).format(value ?? 0);
-}
+const formatCurrency = formatMoney;
 
 
 type MainView = 'cashCuts' | 'bankBalances' | 'bankMovements';
@@ -200,7 +196,7 @@ export default function DailyCashCutPage() {
 
     return (
 
-        <div className="relative mx-auto max-w-[1600px]">
+        <div className={isBankMovementsView ? 'mx-4 pt-2' : 'relative mx-auto max-w-[1600px]'}>
             {showLoadingOverlay ? (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-[1px]">
                     <div className="flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-slate-950 px-7 py-6 text-white shadow-2xl">
@@ -296,7 +292,7 @@ export default function DailyCashCutPage() {
                         onSubmit={submitWithdrawal}
                     />
 
-                    <WithdrawalsInTransit canCancel={canRegisterBankMovements} />
+                    {!isBankMovementsView && <WithdrawalsInTransit canCancel={canRegisterBankMovements} />}
 
                     {isBankBalancesView ? (
                         <BankBalancesSection
@@ -322,7 +318,7 @@ export default function DailyCashCutPage() {
                     {isCashCutsView && currentData ? (
                         <>
                             <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/5">
-                                <div className="bg-gradient-to-r from-slate-950 to-slate-800 px-6 py-5 text-white">
+                                <div className={`${isBankMovementsView ? 'bg-slate-950' : 'bg-gradient-to-r from-slate-950 to-slate-800'} px-6 py-5 text-white`}>
                                 <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                                     <div>
                                         <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-blue-300"><CalendarDays className="h-4 w-4" /> Resumen del periodo</p>
@@ -392,6 +388,7 @@ export default function DailyCashCutPage() {
                                     totalLabel="Total entradas"
                                     total={currentData.totalEntradas}
                                     highlight="positive"
+                                    hideZeroRows={isBankMovementsView}
                                     rows={[
                                         {
                                             label: 'Transferencia',
@@ -414,6 +411,7 @@ export default function DailyCashCutPage() {
                                     totalLabel="Total salidas"
                                     total={currentData.totalSalidas}
                                     highlight="negative"
+                                    hideZeroRows={isBankMovementsView}
                                     rows={[
                                         {
                                             label: 'Retornos a clientes por transferencia',
@@ -443,7 +441,7 @@ export default function DailyCashCutPage() {
                                 />
                             </div>
 
-                            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/5">
+                            {!isBankMovementsView && <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/5">
                                 <div className="flex items-center gap-2 bg-slate-900 px-5 py-4 text-white"><Scale className="h-4 w-4 text-blue-300" /><h3 className="text-sm font-bold">
                                     Resumen operativo
                                 </h3></div>
@@ -487,10 +485,10 @@ export default function DailyCashCutPage() {
                                         </tbody>
                                     </table>
                                 </div>
-                            </section>
+                            </section>}
                         </>
                     ) : null}
-                    {isBankMovementsView && <div className="space-y-3"><h2 className="text-base font-semibold text-slate-900">Movimientos del periodo</h2><BankMovementsSection desde={isDailyMode ? fecha : startDate} hasta={isDailyMode ? fecha : endDate} showSummary={false} /></div>}
+                    {isBankMovementsView && <div className="space-y-3"><h2 className="text-base font-semibold text-slate-900">Movimientos del periodo</h2><WithdrawalsInTransit canCancel={canRegisterBankMovements} /><BankMovementsSection desde={isDailyMode ? fecha : startDate} hasta={isDailyMode ? fecha : endDate} showSummary={false} /></div>}
                 </div>
             </div>
         </div>
@@ -560,6 +558,7 @@ interface BreakdownCardProps {
     totalLabel: string;
     total: number;
     highlight?: 'positive' | 'negative' | 'neutral';
+    hideZeroRows?: boolean;
 }
 
 function BreakdownCard({
@@ -569,7 +568,10 @@ function BreakdownCard({
     totalLabel,
     total,
     highlight = 'neutral',
+    hideZeroRows = false,
 }: BreakdownCardProps) {
+    const [showAll, setShowAll] = useState(false);
+    const visibleRows = hideZeroRows && !showAll ? rows.filter(row => row.value !== 0) : rows;
     const totalStyles =
         highlight === 'positive'
             ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
@@ -605,7 +607,7 @@ function BreakdownCard({
             </div>
 
             <div className="mt-5 space-y-3">
-                {rows.map((row) => (
+                {visibleRows.map((row) => (
                     <div
                         key={row.label}
                         className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3"
@@ -626,6 +628,8 @@ function BreakdownCard({
                         ) : null}
                     </div>
                 ))}
+                {visibleRows.length === 0 && <p className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-500">Sin conceptos con movimiento en este periodo.</p>}
+                {hideZeroRows && <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 px-4 py-3 text-xs text-slate-400"><span>{showAll ? 'Se muestran todos los conceptos' : 'Solo se muestran conceptos con movimiento'}</span><button type="button" onClick={() => setShowAll(current => !current)} className="font-semibold text-[#3b6ef5] hover:underline">{showAll ? 'Mostrar solo con movimiento' : 'Ver todos los conceptos'}</button></div>}
             </div></div>
         </section>
     );

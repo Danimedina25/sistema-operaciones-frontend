@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import type { BankAccountResponse } from '@/modules/bank-accounts/types/bank-accounts.types';
-import { formatBankAccountLabel, normalizeForSearch } from '@/shared/utils/bank-account-label';
+import { normalizeForSearch } from '@/shared/utils/bank-account-label';
 import { maskAccountNumber } from '@/shared/utils/account-formatting';
 
 export interface BankAccountComboboxProps {
@@ -83,7 +83,7 @@ export function BankAccountCombobox({
     );
   }, [selectable, query]);
 
-  const displayValue = open ? query : selected ? formatBankAccountLabel(selected) : '';
+  const displayValue = open ? query : selected ? `${selected.titular} · ${selected.banco} · ${maskAccountNumber(selected.numeroCuenta)}` : '';
 
   useEffect(() => {
     if (!open) return;

@@ -3,7 +3,7 @@ import { cn } from '@/shared/lib/cn';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   isLoading?: boolean;
-  variant?: 'primary' | 'neutral' | 'success' | 'destructive';
+  variant?: 'primary' | 'neutral' | 'success' | 'destructive' | 'dark';
 }
 
 const variantClasses = {
@@ -11,6 +11,7 @@ const variantClasses = {
   neutral: 'border border-border-strong bg-surface text-ink hover:bg-surface-subtle',
   success: 'bg-success text-white hover:bg-success-strong',
   destructive: 'bg-danger text-white hover:bg-danger-strong',
+  dark: 'bg-slate-950 text-white hover:bg-slate-800',
 } as const;
 
 export function Button({

@@ -23,7 +23,7 @@ function day(dialog: HTMLElement, iso: string) {
 describe('PeriodSelector', () => {
   it('elige un día y no aplica hasta pulsar Aplicar', () => {
     const { onApply, dialog } = mount();
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Día' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Un día' }));
     fireEvent.click(day(dialog, '2026-10-02'));
     expect(onApply).not.toHaveBeenCalled();
     fireEvent.click(within(dialog).getByRole('button', { name: 'Aplicar' }));
@@ -32,10 +32,10 @@ describe('PeriodSelector', () => {
 
   it('elige y aplica un rango en el mismo calendario', () => {
     const { onApply, dialog } = mount();
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Rango' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Rango de fechas' }));
     fireEvent.click(day(dialog, '2026-10-02'));
     fireEvent.click(day(dialog, '2026-10-08'));
-    expect(within(dialog).getByText('2 – 8 oct 2026')).toBeInTheDocument();
+    expect(within(dialog).getByText('2 – 8 oct 2026 · 7 días')).toBeInTheDocument();
     fireEvent.click(within(dialog).getByRole('button', { name: 'Aplicar' }));
     expect(onApply).toHaveBeenCalledExactlyOnceWith({ mode: 'range', startDate: '2026-10-02', endDate: '2026-10-08' });
   });

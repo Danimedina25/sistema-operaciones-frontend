@@ -10,6 +10,7 @@ import cashLock from '@/shared/assets/navigation/73584.svg';
 import cashLockActive from '@/shared/assets/navigation/c2d05.svg';
 import { getNavProfile, getVisibleEntries, isNavItemActive, type NavEntry, type NavGroup, type NavItem } from './navigation';
 import { useNavigationState } from './use-navigation-state';
+import { paths } from '@/routes/paths';
 
 interface SidebarProps { isOpen: boolean; onClose: () => void }
 type Counts = ReturnType<typeof useNavigationState>['counts'];
@@ -29,10 +30,12 @@ function Badge({ count, active = false }: { count: number; active?: boolean }) {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { logout, user } = useAuth();
   const location = useLocation();
+  const visiblePathname = location.state?.backgroundBankOutflow === true ? paths.bankOutflow : location.pathname;
+  const visibleSearch = location.state?.backgroundBankOutflow === true ? '' : location.search;
   const profile = getNavProfile(user?.roles);
   const entries = profile ? getVisibleEntries(profile, user?.roles ?? []) : [];
   const { counts, cashOpen, cashStateKnown } = useNavigationState(profile?.role);
-  const routeKey = `${location.pathname}${location.search}`;
+  const routeKey = `${visiblePathname}${visibleSearch}`;
   const [compactExpanded, setCompactExpanded] = useState(false);
   const compactHidden = compactExpanded ? '' : 'lg:max-xl:hidden';
   const compactCentered = compactExpanded ? '' : 'lg:max-xl:justify-center lg:max-xl:px-2';
@@ -40,7 +43,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const groupOverrides = groupState.routeKey === routeKey ? groupState.overrides : {};
 
   function renderItem(item: NavItem, nested = false) {
-    const active = isNavItemActive(item, location.pathname, location.search);
+    const active = isNavItemActive(item, visiblePathname, visibleSearch);
     const label = item.cashAction && cashStateKnown ? `${cashOpen ? 'Cerrar' : 'Abrir'} caja` : item.label;
     const glyph = item.cashAction && cashOpen
       ? (active ? cashLockActive : cashLock)
@@ -60,7 +63,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   }
 
   function renderGroup(group: NavGroup) {
-    const childActive = group.children.some(child => isNavItemActive(child, location.pathname, location.search));
+    const childActive = group.children.some(child => isNavItemActive(child, visiblePathname, visibleSearch));
     const expanded = groupOverrides[group.id] ?? childActive;
     return <div key={group.id}>
       <button type="button" aria-expanded={expanded} aria-controls={`sidebar-group-${group.id}`}

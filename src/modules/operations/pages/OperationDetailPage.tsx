@@ -38,6 +38,7 @@ import {
 import { formatCurrency } from '../utils/operation-formatters';
 import { DeleteConfirmationModal } from '@/shared/components/ui/DeleteConfirmationModal';
 import { useDeleteOperation } from '../hooks/use-delete-operation';
+import BankOutflowPage from '@/modules/corte/pages/BankOutflowPage';
 
 export default function OperationDetailPage() {
   const navigate = useNavigate();
@@ -139,6 +140,7 @@ export default function OperationDetailPage() {
     await queryClient.invalidateQueries({ queryKey: ['return-operation', parsedOperationId] });
     await queryClient.invalidateQueries({ queryKey: ['return-request-summary'] });
     await queryClient.invalidateQueries({ queryKey: ['cash-work'] });
+    await queryClient.invalidateQueries({ queryKey: ['bank-work'] });
     setRefreshKey((prev) => prev + 1);
   }
 
@@ -230,6 +232,7 @@ export default function OperationDetailPage() {
   const isAdmin = roles.includes('ADMIN');
   const isJefaCuentas = roles.includes('JEFA_CUENTAS');
   const isAuxiliarCuentas = roles.includes('AUXILIAR_CUENTAS');
+  const backgroundBankOutflow = location.state?.backgroundBankOutflow === true && (isJefaCuentas || isAuxiliarCuentas || isAdmin);
 
   function canConfirmInstallment(i: ReturnInstallment): boolean {
     return canSocioConfirmInstallment(i, { isSocioComercial });
@@ -248,6 +251,8 @@ export default function OperationDetailPage() {
 
   return (
     <>
+      {backgroundBankOutflow && <BankOutflowPage />}
+      <div className={backgroundBankOutflow ? 'hidden' : undefined}>
       <OperationDetailContainer
         key={refreshKey}
         operationId={parsedOperationId}
@@ -257,7 +262,7 @@ export default function OperationDetailPage() {
         initialTargetId={initialTargetId}
         onInitialActionHandled={() => navigate(location.pathname, {
           replace: true,
-          state: { scrollToPayments, scrollToReturns },
+          state: { ...location.state, scrollToPayments, scrollToReturns },
         })}
         backLabel={backLabel}
         onBack={() => {
@@ -299,6 +304,7 @@ export default function OperationDetailPage() {
         }}
         onDeleteOperation={setOperationToDelete}
       />
+      </div>
 
       <DeleteConfirmationModal
         open={Boolean(operationToDelete)}
@@ -444,7 +450,10 @@ export default function OperationDetailPage() {
           setCancelTarget(i);
           setCancelReason('');
         }}
-        onClose={() => setSelectedReturnRequest(null)}
+        onClose={() => {
+          setSelectedReturnRequest(null);
+          if (backgroundBankOutflow) navigate(paths.bankOutflow);
+        }}
       />
 
       <MarkCashReturnDeliveredModal

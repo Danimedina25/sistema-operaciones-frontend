@@ -178,7 +178,7 @@ export function OperationsTable({
     ? [
         ...commonColumns,
         { key: 'updated', header: 'Último cambio', cell: (operation) => formatDate(operation.updatedAt), width: '120px' },
-        { key: 'amount', header: 'Monto', cell: (operation) => <span className="font-semibold tabular-nums text-slate-900">{formatMoney(operation.montoTotal)}</span>, width: '112px' },
+        { key: 'amount', header: 'Monto', cell: (operation) => <span className="whitespace-nowrap font-semibold tabular-nums text-slate-900">{formatMoney(operation.montoTotal)}</span>, width: '124px' },
         { key: 'status', header: 'Estatus', cell: (operation) => <OperationStatusBadge status={operation.estatus} />, kind: 'status', width: '218px' },
         { key: 'elapsed', header: 'Sin avanzar', cell: (operation) => <span className="font-medium text-red-600">{formatElapsedSince(operation.updatedAt)}</span>, width: '110px' },
         { key: 'actions', header: 'Acciones', cell: actionsCell, kind: 'actions', align: 'right', width: '148px' },
@@ -186,7 +186,7 @@ export function OperationsTable({
     : [
         ...commonColumns,
         { key: 'created', header: 'Creada', cell: (operation) => formatDate(operation.createdAt), width: '112px' },
-        { key: 'amount', header: 'Monto', cell: (operation) => <span className="font-semibold tabular-nums text-slate-900">{formatMoney(operation.montoTotal)}</span>, width: '112px' },
+        { key: 'amount', header: 'Monto', cell: (operation) => <span className="whitespace-nowrap font-semibold tabular-nums text-slate-900">{formatMoney(operation.montoTotal)}</span>, width: '124px' },
         { key: 'income', header: 'Ingreso validado', cell: (operation) => <ProgressBar total={operation.montoTotal} registered={operation.montoRegistrado} validated={operation.montoValidado} compact />, width: '150px' },
         { key: 'status', header: 'Estatus', cell: (operation) => <OperationStatusBadge status={operation.estatus} />, kind: 'status', width: '218px' },
         { key: 'actions', header: 'Acciones', cell: actionsCell, kind: 'actions', align: 'right', width: '148px' },
