@@ -21,4 +21,4 @@ Por defecto usa el usuario MySQL `root`; para otro usuario local, ejecuta `LOCAL
 
 Contraseña de todas: `LocalSolo2026!`.
 
-El Socio nuevo empieza sin operaciones propias. Para ver datos, inicia sesión como `prueba.socio@prueba.test`, crea un cliente en **Mi red › Clientes** y después crea una operación para ese cliente en **Operaciones**. Sus operaciones y pendientes aparecerán en sus listados; no se reasignan operaciones existentes de otros socios.
+El script de usuarios no asigna operaciones. La base local usada en la revisión del rediseño ya puede tener operaciones vinculadas al Socio de prueba (incluida la operación #43 del recorrido de la etapa 7). En una base local nueva, inicia sesión como `prueba.socio@prueba.test`, crea un cliente en **Mi red › Clientes** y después una operación en **Operaciones** para ver datos propios.

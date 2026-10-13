@@ -11,3 +11,7 @@
 - **Permisos de Usuarios.** El frame `179:2079` ofrece «Nuevo usuario» al Director; la interfaz actual lo ofrece solo a Admin, mientras el backend admite también a Gerente y Director. Esta migración conserva los botones visibles por rol; la alineación de permisos acordada en CLAUDE.md requiere una tarea de seguridad independiente.
 - **Reportes y Bitácora.** Los frames `178:1924` y `178:2165` requieren consultas y almacenamiento de bitácora que aún no existen. Se mantienen ocultos en el menú hasta poder mostrar datos reales.
 
+## Retornos
+
+- **Cuenta o CLABE en transferencias.** La regla acordada permite capturar número de cuenta **o** CLABE. El recorrido local de la etapa 7 mostró que `ReturnsOperationServiceImpl.validateReturnRequest` rechaza una solicitud con solo número de cuenta y exige CLABE de 18 dígitos. Corregir esta validación de escritura y cubrirla con pruebas de permisos y negocio en Fase 2.
+
