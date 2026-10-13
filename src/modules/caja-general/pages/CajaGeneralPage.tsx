@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { ArrowDown, ArrowUp, WalletCards } from 'lucide-react';
@@ -24,7 +24,6 @@ import { CashDayForm } from '../components/CashDayForm';
 import { CashMovementForm } from '../components/CashMovementForm';
 import { CashLedgerTable } from '../components/CashLedgerTable';
 import { DeleteCashDayModal } from '../components/DeleteCashDayModal';
-import { PendingWithdrawalsInbox } from '../components/PendingWithdrawalsInbox';
 import type { CashDay } from '../types/caja-general.types';
 import { currency } from '../utils/cash-amounts';
 import { formatCashDate } from '../utils/cash-dates';
@@ -55,7 +54,8 @@ export default function CajaGeneralPage() {
   const start = filters.mode === 'daily' ? filters.fecha : filters.startDate;
   const end = filters.mode === 'daily' ? filters.fecha : filters.endDate;
   const { latest, ledger, open, movement, close, deleteDay } = useCajaGeneral(start, end);
-  const cutSummary = useQuery({ queryKey: ['cash-work', 'cut-summary', start, end], queryFn: () => cashWorkApi.cutSummary(start, end), enabled: !!start && !!end && start <= end && end <= today });
+  const cutSummary = useQuery({ queryKey: ['cash-work', 'cut-summary', start, end], queryFn: () => cashWorkApi.cutSummary(start, end), enabled: !sessionMode && !!start && !!end && start <= end && end <= today });
+  const pendingSummary = useQuery({ queryKey: ['cash-work', 'summary'], queryFn: cashWorkApi.summary, enabled: sessionMode });
   const [activePanel, setActivePanel] = useState<ActivePanel>(null);
   const [deleteTarget, setDeleteTarget] = useState<CashDay | null>(null);
   const days = ledger.data?.dias ?? [];
@@ -81,17 +81,13 @@ export default function CajaGeneralPage() {
       setFilters(current => ({ ...current, mode: 'daily', fecha: today, startDate: today, endDate: today }));
     }
   }, [sessionMode, filters.mode, filters.fecha, today, setFilters]);
-  const sessionOpened = useRef(false);
-  useEffect(() => {
-    if (!sessionMode) { sessionOpened.current = false; return; }
-    if (sessionOpened.current || !viewingToday || (!canStartAction && !canClose)) return;
-    sessionOpened.current = true;
-    setActivePanel(closingDay ? 'close' : 'open');
-  }, [sessionMode, viewingToday, canStartAction, canClose, closingDay]);
+  const visiblePanel = sessionMode
+    ? canClose && closingDay ? 'close' : canStartAction && !day && !pendingDay ? 'open' : null
+    : activePanel;
 
   return <div className="space-y-3">
     <PageHeader
-      title={sessionMode ? 'Abrir/Cerrar caja' : 'Corte de caja'}
+      title={sessionMode ? (closingDay || (latest.data && !latest.data.closedAt) ? 'Cerrar caja' : 'Abrir caja') : 'Corte de caja'}
       actions={!sessionMode ? <PeriodSelector allowAll={false} label="Periodo de caja"
         value={{ ...selectionFromDates(start, end), mode: filters.mode === 'daily' ? 'day' : 'range' }}
         onApply={selection => {
@@ -104,7 +100,7 @@ export default function CajaGeneralPage() {
         }} /> : undefined}
     />
 
-    <section className="flex flex-col gap-7 rounded-2xl bg-slate-950 px-6 py-7 text-white shadow-lg shadow-slate-950/10 sm:px-8 lg:flex-row lg:items-end lg:justify-between">
+    {!sessionMode && <><section className="flex flex-col gap-7 rounded-2xl bg-slate-950 px-6 py-7 text-white shadow-lg shadow-slate-950/10 sm:px-8 lg:flex-row lg:items-end lg:justify-between">
       <div><p className="text-sm text-slate-400">Saldo disponible</p><p className="mt-1 text-4xl font-bold tabular-nums tracking-tight">{day ? currency(isOpen ? day.saldoActual : day.saldoContado ?? day.saldoActual) : '—'}</p></div>
       <div className="grid grid-cols-3 gap-5 sm:gap-9">
         <div className="text-right"><p className="text-xs text-slate-400">Entradas del periodo</p><p className="mt-1 font-semibold tabular-nums text-emerald-300">{cutSummary.data ? currency(cutSummary.data.income) : '—'}</p></div>
@@ -134,7 +130,7 @@ export default function CajaGeneralPage() {
       <span className={`flex items-center gap-2 font-medium ${day ? 'text-emerald-700' : 'text-slate-400'}`}><i className={`h-2 w-2 rounded-full ${day ? 'bg-emerald-500' : 'bg-slate-300'}`} />Apertura</span><i className="h-px w-10 bg-slate-300" />
       <span className={`flex items-center gap-2 font-semibold ${isOpen && activePanel !== 'close' ? 'text-slate-950' : 'text-slate-400'}`}><i className={`h-2 w-2 rounded-full ${isOpen && activePanel !== 'close' ? 'bg-slate-950' : 'bg-slate-300'}`} />En operación</span><i className="h-px w-10 bg-slate-300" />
       <span className={`flex items-center gap-2 font-semibold ${activePanel === 'close' || day?.closedAt ? 'text-slate-950' : 'text-slate-400'}`}><i className={`h-2 w-2 rounded-full ${activePanel === 'close' || day?.closedAt ? 'bg-slate-950' : 'bg-slate-300'}`} />Cierre</span>
-    </div>
+    </div></>}
 
     {latest.isPending && <p className={mutedText}>Cargando caja…</p>}
     {latest.isError && <p role="alert" className={noteDanger}>
@@ -142,19 +138,14 @@ export default function CajaGeneralPage() {
       <button type="button" onClick={() => void latest.refetch()} className="font-semibold underline">Reintentar</button>
     </p>}
 
-    {sessionMode && <PendingWithdrawalsInbox
-      canResolve={Boolean(canWrite)}
-      openDayId={isOpen && viewingToday ? day.id : null}
-    />}
+    {!sessionMode && pendingDay && !isOpen && viewingToday && <p role="alert" className={noteWarning}>La caja del <strong>{formatCashDate(pendingDay.fecha)}</strong> quedó abierta. Ciérrala para poder abrir la de hoy; el saldo contado de ese cierre será el saldo inicial de la nueva caja.</p>}
 
-    {pendingDay && !isOpen && viewingToday && <p role="alert" className={noteWarning}>La caja del <strong>{formatCashDate(pendingDay.fecha)}</strong> quedó abierta. Ciérrala para poder abrir la de hoy; el saldo contado de ese cierre será el saldo inicial de la nueva caja.</p>}
-
-    {activePanel === 'open' && canOperate && !day && !pendingDay && <section className="rounded-2xl border border-slate-200 border-t-4 border-t-slate-950 bg-white p-5 shadow-sm">
-      <p className={`mb-4 ${microTitle}`}>Apertura de caja</p>
-      <CashDayForm key={latest.data?.id ?? 'first'} mode="open" previous={latest.data ?? null} busy={busy} onSubmit={async value => { const result = await open.mutateAsync(value); selectDate(result.fecha); setActivePanel(null); }} />
+    {visiblePanel === 'open' && canOperate && !day && !pendingDay && <section className={sessionMode ? '' : 'rounded-2xl border border-slate-200 border-t-4 border-t-slate-950 bg-white p-5 shadow-sm'}>
+      {!sessionMode && <p className={`mb-4 ${microTitle}`}>Apertura de caja</p>}
+      <CashDayForm key={latest.data?.id ?? 'first'} mode="open" previous={latest.data ?? null} busy={busy} pendingWithdrawals={sessionMode ? pendingSummary.data?.withdrawals : undefined} onSubmit={async value => { const result = await open.mutateAsync(value); selectDate(result.fecha); setActivePanel(null); }} />
     </section>}
 
-    {sessionMode && isOpen && canOperate && activePanel !== 'close' && <section>
+    {!sessionMode && isOpen && canOperate && activePanel !== 'close' && <section>
       <p className={`mb-3 ${microTitle}`}>Registrar movimiento</p>
       <div className="grid grid-cols-2 gap-3">
         <button type="button" onClick={() => toggleMovement('ENTRADA')} aria-pressed={activePanel === 'ENTRADA'} className={`flex items-start gap-3 rounded-2xl border p-5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${activePanel === 'ENTRADA' ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 bg-white hover:border-slate-400'}`}>
@@ -169,11 +160,12 @@ export default function CajaGeneralPage() {
       {(activePanel === 'ENTRADA' || activePanel === 'SALIDA') && <CashMovementForm key={`${day.id}-${activePanel}`} direction={activePanel} day={day} busy={busy} onSubmit={async data => { await movement.mutateAsync({ id: day.id, data }); selectDate(day.fecha); setActivePanel(null); }} />}
     </section>}
 
-    {closingDay && canClose && activePanel === 'close' && <section className="rounded-2xl border border-slate-200 border-t-4 border-t-slate-950 bg-white p-5 shadow-sm">
-      <p className={`mb-1 ${microTitle}`}>Conteo final y cierre</p>
-      <p className={`mb-5 ${mutedText}`}>Cuenta el efectivo físico disponible y compara el resultado con el saldo esperado.</p>
-      <CashDayForm key={closingDay.id} mode="close" day={closingDay} busy={busy} onSubmit={async data => { await close.mutateAsync({ id: closingDay.id, data }); selectDate(closingDay.fecha); setActivePanel(null); }} />
+    {closingDay && canClose && visiblePanel === 'close' && <section className={sessionMode ? '' : 'rounded-2xl border border-slate-200 border-t-4 border-t-slate-950 bg-white p-5 shadow-sm'}>
+      {!sessionMode && <><p className={`mb-1 ${microTitle}`}>Conteo final y cierre</p><p className={`mb-5 ${mutedText}`}>Cuenta el efectivo físico disponible y compara el resultado con el saldo esperado.</p></>}
+      <CashDayForm key={closingDay.id} mode="close" day={closingDay} busy={busy} pendingWithdrawals={sessionMode ? pendingSummary.data?.withdrawals : undefined} onSubmit={async data => { await close.mutateAsync({ id: closingDay.id, data }); selectDate(closingDay.fecha); setActivePanel(null); }} />
     </section>}
+
+    {sessionMode && viewingToday && day?.closedAt && !pendingDay && <p className={noteNeutral}>La caja de hoy ya está cerrada. Consulta el conteo y los movimientos en Corte.</p>}
 
     {!viewingToday && ledger.isSuccess && <p className={noteNeutral}>Modo consulta. Las fechas anteriores permiten revisar cortes y movimientos, sin abrir, cerrar ni registrar operaciones.</p>}
     {!canWrite && viewingToday && latest.isSuccess && <p className={noteNeutral}>Consulta de Caja General. Las aperturas, movimientos y cierres se registran por Jefa de Cajas o Administración.</p>}

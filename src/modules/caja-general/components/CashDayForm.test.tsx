@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import { CashDayForm } from './CashDayForm';
 import { emptyCounts } from '../utils/cash-amounts';
 import type { CashDay } from '../types/caja-general.types';
@@ -25,7 +26,7 @@ describe('Formulario de apertura y cierre', () => {
   it('también requiere confirmar una apertura en cero', async () => {
     const submit = vi.fn().mockResolvedValue(undefined);
     render(<CashDayForm mode="open" previous={null} busy={false} onSubmit={submit} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Abrir caja' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir caja con este conteo' }));
     expect(screen.getByRole('dialog')).toHaveTextContent('saldo inicial de apertura');
     expect(submit).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Sí, registrar $0.00' }));
@@ -45,9 +46,9 @@ describe('Formulario de apertura y cierre', () => {
     expect(screen.getByLabelText('Saldo inicial')).toHaveAttribute('readonly');
     expect(screen.getByLabelText('Cantidad de $50.00')).toHaveValue(2);
     expect(screen.getByLabelText('Cantidad de $50.00')).toBeDisabled();
-    expect(screen.getByText(/Saldo y denominaciones heredados/)).toHaveTextContent('14 sep 2026');
+    expect(screen.getByText(/Ya viene prellenado con el conteo del último cierre/)).toHaveTextContent('14 sep 2026');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Abrir caja' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir caja con este conteo' }));
 
     await waitFor(() => expect(submit).toHaveBeenCalledWith(expect.objectContaining({
       saldoInicial: 100,
@@ -69,7 +70,7 @@ describe('Formulario de apertura y cierre', () => {
     expect(quantity).toHaveValue(0);
     fireEvent.focus(quantity);
     expect(quantity).toHaveValue(null);
-    expect(screen.getByText('$0.00')).toBeInTheDocument();
+    expect(screen.getAllByText('$0.00').length).toBeGreaterThan(0);
     fireEvent.blur(quantity);
     expect(quantity).toHaveValue(0);
     fireEvent.focus(quantity);
@@ -77,9 +78,9 @@ describe('Formulario de apertura y cierre', () => {
     fireEvent.blur(quantity);
     fireEvent.focus(quantity);
     expect(quantity).toHaveValue(3);
-    expect(screen.getByText('$300.00')).toBeInTheDocument();
+    expect(screen.getAllByText('$300.00').length).toBeGreaterThan(0);
     fireEvent.change(quantity, { target: { value: '' } });
-    expect(screen.getByText('$0.00')).toBeInTheDocument();
+    expect(screen.getAllByText('$0.00').length).toBeGreaterThan(0);
     fireEvent.blur(quantity);
     expect(quantity).toHaveValue(0);
   });
@@ -87,11 +88,11 @@ describe('Formulario de apertura y cierre', () => {
     const submit = vi.fn().mockResolvedValue(undefined);
     render(<CashDayForm mode="open" previous={null} busy={false} onSubmit={submit} />);
     fireEvent.change(screen.getByLabelText('Saldo inicial'), { target: { value: '100.50' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Abrir caja' }));
-    expect(screen.getByRole('alert')).toHaveTextContent('exactamente'); expect(submit).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir caja con este conteo' }));
+    expect(screen.getAllByRole('alert').some(alert => alert.textContent?.includes('exactamente'))).toBe(true); expect(submit).not.toHaveBeenCalled();
     fireEvent.change(screen.getByLabelText('Cantidad de $100.00'), { target: { value: '1' } });
     fireEvent.change(screen.getByLabelText('Cantidad de $0.50'), { target: { value: '1' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Abrir caja' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir caja con este conteo' }));
     await waitFor(() => expect(submit).toHaveBeenCalledWith(expect.objectContaining({ saldoInicial: 100.5 })));
   });
   it('exige motivo por diferencia y envía versión del conteo', async () => {
@@ -99,7 +100,7 @@ describe('Formulario de apertura y cierre', () => {
     render(<CashDayForm mode="close" day={day} busy={false} onSubmit={submit} />);
     fireEvent.change(screen.getByLabelText('Cantidad de $0.50'), { target: { value: '199' } });
     fireEvent.click(screen.getByRole('button', { name: 'Cerrar caja con este conteo' }));
-    expect(screen.getByRole('alert')).toHaveTextContent('Explica la diferencia');
+    expect(screen.getAllByRole('alert').some(alert => alert.textContent?.includes('Explica la diferencia'))).toBe(true);
     fireEvent.change(screen.getByLabelText(/Observaciones del cierre/), { target: { value: 'Faltante de moneda' } });
     fireEvent.click(screen.getByRole('button', { name: 'Cerrar caja con este conteo' }));
     await waitFor(() => expect(submit).toHaveBeenCalledWith(expect.objectContaining({ saldoContado: 99.5, version: 0, observaciones: 'Faltante de moneda' })));
@@ -109,7 +110,7 @@ describe('Formulario de apertura y cierre', () => {
     const { rerender } = render(<CashDayForm mode="close" day={day} busy={false} onSubmit={submit} />);
     rerender(<CashDayForm mode="close" day={{ ...day, version: 1, saldoActual: 200 }} busy={false} onSubmit={submit} />);
     expect(screen.getByRole('button', { name: 'Cerrar caja con este conteo' })).toBeDisabled();
-    expect(screen.getByRole('alert')).toHaveTextContent('cambió durante el conteo');
+    expect(screen.getAllByRole('alert').some(alert => alert.textContent?.includes('cambió durante el conteo'))).toBe(true);
   });
   it('prellena el cierre con el desglose esperado para solo revisarlo', async () => {
     const submit = vi.fn().mockResolvedValue(undefined);
@@ -118,7 +119,7 @@ describe('Formulario de apertura y cierre', () => {
 
     expect((screen.getByLabelText('Cantidad de $1,000.00') as HTMLInputElement).value).toBe('1');
     expect((screen.getByLabelText('Cantidad de $100.00') as HTMLInputElement).value).toBe('2');
-    expect(screen.getByText(/Desglose prellenado/)).toBeInTheDocument();
+    expect(screen.getByText(/Ya viene prellenado con lo que debería haber en caja/)).toBeInTheDocument();
     // Cuadra con el saldo esperado, así que se puede confirmar sin tocar nada.
     expect(screen.getByText('El conteo cuadra exactamente')).toBeInTheDocument();
 
@@ -131,14 +132,37 @@ describe('Formulario de apertura y cierre', () => {
       day={{ ...day, saldoActual: 900, denominacionesEsperadas: { ...emptyCounts(), D1000: 1, D100: -1 } }} />);
 
     expect((screen.getByLabelText('Cantidad de $100.00') as HTMLInputElement).value).toBe('0');
-    expect(screen.getByRole('alert')).toHaveTextContent('quedó en negativo');
+    expect(screen.getAllByRole('alert').some(alert => alert.textContent?.includes('quedó en negativo'))).toBe(true);
   });
 
   it('explica que la caja quedó abierta de un día anterior', () => {
     render(<CashDayForm mode="close" busy={false} onSubmit={vi.fn()}
       day={{ ...day, fecha: '2026-09-10' }} />);
 
-    expect(screen.getByText(/quedó abierta del/)).toBeInTheDocument();
+    expect(screen.getByText(/La caja del/)).toHaveTextContent('quedó abierta');
+  });
+
+  it('presenta dos tablas compactas y el cuadre sin cambiar el desglose', () => {
+    render(<CashDayForm mode="close" busy={false} onSubmit={vi.fn()}
+      day={{ ...day, saldoActual: 1200, denominacionesEsperadas: { ...emptyCounts(), D1000: 1, D100: 2 } }} />);
+    expect(screen.getAllByRole('table')).toHaveLength(2);
+    expect(screen.getByRole('row', { name: /Total en billetes/ })).toHaveTextContent('$1,200.00');
+    expect(screen.getByRole('row', { name: /Total en monedas/ })).toHaveTextContent('$0.00');
+    expect(screen.getByRole('status')).toHaveTextContent('Dif. $0.00');
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+  });
+
+  it('muestra solo el aviso y enlace de retiros en el cierre', () => {
+    render(<MemoryRouter><CashDayForm mode="close" day={day} busy={false} pendingWithdrawals={{ count: 2, amount: 3000 }} onSubmit={vi.fn()} /></MemoryRouter>);
+    expect(screen.getByRole('note')).toHaveTextContent('2 retiros por ingresar de $3,000.00');
+    expect(screen.getByRole('link', { name: /Retiros de cuentas bancarias/ })).toHaveAttribute('href', '/caja/entradas?tab=withdrawals');
+    expect(screen.queryByRole('button', { name: /Confirmar|Rechazar/ })).not.toBeInTheDocument();
+  });
+
+  it('oculta observaciones en apertura porque no están en el contrato', () => {
+    render(<CashDayForm mode="open" previous={null} busy={false} onSubmit={vi.fn()} />);
+    expect(screen.queryByLabelText(/Observaciones/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Abrir caja con este conteo' })).toBeInTheDocument();
   });
 
 });

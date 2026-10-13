@@ -2,6 +2,7 @@
 
 ## Caja General
 
+- **Observaciones de apertura.** El frame C5 (`23:1072`) incluye el campo «Observaciones de la apertura», pero `OpenCashDay` y el endpoint de apertura no reciben ni guardan observaciones. El campo queda oculto hasta ampliar el contrato y la persistencia; las observaciones del cierre sí se conservan.
 - **Envíos de efectivo de Caja a una cuenta bancaria.** El frame `144:2551` los muestra en Salidas, pero el backend actual solo admite movimientos manuales de efectivo sin banco ni cuenta (`CashGeneralService.createMovement` y `resolveBankAccount`). El flujo de depósito en tránsito y su confirmación por Cuentas requiere escrituras y reglas nuevas; esta migración solo permite lecturas nuevas. La pestaña de envíos queda oculta hasta implementar ese flujo. Salidas conserva los retornos por solicitud y las entregas programadas. La ruta histórica de Caja permanece disponible.
 
 ## Gerencia y Dirección
