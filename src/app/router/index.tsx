@@ -2,6 +2,9 @@ import ChequesPage from '@/modules/cheques/ChequesPage';
 import CajaGeneralPage from '@/modules/caja-general/pages/CajaGeneralPage';
 import CashIncomePage from '@/modules/caja-general/pages/CashIncomePage';
 import CashOutflowPage from '@/modules/caja-general/pages/CashOutflowPage';
+import BankIncomePage from '@/modules/corte/pages/BankIncomePage';
+import BankOutflowPage from '@/modules/corte/pages/BankOutflowPage';
+import BankTransferPage from '@/modules/corte/pages/BankTransferPage';
 import MyPendingPage from '@/modules/operations/pages/MyPendingPage';
 import TeamPendingPage from '@/modules/operations/pages/TeamPendingPage';
 import { createBrowserRouter } from 'react-router-dom';
@@ -76,6 +79,9 @@ export const router = createBrowserRouter([
           },
           { element: <RoleGuard allowedRoles={ROUTE_ACCESS.cashIncome} />, children: [{ path: paths.cashIncome, element: <CashIncomePage /> }] },
           { element: <RoleGuard allowedRoles={ROUTE_ACCESS.cashOutflow} />, children: [{ path: paths.cashOutflow, element: <CashOutflowPage /> }] },
+          { element: <RoleGuard allowedRoles={ROUTE_ACCESS.bankIncome} />, children: [{ path: paths.bankIncome, element: <BankIncomePage /> }] },
+          { element: <RoleGuard allowedRoles={ROUTE_ACCESS.bankOutflow} />, children: [{ path: paths.bankOutflow, element: <BankOutflowPage /> }] },
+          { element: <RoleGuard allowedRoles={ROUTE_ACCESS.bankTransfer} />, children: [{ path: paths.bankTransfer, element: <BankTransferPage /> }] },
           {
             element: <RoleGuard allowedRoles={ROUTE_ACCESS.corte} />,
             children: [

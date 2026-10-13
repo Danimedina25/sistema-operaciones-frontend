@@ -1,10 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { BankAccountsTable } from '@/modules/bank-accounts/components/BankAccountsTable';
+import { AccountMovementsModal } from '@/modules/bank-accounts/components/AccountMovementsModal';
 import { BankAccountFormModal } from '@/modules/bank-accounts/components/BankAccountFormModal';
-import { BankAccountsFilters } from '@/modules/bank-accounts/components/BankAccountsFilters';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { DeleteConfirmationModal } from '@/shared/components/ui/DeleteConfirmationModal';
-import { TableFilterSection } from '@/shared/components/ui/TableFilterSection';
+import { SearchFilterBar } from '@/shared/components/ui/SearchFilterBar';
+import { PageHeader } from '@/shared/components/layout/PageHeader';
+import { Button } from '@/shared/components/ui/Button';
+import { formatMoney } from '@/shared/format';
+import { officeToday } from '@/shared/utils/period';
+import { calculateBankBalancesGrouped, calculateDailyCashCut } from '@/modules/corte/api/corte.api';
+import { bankWorkApi } from '@/modules/corte/api/bank-work.api';
 import { useAuth } from '@/modules/auth/store/auth.context';
 
 import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts';
@@ -39,6 +46,7 @@ export default function BankAccountsPage() {
     useState<BankAccountResponse | null>(null);
   const [deletingAccount, setDeletingAccount] =
     useState<BankAccountResponse | null>(null);
+  const [movementsAccount, setMovementsAccount] = useState<BankAccountResponse | null>(null);
 
   const pageSize = 10;
 
@@ -51,6 +59,11 @@ export default function BankAccountsPage() {
 
   const { accounts, isLoading, loadBankAccounts, loadBankAccount } =
     useBankAccounts();
+  const today = officeToday();
+  const balancesQuery = useQuery({ queryKey: ['bank-balances-grouped', today], queryFn: () => calculateBankBalancesGrouped(today) });
+  const cutQuery = useQuery({ queryKey: ['daily-cash-cut', today], queryFn: () => calculateDailyCashCut(today) });
+  const transitQuery = useQuery({ queryKey: ['bank-work', 'summary'], queryFn: bankWorkApi.summary });
+  const balances = useMemo(() => new Map(balancesQuery.data?.flatMap(group => group.cuentas.map(account => [account.bankAccountId, account.saldoFinal] as const)) ?? []), [balancesQuery.data]);
 
   const { isSubmitting: isCreating, submitCreateBankAccount } =
     useCreateBankAccount({
@@ -144,33 +157,19 @@ export default function BankAccountsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-slate-900">
-              Cuentas bancarias
-            </h1>
-            <p className="mt-2 text-sm text-slate-500">
-              Registro, listado y edición de cuentas bancarias.
-            </p>
-          </div>
-
-          {canCreate && (
-            <button
-              type="button"
-              onClick={handleOpenCreate}
-              className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
-            >
-              Nueva cuenta
-            </button>
-          )}
-        </div>
+    <div className="space-y-5">
+      <PageHeader title="Cuentas bancarias y saldos" actions={canCreate ? <Button variant="primary" onClick={handleOpenCreate}>Nueva cuenta</Button> : undefined} />
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="rounded-xl bg-slate-950 p-5 text-white"><p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Saldo total en cuentas</p><p className="mt-2 text-2xl font-bold tabular-nums">{cutQuery.data ? formatMoney(cutQuery.data.saldoFinal) : '—'}</p><p className="mt-1 text-xs text-slate-400">Saldo confirmado del corte bancario</p></div>
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-amber-900"><p className="text-xs font-semibold uppercase tracking-wider">Retiros en tránsito</p><p className="mt-2 text-2xl font-bold tabular-nums">{transitQuery.data ? formatMoney(transitQuery.data.withdrawalsInTransit.amount) : '—'}</p><p className="mt-1 text-xs">{transitQuery.data?.withdrawalsInTransit.count ?? '—'} por confirmar en Caja General</p></div>
       </div>
-
-      <TableFilterSection>
-        <BankAccountsFilters filters={filters} onChange={setFilters} />
-      </TableFilterSection>
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+        <SearchFilterBar search={filters.search} onSearchChange={search => setFilters(current => ({ ...current, search }))}
+          searchPlaceholder="Buscar por titular, número de cuenta o CLABE"
+          activeFilters={filters.status !== 'ACTIVE' ? [{ key: 'status', label: filters.status === 'INACTIVE' ? 'Inactivas' : 'Todas', onRemove: () => setFilters(current => ({ ...current, status: 'ACTIVE' })) }] : []}
+          filters={<label className="block max-w-xs text-sm font-medium text-slate-700">Mostrar
+            <select aria-label="Mostrar cuentas" value={filters.status} onChange={event => setFilters(current => ({ ...current, status: event.target.value as BankAccountsFiltersType['status'] }))} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2"><option value="ACTIVE">Activas</option><option value="INACTIVE">Inactivas</option><option value="ALL">Todas</option></select>
+          </label>} />
 
       {isLoading ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm">
@@ -180,6 +179,7 @@ export default function BankAccountsPage() {
         <>
           <BankAccountsTable
             accounts={paginatedAccounts}
+            balances={balances}
             processingAccountId={processingAccountId}
             canEdit={canEdit}
             canToggleStatus={canToggleStatus}
@@ -188,6 +188,7 @@ export default function BankAccountsPage() {
             onActivate={submitActivateBankAccount}
             onDeactivate={submitDeactivateBankAccount}
             onDelete={setDeletingAccount}
+            onViewMovements={setMovementsAccount}
           />
 
           <Pagination
@@ -199,6 +200,7 @@ export default function BankAccountsPage() {
           />
         </>
       )}
+      </div>
 
       <BankAccountFormModal
         open={isFormOpen}
@@ -208,6 +210,7 @@ export default function BankAccountsPage() {
         onClose={handleCloseForm}
         onSubmit={handleSubmit}
       />
+      <AccountMovementsModal account={movementsAccount} onClose={() => setMovementsAccount(null)} />
 
       <DeleteConfirmationModal
         open={Boolean(deletingAccount)}

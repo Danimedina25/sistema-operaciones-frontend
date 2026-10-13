@@ -6,6 +6,9 @@ import type { BankCashWithdrawal } from '@/modules/cash-withdrawals/types';
 
 const pending = vi.fn();
 const cancel = vi.fn();
+const summary = vi.fn();
+
+vi.mock('../api/bank-work.api', () => ({ bankWorkApi: { summary: () => summary() } }));
 
 vi.mock('@/modules/cash-withdrawals/api', () => ({
   cashWithdrawalsApi: { pending: () => pending(), cancel: (...args: unknown[]) => cancel(...args) },
@@ -32,6 +35,7 @@ function mount(canCancel = true) {
 beforeEach(() => {
   pending.mockReset().mockResolvedValue([withdrawal(1, 150.25), withdrawal(2, 100)]);
   cancel.mockReset().mockResolvedValue({});
+  summary.mockReset().mockResolvedValue({ withdrawalsInTransit: { count: 2, amount: 250.25, oldest: null } });
 });
 
 describe('Efectivo en tránsito a Caja General', () => {

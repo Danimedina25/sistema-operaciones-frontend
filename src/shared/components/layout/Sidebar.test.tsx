@@ -69,9 +69,9 @@ describe('Sidebar', () => {
     expect(screen.getByRole('link', { name: 'Abrir caja' })).toHaveAttribute('aria-current', 'page');
   });
 
-  it('selecciona el hijo correcto cuando Cortes y movimientos y Transferir comparten ruta', () => {
+  it('selecciona Transferir en su ruta propia', () => {
     mocks.roles = ['JEFA_CUENTAS'];
-    show('/corte/movimientos?nav=transfer');
+    show('/cuentas/transferir');
     expect(screen.getByRole('button', { name: 'Cuentas' })).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByRole('link', { name: 'Transferir entre cuentas' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: 'Cortes y movimientos' })).not.toHaveAttribute('aria-current');

@@ -36,10 +36,14 @@ const totals: BankMovementTotals = {
 
 const searchBankMovements = vi.fn();
 const getBankMovementTotals = vi.fn();
+const searchBankMovementsText = vi.fn();
+const getBankMovementSearchTotals = vi.fn();
 
 vi.mock('../api/corte.api', () => ({
   searchBankMovements: (...args: unknown[]) => searchBankMovements(...args),
   getBankMovementTotals: (...args: unknown[]) => getBankMovementTotals(...args),
+  searchBankMovementsText: (...args: unknown[]) => searchBankMovementsText(...args),
+  getBankMovementSearchTotals: (...args: unknown[]) => getBankMovementSearchTotals(...args),
 }));
 
 vi.mock('@/modules/bank-accounts/hooks/use-bank-accounts', () => ({
@@ -52,7 +56,7 @@ vi.mock('@/modules/auth/store/auth.context', () => ({
 
 /** El panel de filtros nace colapsado, como en el resto de las tablas. */
 function openFilters() {
-  fireEvent.click(screen.getByRole('button', { name: /mostrar/i }));
+  fireEvent.click(screen.getByRole('button', { name: 'Filtros' }));
 }
 
 /** El periodo llega desde la cabecera de Cortes y saldos, no de esta sección. */
@@ -72,6 +76,8 @@ describe('BankMovementsSection', () => {
       content: movements, totalElements: 37, totalPages: 2, size: 20, number: 0,
     });
     getBankMovementTotals.mockReset().mockResolvedValue(totals);
+    searchBankMovementsText.mockReset().mockResolvedValue({ content: [movements[1]], totalElements: 1, totalPages: 1, size: 20, number: 0 });
+    getBankMovementSearchTotals.mockReset().mockResolvedValue({ totalEntradas: 1000, totalSalidas: 0, variacionNeta: 1000, totalMovimientos: 1 });
   });
 
   it('muestra entradas, salidas y neto tomados del resumen del backend', async () => {
@@ -85,22 +91,21 @@ describe('BankMovementsSection', () => {
 
   it('lista los movimientos con su cuenta, origen y referencia', async () => {
     mount();
-    const cheque = await screen.findByText('Cheque cobrado');
+    const cheque = await within(await screen.findByRole('table')).findByText('Cheque cobrado');
     const row = cheque.closest('tr') as HTMLElement;
-    expect(within(row).getByText(/Operaciones SA — BBVA — ••••5678/)).toBeInTheDocument();
-    expect(within(row).getByText('Caja General')).toBeInTheDocument();
-    expect(within(row).getByRole('link', { name: /Caja General · Registro #8/ })).toBeInTheDocument();
-    expect(within(row).getByText('Jefa de Cajas')).toBeInTheDocument();
+    expect(within(row).getByText('Operaciones SA')).toBeInTheDocument();
+    expect(within(row).getByText('BBVA ••5678')).toBeInTheDocument();
+    expect(within(row).getByRole('link', { name: /Caja General #8/ })).toBeInTheDocument();
 
-    const pago = screen.getByText('Pago Transferencia · Operación #12').closest('tr') as HTMLElement;
+    const pago = within(screen.getByRole('table')).getByText('Pago Transferencia · Operación #12').closest('tr') as HTMLElement;
     expect(within(pago).getByRole('link', { name: 'Operación #12' })).toBeInTheDocument();
     // Las cuentas inactivas se siguen consultando en el histórico.
-    expect(within(pago).getByText('(inactiva)')).toBeInTheDocument();
+    expect(within(pago).getByText('Cuenta Vieja')).toBeInTheDocument();
   });
 
   it('no ofrece ninguna acción de captura', async () => {
     mount();
-    await screen.findByText('Cheque cobrado');
+    await within(await screen.findByRole('table')).findByText('Cheque cobrado');
     expect(screen.queryByRole('button', { name: /registrar|agregar|nuevo|nueva|capturar/i })).toBeNull();
   });
 
@@ -111,9 +116,19 @@ describe('BankMovementsSection', () => {
     ));
   });
 
+  it('busca en el servidor antes de paginar y usa sus totales filtrados', async () => {
+    mount();
+    fireEvent.change(screen.getByPlaceholderText('Concepto, folio o referencia'), { target: { value: 'Transferencia' } });
+    await waitFor(() => expect(searchBankMovementsText).toHaveBeenLastCalledWith(
+      expect.objectContaining({ search: 'Transferencia' }), 0, 20,
+    ));
+    expect((await screen.findAllByText('$1,000.00')).length).toBeGreaterThan(0);
+    expect(getBankMovementSearchTotals).toHaveBeenCalledWith(expect.objectContaining({ search: 'Transferencia' }));
+  });
+
   it('el periodo ya no se captura dentro de los filtros de la sección', async () => {
     mount();
-    await screen.findByText('Cheque cobrado');
+    await within(await screen.findByRole('table')).findByText('Cheque cobrado');
     openFilters();
     expect(screen.queryByLabelText('Desde')).toBeNull();
     expect(screen.queryByLabelText('Hasta')).toBeNull();
@@ -130,7 +145,7 @@ describe('BankMovementsSection', () => {
 
   it('pagina desde el backend y reinicia al cambiar un filtro', async () => {
     mount();
-    await screen.findByText('Cheque cobrado');
+    await within(await screen.findByRole('table')).findByText('Cheque cobrado');
     expect(searchBankMovements).toHaveBeenLastCalledWith(expect.anything(), 0, 20);
 
     fireEvent.click(screen.getByRole('button', { name: /siguiente/i }));

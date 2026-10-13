@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { TableFilterSection } from '@/shared/components/ui/TableFilterSection';
 import { BankAccountCombobox } from '@/shared/components/ui/BankAccountCombobox';
 import type { BankAccountResponse } from '@/modules/bank-accounts/types/bank-accounts.types';
 import { fieldControl } from '@/shared/styles/ui-tokens';
@@ -25,7 +24,6 @@ export function BankMovementsFilters({ filters, onChange, accounts, isLoadingAcc
   }
 
   return (
-    <TableFilterSection title="Filtros">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {/* Histórico: las cuentas inactivas siguen siendo consultables. */}
         <BankAccountCombobox
@@ -65,6 +63,5 @@ export function BankMovementsFilters({ filters, onChange, accounts, isLoadingAcc
           </select>
         </label>
       </div>
-    </TableFilterSection>
   );
 }

@@ -18,8 +18,7 @@ const selectClass = 'mt-1 flex h-11 w-full rounded-xl border border-slate-300 bg
  * la Jefa de Cajas lo recibe y lo confirma: hasta entonces el saldo del banco no baja, pero
  * ese dinero ya no está disponible para otra salida.
  */
-export function RegisterWithdrawalModal({ open, onClose, onSubmit }: {
-  open: boolean;
+export function RegisterWithdrawalForm({ onClose, onSubmit }: {
   onClose: () => void;
   onSubmit: (request: RegisterWithdrawal) => Promise<BankCashWithdrawal>;
 }) {
@@ -70,7 +69,6 @@ export function RegisterWithdrawalModal({ open, onClose, onSubmit }: {
   }
 
   return (
-    <Modal open={open} title="Retiro de efectivo para Caja General" onClose={close}>
       <form onSubmit={submit} className="space-y-5">
         <fieldset disabled={busy} className="space-y-5">
           <p className="text-sm text-slate-600">
@@ -115,6 +113,15 @@ export function RegisterWithdrawalModal({ open, onClose, onSubmit }: {
         </fieldset>
         {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
       </form>
-    </Modal>
   );
+}
+
+export function RegisterWithdrawalModal({ open, onClose, onSubmit }: {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (request: RegisterWithdrawal) => Promise<BankCashWithdrawal>;
+}) {
+  return <Modal open={open} title="Retiro de efectivo para Caja General" onClose={onClose}>
+    <RegisterWithdrawalForm onClose={onClose} onSubmit={onSubmit} />
+  </Modal>;
 }

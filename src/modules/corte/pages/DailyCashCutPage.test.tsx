@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { emitNotificationReceived } from '@/modules/notifications/services/notification-events';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -88,12 +88,12 @@ describe('DailyCashCutPage', () => {
     expect(tab('Movimientos bancarios')).toBeInTheDocument();
   });
 
-  it('abre la pestaña que indica la ruta', async () => {
+  it('muestra corte y movimientos juntos en la ruta de Cuentas', async () => {
     mount(paths.bankMovements);
 
-    expect(await screen.findByRole('heading', { name: 'Movimientos bancarios' })).toBeInTheDocument();
-    // Estando en el libro de movimientos no se pide corte ni saldos.
-    expect(fetchDailyCut).not.toHaveBeenCalled();
+    expect(await screen.findByRole('heading', { name: 'Cortes y movimientos' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Movimientos del periodo' })).toBeInTheDocument();
+    expect(fetchDailyCut).toHaveBeenCalled();
     expect(fetchRangeCut).not.toHaveBeenCalled();
     expect(fetchBankBalancesGrouped).not.toHaveBeenCalled();
   });
@@ -102,12 +102,9 @@ describe('DailyCashCutPage', () => {
     mount(paths.corte);
 
     fireEvent.click(tab('Movimientos bancarios'));
-    expect(await screen.findByRole('heading', { name: 'Movimientos bancarios' })).toBeInTheDocument();
-
-    // El estado de la pestaña se deriva de la ruta, así que volver a Saldos desde
-    // Movimientos aterriza en Saldos y no en Corte.
-    fireEvent.click(tab('Saldos bancarios'));
-    expect(await screen.findByRole('heading', { name: 'Saldos bancarios' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Cortes y movimientos' })).toBeInTheDocument();
+    // La ruta dedicada de Cuentas ya no ofrece pestañas de corte genérico.
+    expect(screen.queryByRole('button', { name: 'Saldos bancarios' })).toBeNull();
   });
 
   it('usa el calendario de la cabecera como periodo de los movimientos', async () => {
@@ -138,7 +135,8 @@ describe('DailyCashCutPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
 
     // Los saldos son una foto a una fecha puntual: un rango no significa nada ahí.
-    fireEvent.click(tab('Saldos bancarios'));
+    cleanup();
+    mount(paths.bankBalances);
     await screen.findByRole('heading', { name: 'Saldos bancarios' });
     fireEvent.click(screen.getByRole('button', { name: /Periodo del corte:/ }));
     expect(screen.queryByRole('button', { name: 'Rango' })).toBeNull();

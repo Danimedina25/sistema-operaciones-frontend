@@ -15,8 +15,6 @@ interface SidebarProps { isOpen: boolean; onClose: () => void }
 type Counts = ReturnType<typeof useNavigationState>['counts'];
 
 function GroupBadge({ group, counts }: { group: NavGroup; counts: Counts }) {
-  // La salida bancaria todavía no dispone de contador por solicitud.
-  if (group.children.some(child => child.id === 'bank-returns')) return null;
   const badgeChildren = group.children.filter(child => child.badge);
   if (!badgeChildren.length || badgeChildren.some(child => counts[child.badge!] === null)) return null;
   const total = badgeChildren.reduce((sum, child) => sum + (counts[child.badge!] ?? 0), 0);

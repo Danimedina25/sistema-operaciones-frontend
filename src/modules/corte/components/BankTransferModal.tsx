@@ -18,8 +18,7 @@ import { AvailabilityHint } from './AvailabilityHint';
  * El UUID de la solicitud se conserva al reintentar la misma captura para que un doble clic
  * o un error de red no la registren dos veces.
  */
-export function BankTransferModal({ open, onClose, onSubmit }: {
-  open: boolean;
+export function BankTransferForm({ onClose, onSubmit }: {
   onClose: () => void;
   onSubmit: (request: CreateBankTransfer) => Promise<BankTransfer>;
 }) {
@@ -83,7 +82,6 @@ export function BankTransferModal({ open, onClose, onSubmit }: {
   }
 
   return (
-    <Modal open={open} title="Registrar transferencia entre cuentas" onClose={close}>
       <form onSubmit={submit} className="space-y-5">
         <fieldset disabled={busy} className="space-y-5">
           <p className="text-sm text-slate-600">
@@ -135,6 +133,15 @@ export function BankTransferModal({ open, onClose, onSubmit }: {
         </fieldset>
         {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
       </form>
-    </Modal>
   );
+}
+
+export function BankTransferModal({ open, onClose, onSubmit }: {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (request: CreateBankTransfer) => Promise<BankTransfer>;
+}) {
+  return <Modal open={open} title="Registrar transferencia entre cuentas" onClose={onClose}>
+    <BankTransferForm onClose={onClose} onSubmit={onSubmit} />
+  </Modal>;
 }

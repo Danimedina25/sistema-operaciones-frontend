@@ -54,6 +54,7 @@ export interface BankMovementTotals {
 export interface BankMovementFilters {
   desde: string;
   hasta: string;
+  search?: string;
   bankAccountId: number | null;
   banco: string;
   direccion: BankMovementDirection | '';

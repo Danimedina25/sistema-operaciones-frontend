@@ -134,6 +134,19 @@ export async function searchBankMovements(
   return response.data.data;
 }
 
+/** Nuevo endpoint de solo lectura: aplica la búsqueda antes de paginar. */
+export async function searchBankMovementsText(filters: BankMovementFilters, page: number, size: number): Promise<PaginatedResponse<BankMovement>> {
+  const response = await api.get<BankMovementPageApiResponse>(`${BANK_MOVEMENTS_BASE_PATH}/search`,
+    { params: { ...bankMovementParams(filters), search: filters.search ?? '', page, size } });
+  return response.data.data;
+}
+
+export async function getBankMovementSearchTotals(filters: BankMovementFilters): Promise<BankMovementTotals> {
+  const response = await api.get<BankMovementTotalsApiResponse>(`${BANK_MOVEMENTS_BASE_PATH}/search/summary`,
+    { params: { ...bankMovementParams(filters), search: filters.search ?? '' } });
+  return response.data.data;
+}
+
 /** Totales sobre todo el filtro. Nunca se suman los renglones de la página. */
 export async function getBankMovementTotals(
   filters: BankMovementFilters,

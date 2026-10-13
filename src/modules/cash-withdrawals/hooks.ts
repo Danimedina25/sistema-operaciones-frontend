@@ -33,6 +33,7 @@ export function useRefreshAfterWithdrawal() {
     client.invalidateQueries({ queryKey: [CASH_WITHDRAWALS_KEY] }),
     client.invalidateQueries({ queryKey: ['caja-general'] }),
     client.invalidateQueries({ queryKey: ['bank-movements'] }),
+    client.invalidateQueries({ queryKey: ['bank-work'] }),
     client.invalidateQueries({ queryKey: ['account-availability'] }),
   ]);
 }

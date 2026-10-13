@@ -100,7 +100,7 @@ export default function DailyCashCutPage() {
         fetchBankBalancesGrouped,
     } = useDailyCashCut();
 
-    const isCashCutsView = mainView === 'cashCuts';
+    const isCashCutsView = mainView === 'cashCuts' || mainView === 'bankMovements';
     const isBankBalancesView = mainView === 'bankBalances';
     const isBankMovementsView = mainView === 'bankMovements';
     const isDailyMode = dateMode === 'daily';
@@ -115,9 +115,7 @@ export default function DailyCashCutPage() {
         return isDailyMode ? dailyCut : rangeCut;
     }, [dailyCut, rangeCut, isCashCutsView, isDailyMode]);
 
-    const isLoading = isBankMovementsView
-        ? false
-        : isCashCutsView
+    const isLoading = isCashCutsView
             ? isDailyMode
                 ? isLoadingDailyCut
                 : isLoadingRangeCut
@@ -125,10 +123,6 @@ export default function DailyCashCutPage() {
     const showLoadingOverlay = isLoading && Boolean(currentData);
 
     const handleSearch = async () => {
-        if (isBankMovementsView) {
-            return;
-        }
-
         if (isBankBalancesView) {
             await fetchBankBalancesGrouped(fecha);
             return;
@@ -150,11 +144,6 @@ export default function DailyCashCutPage() {
     });
 
     useEffect(() => {
-        // El libro de movimientos consulta por su cuenta; no hay corte ni saldos que pedir.
-        if (mainView === 'bankMovements') {
-            return;
-        }
-
         if (mainView === 'bankBalances') {
             fetchBankBalancesGrouped(fecha);
             return;
@@ -200,7 +189,7 @@ export default function DailyCashCutPage() {
     const pageTitle = {
         cashCuts: 'Cortes diarios',
         bankBalances: 'Saldos bancarios',
-        bankMovements: 'Movimientos bancarios',
+        bankMovements: 'Cortes y movimientos',
     }[mainView];
 
     const pageDescription = {
@@ -225,7 +214,7 @@ export default function DailyCashCutPage() {
 
             <div className={`space-y-6 ${showLoadingOverlay ? 'pointer-events-none opacity-60' : ''}`}>
                 <div className="space-y-6">
-                    <section className="rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
+                    {!isBankMovementsView && <section className="rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
                         <div className="grid gap-2 sm:grid-cols-3">
                             <button
                                 type="button"
@@ -252,21 +241,18 @@ export default function DailyCashCutPage() {
                             <button
                                 type="button"
                                 onClick={() => selectView('bankMovements')}
-                                className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${mainView === 'bankMovements'
-                                    ? 'bg-slate-900 text-white shadow-md'
-                                    : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                                    }`}
+                                className="rounded-xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
                             >
                                 Movimientos bancarios
                             </button>
                         </div>
-                    </section>
+                    </section>}
                     <PageHeader
                         title={pageTitle}
-                        description={pageDescription}
+                        description={isBankMovementsView ? undefined : pageDescription}
                         actions={(
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                                {canRegisterBankMovements ? (
+                                {canRegisterBankMovements && !isBankMovementsView ? (
                                     <button
                                         type="button"
                                         onClick={() => setWithdrawalOpen(true)}
@@ -276,7 +262,7 @@ export default function DailyCashCutPage() {
                                         Retiro a Caja General
                                     </button>
                                 ) : null}
-                                {canRegisterBankMovements ? (
+                                {canRegisterBankMovements && !isBankMovementsView ? (
                                     <button
                                         type="button"
                                         onClick={() => setTransferOpen(true)}
@@ -311,13 +297,6 @@ export default function DailyCashCutPage() {
                     />
 
                     <WithdrawalsInTransit canCancel={canRegisterBankMovements} />
-
-                    {isBankMovementsView ? (
-                        <BankMovementsSection
-                            desde={isDailyMode ? fecha : startDate}
-                            hasta={isDailyMode ? fecha : endDate}
-                        />
-                    ) : null}
 
                     {isBankBalancesView ? (
                         <BankBalancesSection
@@ -511,6 +490,7 @@ export default function DailyCashCutPage() {
                             </section>
                         </>
                     ) : null}
+                    {isBankMovementsView && <div className="space-y-3"><h2 className="text-base font-semibold text-slate-900">Movimientos del periodo</h2><BankMovementsSection desde={isDailyMode ? fecha : startDate} hasta={isDailyMode ? fecha : endDate} showSummary={false} /></div>}
                 </div>
             </div>
         </div>

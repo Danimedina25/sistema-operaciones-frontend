@@ -45,7 +45,7 @@ import adminUsersActive from '@/shared/assets/navigation/d9857.svg';
 export interface NavIcon { normal: string; active: string }
 export interface NavItem {
   kind: 'item'; id: string; label: string; to: string; access: RouteAccessKey;
-  icon: NavIcon; badge?: 'cashIncome' | 'cashOutflow' | 'bankIncome' | 'commissions';
+  icon: NavIcon; badge?: 'cashIncome' | 'cashOutflow' | 'bankIncome' | 'bankOutflow' | 'commissions';
   cashAction?: boolean;
 }
 export interface NavGroup {
@@ -65,7 +65,7 @@ const pending = item('pending', 'Mis pendientes', paths.myPending, 'myPending', 
 const operations = item('operations', 'Operaciones', paths.operations, 'operations', icon(clipboard, clipboardActive));
 const clients = item('clients', 'Clientes', paths.clientes, 'clientes', icon(person, personActive));
 const partners = item('partners', 'Socios comerciales', paths.mycomercialpartners, 'mycomercialpartners', icon(network, networkActive));
-const balances = item('balances', 'Cuentas bancarias y saldos', paths.bankBalances, 'bankBalances', icon(account, accountActive));
+const balances = item('balances', 'Cuentas bancarias y saldos', paths.bankAccounts, 'bankAccounts', icon(account, accountActive));
 const commissions = item('commissions', 'Comisiones', paths.comisionessocios, 'comisionessocios', icon(dollar, dollarActive));
 
 const cashEntries: NavEntry[] = [
@@ -84,9 +84,9 @@ const bankEntries: NavEntry[] = [
   group('accounts', 'Cuentas', icon(landmark, landmarkActive), [
     balances,
     item('bank-movements', 'Cortes y movimientos', paths.bankMovements, 'bankMovements', icon(scroll, scrollActive)),
-    item('bank-income', 'Entradas bancarias', `${paths.operations}?workQueue=BANK_INCOME&dateFilter=`, 'operations', icon(down, downActive), { badge: 'bankIncome' }),
-    item('bank-returns', 'Salidas bancarias', `${paths.returnsforpayment}?workQueue=BANK_RETURNS&dateFilter=`, 'returnsforpayment', icon(up, upActive)),
-    item('bank-transfer', 'Transferir entre cuentas', `${paths.bankMovements}?nav=transfer`, 'bankMovements', icon(transfer, transferActive)),
+    item('bank-income', 'Entradas bancarias', paths.bankIncome, 'bankIncome', icon(down, downActive), { badge: 'bankIncome' }),
+    item('bank-returns', 'Salidas bancarias', paths.bankOutflow, 'bankOutflow', icon(up, upActive), { badge: 'bankOutflow' }),
+    item('bank-transfer', 'Transferir entre cuentas', paths.bankTransfer, 'bankTransfer', icon(transfer, transferActive)),
   ]),
   operations,
 ];
@@ -147,6 +147,8 @@ export function getVisibleEntries(profile: NavProfile, roles: readonly RoleName[
 export function isNavItemActive(item: NavItem, pathname: string, search: string): boolean {
   const target = new URL(item.to, 'http://local.test');
   if (pathname !== target.pathname) {
+    if ((item.id === 'bank-income' || item.id === 'cash-income') && /^\/operaciones\/[^/]+$/.test(pathname) && new URLSearchParams(search).get('action') === 'review-payment') return true;
+    if ((item.id === 'bank-returns' || item.id === 'cash-returns') && /^\/operaciones\/[^/]+$/.test(pathname) && new URLSearchParams(search).get('action') === 'manage-return') return true;
     if (item.id === 'operations' && /^\/operaciones\/[^/]+$/.test(pathname)) return true;
     if ((item.id === 'cash-returns' || item.id === 'bank-returns') && /^\/retornos-por-pagar\/[^/]+$/.test(pathname)) return true;
     return false;

@@ -206,7 +206,7 @@ export function PaymentsTable({
   useEffect(() => {
     if (!initialReviewPaymentId || initialReviewHandled.current) return;
     const payment = visiblePayments.find(item => item.id === initialReviewPaymentId);
-    if (!payment || payment.tipoPago !== 'EFECTIVO' || !canValidatePaymentType(payment.tipoPago)) return;
+    if (!payment || (payment.tipoPago !== 'CHEQUE' && !canValidatePaymentType(payment.tipoPago))) return;
     initialReviewHandled.current = true;
     openReviewDrawer(payment.id);
     onInitialReviewHandled?.();

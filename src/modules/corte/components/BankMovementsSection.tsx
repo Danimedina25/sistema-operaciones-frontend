@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useDeferredValue, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { QueryState } from '@/shared/components/ui/QueryState';
+import { SearchFilterBar } from '@/shared/components/ui/SearchFilterBar';
 import { useTableFilters } from '@/shared/hooks/use-table-filters';
 import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts';
 import { BankMovementsFilters } from './BankMovementsFilters';
@@ -25,19 +27,30 @@ function defaultSideFilters(): BankMovementSideFilters {
  * es la misma para las tres pestañas. Así cambiar de pestaña conserva el periodo que el
  * usuario venía consultando en lugar de reiniciarlo.
  */
-export function BankMovementsSection({ desde, hasta }: { desde: string; hasta: string }) {
+export function BankMovementsSection({ desde, hasta, showSummary = true }: { desde: string; hasta: string; showSummary?: boolean }) {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { filters: sideFilters, setFilters: setSideFilters } = useTableFilters<BankMovementSideFilters>(
     'table-filters:bank-movements',
     defaultSideFilters(),
   );
+  const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
+  useEffect(() => {
+    const id = Number(searchParams.get('bankAccountId'));
+    if (!Number.isSafeInteger(id) || id <= 0) return;
+    setSideFilters(current => ({ ...current, bankAccountId: id }));
+    const next = new URLSearchParams(searchParams);
+    next.delete('bankAccountId');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams, setSideFilters]);
 
-  const filters: BankMovementFilters = { ...sideFilters, desde, hasta };
+  const filters: BankMovementFilters = { ...sideFilters, desde, hasta, search: deferredSearch };
 
   // La página se guarda junto a los filtros a los que pertenece: al cambiar un filtro
   // cambia el universo consultado y la paginación vuelve al inicio, sin efectos en cascada.
   // Se compara por valor y no por identidad porque `filters` se recompone en cada render
   // al fusionar las fechas de la cabecera con los filtros propios.
-  const filterKey = [desde, hasta, sideFilters.bankAccountId, sideFilters.banco, sideFilters.direccion, sideFilters.tipo].join('|');
+  const filterKey = [desde, hasta, deferredSearch, sideFilters.bankAccountId, sideFilters.banco, sideFilters.direccion, sideFilters.tipo].join('|');
   const [pagination, setPagination] = useState({ filterKey, page: 0 });
   const page = pagination.filterKey === filterKey ? pagination.page : 0;
   const setPage = (next: number) => setPagination({ filterKey, page: next });
@@ -52,18 +65,20 @@ export function BankMovementsSection({ desde, hasta }: { desde: string; hasta: s
 
   return (
     <section className="space-y-6">
-      <BankMovementsFilters
-        filters={sideFilters}
-        onChange={setSideFilters}
-        accounts={accounts}
-        isLoadingAccounts={loadingAccounts}
-      />
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><SearchFilterBar search={search} onSearchChange={setSearch} searchPlaceholder="Concepto, folio o referencia"
+        activeFilters={[
+          ...(sideFilters.bankAccountId ? [{ key: 'account', label: 'Cuenta seleccionada', onRemove: () => setSideFilters(current => ({ ...current, bankAccountId: null })) }] : []),
+          ...(sideFilters.direccion ? [{ key: 'direction', label: sideFilters.direccion === 'ENTRADA' ? 'Entradas' : 'Salidas', onRemove: () => setSideFilters(current => ({ ...current, direccion: '' })) }] : []),
+          ...(sideFilters.banco ? [{ key: 'bank', label: sideFilters.banco, onRemove: () => setSideFilters(current => ({ ...current, banco: '' })) }] : []),
+          ...(sideFilters.tipo ? [{ key: 'type', label: sideFilters.tipo, onRemove: () => setSideFilters(current => ({ ...current, tipo: '' })) }] : []),
+        ]}
+        filters={<BankMovementsFilters filters={sideFilters} onChange={setSideFilters} accounts={accounts} isLoadingAccounts={loadingAccounts} />} /></div>
 
       {rangeProblem ? (
         <p role="alert" className="text-sm text-red-600">{rangeProblem}</p>
       ) : (
         <>
-          <BankMovementsSummary totals={totals.data} isLoading={totals.isLoading} />
+          {showSummary && <BankMovementsSummary totals={totals.data} isLoading={totals.isLoading} />}
 
           <QueryState
             isLoading={movements.isLoading}
