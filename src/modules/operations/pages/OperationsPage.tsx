@@ -8,7 +8,7 @@ import { useUrlFilters } from '@/shared/hooks/use-url-filters';
 import { OperationsFilters } from '@/modules/operations/components/OperationsFilters';
 import { OperationsTable } from '@/modules/operations/components/OperationsTable';
 import { useOperations } from '@/modules/operations/hooks/use-operations';
-import { searchStalledOperations } from '@/modules/operations/api/operations.api';
+import { getOperations, searchStalledOperations } from '@/modules/operations/api/operations.api';
 import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts';
 import { AddOperationPaymentForm } from '@/modules/operations/components/AddOperationPaymentForm';
 import { useAddOperationPayment } from '@/modules/operations/hooks/use-add-operation-payment';
@@ -57,6 +57,7 @@ export default function OperationsPage() {
   const { hasRole, user } = useAuth();
   const isSocio = hasRole('SOCIO_COMERCIAL');
   const isManager = hasRole(['GERENTE']);
+  const showAccountValidationTabs = hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS']);
   const [listView, setListView] = useState<'all' | 'pending' | 'stalled'>(() =>
     isManager && new URLSearchParams(window.location.search).get('view') === 'stalled' ? 'stalled' : 'all');
   const [stalledPage, setStalledPage] = useState(0);
@@ -99,10 +100,12 @@ export default function OperationsPage() {
 
   const showSocioFilter = hasRole(['GERENTE', 'DIRECCION', 'ADMIN']);
   const queryFilters = useMemo<OperationsFiltersType>(() =>
-    isManager && listView === 'pending'
-      ? { ...filters, status: 'PENDIENTE_VALIDACION' }
-      : filters,
-  [filters, isManager, listView]);
+    showAccountValidationTabs && listView === 'pending'
+      ? { ...filters, status: 'ALL', workQueue: 'BANK_INCOME' }
+      : isManager && listView === 'pending'
+        ? { ...filters, status: 'PENDIENTE_VALIDACION' }
+        : filters,
+  [filters, isManager, showAccountValidationTabs, listView]);
 
   const {
     commercialLevelOneUsers,
@@ -158,6 +161,17 @@ export default function OperationsPage() {
     refetchOnWindowFocus: false,
     staleTime: 60_000,
   });
+  const alternateAccountCount = useQuery({
+    queryKey: ['operations-list-account-alternate-count', user?.userId, filters, listView],
+    queryFn: () => getOperations(0, 1, {
+      ...filters,
+      status: 'ALL',
+      workQueue: listView === 'pending' ? '' : 'BANK_INCOME',
+    }),
+    enabled: showAccountValidationTabs,
+    refetchOnWindowFocus: false,
+    staleTime: 60_000,
+  });
   const showingStalled = isManager && listView === 'stalled';
   const stalledRows = stalledQuery.data?.content ?? [];
   const visibleOperations = showingStalled
@@ -171,7 +185,10 @@ export default function OperationsPage() {
 
   async function refreshVisibleOperations(): Promise<void> {
     if (showingStalled) await stalledQuery.refetch();
-    else await fetchOperations(currentPage);
+    else {
+      await fetchOperations(currentPage);
+      if (showAccountValidationTabs) await alternateAccountCount.refetch();
+    }
   }
 
   const { isDeleting, submitDeleteOperation } = useDeleteOperation({
@@ -337,13 +354,25 @@ export default function OperationsPage() {
               setCurrentPage(0);
               if (value !== 'all') setFilters({ ...filters, status: 'ALL', search: '' });
             }}
+          /> : showAccountValidationTabs ? <Tabs
+            label="Vistas de operaciones"
+            options={[
+              { value: 'pending', label: 'Por validar', count: listView === 'pending' ? totalElements : alternateAccountCount.data?.totalElements },
+              { value: 'all', label: 'Todas', count: listView === 'all' ? totalElements : alternateAccountCount.data?.totalElements },
+            ]}
+            value={listView}
+            onChange={(value) => {
+              setListView(value);
+              setCurrentPage(0);
+              setFilters({ ...filters, status: 'ALL' });
+            }}
           /> : undefined}
           filters={showingStalled ? (
             <p className="text-sm text-slate-600">La búsqueda revisa todas las operaciones detenidas antes de paginar.</p>
           ) : <OperationsFilters
             filters={filters}
             onChange={setFilters}
-            showEstatusFilter={!isManager || listView === 'all'}
+            showEstatusFilter={(!isManager && !showAccountValidationTabs) || listView === 'all'}
             showPaymentTypeFilter={showPaymentTypeFilter && !filters.workQueue}
             hideCashPaymentType={hideCashPaymentType}
             bankAccounts={bankAccountsCatalog}

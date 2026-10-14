@@ -19,6 +19,7 @@ import {
 } from '@/shared/utils/whatsapp-message';
 import { buildOperationDetailPath } from '@/routes/paths';
 import { RowActionsMenu } from '@/shared/components/ui/RowActionsMenu';
+import { StatusBadge } from '@/shared/components/ui/StatusBadge';
 import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
 import { ActionDrawer } from '@/shared/components/ui/ActionDrawer';
 import { ReceiptUploadField } from '@/shared/components/ui/ReceiptUploadField';
@@ -60,6 +61,8 @@ interface PaymentsTableProps {
   initialReviewPaymentId?: number;
   onInitialReviewHandled?: () => void;
   reviewOnly?: boolean;
+  sectionTabs?: ReactNode;
+  pendingValidationAmount?: number;
 }
 
 type PaymentActionType = 'VALIDATE' | 'REJECT';
@@ -88,6 +91,8 @@ export function PaymentsTable({
   initialReviewPaymentId,
   onInitialReviewHandled,
   reviewOnly = false,
+  sectionTabs,
+  pendingValidationAmount = 0,
 }: PaymentsTableProps) {
   const { hasRole } = useAuth();
   const { openWhatsApp } = useWhatsAppLink();
@@ -305,7 +310,9 @@ export function PaymentsTable({
     const hasOtherTypePayments = payments.length > 0;
 
     return (
-      <div className="rounded-[1.75rem] border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
+      <div className="rounded-2xl border border-slate-200 bg-white text-center shadow-sm">
+        {sectionTabs && <div className="border-b border-slate-200 px-5 pt-2 text-left">{sectionTabs}</div>}
+        <div className="p-10">
         <ReceiptText className="mx-auto h-8 w-8 text-slate-300" />
         <p className="mt-3 text-sm font-semibold text-slate-700">
           {hasOtherTypePayments ? 'Sin comprobantes de tu tipo' : 'Sin pagos registrados'}
@@ -315,6 +322,7 @@ export function PaymentsTable({
             ? 'Esta operación no tiene comprobantes del tipo que te corresponde validar.'
             : 'Los comprobantes de ingreso aparecerán aquí.'}
         </p>
+        </div>
       </div>
     );
   }
@@ -386,7 +394,7 @@ export function PaymentsTable({
   }
 
   function renderRowActions(payment: OperationPaymentResponse): ReactNode {
-    const { isProcessing, canEdit, canManageCheque, canReview, canNotify, hasActions } =
+    const { isProcessing, canEdit, canManageCheque, canReview, canNotify } =
       getPaymentActionFlags(payment);
 
     return (
@@ -481,11 +489,6 @@ export function PaymentsTable({
           </button>
         )}
 
-        {!hasActions && (
-          <span className="text-xs text-slate-400">
-            Sin acciones
-          </span>
-        )}
       </>
     );
   }
@@ -514,17 +517,17 @@ export function PaymentsTable({
     <>
       {chequePaymentId !== null && <ChequeManager paymentId={chequePaymentId} onClose={() => { setChequePaymentId(null); if (initialReviewPaymentId) onInitialReviewHandled?.(); }} />}
       {!reviewOnly && <div
-        className="
-    overflow-hidden
-    rounded-[1.75rem]
-    border
-    border-slate-200/80
-    bg-white
-    shadow-xl
-    shadow-slate-950/[0.06]
-  "
+        className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${sectionTabs ? 'max-sm:overflow-visible max-sm:border-0 max-sm:bg-transparent max-sm:shadow-none' : ''}`}
       >
-        <div className="border-b border-slate-100 bg-white px-4 py-3 sm:px-6">
+        {sectionTabs ? <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-2 border-b border-slate-200 bg-white px-5 pt-2 sm:px-6 max-sm:border-0 max-sm:bg-transparent max-sm:px-0 max-sm:pt-0">
+          {sectionTabs}
+          <div className="flex flex-wrap items-center gap-3 pb-2 text-sm">
+            {pendingValidationAmount > 0 && !hasRole(['SOCIO_COMERCIAL']) ? <span className="text-slate-500">Por validar <strong className="ml-1 font-bold text-amber-700">{formatCurrency(pendingValidationAmount)}</strong></span>
+              : montoPendientePorRegistrar ? <span className="text-slate-500">Por registrar <strong className="ml-1 font-bold text-amber-700">{formatCurrency(montoPendientePorRegistrar)}</strong></span>
+                : <span className="text-emerald-700">✓ No hay más pagos por registrar</span>}
+            {canAddPayment && onAddPayment && <button type="button" onClick={onAddPayment} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-blue-600 px-3 text-xs font-semibold text-white"><Plus className="size-3.5" /> Registrar ingreso</button>}
+          </div>
+        </div> : <div className="border-b border-slate-100 bg-white px-4 py-3 sm:px-6">
           <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div className="text-left">
               <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600"><FileCheck2 className="h-4 w-4" /> Ingresos</p>
@@ -584,13 +587,14 @@ export function PaymentsTable({
               ) : null}
             </div>
           </div>
-        </div>
+        </div>}
 
         <DataTable
+          rowClassName={(payment) => isCuentas && payment.estatus === 'PENDIENTE_VALIDACION' ? 'bg-amber-50/70' : ''}
           columns={[
             { key: 'amount', header: 'Monto', width: '132px', cell: (payment: OperationPaymentResponse) => <span className="font-semibold tabular-nums text-slate-900">{formatCurrency(payment.monto)}</span> },
             { key: 'type', header: 'Tipo', width: '128px', cell: (payment: OperationPaymentResponse) => <span>{paymentTypeLabels[payment.tipoPago]}{payment.tipoPago === 'CHEQUE' && <span className="block text-xs text-slate-500">{payment.chequeEstado ? chequeLabels[payment.chequeEstado] : 'Requiere conciliación'}</span>}</span> },
-            { key: 'account', header: 'Cuenta destino', cell: (payment: OperationPaymentResponse) => <span className="block min-w-0 truncate" title={`${payment.cuentaDestinoBanco ?? '—'} · ${payment.cuentaDestinoTitular ?? ''}`}>{payment.cuentaDestinoBanco ?? '—'}<span className="block truncate text-xs text-slate-500">{payment.cuentaDestinoTitular}</span></span> },
+            { key: 'account', header: 'Cuenta destino', cell: (payment: OperationPaymentResponse) => payment.tipoPago === 'EFECTIVO' ? <span>Caja General<span className="block text-xs text-slate-500">Entrega directa</span></span> : <span className="block min-w-0 truncate" title={`${payment.cuentaDestinoBanco ?? '—'} · ${payment.cuentaDestinoTitular ?? ''}`}>{payment.cuentaDestinoBanco ?? '—'}<span className="block truncate text-xs text-slate-500">{payment.cuentaDestinoTitular}</span></span> },
             { key: 'date', header: 'Fecha comprobante', width: '132px', cell: (payment: OperationPaymentResponse) => formatDate(payment.fechaComprobante) },
             { key: 'status', header: 'Estatus', kind: 'status', width: '162px', cell: (payment: OperationPaymentResponse) => <span><PaymentStatusBadge status={payment.estatus} />{payment.validadoPorNombre && <span className="mt-1 block text-xs text-slate-500">por {payment.validadoPorNombre}</span>}</span> },
             { key: 'actions', header: 'Acciones', kind: 'actions', align: 'right', width: '250px', cell: (payment: OperationPaymentResponse) => paymentActions(payment) },
@@ -598,16 +602,19 @@ export function PaymentsTable({
           rows={visiblePayments}
           getRowKey={(payment) => payment.id}
           emptyTitle="Sin pagos de ingreso"
+          mobileFieldsLayout="rows"
           mobile={{
-            title: (payment) => <>{formatCurrency(payment.monto)} · {paymentTypeLabels[payment.tipoPago]}</>,
-            status: (payment) => <PaymentStatusBadge status={payment.estatus} />,
+            title: (payment) => formatCurrency(payment.monto),
+            subtitle: (payment) => <>{paymentTypeLabels[payment.tipoPago]}{payment.tipoPago === 'CHEQUE' && payment.chequeEstado === 'PENDIENTE_COBRO_EFECTIVO' ? ' · Cobro en efectivo' : ''}</>,
+            status: (payment) => payment.tipoPago === 'CHEQUE' && payment.chequeEstado === 'PENDIENTE_COBRO_EFECTIVO' ? <StatusBadge tone="pending">Pendiente de cobro</StatusBadge> : <PaymentStatusBadge status={payment.estatus} />,
             fields: [
-              { key: 'account', label: 'Cuenta destino', value: (payment) => payment.cuentaDestinoBanco ?? '—' },
+              { key: 'account', label: 'Cuenta destino', value: (payment) => {
+                const account = payment.tipoPago === 'EFECTIVO' ? 'Caja General · Entrega directa' : [payment.cuentaDestinoBanco, payment.cuentaDestinoTitular].filter(Boolean).join(' · ') || '—';
+                return <span className="block max-w-[190px] truncate" title={account}>{account}</span>;
+              } },
               { key: 'date', label: 'Fecha comprobante', value: (payment) => formatDate(payment.fechaComprobante) },
-              { key: 'registered', label: 'Registrado', value: (payment) => formatDate(payment.fechaPago) },
-              { key: 'validated', label: 'Validado por', value: (payment) => payment.validadoPorNombre ?? '—' },
-              { key: 'age', label: 'Antigüedad', value: (payment) => BANK_PAYMENT_TYPES.includes(payment.tipoPago) ? <AgingBadge effectiveDate={payment.fechaComprobante} createdAt={payment.createdAt} /> : '—' },
-              { key: 'observations', label: 'Observaciones', value: (payment) => payment.observaciones || '—' },
+              { key: 'validated', label: 'Validado', value: (payment) => payment.validadoPorNombre ? `por ${payment.validadoPorNombre}` : '—', visible: (payment) => payment.estatus === 'VALIDADA' },
+              { key: 'age', label: 'Antigüedad', value: (payment) => <AgingBadge effectiveDate={payment.fechaComprobante} createdAt={payment.createdAt} />, visible: (payment) => !hasRole(['SOCIO_COMERCIAL']) && payment.estatus === 'PENDIENTE_VALIDACION' && BANK_PAYMENT_TYPES.includes(payment.tipoPago) },
             ],
             actions: paymentActions,
           }}

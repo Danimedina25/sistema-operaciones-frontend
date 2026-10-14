@@ -10,6 +10,7 @@ import { ReturnPaymentsTable } from './returns/ReturnPaymentsTable.js';
 import { useAuth } from '@/modules/auth/store/auth.context.js';
 import type { CashCounts } from '@/modules/caja-general/types/caja-general.types';
 import { Tabs } from '@/shared/components/ui/Tabs';
+import { isCashReturnMethod } from '@/modules/operations/utils/return-installment';
 
 interface OperationDetailViewProps {
   operation: PaymentOperationResponse;
@@ -84,6 +85,9 @@ export function OperationDetailView({
   const [activeTab, setActiveTab] = useState<'income' | 'returns'>(scrollToReturns ? 'returns' : 'income');
   const { user } = useAuth();
   const isSocio = user?.roles.includes('SOCIO_COMERCIAL');
+  const isCuentas = user?.roles.includes('JEFA_CUENTAS') || user?.roles.includes('AUXILIAR_CUENTAS');
+  const isCajas = user?.roles.includes('JEFA_CAJAS');
+  const visibleReturnCount = returns.filter((item) => isCuentas ? !isCashReturnMethod(item.tipoPago) : isCajas ? isCashReturnMethod(item.tipoPago) : true).length;
 
   useEffect(() => {
     if (!scrollToPayments) return;
@@ -115,14 +119,17 @@ export function OperationDetailView({
 
   const montoPendientePorSolicitar = operation.saldoPendientePorSolicitar;
 
-  const montoPendientePorRetornar = operation.saldoPendienteRetornar
+  const montoPendientePorRetornar = operation.saldoPendienteRetornar;
+  const sectionTabs = <Tabs variant="method" label="Secciones de la operación" value={activeTab} onChange={setActiveTab}
+    className={isSocio ? 'max-sm:grid max-sm:w-full max-sm:grid-cols-2 max-sm:gap-0 max-sm:rounded-xl max-sm:bg-slate-200 max-sm:p-1 max-sm:[&>button]:justify-center max-sm:[&>button]:rounded-lg max-sm:[&>button]:border-0 max-sm:[&>button[aria-selected=true]]:bg-white max-sm:[&>button[aria-selected=true]]:text-slate-900 max-sm:[&>button[aria-selected=true]]:shadow-sm' : ''}
+    options={[{ value: 'income', label: 'Ingresos', count: operation.pagos.length, icon: <ArrowDown className="size-3.5 text-emerald-600" /> }, { value: 'returns', label: isCuentas ? 'Retornos bancarios' : isCajas ? 'Retornos en efectivo' : 'Retornos', count: visibleReturnCount, icon: <ArrowUp className="size-3.5 text-slate-400" /> }]} />;
   return (
-    <div className="mx-auto max-w-[1600px] space-y-5 pb-8">
+    <div className="mx-auto max-w-[1600px] space-y-5 pb-8 max-sm:flex max-sm:flex-col max-sm:gap-4 max-sm:space-y-0">
       <div className={`flex items-center justify-between ${user?.roles.includes('SOCIO_COMERCIAL') ? 'max-sm:hidden' : ''}`}>
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 shadow-sm transition hover:border-slate-300 hover:text-slate-950"
+          className="inline-flex items-center gap-2 py-1 text-sm font-semibold text-[#3b6ef5] transition hover:text-blue-700"
         >
           <ArrowLeft className="h-4 w-4" />
           {backLabel}
@@ -149,14 +156,10 @@ export function OperationDetailView({
         onOperationUpdated={onOperationUpdated}
       />
 
-      <div className={`rounded-xl border border-slate-200 bg-white px-4 pt-2 shadow-sm ${isSocio ? 'max-sm:border-0 max-sm:bg-slate-200 max-sm:p-1 max-sm:shadow-none' : ''}`}>
-        <Tabs variant="method" label="Secciones de la operación" value={activeTab} onChange={setActiveTab}
-          className={isSocio ? 'max-sm:grid max-sm:grid-cols-2 max-sm:gap-0 max-sm:[&>button]:justify-center max-sm:[&>button]:rounded-lg max-sm:[&>button]:border-0 max-sm:[&>button[aria-selected=true]]:bg-white max-sm:[&>button[aria-selected=true]]:text-slate-900 max-sm:[&>button[aria-selected=true]]:shadow-sm' : ''}
-          options={[{ value: 'income', label: 'Ingresos', count: operation.pagos.length, icon: isSocio ? <ArrowDown className="size-3.5 text-emerald-600" /> : undefined }, { value: 'returns', label: 'Retornos', count: returns.length, icon: isSocio ? <ArrowUp className="size-3.5 text-red-600" /> : undefined }]} />
-      </div>
-
       <div ref={paymentsSectionRef} className={activeTab === 'income' ? 'scroll-mt-20' : 'hidden'}>
         <PaymentsTable
+          sectionTabs={sectionTabs}
+          pendingValidationAmount={operation.saldoPendientePorValidar}
           payments={operation.pagos}
           operationId={operation.id}
           clienteNombre={operation.clienteNombre}
@@ -191,6 +194,7 @@ export function OperationDetailView({
 
       <div ref={returnsSectionRef} className={activeTab === 'returns' ? 'scroll-mt-20' : 'hidden'}>
         <ReturnPaymentsTable
+          sectionTabs={sectionTabs}
           returns={returns}
           montoPendientePorRetornar={montoPendientePorRetornar}
           montoPendientePorSolicitar={montoPendientePorSolicitar}

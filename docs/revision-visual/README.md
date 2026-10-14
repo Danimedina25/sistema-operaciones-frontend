@@ -42,7 +42,7 @@ La captura de apertura y las capturas de estados vacíos usan respuestas de lect
 | 08b · Detalle de retornos | [56:890](08b-detalle-retornos-figma.png) | [Antes](08b-detalle-retornos-local-antes.png) | [Estado actual](08b-detalle-retornos-local-despues.png) |
 | 08c · Retorno bancario por pagar | [92:830](08c-retorno-por-pagar-figma.png) | [Antes](08c-retorno-por-pagar-local-antes.png) | [Estado actual](08c-retorno-por-pagar-local-despues.png) |
 
-La captura final 01b muestra movimientos reales del 12 oct 2026 mediante el selector de periodo. El frame usa datos de ejemplo del 1 oct 2026. La cuenta y los saldos locales no se sustituyeron por cifras del diseño. Los frames 07–08c usan la base de Operaciones compartida entre roles; sus diferencias pendientes se corregirán en la etapa «Pantallas compartidas».
+La captura final 01b muestra movimientos reales del 12 oct 2026 mediante el selector de periodo. El frame usa datos de ejemplo del 1 oct 2026. La cuenta y los saldos locales no se sustituyeron por cifras del diseño. Los frames 07–08c usan la base de Operaciones compartida entre roles. El saldo pendiente bancario por operación del frame 08b/08c requiere una respuesta de lectura del backend.
 
 ## Socio Comercial
 
@@ -77,3 +77,13 @@ La captura final 01b muestra movimientos reales del 12 oct 2026 mediante el sele
 
 El Socio local tiene una solicitud por iniciar y una en seguimiento; sus pagos de ingreso ya están completos. También carece de clientes, socios comerciales y comisiones en la semana ilustrada. Las capturas usan esos datos sin sustituir montos por los de Figma.
 Las capturas S1d, S3d y M3d usan una respuesta GET simulada en Chrome sobre la operación local #42 para representar $50,000.00 por registrar; no se envían formularios ni se altera MySQL. El formulario S5/M5 no muestra el resumen de un borrador hasta tener cotización de lectura del backend.
+
+## Pantallas compartidas · Jefa de Cajas
+
+| Frame y estado | Figma | Local antes | Local después |
+| --- | --- | --- | --- |
+| C8 · Operaciones | [93:2055](C8-operaciones-figma.png) | [Antes](C8-operaciones-local-antes.png) | [Estado actual](C8-operaciones-local-despues.png) |
+| C8b · Retornos en efectivo | [93:2170](C8b-detalle-retornos-figma.png) | [Antes](C8b-detalle-retornos-local-antes.png) | [Después](C8b-detalle-retornos-local-despues.png) |
+| C8c · Ingresos | [111:2252](C8c-detalle-ingresos-figma.png) | [Antes](C8c-detalle-ingresos-local-antes.png) | [Después](C8c-detalle-ingresos-local-despues.png) |
+
+La pestaña «Con entregas en efectivo» de C8 espera un filtro paginado de backend. C8b usa la operación local #40, que tiene el mismo total que el ejemplo del frame pero solicitudes en estados distintos. No se alteraron estados, importes ni acciones para fabricar la captura.

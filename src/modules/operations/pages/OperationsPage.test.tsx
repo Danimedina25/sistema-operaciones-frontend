@@ -14,6 +14,8 @@ const mocks = vi.hoisted(() => ({
   success: vi.fn(),
   error: vi.fn(),
   fetchOperations: vi.fn(),
+  getOperations: vi.fn(),
+  listFilters: [] as Array<{ status: string; workQueue: string }>,
   setCurrentPage: vi.fn(),
   operations: [] as PaymentOperationResponse[],
   currentPage: 0,
@@ -32,6 +34,7 @@ vi.mock('@/modules/auth/store/auth.context', () => ({
 
 vi.mock('@/modules/operations/api/operations.api', () => ({
   deleteOperation: mocks.deleteOperation,
+  getOperations: mocks.getOperations,
 }));
 vi.mock('@/modules/operations/api/operations-storage.api', () => ({
   deleteOperationProofByUrl: mocks.deleteProof,
@@ -41,7 +44,9 @@ vi.mock('react-hot-toast', () => ({
 }));
 
 vi.mock('@/modules/operations/hooks/use-operations', () => ({
-  useOperations: () => ({
+  useOperations: (filters: { status: string; workQueue: string }) => {
+    mocks.listFilters.push(filters);
+    return ({
     operations: mocks.operations,
     error: null,
     isLoading: false,
@@ -53,7 +58,8 @@ vi.mock('@/modules/operations/hooks/use-operations', () => ({
     processingOperationId: null,
     handleActivate: vi.fn(),
     handleDeactivate: vi.fn(),
-  }),
+  });
+  },
 }));
 
 vi.mock('@/modules/operations/hooks/use-create-operation', () => ({
@@ -161,6 +167,8 @@ beforeEach(() => {
   mocks.roles = ['ADMIN'];
   mocks.operations = [buildOperation(42)];
   mocks.currentPage = 0;
+  mocks.listFilters = [];
+  mocks.getOperations.mockResolvedValue({ content: [], totalElements: 3, totalPages: 3 });
   mocks.bankEnabled = [];
   mocks.clientsEnabled = [];
   mocks.partnersEnabled = [];
@@ -197,6 +205,22 @@ it('mantiene Nueva operación oculta para Gerente', () => {
   render(<QueryClientProvider client={client}><MemoryRouter><OperationsPage /></MemoryRouter></QueryClientProvider>);
 
   expect(screen.getByRole('heading', { level: 1, name: 'Operaciones' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Nueva operación' })).not.toBeInTheDocument();
+});
+
+it.each(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS'])('muestra vistas de validación con conteos del servidor para %s', async (role) => {
+  mocks.roles = [role];
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  render(<QueryClientProvider client={client}><MemoryRouter><OperationsPage /></MemoryRouter></QueryClientProvider>);
+
+  const tabs = screen.getByRole('tablist', { name: 'Vistas de operaciones' });
+  expect(within(tabs).getByRole('tab', { name: /Todas\s*21/ })).toHaveAttribute('aria-selected', 'true');
+  await waitFor(() => expect(within(tabs).getByRole('tab', { name: /Por validar\s*3/ })).toBeInTheDocument());
+  expect(mocks.getOperations).toHaveBeenCalledWith(0, 1, expect.objectContaining({ workQueue: 'BANK_INCOME' }));
+
+  await userEvent.click(within(tabs).getByRole('tab', { name: /Por validar\s*3/ }));
+  expect(mocks.listFilters[mocks.listFilters.length - 1]).toEqual(expect.objectContaining({ workQueue: 'BANK_INCOME' }));
+  await waitFor(() => expect(mocks.getOperations).toHaveBeenCalledWith(0, 1, expect.objectContaining({ workQueue: '' })));
   expect(screen.queryByRole('button', { name: 'Nueva operación' })).not.toBeInTheDocument();
 });
 

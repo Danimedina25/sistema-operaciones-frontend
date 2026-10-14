@@ -34,6 +34,17 @@ describe('DataTable', () => {
     expect(screen.getAllByRole('columnheader')).toHaveLength(3);
   });
 
+  it('puede compactar los campos móviles y ocultar los que no aplican a la fila', () => {
+    render(<DataTable columns={columns} rows={rows} getRowKey={(row) => row.id} emptyTitle="Sin datos" mobileFieldsLayout="rows" mobile={{ ...mobile, fields: [
+      { key: 'folio', label: 'Folio', value: (row) => row.id },
+      { key: 'validated', label: 'Validado por', value: () => 'Cuentas', visible: (row) => row.status === 'Validado' },
+    ] }} />);
+    const card = within(screen.getByTestId('data-table-mobile')).getByRole('article');
+    expect(card).toHaveTextContent('Folio');
+    expect(card).not.toHaveTextContent('Validado por');
+    expect(card.querySelector('dl')).toHaveClass('space-y-1.5');
+  });
+
   it('muestra un mensaje específico cuando no hay filas', () => {
     render(<DataTable columns={columns} rows={[]} getRowKey={(row) => row.id} mobile={mobile} emptyTitle="No hay retornos por pagar" emptyDescription="Aparecerán cuando un socio los solicite." />);
     expect(screen.getByText('No hay retornos por pagar')).toBeInTheDocument();

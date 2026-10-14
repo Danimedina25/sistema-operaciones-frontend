@@ -16,7 +16,7 @@ export interface DataTableMobile<Row> {
   title: (row: Row) => ReactNode;
   subtitle?: (row: Row) => ReactNode;
   status?: (row: Row) => ReactNode;
-  fields: readonly { key: string; label: string; value: (row: Row) => ReactNode }[];
+  fields: readonly { key: string; label: string; value: (row: Row) => ReactNode; visible?: (row: Row) => boolean }[];
   extra?: (row: Row) => ReactNode;
   actions?: (row: Row) => ReactNode;
 }
@@ -33,6 +33,9 @@ interface DataTableProps<Row> {
   showHeaderWhenEmpty?: boolean;
   compact?: boolean;
   mobileCardClassName?: string;
+  mobileTitleClassName?: string;
+  mobileFieldsLayout?: 'grid' | 'rows';
+  rowClassName?: (row: Row) => string;
   isLoading?: boolean;
   loadingLabel?: string;
 }
@@ -49,6 +52,9 @@ export function DataTable<Row>({
   showHeaderWhenEmpty = false,
   compact = false,
   mobileCardClassName,
+  mobileTitleClassName,
+  mobileFieldsLayout = 'grid',
+  rowClassName,
   isLoading = false,
   loadingLabel = 'Cargando...',
 }: DataTableProps<Row>) {
@@ -90,7 +96,7 @@ export function DataTable<Row>({
             {rows.map((row) => {
               const expanded = expandedRow?.(row);
               return <Fragment key={getRowKey(row)}>
-                <tr className="border-t border-slate-100 transition hover:bg-blue-50/40">
+                <tr className={cn('border-t border-slate-100 transition hover:bg-blue-50/40', rowClassName?.(row))}>
                   {columns.map((column) => (
                     <td key={column.key} className={cn('min-w-0 px-3 py-3.5 align-middle text-slate-700 [overflow-wrap:anywhere]', column.align === 'right' && 'text-right', column.className)}>
                       {column.cell(row)}
@@ -108,21 +114,21 @@ export function DataTable<Row>({
           <article key={getRowKey(row)} className={cn('min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-sm', mobileCardClassName)}>
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <div className="break-words text-sm font-semibold text-slate-900">{mobile.title(row)}</div>
-                {mobile.subtitle && <div className="mt-1 break-words text-xs text-slate-500">{mobile.subtitle(row)}</div>}
+                <div className={cn('break-words text-base font-semibold text-slate-900', mobileTitleClassName)}>{mobile.title(row)}</div>
               </div>
               {mobile.status && <div className="shrink-0">{mobile.status(row)}</div>}
             </div>
-            {mobile.fields.length > 0 && <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2">
-              {mobile.fields.map((field) => (
-                <div key={field.key} className="min-w-0">
-                  <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{field.label}</dt>
-                  <dd className="mt-0.5 break-words text-xs font-medium text-slate-700">{field.value(row)}</dd>
+            {mobile.subtitle && <div className="mt-1 break-words text-xs text-slate-500">{mobile.subtitle(row)}</div>}
+            {mobile.fields.length > 0 && <dl className={cn('mt-2', mobileFieldsLayout === 'rows' ? 'space-y-1.5' : 'grid grid-cols-2 gap-x-3 gap-y-2')}>
+              {mobile.fields.filter((field) => field.visible?.(row) ?? true).map((field) => (
+                <div key={field.key} className={cn('min-w-0', mobileFieldsLayout === 'rows' && 'flex items-baseline justify-between gap-3')}>
+                  <dt className={cn('text-[10px] font-semibold uppercase tracking-wide text-slate-400', mobileFieldsLayout === 'rows' && 'shrink-0 text-xs font-normal normal-case text-slate-500')}>{field.label}</dt>
+                  <dd className={cn('mt-0.5 break-words text-xs font-medium text-slate-700', mobileFieldsLayout === 'rows' && 'text-right')}>{field.value(row)}</dd>
                 </div>
               ))}
             </dl>}
             {mobile.extra && <div className="mt-3">{mobile.extra(row)}</div>}
-            {mobile.actions && <div className="mt-4 flex items-center gap-2">{mobile.actions(row)}</div>}
+            {mobile.actions && <div className="mt-3 flex items-center gap-2">{mobile.actions(row)}</div>}
           </article>
         ))}
       </div>
