@@ -93,7 +93,7 @@ export function OperationDetailCard({
 
   const { hasRole } = useAuth();
   const isSocio = hasRole(['SOCIO_COMERCIAL']);
-  const isStaff = hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS', 'JEFA_CAJAS']);
+  const isStaff = hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS', 'JEFA_CAJAS', 'GERENTE', 'DIRECCION', 'ADMIN']);
   const canReviewCommission = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
   const canShareViaWhatsApp = hasRole(['SOCIO_COMERCIAL', 'ADMIN', 'GERENTE', 'DIRECCION']);
 

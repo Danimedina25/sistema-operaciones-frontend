@@ -20,13 +20,14 @@ const columns: DataTableColumn<GeneralCutMovement>[] = [
   { key: 'amount', header: 'Monto', kind: 'actions', width: '12%', cell: row => <strong className={'whitespace-nowrap ' + (row.direction === 'SALIDA' ? 'text-red-600' : 'text-emerald-700')}>{formatMoney(row.direction === 'SALIDA' ? -row.amount : row.amount)}</strong> },
 ];
 
-function Row({ label, cash, bank, total, strong = false }: { label: string; cash: number; bank: number; total: number; strong?: boolean }) {
+function Row({ label, cash, bank, total, strong = false, tone }: { label: string; cash: number; bank: number; total: number; strong?: boolean; tone?: 'income' | 'outflow' | 'internal' }) {
+  const toneClass = tone === 'income' ? 'text-emerald-700' : tone === 'outflow' ? 'text-red-700' : tone === 'internal' ? 'text-blue-700' : '';
   return <div className={'border-b border-slate-100 px-4 py-3 text-xs sm:grid sm:grid-cols-[minmax(0,1fr)_repeat(3,minmax(82px,1fr))] sm:gap-2 sm:text-sm ' + (strong ? 'font-semibold text-slate-950' : 'text-slate-700')}>
     <span className="block font-semibold">{label}</span>
     <div className="mt-2 grid grid-cols-3 gap-2 sm:contents">
-      <span className="min-w-0 text-right text-[11px] tabular-nums sm:text-sm"><small className="block text-[10px] text-slate-500 sm:hidden">Efectivo</small>{formatMoney(cash)}</span>
-      <span className="min-w-0 text-right text-[11px] tabular-nums sm:text-sm"><small className="block text-[10px] text-slate-500 sm:hidden">Bancos</small>{formatMoney(bank)}</span>
-      <span className="min-w-0 text-right text-[11px] tabular-nums sm:text-sm"><small className="block text-[10px] text-slate-500 sm:hidden">Total</small>{formatMoney(total)}</span>
+      <span className={'min-w-0 text-right text-[11px] tabular-nums sm:text-sm ' + toneClass}><small className="block text-[10px] text-slate-500 sm:hidden">Efectivo</small>{formatMoney(cash)}</span>
+      <span className={'min-w-0 text-right text-[11px] tabular-nums sm:text-sm ' + toneClass}><small className="block text-[10px] text-slate-500 sm:hidden">Bancos</small>{formatMoney(bank)}</span>
+      <span className={'min-w-0 text-right text-[11px] tabular-nums sm:text-sm ' + toneClass}><small className="block text-[10px] text-slate-500 sm:hidden">Total</small>{formatMoney(total)}</span>
     </div>
   </div>;
 }
@@ -38,10 +39,11 @@ function Summary({ cut }: { cut: GeneralCut }) {
       <span>Concepto</span><span className="text-right">Efectivo</span><span className="text-right">Bancos</span><span className="text-right">Total</span>
     </div>
     <Row label="Saldo inicial" cash={cut.cashInitial} bank={cut.bankInitial} total={cut.totalInitial} />
-    <Row label="+ Entradas" cash={cut.cashIncome} bank={cut.bankIncome} total={cut.totalIncome} />
-    <Row label="− Salidas" cash={cut.cashOutflow} bank={cut.bankOutflow} total={cut.totalOutflow} />
-    <Row label="↔ Entre efectivo y bancos" cash={cut.cashInternal} bank={cut.bankInternal} total={cut.totalInternal} />
+    <Row label="+ Entradas" cash={cut.cashIncome} bank={cut.bankIncome} total={cut.totalIncome} tone="income" />
+    <Row label="− Salidas" cash={cut.cashOutflow} bank={cut.bankOutflow} total={cut.totalOutflow} tone="outflow" />
+    <Row label="↔ Entre efectivo y bancos" cash={cut.cashInternal} bank={cut.bankInternal} total={cut.totalInternal} tone="internal" />
     <Row label="= Saldo final" cash={cut.cashFinal} bank={cut.bankFinal} total={cut.totalFinal} strong />
+    <p className="bg-slate-50 px-4 py-3 text-xs text-slate-500">Movimientos internos: trasladan dinero entre Caja y bancos sin alterar el total. Pendientes de confirmación se muestran en En tránsito.</p>
     {cut.difference !== 0 && <p role="alert" className="bg-amber-50 px-4 py-3 text-xs text-amber-900">Diferencia del periodo: {formatMoney(cut.difference)}. Revisa los movimientos y los saldos iniciales.</p>}
   </section>;
 }
@@ -56,8 +58,8 @@ export default function GeneralCutPage() {
     queryFn: () => getGeneralCut(period.startDate, period.endDate, page) });
   const cut = query.data;
   return <div className="space-y-5">
-    <PageHeader title="Corte general" actions={<div className="flex items-center gap-3"><span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">Solo consulta</span>
-      <PeriodSelector value={period} onApply={next => { setPeriod(next); setPage(0); }} allowAll={false} compact /></div>} />
+    <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="flex items-center gap-2"><PageHeader title="Corte general" /><span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">Solo consulta</span></div><p className="mt-1 text-sm text-slate-500">Todo el dinero del negocio: efectivo en Caja General y dinero en cuentas bancarias.</p></div>
+      <PeriodSelector value={period} onApply={next => { setPeriod(next); setPage(0); }} allowAll={false} compact /></div>
     <QueryState isLoading={query.isPending} error={query.error} onRetry={() => void query.refetch()} loadingLabel="Calculando corte general…">
       {cut && <>
         <section className="grid gap-4 rounded-2xl bg-slate-950 p-5 text-white shadow-sm md:grid-cols-[minmax(0,1fr)_repeat(2,minmax(170px,240px))] md:p-6">
@@ -89,6 +91,7 @@ export default function GeneralCutPage() {
             ] }} emptyTitle="Sin movimientos en este periodo" emptyDescription="Prueba con otro periodo para consultar el libro." />
           <div className="border-t border-slate-100 p-3"><Pagination currentPage={page + 1} totalPages={cut.totalPages} totalElements={cut.totalMovements} onPageChange={value => setPage(value - 1)} /></div>
         </section>
+        <p className="rounded-xl bg-amber-50 px-4 py-3 text-xs text-amber-900"><strong>SOLO CONSULTA · Resumen financiero</strong><br />El corte consolida efectivo y bancos del periodo seleccionado. Los movimientos en tránsito están pendientes de confirmación en destino.</p>
       </>}
     </QueryState>
   </div>;

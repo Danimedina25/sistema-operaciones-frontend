@@ -40,7 +40,7 @@ export default function ClientesPage() {
   );
   const [currentPage, setCurrentPage] = useState(1);
 
-  const pageSize = 10;
+  const pageSize = 6;
 
   const {
     clientes,
@@ -105,7 +105,7 @@ export default function ClientesPage() {
   return (
     <div className="space-y-3 sm:space-y-6">
       <PageHeader title="Clientes" className={isSocio ? 'max-sm:hidden' : undefined} actions={<CanAccess roles={['ADMIN', 'GERENTE', 'SOCIO_COMERCIAL']}>
-        <Button type="button" variant={isSocio ? 'dark' : 'primary'} onClick={() => setIsCreateModalOpen(true)}>Nuevo cliente</Button>
+        <Button type="button" variant="dark" onClick={() => setIsCreateModalOpen(true)}>＋ Nuevo cliente</Button>
       </CanAccess>} />
 
       {isSocio && <SocioMobileNetworkTabs />}

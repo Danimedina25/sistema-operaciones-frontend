@@ -14,8 +14,9 @@ interface Props {
 }
 
 export function ClientesTable({ clientes, processingClienteId, onEdit, onActivate, onDeactivate, onDelete }: Props) {
+  const initials = (value: string) => value.trim().split(/\s+/).slice(0, 2).map(part => part.charAt(0)).join('').toLocaleUpperCase('es-MX');
   const name = (cliente: ClienteResponse) => <div className="flex min-w-0 items-center gap-3">
-    <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">{cliente.nombre.trim().charAt(0).toLocaleUpperCase('es-MX')}</span>
+    <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">{initials(cliente.nombre)}</span>
     <span className="min-w-0 truncate font-semibold text-slate-900" title={cliente.nombre}>{cliente.nombre}</span>
     {!cliente.activo && <ClienteStatusBadge active={false} />}
   </div>;
@@ -30,7 +31,7 @@ export function ClientesTable({ clientes, processingClienteId, onEdit, onActivat
     { key: 'name', header: 'Nombre', cell: name },
     { key: 'actions', header: 'Opciones', cell: actions, kind: 'actions', align: 'right', width: '90px' },
   ];
-  return <DataTable columns={columns} rows={clientes} getRowKey={(cliente) => cliente.id}
+  return <DataTable columns={columns} rows={clientes} dense getRowKey={(cliente) => cliente.id}
     emptyTitle="No se encontraron clientes" emptyDescription="Prueba otra búsqueda o cambia el filtro de estado."
     mobile={{ title: name, fields: [], actions }} />;
 }

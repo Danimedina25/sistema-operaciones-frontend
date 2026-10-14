@@ -108,7 +108,12 @@ export default function CommercialPartnersPage() {
 
   return (
     <div className="space-y-3 sm:space-y-6">
-      <PageHeader title="Socios comerciales" className={isSocio ? 'max-sm:hidden' : undefined} actions={<Button type="button" variant={isSocio ? 'dark' : 'primary'} onClick={() => setIsCreateModalOpen(true)}>Nuevo socio comercial</Button>} />
+      <PageHeader title="Socios comerciales" className={isSocio ? 'max-sm:hidden' : undefined} actions={<Button type="button" variant="dark" onClick={() => setIsCreateModalOpen(true)}>＋ Nuevo socio comercial</Button>} />
+
+      {!isSocio && <div className="space-y-3">
+        <p className="flex flex-wrap items-center gap-2 text-sm text-slate-500"><span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-semibold text-violet-700">Nivel 2</span><span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-semibold text-violet-700">Nivel 3</span>Socios de la red que reciben comisión pero no entran al sistema.</p>
+        <p className="rounded-xl bg-blue-50 px-4 py-3 text-sm text-blue-800">Los socios de nivel 1 tienen acceso al sistema y se administran en <a href="/usuarios" className="font-semibold text-blue-600 hover:underline">Administración › Usuarios →</a></p>
+      </div>}
 
       {isSocio && <SocioMobileNetworkTabs />}
 

@@ -32,6 +32,7 @@ interface DataTableProps<Row> {
   emptyIcon?: ComponentType<{ className?: string }>;
   showHeaderWhenEmpty?: boolean;
   compact?: boolean;
+  dense?: boolean;
   mobileCardClassName?: string;
   mobileTitleClassName?: string;
   mobileFieldsLayout?: 'grid' | 'rows';
@@ -51,6 +52,7 @@ export function DataTable<Row>({
   emptyIcon,
   showHeaderWhenEmpty = false,
   compact = false,
+  dense = false,
   mobileCardClassName,
   mobileTitleClassName,
   mobileFieldsLayout = 'grid',
@@ -86,7 +88,7 @@ export function DataTable<Row>({
           <thead className="bg-slate-50 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
             <tr>
               {columns.map((column) => (
-                <th key={column.key} scope="col" className={cn('px-3 py-3 font-semibold', column.align === 'right' && 'text-right', column.className)}>
+                <th key={column.key} scope="col" className={cn('px-3 py-3 font-semibold', dense && 'py-2', column.align === 'right' && 'text-right', column.className)}>
                   {column.header}
                 </th>
               ))}
@@ -98,7 +100,7 @@ export function DataTable<Row>({
               return <Fragment key={getRowKey(row)}>
                 <tr className={cn('border-t border-slate-100 transition hover:bg-blue-50/40', rowClassName?.(row))}>
                   {columns.map((column) => (
-                    <td key={column.key} className={cn('min-w-0 px-3 py-3.5 align-middle text-slate-700 [overflow-wrap:anywhere]', column.align === 'right' && 'text-right', column.className)}>
+                    <td key={column.key} className={cn('min-w-0 px-3 py-3.5 align-middle text-slate-700 [overflow-wrap:anywhere]', dense && 'py-2', column.align === 'right' && 'text-right', column.className)}>
                       {column.cell(row)}
                     </td>
                   ))}

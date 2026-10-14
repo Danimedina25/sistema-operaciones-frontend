@@ -162,7 +162,7 @@ export function OperationsTable({
     </div>
   );
   const viewButton = (operation: PaymentOperationResponse) => (
-    <Button type="button" variant="neutral" onClick={() => onViewDetail(operation.id)}>Ver</Button>
+    <Button type="button" variant="neutral" className={stalledView ? 'h-8 px-3 text-xs' : undefined} onClick={() => onViewDetail(operation.id)}>Ver</Button>
   );
   const mobileViewButton = (operation: PaymentOperationResponse) => (
     <Button type="button" variant="neutral" className="h-8 px-3 text-xs" onClick={() => onViewDetail(operation.id)}>Ver</Button>
@@ -170,7 +170,7 @@ export function OperationsTable({
   const actionsCell = (operation: PaymentOperationResponse) => (
     <div className="flex items-center justify-end gap-1 whitespace-nowrap">
       {viewButton(operation)}
-      <RowActionsMenu triggerLabel="" ariaLabel="Más opciones" triggerClassName="min-w-10 shrink-0 justify-center px-2">{renderActions(operation)}</RowActionsMenu>
+      <RowActionsMenu triggerLabel="" ariaLabel="Más opciones" triggerClassName={stalledView ? 'h-8 min-w-8 shrink-0 justify-center px-1' : 'min-w-10 shrink-0 justify-center px-2'}>{renderActions(operation)}</RowActionsMenu>
     </div>
   );
   const commonColumns: DataTableColumn<PaymentOperationResponse>[] = [
@@ -198,6 +198,7 @@ export function OperationsTable({
   return (
     <DataTable
       columns={columns}
+      dense={stalledView}
       rows={operations}
       getRowKey={(operation) => operation.id}
       isLoading={isLoading}

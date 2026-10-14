@@ -87,3 +87,21 @@ Las capturas S1d, S3d y M3d usan una respuesta GET simulada en Chrome sobre la o
 | C8c · Ingresos | [111:2252](C8c-detalle-ingresos-figma.png) | [Antes](C8c-detalle-ingresos-local-antes.png) | [Después](C8c-detalle-ingresos-local-despues.png) |
 
 La pestaña «Con entregas en efectivo» de C8 espera un filtro paginado de backend. C8b usa la operación local #40, que tiene el mismo total que el ejemplo del frame pero solicitudes en estados distintos. No se alteraron estados, importes ni acciones para fabricar la captura.
+
+## Gerente
+
+| Frame | Figma | Local antes | Local después |
+| --- | --- | --- | --- |
+| G1 · Inicio | [159:1215](G1-inicio-figma.png) | [Antes](G1-inicio-local-antes.png) | [Después](G1-inicio-local-despues.png) |
+| G2 · Operaciones detenidas | [160:1275](G2-operaciones-detenidas-figma.png) | [Antes](G2-operaciones-detenidas-local-antes.png) | [Después](G2-operaciones-detenidas-local-despues.png) |
+| G2b · Detalle con eliminar | [160:1464](G2b-detalle-eliminar-figma.png) | [Antes](G2b-detalle-eliminar-local-antes.png) | [Después](G2b-detalle-eliminar-local-despues.png) |
+| G3 · Comisiones | [161:1397](G3-comisiones-figma.png) | [Antes](G3-comisiones-local-antes.png) | [Después](G3-comisiones-local-despues.png) |
+| G3b · Pagar comisión | [161:1588](G3b-pagar-comision-figma.png) | [Antes](G3b-pagar-comision-local-antes.png) | [Después](G3b-pagar-comision-local-despues.png) |
+| G4 · Usuarios | [162:1519](G4-usuarios-figma.png) | [Antes](G4-usuarios-local-antes.png) | [Después](G4-usuarios-local-despues.png) |
+| G5 · Configuración | [162:1757](G5-configuracion-figma.png) | [Antes](G5-configuracion-local-antes.png) | [Después](G5-configuracion-local-despues.png) |
+| G7 · Cuentas y saldos | [169:1938](G7-cuentas-saldos-figma.png) | [Antes](G7-cuentas-saldos-local-antes.png) | [Estado actual](G7-cuentas-saldos-local-despues.png) |
+| G9 · Clientes | [169:2639](G9-clientes-figma.png) | [Antes](G9-clientes-local-antes.png) | [Después](G9-clientes-local-despues.png) |
+| G10 · Socios comerciales | [169:2888](G10-socios-comerciales-figma.png) | [Antes](G10-socios-comerciales-local-antes.png) | [Después](G10-socios-comerciales-local-despues.png) |
+| G11 · Corte general | [184:2098](G11-corte-general-figma.png) | [Antes](G11-corte-general-local-antes.png) | [Después](G11-corte-general-local-despues.png) |
+
+Capturas locales a 1440 px con `prueba.gerente@prueba.test`; cifras y usuarios son los datos reales locales. G3/G3b seleccionan «Este mes» para mostrar la comisión pendiente local de $10.00. El frame de G11 usa otro periodo y datos de ejemplo; el corte local conserva las cifras que entrega su API.

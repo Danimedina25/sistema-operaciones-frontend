@@ -4,6 +4,7 @@ import { RowActionsMenu } from '@/shared/components/ui/RowActionsMenu';
 import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
 import { formatAccount, formatPercent } from '@/shared/format';
 import type { CommercialPartnerResponse } from '../types/socioscomerciales.types';
+import { Landmark } from 'lucide-react';
 
 interface Props {
   commercialPartners: CommercialPartnerResponse[];
@@ -15,8 +16,9 @@ interface Props {
 }
 
 export function CommercialPartnersTable({ commercialPartners, processingPartnerId, onEdit, onActivate, onDeactivate, onDelete }: Props) {
+  const initials = (value: string) => value.trim().split(/\s+/).slice(0, 2).map(part => part.charAt(0)).join('').toLocaleUpperCase('es-MX');
   const name = (partner: CommercialPartnerResponse) => <div className="flex min-w-0 items-center gap-3">
-    <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-100 text-xs font-bold text-violet-700">{partner.nombre.trim().charAt(0).toLocaleUpperCase('es-MX')}</span>
+    <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-100 text-xs font-bold text-violet-700">{initials(partner.nombre)}</span>
     <span className="min-w-0 truncate font-semibold text-slate-900" title={partner.nombre}>{partner.nombre}</span>
     {!partner.activo && <StatusBadge active={false} />}
   </div>;
@@ -27,7 +29,7 @@ export function CommercialPartnersTable({ commercialPartners, processingPartnerI
       : <button type="button" onClick={() => onActivate(partner.id)} className="block w-full px-4 py-2.5 text-left text-sm text-emerald-700 hover:bg-emerald-50">Activar</button>}
     <CanAccess roles={['ADMIN', 'DIRECCION']}><button type="button" onClick={() => onDelete(partner)} className="block w-full border-t border-red-100 px-4 py-2.5 text-left text-sm text-red-900 hover:bg-red-50">Eliminar definitivamente</button></CanAccess>
   </RowActionsMenu>;
-  const account = (partner: CommercialPartnerResponse) => <span title={`${partner.banco} · ${partner.titularCuenta}`}>{formatAccount(partner.banco, partner.cuentaBancaria)}</span>;
+  const account = (partner: CommercialPartnerResponse) => <div className="flex items-start gap-2" title={`${partner.banco} · ${partner.titularCuenta}`}><Landmark aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" /><span className="min-w-0"><span className="block truncate text-slate-900">{formatAccount(partner.banco, partner.cuentaBancaria)}</span><small className="block truncate text-xs text-slate-400">Titular: {partner.titularCuenta}</small></span></div>;
   const columns: DataTableColumn<CommercialPartnerResponse>[] = [
     { key: 'name', header: 'Nombre', cell: name },
     { key: 'account', header: 'Cuenta para pago de comisión', cell: account, width: '270px' },

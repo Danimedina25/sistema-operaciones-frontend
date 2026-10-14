@@ -16,9 +16,10 @@ interface Props {
   onViewDetail: (beneficiary: CommissionPartnerSummaryResponse) => void;
   canManagePayments: boolean;
   periodLabel?: string;
+  showStatus?: boolean;
 }
 
-export function CommissionBeneficiariesTable({ beneficiaries, onPayBeneficiary, onViewDetail, canManagePayments, periodLabel }: Props) {
+export function CommissionBeneficiariesTable({ beneficiaries, onPayBeneficiary, onViewDetail, canManagePayments, periodLabel, showStatus = true }: Props) {
   const { openWhatsApp } = useWhatsAppLink();
   const [page, setPage] = useState(1);
   useEffect(() => setPage(1), [beneficiaries]);
@@ -32,8 +33,8 @@ export function CommissionBeneficiariesTable({ beneficiaries, onPayBeneficiary, 
   function actions(row: CommissionPartnerSummaryResponse) {
     const canPay = row.commissionIdsToPay?.length > 0;
     return <div className="flex flex-wrap items-center justify-end gap-2">
-      <Button variant="neutral" onClick={() => onViewDetail(row)}>Ver detalle</Button>
-      {canPay ? canManagePayments ? <Button variant="primary" onClick={() => onPayBeneficiary(row)}>Pagar</Button>
+      <Button variant="neutral" className="h-8 px-3 text-xs" onClick={() => onViewDetail(row)}>Ver detalle</Button>
+      {canPay ? canManagePayments ? <Button variant="dark" className="h-8 px-3 text-xs" onClick={() => onPayBeneficiary(row)}>Pagar</Button>
         : <span className="text-xs text-slate-400">Pendiente de pago</span>
         : row.paymentProofUrl ? <Button variant="neutral" onClick={() => window.open(row.paymentProofUrl!, '_blank')}>Ver comprobante</Button>
           : <span className="text-xs text-slate-400">Sin comprobante</span>}
@@ -43,12 +44,12 @@ export function CommissionBeneficiariesTable({ beneficiaries, onPayBeneficiary, 
     </div>;
   }
   const columns: DataTableColumn<CommissionPartnerSummaryResponse>[] = [
-    { key: 'beneficiary', header: 'Beneficiario', width: '28%', cell: row => <span className="block min-w-0"><strong className="block truncate text-slate-900" title={row.nombre}>{row.nombre}</strong><small className="block truncate text-slate-500" title={row.banco && row.cuentaBancaria ? formatAccount(row.banco, row.cuentaBancaria) : undefined}>{row.banco && row.cuentaBancaria ? formatAccount(row.banco, row.cuentaBancaria) : row.beneficiaryType === 'COMMERCIAL_PARTNER' ? 'Socio comercial' : 'Usuario'}</small></span> },
+    { key: 'beneficiary', header: 'Beneficiario', width: showStatus ? '28%' : '32%', cell: row => <span className="block min-w-0"><strong className="block truncate text-slate-900" title={row.nombre}>{row.nombre}</strong><small className="block truncate text-slate-500" title={row.banco && row.cuentaBancaria ? formatAccount(row.banco, row.cuentaBancaria) : undefined}>{row.banco && row.cuentaBancaria ? formatAccount(row.banco, row.cuentaBancaria) : row.beneficiaryType === 'COMMERCIAL_PARTNER' ? 'Socio comercial' : 'Usuario'}</small></span> },
     { key: 'week', header: 'Semana', width: '15%', cell: () => periodLabel ?? '—' },
     { key: 'operations', header: 'Operaciones', width: '10%', cell: row => row.totalOperaciones },
     { key: 'amount', header: 'Por pagar', width: '15%', cell: row => <strong className="whitespace-nowrap text-amber-700">{formatMoney(row.totalPendientes)}</strong> },
-    { key: 'status', header: 'Estado', kind: 'status', width: '10%', cell: status },
-    { key: 'actions', header: 'Acciones', kind: 'actions', width: '22%', cell: actions },
+    ...(showStatus ? [{ key: 'status', header: 'Estado', kind: 'status' as const, width: '10%', cell: status }] : []),
+    { key: 'actions', header: 'Acciones', kind: 'actions', width: showStatus ? '22%' : '28%', cell: actions },
   ];
   return <><DataTable columns={columns} rows={rows} getRowKey={row => row.beneficiaryType + '-' + row.beneficiaryId}
     mobile={{ title: row => row.nombre, subtitle: row => row.banco && row.cuentaBancaria ? formatAccount(row.banco, row.cuentaBancaria) : row.beneficiaryType === 'COMMERCIAL_PARTNER' ? 'Socio comercial' : 'Usuario',
@@ -58,6 +59,6 @@ export function CommissionBeneficiariesTable({ beneficiaries, onPayBeneficiary, 
         { key: 'paid', label: 'Pagado', value: row => formatMoney(row.totalPagadas) },
         { key: 'date', label: 'Fecha de pago', value: row => row.fechaPagada ? formatDate(row.fechaPagada) : '—' }], actions }}
     emptyTitle="Sin comisiones" emptyDescription="Prueba con otro periodo o estado." />
-    <div className="border-t border-slate-100 p-3"><Pagination currentPage={page} totalPages={Math.ceil(beneficiaries.length / pageSize)} totalElements={beneficiaries.length} onPageChange={setPage} /></div>
+    {beneficiaries.length > pageSize && <div className="border-t border-slate-100 p-3"><Pagination currentPage={page} totalPages={Math.ceil(beneficiaries.length / pageSize)} totalElements={beneficiaries.length} onPageChange={setPage} /></div>}
   </>;
 }

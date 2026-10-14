@@ -1,457 +1,105 @@
 import { useEffect, useState } from 'react';
-
-import { Modal } from '@/shared/components/ui/Modal';
-
-import type {
-    CommissionPartnerSummaryResponse,
-} from '../types/commercial-partner-commissions.types';
-import { formatPeriodDate } from '@/modules/operations/utils/operation-formatters';
+import { useQuery } from '@tanstack/react-query';
+import { Copy, Landmark, Send } from 'lucide-react';
+import { ActionDrawer } from '@/shared/components/ui/ActionDrawer';
 import { BankAccountCombobox } from '@/shared/components/ui/BankAccountCombobox';
+import { ReceiptUploadField } from '@/shared/components/ui/ReceiptUploadField';
+import { Button } from '@/shared/components/ui/Button';
 import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts';
+import { formatAccount, formatMoney, formatPercent, formatPeriod } from '@/shared/format';
+import { getBeneficiaryCommissionDetail } from '../api/commercial-partner-commissions.api';
+import type { CommissionPartnerSummaryResponse } from '../types/commercial-partner-commissions.types';
 
-interface PayBeneficiaryCommissionsModalProps {
-    open: boolean;
-
-    beneficiary: CommissionPartnerSummaryResponse | null;
-
-    startDate: string;
-
-    endDate: string;
-
-    isSubmitting?: boolean;
-
-    onClose: () => void;
-
-    onSubmit: (
-        paymentProofFile: File,
-        cuentaOrigenId: number,
-    ) => Promise<void>;
-}
-
-function formatCurrency(
-    value: number,
-) {
-    return new Intl.NumberFormat(
-        'es-MX',
-        {
-            style: 'currency',
-            currency: 'MXN',
-        },
-    ).format(value);
-}
-
-
-function isImageFile(
-    file?: File | null,
-) {
-    if (!file) {
-        return false;
-    }
-
-    return file.type.startsWith(
-        'image/',
-    );
+interface Props {
+  open: boolean;
+  beneficiary: CommissionPartnerSummaryResponse | null;
+  startDate: string;
+  endDate: string;
+  isSubmitting?: boolean;
+  onClose: () => void;
+  onSubmit: (paymentProofFile: File, cuentaOrigenId: number) => Promise<void>;
 }
 
 export function PayBeneficiaryCommissionsModal({
-    open,
-    beneficiary,
-    startDate,
-    endDate,
-    isSubmitting = false,
-    onClose,
-    onSubmit,
-}: PayBeneficiaryCommissionsModalProps) {
-
-    const [
-        paymentProofFile,
-        setPaymentProofFile,
-    ] = useState<File | null>(
-        null,
-    );
-
-    const [
-        previewUrl,
-        setPreviewUrl,
-    ] = useState<string | null>(
-        null,
-    );
-
-    const [
-        isDragging,
-        setIsDragging,
-    ] = useState(false);
-
-    useEffect(() => {
-
-        if (
-            !paymentProofFile ||
-            !isImageFile(
-                paymentProofFile,
-            )
-        ) {
-
-            setPreviewUrl(
-                null,
-            );
-
-            return;
-        }
-
-        const objectUrl =
-            URL.createObjectURL(
-                paymentProofFile,
-            );
-
-        setPreviewUrl(
-            objectUrl,
-        );
-
-        return () =>
-            URL.revokeObjectURL(
-                objectUrl,
-            );
-
-    }, [paymentProofFile]);
-
-    const { accounts, isLoading: loadingAccounts } = useBankAccounts();
-    const [cuentaOrigenId, setCuentaOrigenId] = useState<number | null>(null);
-    const [cuentaError, setCuentaError] = useState('');
-
-    useEffect(() => {
-
-        if (!open) {
-            return;
-        }
-
-        setPaymentProofFile(
-            null,
-        );
-
-        setPreviewUrl(
-            null,
-        );
-
-        setCuentaOrigenId(null);
-        setCuentaError('');
-
-    }, [open]);
-
-    return (
-        <Modal
-            open={open}
-            title={`Pagar comisiones · ${formatPeriodDate(startDate)} - ${formatPeriodDate(endDate)}`}
-            onClose={onClose}
-        >
-
-            {!beneficiary ? null : (
-
-                <div className="space-y-5">
-                    <>
-                        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
-                            <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">
-                                Total a pagar
-                            </p>
-
-                            <p className="mt-2 text-3xl font-bold text-emerald-900">
-                                {formatCurrency(
-                                    beneficiary.totalPendientes,
-                                )}
-                            </p>
-
-                            <p className="mt-1 text-sm text-emerald-700">
-                                {beneficiary.totalComisionesPendientes} comisiones pendientes
-                            </p>
-                        </div>
-
-                        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/5">
-                            <div className="border-b border-slate-100 px-5 py-4">
-                                <h3 className="text-base font-semibold text-slate-900">
-                                    Información del beneficiario
-                                </h3>
-
-                                <p className="mt-1 text-sm text-slate-500">
-                                    Verifica los datos bancarios antes de realizar el pago.
-                                </p>
-                            </div>
-
-                            <div className="grid gap-5 p-5 md:grid-cols-2">
-                                <div>
-                                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                                        Beneficiario
-                                    </p>
-
-                                    <p className="mt-1 font-semibold text-slate-900">
-                                        {beneficiary.nombre}
-                                    </p>
-                                </div>
-
-                                <div>
-                                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                                        Tipo
-                                    </p>
-
-                                    <p className="mt-1 text-slate-900">
-                                        {beneficiary.beneficiaryType ===
-                                            'COMMERCIAL_PARTNER'
-                                            ? 'Socio comercial'
-                                            : 'Usuario'}
-                                    </p>
-                                </div>
-
-                                <div>
-                                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                                        Banco
-                                    </p>
-
-                                    <p className="mt-1 text-slate-900">
-                                        {beneficiary.banco ?? '-'}
-                                    </p>
-                                </div>
-
-                                <div>
-                                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                                        Titular
-                                    </p>
-
-                                    <p className="mt-1 text-slate-900">
-                                        {beneficiary.titularCuenta ?? '-'}
-                                    </p>
-                                </div>
-
-                                <div className="md:col-span-2">
-                                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                                        Cuenta bancaria
-                                    </p>
-
-                                    <p className="mt-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 font-mono text-sm text-slate-900">
-                                        {beneficiary.cuentaBancaria ?? '-'}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="grid gap-4 md:grid-cols-3">
-                            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                                    Operaciones
-                                </p>
-
-                                <p className="mt-2 text-2xl font-bold text-slate-900">
-                                    {beneficiary.totalOperaciones}
-                                </p>
-                            </div>
-
-                            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                                <p className="text-xs font-medium uppercase tracking-wide text-amber-700">
-                                    Comisiones pendientes
-                                </p>
-
-                                <p className="mt-2 text-2xl font-bold text-amber-900">
-                                    {beneficiary.totalComisionesPendientes}
-                                </p>
-                            </div>
-
-                            <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
-                                <p className="text-xs font-medium uppercase tracking-wide text-blue-700">
-                                    Registros a pagar
-                                </p>
-
-                                <p className="mt-2 text-2xl font-bold text-blue-900">
-                                    {beneficiary.commissionIdsToPay.length}
-                                </p>
-                            </div>
-                        </div>
-                    </>
-
-                    <div>
-
-                        <div className="mb-3">
-                            <h3 className="text-base font-semibold text-slate-900">
-                                Comprobante de pago
-                            </h3>
-
-                            <p className="mt-1 text-sm text-slate-500">
-                                Adjunta el comprobante que respalda el pago realizado al beneficiario.
-                            </p>
-                        </div>
-
-
-                        {paymentProofFile ? (
-                            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                                <div className="flex items-start gap-4">
-                                    <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
-                                        {previewUrl ? (
-                                            <img
-                                                src={previewUrl}
-                                                alt="Comprobante"
-                                                className="h-full w-full object-cover"
-                                            />
-                                        ) : (
-                                            <div className="px-2 text-center text-xs text-slate-500">
-                                                PDF
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="flex-1">
-                                        <p className="text-sm font-semibold text-slate-900">
-                                            Comprobante seleccionado
-                                        </p>
-
-                                        <p className="mt-1 break-all text-xs text-slate-500">
-                                            {paymentProofFile.name}
-                                        </p>
-
-                                        <div className="mt-3 flex gap-2">
-                                            {previewUrl && (
-                                                <a
-                                                    href={previewUrl}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    className="inline-flex rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                                                >
-                                                    Ver imagen
-                                                </a>
-                                            )}
-
-                                            <label className="inline-flex cursor-pointer rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800">
-                                                Cambiar comprobante
-
-                                                <input
-                                                    type="file"
-                                                    accept=".pdf,.jpg,.jpeg,.png,.webp"
-                                                    className="hidden"
-                                                    onChange={(event) => {
-                                                        const file = event.target.files?.[0];
-
-                                                        if (!file) return;
-
-                                                        setPaymentProofFile(file);
-                                                    }}
-                                                />
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ) : (
-                            <label
-                                onDragOver={(event) => {
-                                    event.preventDefault();
-                                    setIsDragging(true);
-                                }}
-                                onDragLeave={(event) => {
-                                    event.preventDefault();
-                                    setIsDragging(false);
-                                }}
-                                onDrop={(event) => {
-                                    event.preventDefault();
-                                    setIsDragging(false);
-
-                                    const file = event.dataTransfer.files?.[0];
-
-                                    if (!file) return;
-
-                                    setPaymentProofFile(file);
-                                }}
-                                className={`flex min-h-[170px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-6 text-center transition ${isDragging
-                                    ? 'border-slate-900 bg-slate-50'
-                                    : 'border-slate-300 bg-white hover:border-slate-400'
-                                    }`}
-                            >
-                                <input
-                                    type="file"
-                                    accept=".pdf,.jpg,.jpeg,.png,.webp"
-                                    className="hidden"
-                                    onChange={(event) => {
-                                        const file = event.target.files?.[0];
-
-                                        if (!file) return;
-
-                                        setPaymentProofFile(file);
-                                    }}
-                                />
-
-                                <p className="text-sm font-medium text-slate-700">
-                                    Arrastra y suelta el comprobante aquí
-                                </p>
-
-                                <p className="mt-1 text-xs text-slate-500">
-                                    o haz clic para seleccionar un archivo
-                                </p>
-
-                                <p className="mt-2 text-xs text-slate-400">
-                                    PDF, JPG, JPEG, PNG o WEBP
-                                </p>
-                            </label>
-                        )}
-
-                    </div>
-
-                    <div className="border-t border-slate-200 pt-4">
-                        <BankAccountCombobox
-                            label="Cuenta de origen"
-                            accounts={accounts}
-                            value={cuentaOrigenId}
-                            onChange={setCuentaOrigenId}
-                            isLoading={loadingAccounts}
-                            onlyActive
-                            fieldError={cuentaError}
-                        />
-                        <p className="mt-1 text-xs text-slate-500">
-                            Las comisiones se pagan por transferencia; esta cuenta es la que se descuenta.
-                        </p>
-                    </div>
-
-                    <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            disabled={isSubmitting}
-                            className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium"
-                        >
-                            Cancelar
-                        </button>
-
-                        <button
-                            type="button"
-                            disabled={
-                                !paymentProofFile ||
-                                isSubmitting
-                            }
-                            onClick={() => {
-
-                                if (
-                                    !paymentProofFile
-                                ) {
-                                    return;
-                                }
-
-                                if (!cuentaOrigenId) {
-                                    setCuentaError('Selecciona la cuenta desde la que se transfiere.');
-                                    return;
-                                }
-
-                                void onSubmit(
-                                    paymentProofFile,
-                                    cuentaOrigenId,
-                                );
-                            }}
-                            className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-                        >
-                            {isSubmitting
-                                ? 'Registrando...'
-                                : 'Confirmar pago'}
-                        </button>
-
-                    </div>
-
-                </div>
-
-            )}
-
-        </Modal>
-    );
+  open, beneficiary, startDate, endDate, isSubmitting = false, onClose, onSubmit,
+}: Props) {
+  const [file, setFile] = useState<File | null>(null);
+  const [accountId, setAccountId] = useState<number | null>(null);
+  const [accountError, setAccountError] = useState('');
+  const { accounts, isLoading: loadingAccounts } = useBankAccounts({ enabled: open });
+  const selectedAccount = accounts.find(account => account.id === accountId);
+  const detail = useQuery({
+    queryKey: ['commission-pay-detail', beneficiary?.beneficiaryType, beneficiary?.beneficiaryId, startDate, endDate],
+    queryFn: () => getBeneficiaryCommissionDetail({
+      beneficiaryId: beneficiary!.beneficiaryId, beneficiaryType: beneficiary!.beneficiaryType, startDate, endDate,
+    }),
+    enabled: open && Boolean(beneficiary),
+    staleTime: 60_000,
+  });
+  const pendingOperations = detail.data?.operations.filter(row =>
+    beneficiary?.commissionIdsToPay.includes(row.commissionId)) ?? [];
+
+  useEffect(() => {
+    if (!open) return;
+    setFile(null);
+    setAccountId(null);
+    setAccountError('');
+  }, [open, beneficiary?.beneficiaryId]);
+
+  function submit() {
+    if (!file) return;
+    if (!accountId) {
+      setAccountError('Selecciona la cuenta desde la que se transfiere.');
+      return;
+    }
+    void onSubmit(file, accountId);
+  }
+
+  const accountNumber = beneficiary?.cuentaBancaria ?? '';
+  return <ActionDrawer open={open} eyebrow="Pagar comisión"
+    title={beneficiary ? `${beneficiary.nombre} · ${formatMoney(beneficiary.totalPendientes)}` : 'Pagar comisión'}
+    subtitle={`${formatPeriod(startDate, endDate)} · ${beneficiary?.totalOperaciones ?? 0} ${beneficiary?.totalOperaciones === 1 ? 'operación' : 'operaciones'}`}
+    onClose={onClose}
+    footer={<div className="flex items-center gap-3">
+      <Button variant="neutral" disabled={isSubmitting} onClick={onClose}>Cancelar</Button>
+      <Button variant="dark" className="min-w-0 flex-1" disabled={isSubmitting || !file} onClick={submit}>
+        <Send className="size-4" />{isSubmitting ? 'Registrando…' : `Registrar pago de ${formatMoney(beneficiary?.totalPendientes)}`}
+      </Button>
+    </div>}>
+    {beneficiary && <div className="space-y-4">
+      <div className="overflow-hidden rounded-xl border border-slate-200">
+        <table className="w-full table-fixed text-xs">
+          <thead className="bg-slate-50 text-[10px] uppercase tracking-wide text-slate-500">
+            <tr><th className="w-[13%] px-2 py-2 text-left">Folio</th><th className="w-[31%] px-2 py-2 text-left">Cliente</th><th className="w-[23%] px-2 py-2 text-right">Monto</th><th className="w-[10%] px-2 py-2 text-right">%</th><th className="w-[23%] px-2 py-2 text-right">Comisión</th></tr>
+          </thead>
+          <tbody>{pendingOperations.map(row => <tr key={row.commissionId} className="border-t border-slate-100">
+            <td className="px-2 py-3 text-slate-500">#{row.operationId}</td>
+            <td className="truncate px-2 py-3 font-semibold" title={row.clienteNombre}>{row.clienteNombre}</td>
+            <td className="px-2 py-3 text-right tabular-nums">{formatMoney(row.operationAmount)}</td>
+            <td className="px-2 py-3 text-right tabular-nums">{formatPercent(row.commissionPercentage)}</td>
+            <td className="px-2 py-3 text-right font-bold tabular-nums">{formatMoney(row.commissionAmount)}</td>
+          </tr>)}</tbody>
+        </table>
+        {detail.isPending && <p className="p-3 text-xs text-slate-500">Cargando operaciones…</p>}
+        {detail.error && <p role="alert" className="p-3 text-xs text-red-700">No se pudo consultar el desglose de operaciones.</p>}
+      </div>
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Transferir a</p>
+        <div className="mt-2 flex items-center gap-3">
+          <Landmark className="size-4 shrink-0 text-slate-500" />
+          <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold" title={beneficiary.nombre}>{beneficiary.nombre}</p>
+            <p className="text-xs text-slate-500">Cuenta para pago de comisión · {formatAccount(beneficiary.banco, beneficiary.cuentaBancaria)}</p></div>
+          {accountNumber && <button type="button" className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-[#3b6ef5]"
+            onClick={() => void navigator.clipboard.writeText(accountNumber)}><Copy className="size-3" />Copiar cuenta</button>}
+        </div>
+      </div>
+      <BankAccountCombobox label="Cuenta origen" accounts={accounts} value={accountId} onChange={setAccountId}
+        isLoading={loadingAccounts} onlyActive fieldError={accountError} />
+      <ReceiptUploadField file={file} onChange={setFile} label="Comprobante de pago" camera={false}
+        dropHint="Subir comprobante de la transferencia" />
+      {selectedAccount && <p className="rounded-lg bg-blue-50 p-3 text-xs text-blue-900">
+        Se registrará como salida de {formatAccount(selectedAccount.banco, selectedAccount.numeroCuenta)} y aparecerá en Cortes y movimientos y en los movimientos de esa cuenta.
+      </p>}
+    </div>}
+  </ActionDrawer>;
 }

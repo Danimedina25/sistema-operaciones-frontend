@@ -156,8 +156,18 @@ export default function OperationsPage() {
 
   const stalledQuery = useQuery({
     queryKey: ['operations-list-stalled-search', user?.userId, stalledPage, stalledSearch],
-    queryFn: () => searchStalledOperations(stalledSearch, stalledPage, 10),
+    queryFn: () => searchStalledOperations(stalledSearch, stalledPage, 5),
     enabled: isManager && listView === 'stalled',
+    refetchOnWindowFocus: false,
+    staleTime: 60_000,
+  });
+  const managerTabCounts = useQuery({
+    queryKey: ['operations-manager-tab-counts', user?.userId],
+    queryFn: () => Promise.all([
+      getOperations(0, 1, { ...initialFilters, status: 'PENDIENTE_VALIDACION' }),
+      getOperations(0, 1, initialFilters),
+    ]),
+    enabled: isManager,
     refetchOnWindowFocus: false,
     staleTime: 60_000,
   });
@@ -189,6 +199,7 @@ export default function OperationsPage() {
       await fetchOperations(currentPage);
       if (showAccountValidationTabs) await alternateAccountCount.refetch();
     }
+    if (isManager) await managerTabCounts.refetch();
   }
 
   const { isDeleting, submitDeleteOperation } = useDeleteOperation({
@@ -330,7 +341,7 @@ export default function OperationsPage() {
       />
 
       <section className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${isSocio ? 'max-sm:overflow-visible max-sm:border-0 max-sm:bg-transparent max-sm:shadow-none' : ''}`}>
-        {hasOperationsNeedingCommissionReview && (
+        {hasOperationsNeedingCommissionReview && !showingStalled && (
             <div className="m-4 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
               <p className="text-sm font-medium text-amber-800">
                 Hay operaciones en este listado con 2 o 3 niveles de socios comerciales (marcadas con el folio en círculo). Revisa si conviene personalizar los porcentajes de comisión al editarlas.
@@ -346,7 +357,11 @@ export default function OperationsPage() {
           onFiltersOpenChange={setFiltersOpen}
           leading={isSocio && filters.activo === 'ACTIVE' ? <button type="button" onClick={() => setFilters({ ...filters, activo: 'ALL' })} className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 max-sm:order-3">Estado: Activas ×</button> : isManager ? <Tabs
             label="Vistas de operaciones"
-            options={[{ value: 'stalled', label: 'Detenidas' }, { value: 'pending', label: 'Por validar' }, { value: 'all', label: 'Todas' }]}
+            options={[
+              { value: 'stalled', label: 'Detenidas', count: stalledQuery.data?.totalElements },
+              { value: 'pending', label: 'Por validar', count: managerTabCounts.data?.[0].totalElements },
+              { value: 'all', label: 'Todas', count: managerTabCounts.data?.[1].totalElements },
+            ]}
             value={listView}
             onChange={(value) => {
               setListView(value);
@@ -417,6 +432,11 @@ export default function OperationsPage() {
             onPageChange={(page) => showingStalled ? setStalledPage(page - 1) : setCurrentPage(page - 1)}
           />
         </div>
+        {hasOperationsNeedingCommissionReview && showingStalled && (
+          <p className="border-t border-amber-100 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+            Los folios en círculo tienen 2 o 3 niveles de socios comerciales. Revisa si conviene personalizar los porcentajes de comisión al editarlos.
+          </p>
+        )}
       </section>
 
       {isSocio && canCreateOperation && <Button type="button" variant="dark" className="fixed bottom-[76px] right-4 z-20 h-12 rounded-full px-5 shadow-xl sm:hidden" onClick={() => navigate(paths.operationCreate)}>＋ Nueva operación</Button>}

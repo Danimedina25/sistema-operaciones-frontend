@@ -15,6 +15,7 @@ interface SearchFilterBarProps {
   filters: ReactNode;
   activeFilters?: readonly ActiveFilter[];
   leading?: ReactNode;
+  trailing?: ReactNode;
   className?: string;
   onFiltersOpenChange?: (open: boolean) => void;
   iconOnlyOnMobile?: boolean;
@@ -27,6 +28,7 @@ export function SearchFilterBar({
   filters,
   activeFilters = [],
   leading,
+  trailing,
   className,
   onFiltersOpenChange,
   iconOnlyOnMobile = false,
@@ -49,6 +51,7 @@ export function SearchFilterBar({
             className="min-w-0 flex-1 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
           />
         </label>
+        {trailing}
         <button
           type="button"
           aria-label="Filtros"

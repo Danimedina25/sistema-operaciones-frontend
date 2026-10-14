@@ -21,6 +21,13 @@ function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0].toUpperCase()).join('');
 }
 
+function roleTone(role: UserResponse['roleName']) {
+  if (role === 'JEFA_CAJAS') return 'success';
+  if (role === 'SOCIO_COMERCIAL') return 'request';
+  if (role === 'GERENTE' || role === 'JEFA_CUENTAS' || role === 'AUXILIAR_CUENTAS') return 'active';
+  return 'neutral';
+}
+
 export function UsersTable({
   users, processingUserId, onEdit, onUpdateEmail, onActivate, onDeactivate, onResendActivation, onDelete,
 }: UsersTableProps) {
@@ -38,19 +45,20 @@ export function UsersTable({
 
   const actions = (user: UserResponse) => <RowActionsMenu
     triggerLabel={processingUserId === user.id ? 'Procesando...' : ''}
-    ariaLabel={user.nombre + ': Más opciones'} triggerDisabled={processingUserId === user.id}>
+    ariaLabel={user.nombre + ': Más opciones'} triggerDisabled={processingUserId === user.id}
+    triggerClassName="h-8 min-w-9 justify-center px-2">
     {renderActions(user)}
   </RowActionsMenu>;
   const columns: DataTableColumn<UserResponse>[] = [
     { key: 'user', header: 'Usuario', width: '46%', cell: user => <div className="flex min-w-0 items-center gap-3">
-      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">{initials(user.nombre)}</span>
+      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">{initials(user.nombre)}</span>
       <span className="min-w-0"><strong className="block truncate text-slate-900" title={user.nombre}>{user.nombre}</strong><small className="block truncate text-slate-500" title={user.correo}>{user.correo}</small></span>
     </div> },
-    { key: 'role', header: 'Rol', width: '25%', cell: user => <span className="inline-block max-w-full truncate rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700" title={formatRole(user.roleName)}>{formatRole(user.roleName)}</span> },
-    { key: 'status', header: 'Estado', kind: 'status', width: '20%', cell: user => <div className="flex flex-wrap items-center gap-1"><StatusBadge active={user.activo} /><StatusBadge tone={user.correoVerificado ? 'success' : 'pending'}>{user.correoVerificado ? 'Verificado' : 'Pendiente'}</StatusBadge></div> },
+    { key: 'role', header: 'Rol', width: '25%', cell: user => <StatusBadge tone={roleTone(user.roleName)}>{user.roleName === 'SOCIO_COMERCIAL' ? 'Socio comercial · nivel 1' : formatRole(user.roleName)}</StatusBadge> },
+    { key: 'status', header: 'Estado', kind: 'status', width: '20%', cell: user => <StatusBadge tone={user.activo && user.correoVerificado ? 'success' : user.activo ? 'pending' : 'neutral'} className={user.activo ? 'bg-transparent px-0' : undefined}>{user.activo ? user.correoVerificado ? '✓ Activo · verificado' : 'Activo · pendiente' : 'Inactivo'}</StatusBadge> },
     { key: 'actions', header: 'Acciones', kind: 'actions', width: '9%', align: 'right', cell: actions },
   ];
-  return <DataTable columns={columns} rows={users} getRowKey={user => user.id}
+  return <DataTable columns={columns} rows={users} getRowKey={user => user.id} dense
     mobile={{ title: user => user.nombre, subtitle: user => user.correo, status: user => <StatusBadge active={user.activo} />,
       fields: [{ key: 'role', label: 'Rol', value: user => formatRole(user.roleName) },
         { key: 'verified', label: 'Verificación', value: user => <StatusBadge tone={user.correoVerificado ? 'success' : 'pending'}>{user.correoVerificado ? 'Verificado' : 'Pendiente'}</StatusBadge> }],
