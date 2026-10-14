@@ -56,7 +56,7 @@ export default function OperationsPage() {
 
   const { hasRole, user } = useAuth();
   const isSocio = hasRole('SOCIO_COMERCIAL');
-  const isManager = hasRole(['GERENTE']);
+  const isManager = hasRole(['GERENTE', 'DIRECCION', 'ADMIN']);
   const showAccountValidationTabs = hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS']);
   const [listView, setListView] = useState<'all' | 'pending' | 'stalled'>(() =>
     isManager && new URLSearchParams(window.location.search).get('view') === 'stalled' ? 'stalled' : 'all');
@@ -432,7 +432,7 @@ export default function OperationsPage() {
             onPageChange={(page) => showingStalled ? setStalledPage(page - 1) : setCurrentPage(page - 1)}
           />
         </div>
-        {hasOperationsNeedingCommissionReview && showingStalled && (
+        {hasOperationsNeedingCommissionReview && showingStalled && hasRole('GERENTE') && (
           <p className="border-t border-amber-100 bg-amber-50 px-4 py-3 text-xs text-amber-800">
             Los folios en círculo tienen 2 o 3 niveles de socios comerciales. Revisa si conviene personalizar los porcentajes de comisión al editarlos.
           </p>

@@ -105,3 +105,24 @@ La pestaña «Con entregas en efectivo» de C8 espera un filtro paginado de back
 | G11 · Corte general | [184:2098](G11-corte-general-figma.png) | [Antes](G11-corte-general-local-antes.png) | [Después](G11-corte-general-local-despues.png) |
 
 Capturas locales a 1440 px con `prueba.gerente@prueba.test`; cifras y usuarios son los datos reales locales. G3/G3b seleccionan «Este mes» para mostrar la comisión pendiente local de $10.00. El frame de G11 usa otro periodo y datos de ejemplo; el corte local conserva las cifras que entrega su API.
+
+## Director
+
+| Frame | Figma | Local antes | Local después |
+| --- | --- | --- | --- |
+| D1 · Inicio | [177:1215](D1-inicio-figma.png) | [Antes](D1-inicio-local-antes.png) | [Después](D1-inicio-local-despues.png) |
+| D1b · Alertas abiertas | [180:2483](D1b-alertas-figma.png) | [Estado local](D1b-alertas-local-antes.png) | [Estado pendiente](D1b-alertas-local-despues.png) |
+| D2 · Operaciones | [177:2389](D2-operaciones-figma.png) | [Antes](D2-operaciones-local-antes.png) | [Después](D2-operaciones-local-despues.png) |
+| D2b · Detalle de consulta | [177:2517](D2b-detalle-figma.png) | [Antes](D2b-detalle-local-antes.png) | [Estado actual](D2b-detalle-local-despues.png) |
+| D3 · Comisiones | [177:2627](D3-comisiones-figma.png) | [Antes](D3-comisiones-local-antes.png) | [Después](D3-comisiones-local-despues.png) |
+| D5 · Cuentas y saldos | [177:2858](D5-cuentas-saldos-figma.png) | [Antes](D5-cuentas-saldos-local-antes.png) | [Estado actual](D5-cuentas-saldos-local-despues.png) |
+| D7 · Clientes | [177:3222](D7-clientes-figma.png) | [Antes](D7-clientes-local-antes.png) | [Estado actual](D7-clientes-local-despues.png) |
+| D8 · Socios comerciales | [177:3332](D8-socios-comerciales-figma.png) | [Vacío local](D8-socios-comerciales-local-antes.png) | [Estado pendiente](D8-socios-comerciales-local-despues.png) |
+| D9 · Reportes | [178:1924](D9-reportes-figma.png) | [Sin ruta](D9-reportes-local-antes.png) | [Pendiente](D9-reportes-local-despues.png) |
+| D10 · Usuarios | [179:2079](D10-usuarios-figma.png) | [Antes](D10-usuarios-local-antes.png) | [Estado actual](D10-usuarios-local-despues.png) |
+| D10b · Eliminar usuario | [179:2431](D10b-eliminar-usuario-figma.png) | [Antes](D10b-eliminar-usuario-local-antes.png) | [Estado pendiente](D10b-eliminar-usuario-local-despues.png) |
+| D11 · Configuración | [180:2255](D11-configuracion-figma.png) | [Antes](D11-configuracion-local-antes.png) | [Estado pendiente](D11-configuracion-local-despues.png) |
+| D12 · Bitácora | [178:2165](D12-bitacora-figma.png) | [Sin ruta](D12-bitacora-local-antes.png) | [Pendiente](D12-bitacora-local-despues.png) |
+| D13 · Corte general | [184:2521](D13-corte-general-figma.png) | [Antes](D13-corte-general-local-antes.png) | [Estado actual](D13-corte-general-local-despues.png) |
+
+Todas las capturas locales son de `prueba.director@prueba.test` a 1440 px y usan respuestas reales de lectura. En D10b se abrió el modal sin introducir la palabra de confirmación ni enviar la eliminación. D9 y D12 documentan el 404 de rutas aún no implementadas; D8 y D1b documentan respuestas vacías reales.
