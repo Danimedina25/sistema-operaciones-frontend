@@ -1,7 +1,7 @@
 // components/returns/ReturnPaymentsTable.tsx
 
 import { type ReactNode } from 'react';
-import { BanknoteArrowDown, Paperclip, Plus } from 'lucide-react';
+import { BanknoteArrowDown, Paperclip, Plus, Send } from 'lucide-react';
 import { paymentTypeLabels } from '@/modules/operations/constants/operations.constants';
 import { formatMoney as formatCurrency, formatDate } from '@/shared/format';
 import {
@@ -197,9 +197,18 @@ export function ReturnPaymentsTable({
     );
   }
 
+  if (isSocioComercial && visibleReturns.length === 0 && canRequestReturns) {
+    return <div className="rounded-2xl border border-slate-200 bg-white px-4 py-7 text-center shadow-sm sm:py-10">
+      <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-violet-100 text-violet-600"><Send className="size-5" /></span>
+      <h3 className="mt-3 text-base font-semibold text-slate-900">Aún no has solicitado el retorno</h3>
+      <p className="mx-auto mt-2 max-w-lg text-sm text-slate-500">Indica cómo se le devolverán {formatCurrency(montoPendientePorSolicitar ?? 0)} al cliente. Puedes dividirlo en varios pagos.</p>
+      <button type="button" onClick={() => onAddRequestReturnPayment?.(montoPendientePorSolicitar ?? 0)} className="mx-auto mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-950 px-6 text-sm font-semibold text-white max-sm:w-full"><Send className="size-4" /> Solicitar retorno</button>
+    </div>;
+  }
+
   return (
     <div className="overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white shadow-xl shadow-slate-950/[0.06]">
-      <div className="border-b border-slate-100 bg-white px-4 py-3 sm:px-6">
+      <div className={`border-b border-slate-100 bg-white px-4 py-3 sm:px-6 ${isSocioComercial ? 'max-sm:hidden' : ''}`}>
         <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
           <div className="text-left">
             <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">
@@ -272,6 +281,7 @@ export function ReturnPaymentsTable({
         </div>
       ) : (
         <>
+          {isSocioComercial && <p className="hidden border-b border-slate-100 px-4 py-3 text-xs text-slate-500 max-sm:block">Pendiente {formatCurrency(montoPendientePorRetornar ?? 0)} · Por solicitar {formatCurrency(montoPendientePorSolicitar ?? 0)}</p>}
           <DataTable
             columns={[
               { key: 'folio', header: 'Folio', width: '64px', cell: (request: ReturnPaymentResponse) => <span className="font-semibold text-slate-900">#{request.id}</span> },

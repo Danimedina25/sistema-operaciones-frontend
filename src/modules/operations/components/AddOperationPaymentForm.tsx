@@ -165,7 +165,7 @@ export function AddOperationPaymentForm({
           || (Number.isInteger(Number(value)) && Number(value) > 0)
           || 'Selecciona una cuenta bancaria',
       })} />
-      <div className="grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-3 text-sm sm:p-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm sm:p-4 md:grid-cols-3">
         <div>
           <span className="block text-slate-500">Monto total requerido</span>
           <span className="font-semibold text-slate-900">
@@ -187,14 +187,6 @@ export function AddOperationPaymentForm({
           </span>
         </div>
 
-        <div>
-          <span className="block text-slate-500">
-            Faltante después del comprobante
-          </span>
-          <span className="font-semibold text-slate-900">
-            ${formatCurrencyDisplay(faltanteDespuesDelPago)}
-          </span>
-        </div>
       </div>
 
       {excedeSaldoPendiente ? (
@@ -204,17 +196,18 @@ export function AddOperationPaymentForm({
         </div>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="space-y-4">
-          <div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="space-y-4 lg:contents">
+          <div className="lg:col-span-2">
             <label className="mb-2 block text-sm font-medium text-slate-700">
               Monto del comprobante
             </label>
 
-            <Input
+            <div className="relative"><Input
               type="text"
               inputMode="decimal"
               placeholder="1,000.00"
+              className="pr-32"
               error={montoErrorMessage}
               {...register('monto', {
                 required: 'El monto es obligatorio',
@@ -241,7 +234,8 @@ export function AddOperationPaymentForm({
                   });
                 },
               })}
-            />
+            /><button type="button" onClick={() => setValue('monto', formatCurrencyDisplay(saldoPendiente), { shouldValidate: true, shouldDirty: true })} className="absolute right-2 top-2 rounded-lg bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-600">Registrar todo</button></div>
+            {montoCapturado > 0 && <p className="mt-1 text-xs text-emerald-700">Después de este pago faltará: ${formatCurrencyDisplay(faltanteDespuesDelPago)}</p>}
           </div>
 
           <div>
@@ -399,7 +393,7 @@ export function AddOperationPaymentForm({
           ) : null}
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 lg:col-span-2">
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">
               Comprobante de pago
@@ -430,29 +424,18 @@ export function AddOperationPaymentForm({
           </div>
         </div>
 
-        <div className="lg:col-span-2">
-          <label className="mb-2 block text-sm font-medium text-slate-700">
-            Observaciones
-          </label>
-
-          <textarea
-            rows={3}
-            placeholder="Opcional"
-            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-900"
-            {...register('observaciones')}
-          />
-        </div>
+        <details className="lg:col-span-2"><summary className="cursor-pointer text-xs font-semibold text-blue-600">+ Agregar observación</summary><label className="mt-3 block text-sm font-medium text-slate-700">Observaciones<textarea rows={3} placeholder="Opcional" className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-900" {...register('observaciones')} /></label></details>
       </div>
 
       <ActionDrawerFooter>
       <div className="w-full">
-        <Button variant="primary"
+        <Button variant="dark"
           type="submit" form={formId}
           isLoading={isSubmitting}
           disabled={excedeSaldoPendiente}
           className="w-full justify-center"
         >
-          Registrar
+          Registrar pago
         </Button>
       </div>
       </ActionDrawerFooter>

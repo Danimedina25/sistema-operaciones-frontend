@@ -17,6 +17,7 @@ interface SearchFilterBarProps {
   leading?: ReactNode;
   className?: string;
   onFiltersOpenChange?: (open: boolean) => void;
+  iconOnlyOnMobile?: boolean;
 }
 
 export function SearchFilterBar({
@@ -28,6 +29,7 @@ export function SearchFilterBar({
   leading,
   className,
   onFiltersOpenChange,
+  iconOnlyOnMobile = false,
 }: SearchFilterBarProps) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
@@ -49,16 +51,17 @@ export function SearchFilterBar({
         </label>
         <button
           type="button"
+          aria-label="Filtros"
           aria-expanded={open}
           aria-controls={panelId}
           onClick={() => setOpen((current) => {
             onFiltersOpenChange?.(!current);
             return !current;
           })}
-          className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 hover:bg-slate-50"
+          className={cn('inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 hover:bg-slate-50', iconOnlyOnMobile && 'max-sm:w-11 max-sm:justify-center max-sm:px-0')}
         >
           <ListFilter aria-hidden="true" className="h-4 w-4" />
-          Filtros
+          <span className={iconOnlyOnMobile ? 'max-sm:sr-only' : undefined}>Filtros</span>
           {activeFilters.length > 0 && <span className="rounded-full bg-blue-100 px-1.5 text-[10px] text-blue-700">{activeFilters.length}</span>}
         </button>
       </div>

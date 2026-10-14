@@ -24,10 +24,12 @@ function SummaryItem({
   label,
   value,
   variant = 'default',
+  compact = false,
 }: {
-  label: string;
+  label: React.ReactNode;
   value: React.ReactNode;
   variant?: 'default' | 'emerald' | 'blue' | 'amber' | 'dark';
+  compact?: boolean;
 }) {
   const variants = {
     default: {
@@ -60,12 +62,12 @@ function SummaryItem({
   const styles = variants[variant];
 
   return (
-    <div className={`min-w-0 rounded-xl border p-3 sm:rounded-2xl sm:p-4 ${styles.container}`}>
-      <p className={`text-[11px] font-semibold uppercase tracking-[0.12em] ${styles.label}`}>
+    <div className={`min-w-0 rounded-xl border p-3 sm:rounded-2xl sm:p-4 ${compact ? 'max-sm:px-3 max-sm:py-2' : ''} ${styles.container}`}>
+      <p className={`text-[11px] font-semibold uppercase tracking-[0.12em] ${compact ? 'max-sm:text-[9px]' : ''} ${styles.label}`}>
         {label}
       </p>
 
-      <div className={`mt-1.5 break-words text-sm font-semibold tabular-nums sm:mt-2 sm:text-base ${styles.value}`}>
+      <div className={`mt-1.5 break-words text-sm font-semibold tabular-nums sm:mt-2 sm:text-base ${compact ? 'max-sm:mt-0.5 max-sm:text-base' : ''} ${styles.value}`}>
         {value}
       </div>
     </div>
@@ -90,6 +92,7 @@ export function OperationDetailCard({
     });
 
   const { hasRole } = useAuth();
+  const isSocio = hasRole(['SOCIO_COMERCIAL']);
   const canReviewCommission = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
   const canShareViaWhatsApp = hasRole(['SOCIO_COMERCIAL', 'ADMIN', 'GERENTE', 'DIRECCION']);
 
@@ -123,37 +126,38 @@ export function OperationDetailCard({
   }
 
   return (
-    <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-950/[0.06] sm:rounded-[1.75rem]">
-      <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 px-4 py-5 text-white sm:px-6 sm:py-6 md:px-8 md:py-7">
+    <div className={`overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-950/[0.06] sm:rounded-[1.75rem] ${isSocio ? 'max-sm:rounded-2xl max-sm:border-0 max-sm:shadow-none' : ''}`}>
+      <div className={`bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 px-4 py-5 text-white sm:px-6 sm:py-6 md:px-8 md:py-7 ${isSocio ? 'max-sm:relative max-sm:bg-slate-950 max-sm:py-4' : ''}`}>
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-5">
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center justify-between gap-2 sm:justify-start sm:gap-3">
-              <span className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-semibold tracking-wide text-slate-300">
-                <ReceiptText className="h-3.5 w-3.5" />
-                FOLIO #{operation.id}
+            <div className={`flex flex-wrap items-center justify-between gap-2 sm:justify-start sm:gap-3 ${isSocio ? 'max-sm:justify-start max-sm:gap-1' : ''}`}>
+              <span className={`inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-semibold tracking-wide text-slate-300 ${isSocio ? 'max-sm:border-0 max-sm:bg-transparent max-sm:p-0 max-sm:font-normal max-sm:normal-case' : ''}`}>
+                <ReceiptText className={`h-3.5 w-3.5 ${isSocio ? 'max-sm:hidden' : ''}`} />
+                {isSocio ? <><span className="sm:hidden">Folio {operation.id}</span><span className="max-sm:hidden">FOLIO #{operation.id}</span></> : `FOLIO #${operation.id}`}
               </span>
               <span className="inline-flex items-center gap-1.5 text-xs text-slate-400">
-                <CalendarDays className="h-3.5 w-3.5" />
+                <CalendarDays className={`h-3.5 w-3.5 ${isSocio ? 'max-sm:hidden' : ''}`} />
+                {isSocio && <span className="hidden max-sm:inline">·</span>}
                 {formatDate(operation.createdAt)}
               </span>
             </div>
-            <h2 className="mt-4 break-words text-xl font-bold tracking-tight sm:text-2xl md:text-3xl">
+            <h2 className={`mt-4 break-words text-xl font-bold tracking-tight sm:text-2xl md:text-3xl ${isSocio ? 'max-sm:mt-2' : ''}`}>
               {operation.clienteNombre}
             </h2>
-            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-              <BriefcaseBusiness className="h-4 w-4" /> Red:
-              <span className="rounded-full border border-blue-400/40 bg-blue-500/20 px-2.5 py-1 text-white">Nivel 1 · {operation.socioComercialNombre}</span>
-              {operation.socioComercialNivel2Nombre && <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-white">Nivel 2 · {operation.socioComercialNivel2Nombre}</span>}
-              {operation.socioComercialNivel3Nombre && <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-white">Nivel 3 · {operation.socioComercialNivel3Nombre}</span>}
+            <div className={`mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-400 ${isSocio ? 'max-sm:gap-1' : ''}`}>
+              <BriefcaseBusiness className={`h-4 w-4 ${isSocio ? 'max-sm:hidden' : ''}`} /><span className={isSocio ? 'max-sm:hidden' : ''}>Red:</span>
+              <span className="rounded-full border border-blue-400/40 bg-blue-500/20 px-2.5 py-1 text-white"><span className={isSocio ? 'max-sm:hidden' : ''}>Nivel 1 · </span><span className="hidden max-sm:inline">N1 </span>{isSocio ? <><span className="sm:hidden">Tú</span><span className="max-sm:hidden">{operation.socioComercialNombre}</span></> : operation.socioComercialNombre}</span>
+              {operation.socioComercialNivel2Nombre && <span title={operation.socioComercialNivel2Nombre} className="max-w-full truncate rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-white max-sm:max-w-[115px]"><span className={isSocio ? 'max-sm:hidden' : ''}>Nivel 2 · </span><span className="hidden max-sm:inline">N2 </span>{operation.socioComercialNivel2Nombre}</span>}
+              {operation.socioComercialNivel3Nombre && <span title={operation.socioComercialNivel3Nombre} className="max-w-full truncate rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-white max-sm:max-w-[115px]"><span className={isSocio ? 'max-sm:hidden' : ''}>Nivel 3 · </span><span className="hidden max-sm:inline">N3 </span>{operation.socioComercialNivel3Nombre}</span>}
             </div>
           </div>
 
-          <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 md:w-auto md:grid-cols-1 md:justify-items-end">
-            <div className="w-full rounded-xl bg-white p-1 shadow-lg sm:w-auto">
+          <div className={`grid w-full grid-cols-1 gap-2 sm:grid-cols-2 md:w-auto md:grid-cols-1 md:justify-items-end ${isSocio ? 'max-sm:absolute max-sm:right-4 max-sm:top-4 max-sm:w-auto' : ''}`}>
+            <div className={`w-full rounded-xl bg-white p-1 shadow-lg sm:w-auto ${isSocio ? 'max-sm:rounded-full max-sm:bg-transparent max-sm:p-0 max-sm:shadow-none' : ''}`}>
               <OperationStatusBadge
                 status={operation.estatus}
                 isReturn={isReturnRequestDetail}
-                className="w-full sm:w-auto"
+                className={isSocio ? 'max-sm:whitespace-nowrap sm:w-auto' : 'w-full sm:w-auto'}
               />
             </div>
 
@@ -161,7 +165,7 @@ export function OperationDetailCard({
               <button
                 type="button"
                 onClick={handleShareViaWhatsApp}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-white/10 sm:w-auto"
+                className={`inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-white/10 sm:w-auto ${isSocio ? 'max-sm:hidden' : ''}`}
               >
                 <MessageCircle className="h-4 w-4 text-emerald-400" />
                 Compartir por WhatsApp
@@ -170,12 +174,13 @@ export function OperationDetailCard({
           </div>
         </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-2 sm:mt-6 sm:gap-3 xl:grid-cols-4">
-          <SummaryItem label="Monto de la operación" value={formatCurrency(operation.montoTotal)} variant="dark" />
-          <SummaryItem label="Ingreso validado" value={formatCurrency(operation.montoValidado)} variant="dark" />
-          <SummaryItem label="Retorno al cliente" value={formatCurrency(operation.montoTotalDevolverCliente)} variant="dark" />
-          <SummaryItem label="Pendiente por retornar" value={formatCurrency(operation.saldoPendienteRetornar)} variant="dark" />
+        <div className={`mt-5 grid grid-cols-2 gap-2 sm:mt-6 sm:gap-3 xl:grid-cols-4 ${isSocio ? 'max-sm:mt-3' : ''}`}>
+          <SummaryItem label="Monto de la operación" value={formatCurrency(operation.montoTotal)} variant="dark" compact={isSocio} />
+          <SummaryItem label="Ingreso validado" value={<span className={isSocio ? 'max-sm:text-emerald-400' : ''}>{formatCurrency(operation.montoValidado)}</span>} variant="dark" compact={isSocio} />
+          <SummaryItem label="Retorno al cliente" value={formatCurrency(operation.montoTotalDevolverCliente)} variant="dark" compact={isSocio} />
+          <SummaryItem label={isSocio ? <><span className="sm:hidden">{operation.saldoPendientePorRegistrar > 0 ? 'Por registrar' : operation.saldoPendientePorValidar > 0 ? 'Por validar' : operation.saldoPendientePorSolicitar > 0 ? 'Por solicitar' : 'Pendiente por retornar'}</span><span className="max-sm:hidden">Pendiente por retornar</span></> : 'Pendiente por retornar'} value={<><span className="sm:hidden text-amber-400">{formatCurrency(operation.saldoPendientePorRegistrar > 0 ? operation.saldoPendientePorRegistrar : operation.saldoPendientePorValidar > 0 ? operation.saldoPendientePorValidar : operation.saldoPendientePorSolicitar > 0 ? operation.saldoPendientePorSolicitar : operation.saldoPendienteRetornar)}</span><span className="max-sm:hidden">{formatCurrency(operation.saldoPendienteRetornar)}</span></>} variant="dark" compact={isSocio} />
         </div>
+        {isSocio && canShareViaWhatsApp && <button type="button" onClick={handleShareViaWhatsApp} className="mt-3 hidden w-full items-center justify-center gap-2 rounded-xl border border-slate-600 py-2 text-xs font-medium text-white max-sm:inline-flex"><MessageCircle className="h-4 w-4 text-emerald-400" />Compartir por WhatsApp</button>}
       </div>
 
       <details className="border-t border-slate-200 p-4 sm:px-6">

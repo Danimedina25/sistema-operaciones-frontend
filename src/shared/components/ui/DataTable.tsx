@@ -32,6 +32,7 @@ interface DataTableProps<Row> {
   emptyIcon?: ComponentType<{ className?: string }>;
   showHeaderWhenEmpty?: boolean;
   compact?: boolean;
+  mobileCardClassName?: string;
   isLoading?: boolean;
   loadingLabel?: string;
 }
@@ -47,6 +48,7 @@ export function DataTable<Row>({
   emptyIcon,
   showHeaderWhenEmpty = false,
   compact = false,
+  mobileCardClassName,
   isLoading = false,
   loadingLabel = 'Cargando...',
 }: DataTableProps<Row>) {
@@ -103,7 +105,7 @@ export function DataTable<Row>({
       </div>
       <div className="responsive-data-table__cards space-y-3 p-3" data-testid="data-table-mobile">
         {rows.map((row) => (
-          <article key={getRowKey(row)} className="min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <article key={getRowKey(row)} className={cn('min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-sm', mobileCardClassName)}>
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="break-words text-sm font-semibold text-slate-900">{mobile.title(row)}</div>
@@ -111,14 +113,14 @@ export function DataTable<Row>({
               </div>
               {mobile.status && <div className="shrink-0">{mobile.status(row)}</div>}
             </div>
-            <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2">
+            {mobile.fields.length > 0 && <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2">
               {mobile.fields.map((field) => (
                 <div key={field.key} className="min-w-0">
                   <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{field.label}</dt>
                   <dd className="mt-0.5 break-words text-xs font-medium text-slate-700">{field.value(row)}</dd>
                 </div>
               ))}
-            </dl>
+            </dl>}
             {mobile.extra && <div className="mt-3">{mobile.extra(row)}</div>}
             {mobile.actions && <div className="mt-4 flex items-center gap-2">{mobile.actions(row)}</div>}
           </article>

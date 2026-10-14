@@ -22,6 +22,7 @@ import { CreateClienteForm } from '../components/CreateClienteForm';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { useCommercialLevelOneUsers } from '@/modules/users/hooks/use-commercial-level-one-users';
 import { useTableFilters } from '@/shared/hooks/use-table-filters';
+import { SocioMobileNetworkTabs } from '@/shared/components/layout/SocioMobileNetworkTabs';
 
 const initialFilters: ClientesFiltersType = {
   search: '',
@@ -52,6 +53,7 @@ export default function ClientesPage() {
   } = useClientes();
 
   const { user, hasRole } = useAuth();
+  const isSocio = hasRole('SOCIO_COMERCIAL');
   const canAssignLevelOne = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
   const { commercialLevelOneUsers } = useCommercialLevelOneUsers({ enabled: canAssignLevelOne });
 
@@ -101,12 +103,14 @@ export default function ClientesPage() {
   }, [filteredClientes, currentPage, pageSize]);
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="Clientes" actions={<CanAccess roles={['ADMIN', 'GERENTE', 'SOCIO_COMERCIAL']}>
-        <Button type="button" onClick={() => setIsCreateModalOpen(true)}>Nuevo cliente</Button>
+    <div className="space-y-3 sm:space-y-6">
+      <PageHeader title="Clientes" className={isSocio ? 'max-sm:hidden' : undefined} actions={<CanAccess roles={['ADMIN', 'GERENTE', 'SOCIO_COMERCIAL']}>
+        <Button type="button" variant={isSocio ? 'dark' : 'primary'} onClick={() => setIsCreateModalOpen(true)}>Nuevo cliente</Button>
       </CanAccess>} />
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      {isSocio && <SocioMobileNetworkTabs />}
+
+      <div className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${isSocio ? 'max-sm:overflow-visible max-sm:border-0 max-sm:bg-transparent max-sm:shadow-none' : ''}`}>
         <ClientesFilters filters={filters} onChange={setFilters} />
 
       {isLoading ? (
@@ -134,6 +138,8 @@ export default function ClientesPage() {
         </>
       )}
       </div>
+
+      {isSocio && <CanAccess roles={['SOCIO_COMERCIAL']}><Button type="button" variant="dark" className="fixed bottom-[76px] right-4 z-20 h-12 rounded-full px-5 shadow-xl sm:hidden" onClick={() => setIsCreateModalOpen(true)}>＋ Nuevo cliente</Button></CanAccess>}
 
       <Modal
         open={isCreateModalOpen}

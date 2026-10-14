@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowLeft, ArrowUp, Trash2 } from 'lucide-react';
 import { OperationDetailCard } from '@/modules/operations/components/OperationDetailCard';
 import { PaymentsTable } from '@/modules/operations/components/PaymentsTable';
 import {
@@ -83,6 +83,7 @@ export function OperationDetailView({
   const returnsSectionRef = useRef<HTMLDivElement | null>(null);
   const [activeTab, setActiveTab] = useState<'income' | 'returns'>(scrollToReturns ? 'returns' : 'income');
   const { user } = useAuth();
+  const isSocio = user?.roles.includes('SOCIO_COMERCIAL');
 
   useEffect(() => {
     if (!scrollToPayments) return;
@@ -117,7 +118,7 @@ export function OperationDetailView({
   const montoPendientePorRetornar = operation.saldoPendienteRetornar
   return (
     <div className="mx-auto max-w-[1600px] space-y-5 pb-8">
-      <div className="flex items-center justify-between">
+      <div className={`flex items-center justify-between ${user?.roles.includes('SOCIO_COMERCIAL') ? 'max-sm:hidden' : ''}`}>
         <button
           type="button"
           onClick={onBack}
@@ -148,9 +149,10 @@ export function OperationDetailView({
         onOperationUpdated={onOperationUpdated}
       />
 
-      <div className="rounded-xl border border-slate-200 bg-white px-4 pt-2 shadow-sm">
+      <div className={`rounded-xl border border-slate-200 bg-white px-4 pt-2 shadow-sm ${isSocio ? 'max-sm:border-0 max-sm:bg-slate-200 max-sm:p-1 max-sm:shadow-none' : ''}`}>
         <Tabs variant="method" label="Secciones de la operación" value={activeTab} onChange={setActiveTab}
-          options={[{ value: 'income', label: 'Ingresos', count: operation.pagos.length }, { value: 'returns', label: 'Retornos', count: returns.length }]} />
+          className={isSocio ? 'max-sm:grid max-sm:grid-cols-2 max-sm:gap-0 max-sm:[&>button]:justify-center max-sm:[&>button]:rounded-lg max-sm:[&>button]:border-0 max-sm:[&>button[aria-selected=true]]:bg-white max-sm:[&>button[aria-selected=true]]:text-slate-900 max-sm:[&>button[aria-selected=true]]:shadow-sm' : ''}
+          options={[{ value: 'income', label: 'Ingresos', count: operation.pagos.length, icon: isSocio ? <ArrowDown className="size-3.5 text-emerald-600" /> : undefined }, { value: 'returns', label: 'Retornos', count: returns.length, icon: isSocio ? <ArrowUp className="size-3.5 text-red-600" /> : undefined }]} />
       </div>
 
       <div ref={paymentsSectionRef} className={activeTab === 'income' ? 'scroll-mt-20' : 'hidden'}>

@@ -39,14 +39,14 @@ export default function NewOperationPage() {
 
   return (
     <div className="mx-auto max-w-[1100px] space-y-4 pb-8">
-      <button type="button" onClick={() => navigate(paths.operations)} className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900">
+      <button type="button" onClick={() => navigate(paths.operations)} className={`inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 ${!canAssignLevelOne ? 'max-sm:hidden' : ''}`}>
         <ArrowLeft className="h-4 w-4" /> Operaciones
       </button>
-      <PageHeader title="Nueva operación" />
+      <div className={!canAssignLevelOne ? 'max-sm:hidden' : ''}><PageHeader title="Nueva operación" /></div>
       {loading ? <div className="rounded-2xl border border-slate-200 bg-white p-8 text-sm text-slate-600">Cargando formulario...</div> : canAssignLevelOne && !configuracionGeneral ? (
         <div role="alert" className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">No se pudo cargar la configuración de comisiones. Vuelve a abrir esta pantalla.</div>
       ) : (
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-7">
+        <div className={`rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-7 ${!canAssignLevelOne ? 'max-sm:border-0 max-sm:bg-transparent max-sm:p-0 max-sm:shadow-none' : ''}`}>
           <CreateOperationForm
             isSubmitting={isSubmitting}
             bankAccounts={bankAccounts}

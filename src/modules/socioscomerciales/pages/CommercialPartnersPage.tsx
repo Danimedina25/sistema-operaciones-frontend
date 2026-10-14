@@ -30,6 +30,8 @@ import { useCommercialPartners } from '../hooks/use-commercial-partners';
 import { CommercialPartnerForm } from '../components/CommercialPartnerForm';
 import { useUpdateCommercialPartner } from '../hooks/use-update-commercial-partner';
 import { useTableFilters } from '@/shared/hooks/use-table-filters';
+import { useAuth } from '@/modules/auth/store/auth.context';
+import { SocioMobileNetworkTabs } from '@/shared/components/layout/SocioMobileNetworkTabs';
 
 const initialFilters: CommercialPartnersFiltersType = {
   search: '',
@@ -37,6 +39,8 @@ const initialFilters: CommercialPartnersFiltersType = {
 };
 
 export default function CommercialPartnersPage() {
+  const { hasRole } = useAuth();
+  const isSocio = hasRole('SOCIO_COMERCIAL');
   const { filters, setFilters } = useTableFilters('table-filters:commercial-partners', initialFilters);
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -103,10 +107,12 @@ export default function CommercialPartnersPage() {
   }, [filteredPartners, currentPage, pageSize]);
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="Socios comerciales" actions={<Button type="button" onClick={() => setIsCreateModalOpen(true)}>Nuevo socio comercial</Button>} />
+    <div className="space-y-3 sm:space-y-6">
+      <PageHeader title="Socios comerciales" className={isSocio ? 'max-sm:hidden' : undefined} actions={<Button type="button" variant={isSocio ? 'dark' : 'primary'} onClick={() => setIsCreateModalOpen(true)}>Nuevo socio comercial</Button>} />
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      {isSocio && <SocioMobileNetworkTabs />}
+
+      <div className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${isSocio ? 'max-sm:overflow-visible max-sm:border-0 max-sm:bg-transparent max-sm:shadow-none' : ''}`}>
         <CommercialPartnersFilters filters={filters} onChange={setFilters} />
 
       {isLoading ? (
@@ -134,6 +140,8 @@ export default function CommercialPartnersPage() {
         </>
       )}
       </div>
+
+      {isSocio && <Button type="button" variant="dark" className="fixed bottom-[76px] right-4 z-20 h-12 rounded-full px-5 shadow-xl sm:hidden" onClick={() => setIsCreateModalOpen(true)}>＋ Nuevo socio</Button>}
 
       <Modal
         open={isCreateModalOpen}

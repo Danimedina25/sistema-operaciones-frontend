@@ -239,16 +239,17 @@ export function CreateOperationForm({
     );
   }
 
-  return (
-    <form className="space-y-5" onSubmit={handleSubmit(onSubmit, onInvalid)}>
-      <div className="mt-6 rounded-2xl border border-slate-200 p-4 sm:p-5">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <h3 className="text-base font-semibold text-slate-900">
-            Datos generales de la operación
-          </h3>
-        </div>
+  const operationNotesField = <div className="mt-5">
+    <label className="mb-2 block text-sm font-medium text-slate-700">Observaciones</label>
+    <textarea rows={4} placeholder="Opcional" className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-900" {...register('observaciones')} />
+    {errors.observaciones ? <p className="mt-1 text-xs text-red-600">{errors.observaciones.message}</p> : null}
+  </div>;
 
-        <div className="grid gap-5 md:grid-cols-2">
+  return (
+    <form className="space-y-5 max-sm:pb-20" onSubmit={handleSubmit(onSubmit, onInvalid)}>
+      <div className="mt-6 rounded-2xl border border-slate-200 p-4 sm:p-5 max-sm:mt-0 max-sm:border-0 max-sm:p-0">
+        <div className="grid gap-5 md:grid-cols-2 max-sm:rounded-2xl max-sm:border max-sm:border-slate-200 max-sm:bg-white max-sm:p-4 max-sm:shadow-sm">
+          <h3 className="text-base font-semibold text-slate-900 md:col-span-2"><span className="mr-2 hidden size-6 items-center justify-center rounded-full bg-slate-950 text-xs text-white max-sm:inline-flex">1</span><span className="max-sm:hidden">Datos generales de la operación</span><span className="hidden max-sm:inline">Cliente y monto</span></h3>
           {canAssignLevelOne ? (
             <div className="md:col-span-2">
               <label className="mb-2 block text-sm font-medium text-slate-700">Socio comercial nivel 1</label>
@@ -276,9 +277,6 @@ export function CreateOperationForm({
             <input type="hidden" {...register('socioComercialId')} />
           )}
           <div className="md:col-span-2">
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Nombre del cliente
-            </label>
             <ClienteCombobox
               clientes={clientes}
               search={clienteSearch}
@@ -301,6 +299,16 @@ export function CreateOperationForm({
               {errors.clienteId.message}
             </p>
           ) : null}
+
+          <div className="md:col-span-2">
+            <label className="mb-2 block text-sm font-medium text-slate-700"><span className="max-sm:hidden">Monto total</span><span className="hidden max-sm:inline">Monto de la operación</span></label>
+            <Input type="text" inputMode="decimal" placeholder="1,000.00" error={errors.montoTotal?.message} {...register('montoTotal')} onChange={(event) => { void handleCurrencyChange('montoTotal', event.target.value); }} />
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-slate-200 p-4 max-sm:bg-white max-sm:shadow-sm">
+          <div className="mb-4 hidden items-center gap-2 max-sm:flex"><span className="inline-flex size-6 items-center justify-center rounded-full bg-slate-950 text-xs font-semibold text-white">2</span><span><strong className="block text-base text-slate-900">Red de socios</strong><span className="text-xs text-slate-500">Quiénes comparten la comisión.</span></span></div>
+          <div className="grid gap-5 md:grid-cols-2">
 
           <div className="md:col-span-2">
             <label className="mb-2 block text-sm font-medium text-slate-700">
@@ -535,43 +543,13 @@ export function CreateOperationForm({
             </div>
           )}
 
-        <div className="mt-5">
-          <label className="mb-2 block text-sm font-medium text-slate-700">
-            Monto total
-          </label>
-          <Input
-            type="text"
-            inputMode="decimal"
-            placeholder="1,000.00"
-            error={errors.montoTotal?.message}
-            {...register('montoTotal')}
-            onChange={(event) => {
-              void handleCurrencyChange('montoTotal', event.target.value);
-            }}
-          />
         </div>
 
-        <div className="mt-5">
-          <label className="mb-2 block text-sm font-medium text-slate-700">
-            Observaciones
-          </label>
-          <textarea
-            rows={4}
-            placeholder="Opcional"
-            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-900"
-            {...register('observaciones')}
-          />
-          {errors.observaciones ? (
-            <p className="mt-1 text-xs text-red-600">
-              {errors.observaciones.message}
-            </p>
-          ) : null}
-        </div>
+        {canAssignLevelOne && operationNotesField}
       </div>
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:mt-5 sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none">
       <div className="mb-5">
-        <h3 className="text-lg font-semibold text-slate-900">
-          Pagos de ingreso
-        </h3>
+        <h3 className="text-lg font-semibold text-slate-900"><span className="mr-2 hidden size-6 items-center justify-center rounded-full bg-slate-950 text-xs text-white max-sm:inline-flex">3</span>Pagos de ingreso</h3>
         <p className="mt-1 text-sm text-slate-500">
           Todos los comprobantes pertenecen a la misma operación. Cada uno puede ir
           a una cuenta distinta.
@@ -899,8 +877,10 @@ export function CreateOperationForm({
         <Plus className="h-4 w-4" />
         Agregar otro pago
       </button>
-      <div className="flex flex-wrap justify-end gap-3 border-t border-slate-200 pt-5">
-        <Button variant="primary" type="submit" isLoading={isSubmitting} disabled={Boolean(errors.pagos?.message)}>
+      </section>
+      {!canAssignLevelOne && <details className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm"><summary className="cursor-pointer text-sm font-semibold text-slate-900">Observaciones <span className="float-right text-blue-600">+ Agregar</span></summary>{operationNotesField}</details>}
+      <div className="flex flex-wrap justify-end gap-3 border-t border-slate-200 pt-5 max-sm:fixed max-sm:bottom-[64px] max-sm:left-0 max-sm:right-0 max-sm:z-20 max-sm:bg-white max-sm:px-4 max-sm:py-3">
+        <Button variant={canAssignLevelOne ? 'primary' : 'dark'} className="max-sm:w-full" type="submit" isLoading={isSubmitting} disabled={Boolean(errors.pagos?.message)}>
           Registrar operación
         </Button>
       </div>

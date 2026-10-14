@@ -29,4 +29,5 @@
 ## Retornos
 
 - **Cuenta o CLABE en transferencias.** La regla acordada permite capturar número de cuenta **o** CLABE. El recorrido local de la etapa 7 mostró que `ReturnsOperationServiceImpl.validateReturnRequest` rechaza una solicitud con solo número de cuenta y exige CLABE de 18 dígitos. Corregir esta validación de escritura y cubrirla con pruebas de permisos y negocio en Fase 2.
+- **Resumen de borrador de operación.** Los frames S5 (`68:1613`) y M5 (`72:2160`) muestran en tiempo real monto de comprobantes, faltante y avance antes de registrar. La API no ofrece una respuesta de lectura que cotice un borrador sin crearlo. Conservar la validación actual del formulario y agregar una cotización de solo lectura en backend antes de mostrar ese resumen; no calcular ni persistir saldos nuevos en el frontend.
 

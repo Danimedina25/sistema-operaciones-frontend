@@ -55,6 +55,7 @@ export default function OperationsPage() {
   const navigate = useNavigate();
 
   const { hasRole, user } = useAuth();
+  const isSocio = hasRole('SOCIO_COMERCIAL');
   const isManager = hasRole(['GERENTE']);
   const [listView, setListView] = useState<'all' | 'pending' | 'stalled'>(() =>
     isManager && new URLSearchParams(window.location.search).get('view') === 'stalled' ? 'stalled' : 'all');
@@ -303,7 +304,7 @@ export default function OperationsPage() {
     <div className="space-y-3">
       <PageHeader
         title="Operaciones"
-        className="flex-row flex-wrap items-center justify-between gap-3 [&>div:last-child]:ml-auto"
+        className={`flex-row flex-wrap items-center justify-between gap-3 [&>div:last-child]:ml-auto ${isSocio ? 'max-sm:hidden' : ''}`}
         actions={canCreateOperation ? (
           <Button type="button" variant="primary" onClick={() => navigate(paths.operationCreate)}>
             Nueva operación
@@ -311,7 +312,7 @@ export default function OperationsPage() {
         ) : undefined}
       />
 
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <section className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${isSocio ? 'max-sm:overflow-visible max-sm:border-0 max-sm:bg-transparent max-sm:shadow-none' : ''}`}>
         {hasOperationsNeedingCommissionReview && (
             <div className="m-4 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
               <p className="text-sm font-medium text-amber-800">
@@ -322,10 +323,11 @@ export default function OperationsPage() {
         <SearchFilterBar
           search={filters.search}
           onSearchChange={(search) => setFilters({ ...filters, search })}
-          searchPlaceholder="Buscar folio, cliente o socio comercial"
+          searchPlaceholder={isSocio ? 'Buscar folio o cliente' : 'Buscar folio, cliente o socio comercial'}
+          iconOnlyOnMobile={isSocio}
           activeFilters={showingStalled ? [] : activeFilters}
           onFiltersOpenChange={setFiltersOpen}
-          leading={isManager ? <Tabs
+          leading={isSocio && filters.activo === 'ACTIVE' ? <button type="button" onClick={() => setFilters({ ...filters, activo: 'ALL' })} className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 max-sm:order-3">Estado: Activas ×</button> : isManager ? <Tabs
             label="Vistas de operaciones"
             options={[{ value: 'stalled', label: 'Detenidas' }, { value: 'pending', label: 'Por validar' }, { value: 'all', label: 'Todas' }]}
             value={listView}
@@ -387,6 +389,8 @@ export default function OperationsPage() {
           />
         </div>
       </section>
+
+      {isSocio && canCreateOperation && <Button type="button" variant="dark" className="fixed bottom-[76px] right-4 z-20 h-12 rounded-full px-5 shadow-xl sm:hidden" onClick={() => navigate(paths.operationCreate)}>＋ Nueva operación</Button>}
 
       <Modal
         open={isEditModalOpen}

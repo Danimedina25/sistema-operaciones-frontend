@@ -164,6 +164,9 @@ export function OperationsTable({
   const viewButton = (operation: PaymentOperationResponse) => (
     <Button type="button" variant="neutral" onClick={() => onViewDetail(operation.id)}>Ver</Button>
   );
+  const mobileViewButton = (operation: PaymentOperationResponse) => (
+    <Button type="button" variant="neutral" className="h-8 px-3 text-xs" onClick={() => onViewDetail(operation.id)}>Ver</Button>
+  );
   const actionsCell = (operation: PaymentOperationResponse) => (
     <div className="flex items-center justify-end gap-1 whitespace-nowrap">
       {viewButton(operation)}
@@ -198,26 +201,27 @@ export function OperationsTable({
       rows={operations}
       getRowKey={(operation) => operation.id}
       isLoading={isLoading}
+      mobileCardClassName={isSocioComercial ? 'p-3' : undefined}
       loadingLabel="Cargando operaciones..."
       emptyTitle={emptyTitle ?? (stalledView ? 'No hay operaciones detenidas' : 'No hay operaciones con estos filtros')}
       emptyDescription={emptyDescription ?? (stalledView
         ? 'Las operaciones detenidas aparecerán aquí cuando requieran seguimiento.'
         : 'Prueba con otros filtros o busca un folio o cliente.')}
       mobile={{
-        title: (operation) => <>{folio(operation)} <span className="ml-1">{operation.clienteNombre}</span></>,
+        title: (operation) => isSocioComercial ? <div className="min-w-0"><p className="text-xs font-normal text-slate-400">Folio {operation.id} · {formatDate(operation.createdAt)}</p><p className="mt-1 truncate text-sm font-semibold text-slate-900" title={operation.clienteNombre}>{operation.clienteNombre}</p><p className="mt-1 text-sm font-bold tabular-nums text-slate-900">{formatMoney(operation.montoTotal)}</p></div> : <>{folio(operation)} <span className="ml-1">{operation.clienteNombre}</span></>,
         subtitle: isSocioComercial ? undefined : (operation) => `Socio: ${operation.socioComercialNombre}`,
         status: (operation) => <OperationStatusBadge status={operation.estatus} />,
-        fields: [
+        fields: isSocioComercial ? [] : [
           { key: 'amount', label: 'Monto', value: (operation) => formatMoney(operation.montoTotal) },
           { key: 'returned', label: 'Monto retornado', value: (operation) => formatMoney(operation.montoRetornado) },
           { key: 'created', label: 'Creada', value: (operation) => formatDate(operation.createdAt) },
           { key: 'updated', label: 'Último cambio', value: (operation) => formatDate(operation.updatedAt) },
           ...(stalledView ? [{ key: 'elapsed', label: 'Sin avanzar', value: (operation: PaymentOperationResponse) => formatElapsedSince(operation.updatedAt) }] : []),
         ],
-        extra: (operation) => <ProgressBar total={operation.montoTotal} registered={operation.montoRegistrado} validated={operation.montoValidado} />,
+        extra: (operation) => isSocioComercial ? <div><ProgressBar total={operation.montoTotal} registered={operation.montoRegistrado} validated={operation.montoValidado} compact /><p className="mt-1 text-xs text-slate-500">{operation.pagos.length} {operation.pagos.length === 1 ? 'pago' : 'pagos'} registrado{operation.pagos.length === 1 ? '' : 's'}</p></div> : <ProgressBar total={operation.montoTotal} registered={operation.montoRegistrado} validated={operation.montoValidado} />,
         actions: (operation) => <>
-          {viewButton(operation)}
-          <RowActionsMenu triggerLabel="" ariaLabel="Más opciones" triggerClassName="min-w-11 justify-center px-2">{renderActions(operation)}</RowActionsMenu>
+          {isSocioComercial ? mobileViewButton(operation) : viewButton(operation)}
+          <RowActionsMenu triggerLabel="" ariaLabel="Más opciones" triggerClassName={isSocioComercial ? 'h-8 min-w-8 justify-center px-1' : 'min-w-11 justify-center px-2'}>{renderActions(operation)}</RowActionsMenu>
         </>,
       }}
     />

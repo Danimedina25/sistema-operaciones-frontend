@@ -43,3 +43,37 @@ La captura de apertura y las capturas de estados vacíos usan respuestas de lect
 | 08c · Retorno bancario por pagar | [92:830](08c-retorno-por-pagar-figma.png) | [Antes](08c-retorno-por-pagar-local-antes.png) | [Estado actual](08c-retorno-por-pagar-local-despues.png) |
 
 La captura final 01b muestra movimientos reales del 12 oct 2026 mediante el selector de periodo. El frame usa datos de ejemplo del 1 oct 2026. La cuenta y los saldos locales no se sustituyeron por cifras del diseño. Los frames 07–08c usan la base de Operaciones compartida entre roles; sus diferencias pendientes se corregirán en la etapa «Pantallas compartidas».
+
+## Socio Comercial
+
+| Frame y estado | Figma | Local antes | Local después |
+| --- | --- | --- | --- |
+| S1 · Mis pendientes, pagos | [49:567](S1-mis-pendientes-figma.png) | [Antes](S1-mis-pendientes-local-antes.png) | [Estado local vacío](S1-mis-pendientes-local-despues.png) |
+| S1b · Mis pendientes, seguimiento | [61:1206](S1b-pendientes-seguimiento-figma.png) | [Antes](S1b-pendientes-seguimiento-local-antes.png) | [Después](S1b-pendientes-seguimiento-local-despues.png) |
+| M1 · Pendientes por solicitar, 390 px | [70:1669](M1-pendientes-por-solicitar-figma.png) | [Antes](M1-pendientes-por-solicitar-local-antes.png) | [Después](M1-pendientes-por-solicitar-local-despues.png) |
+| M1b · Pendientes seguimiento, 390 px | [70:1819](M1b-pendientes-seguimiento-figma.png) | [Antes](M1b-pendientes-seguimiento-local-antes.png) | [Después](M1b-pendientes-seguimiento-local-despues.png) |
+| S6 · Clientes | [73:1992](S6-clientes-figma.png) | [Antes](S6-clientes-local-antes.png) | [Después](S6-clientes-local-despues.png) |
+| M6 · Clientes, 390 px | [75:2244](M6-clientes-figma.png) | [Antes](M6-clientes-local-antes.png) | [Después](M6-clientes-local-despues.png) |
+| S7 · Socios comerciales | [73:2173](S7-socios-figma.png) | [Antes](S7-socios-local-antes.png) | [Después](S7-socios-local-despues.png) |
+| M7 · Socios comerciales, 390 px | [75:2386](M7-socios-figma.png) | [Antes](M7-socios-local-antes.png) | [Después](M7-socios-local-despues.png) |
+| S8 · Mis comisiones con datos | [74:2134](S8-comisiones-figma.png) | [Sin datos locales](S8-comisiones-local-antes.png) | [Estado local vacío](S8-comisiones-local-despues.png) |
+| S8b · Mis comisiones vacías | [74:2287](S8b-comisiones-vacias-figma.png) | [Antes](S8b-comisiones-vacias-local-antes.png) | [Después](S8b-comisiones-vacias-local-despues.png) |
+| M8 · Mis comisiones, 390 px | [75:2530](M8-comisiones-figma.png) | [Sin datos locales](M8-comisiones-local-antes.png) | [Estado local vacío](M8-comisiones-local-despues.png) |
+| S1a · Retornos por solicitar | [155:2321](S1a-retornos-por-solicitar-figma.png) | [Antes](S1a-retornos-por-solicitar-local-antes.png) | [Después](S1a-retornos-por-solicitar-local-despues.png) |
+| S1c · Solicitar retorno, panel | [154:2338](S1c-solicitar-retorno-panel-figma.png) | [Antes](S1c-solicitar-retorno-panel-local-antes.png) | [Después](S1c-solicitar-retorno-panel-local-despues.png) |
+| S1d · Registrar pago, panel | [156:2376](S1d-registrar-pago-panel-figma.png) | [Antes](S1d-registrar-pago-panel-local-antes.png) | [Después](S1d-registrar-pago-panel-local-despues.png) |
+| S2 · Operaciones | [49:692](S2-operaciones-figma.png) | [Antes](S2-operaciones-local-antes.png) | [Después](S2-operaciones-local-despues.png) |
+| M2 · Operaciones, 390 px | [71:1812](M2-operaciones-figma.png) | [Antes](M2-operaciones-local-antes.png) | [Después](M2-operaciones-local-despues.png) |
+| S3 · Detalle de ingresos | [50:694](S3-detalle-ingresos-figma.png) | [Antes](S3-detalle-ingresos-local-antes.png) | [Después](S3-detalle-ingresos-local-despues.png) |
+| M3 · Detalle de ingresos, 390 px | [71:1939](M3-detalle-ingresos-figma.png) | [Antes](M3-detalle-ingresos-local-antes.png) | [Después](M3-detalle-ingresos-local-despues.png) |
+| S3b · Detalle de retornos | [50:902](S3b-detalle-retornos-figma.png) | [Antes](S3b-detalle-retornos-local-antes.png) | [Después](S3b-detalle-retornos-local-despues.png) |
+| M3b · Detalle de retornos, 390 px | [71:2116](M3b-detalle-retornos-figma.png) | [Antes](M3b-detalle-retornos-local-antes.png) | [Después](M3b-detalle-retornos-local-despues.png) |
+| S3c · Retorno por solicitar | [61:1434](S3c-retornos-por-solicitar-figma.png) | [Antes](S3c-retornos-por-solicitar-local-antes.png) | [Después](S3c-retornos-por-solicitar-local-despues.png) |
+| M3c · Retorno por solicitar, 390 px | [72:1920](M3c-retorno-por-solicitar-figma.png) | [Antes](M3c-retorno-por-solicitar-local-antes.png) | [Después](M3c-retorno-por-solicitar-local-despues.png) |
+| S3d · Ingreso por registrar | [62:1316](S3d-ingresos-por-registrar-figma.png) | [Antes](S3d-ingresos-por-registrar-local-antes.png) | [Después](S3d-ingresos-por-registrar-local-despues.png) |
+| M3d · Ingreso por registrar, 390 px | [72:2027](M3d-ingresos-por-registrar-figma.png) | [Antes](M3d-ingresos-por-registrar-local-antes.png) | [Después](M3d-ingresos-por-registrar-local-despues.png) |
+| S5 · Nueva operación | [68:1613](S5-nueva-operacion-figma.png) | [Antes](S5-nueva-operacion-local-antes.png) | [Después](S5-nueva-operacion-local-despues.png) |
+| M5 · Nueva operación, 390 px | [72:2160](M5-nueva-operacion-figma.png) | [Antes](M5-nueva-operacion-local-antes.png) | [Después](M5-nueva-operacion-local-despues.png) |
+
+El Socio local tiene una solicitud por iniciar y una en seguimiento; sus pagos de ingreso ya están completos. También carece de clientes, socios comerciales y comisiones en la semana ilustrada. Las capturas usan esos datos sin sustituir montos por los de Figma.
+Las capturas S1d, S3d y M3d usan una respuesta GET simulada en Chrome sobre la operación local #42 para representar $50,000.00 por registrar; no se envían formularios ni se altera MySQL. El formulario S5/M5 no muestra el resumen de un borrador hasta tener cotización de lectura del backend.
