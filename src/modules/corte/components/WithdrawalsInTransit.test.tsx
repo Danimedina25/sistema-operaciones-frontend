@@ -20,7 +20,7 @@ vi.mock('@/modules/auth/store/auth.context', () => ({
 
 function withdrawal(id: number, monto: number): BankCashWithdrawal {
   return {
-    id, registradoEn: '2026-09-29T10:15:00', bankAccountId: 4, cuenta: '', cuentaTitular: 'Operaciones SA',
+    id, version: 0, registradoEn: '2026-09-29T10:15:00', bankAccountId: 4, cuenta: '', cuentaTitular: 'Operaciones SA',
     cuentaNumero: '00001111', banco: 'BANORTE', forma: 'RETIRO_CON_TARJETA', formaEtiqueta: 'Retiro con tarjeta',
     monto, referencia: null, comprobanteUrl: null, estatus: 'PENDIENTE', motivo: null, registradoPorId: 2,
     registradoPorNombre: 'Jefa de Cuentas', resueltoPorNombre: null, resueltoEn: null, cashMovementId: null,

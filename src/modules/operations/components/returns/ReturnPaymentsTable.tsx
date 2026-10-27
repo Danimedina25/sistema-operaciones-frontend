@@ -58,6 +58,7 @@ export function ReturnPaymentsTable({
 
   const visibleReturns = returns.filter((returnPayment) => {
     if (isAdmin) return true;
+    if (returnPayment.tipoPago === 'RETIRO_SIN_TARJETA') return !isJefaCajas || Boolean(returnPayment.parcialidades?.some(i => !i.codigoParaCliente));
     if (isJefaCajas || isJefaCuentas || isAuxiliarCuentas) {
       return isCashReturnMethod(returnPayment.tipoPago) ? isJefaCajas : isJefaCuentas || isAuxiliarCuentas;
     }
@@ -92,6 +93,7 @@ export function ReturnPaymentsTable({
 
   function roleCanHandleMethod(returnPayment: ReturnPaymentResponse): boolean {
     if (isAdmin) return true;
+    if (returnPayment.tipoPago === 'RETIRO_SIN_TARJETA') return isJefaCuentas || isAuxiliarCuentas;
     if (isCashReturnMethod(returnPayment.tipoPago)) return isJefaCajas;
     return isJefaCuentas || isAuxiliarCuentas;
   }
@@ -106,6 +108,8 @@ export function ReturnPaymentsTable({
   }
 
   function renderRowActions(returnPayment: ReturnPaymentResponse): ReactNode {
+    if (returnPayment.tipoPago === 'RETIRO_SIN_TARJETA' && !isJefaCajas)
+      return <div className="flex flex-wrap gap-2"><button type="button" onClick={() => isJefaCuentas || isAuxiliarCuentas || isAdmin || isSocioComercial ? onManageReturn?.(returnPayment) : onOpenReturn?.(returnPayment)} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white">{isJefaCuentas || isAuxiliarCuentas || isAdmin ? 'Gestionar códigos' : 'Ver códigos de retiro'}</button>{canEditRequestReturnPayments && returnPayment.estatus === 'SOLICITADO' && !returnPayment.numeroParcialidades && <button className="rounded-lg border border-slate-300 px-3 py-2 text-xs" onClick={() => onEditReturn?.(returnPayment)}>Editar solicitud</button>}</div>;
     const totals = resolveReturnRequestTotals(returnPayment);
     const availability = registerAvailability(returnPayment);
     const puedeGestionar =
@@ -318,7 +322,7 @@ export function ReturnPaymentsTable({
               { key: 'requested', header: 'Solicitado', width: '126px', cell: (request: ReturnPaymentResponse) => <span className="font-semibold tabular-nums text-slate-900">{formatCurrency(resolveReturnRequestTotals(request).montoSolicitado)}</span> },
               { key: 'progress', header: 'Avance', cell: renderProgress },
               { key: 'pending', header: 'Pendiente', width: '118px', cell: (request: ReturnPaymentResponse) => <span className="font-semibold tabular-nums text-amber-700">{formatCurrency(resolveReturnRequestTotals(request).montoPendiente)}</span> },
-              { key: 'status', header: 'Estatus', kind: 'status', width: '170px', cell: (request: ReturnPaymentResponse) => <ReturnStatusBadge status={request.estatus} /> },
+              { key: 'status', header: 'Estatus', kind: 'status', width: '170px', cell: (request: ReturnPaymentResponse) => <ReturnStatusBadge status={request.estatus} stage={request.retiroEtapa} /> },
               { key: 'actions', header: 'Acciones', kind: 'actions', align: 'right', width: '166px', cell: renderRowActions },
             ] satisfies DataTableColumn<ReturnPaymentResponse>[]}
             rows={visibleReturns}
@@ -326,7 +330,7 @@ export function ReturnPaymentsTable({
             emptyTitle="Sin solicitudes de retorno"
             mobile={{
               title: (request) => <>#{request.id} · {paymentTypeLabels[request.tipoPago]}</>,
-              status: (request) => <ReturnStatusBadge status={request.estatus} />,
+              status: (request) => <ReturnStatusBadge status={request.estatus} stage={request.retiroEtapa} />,
               fields: [
                 { key: 'requested', label: 'Solicitado', value: (request) => formatCurrency(resolveReturnRequestTotals(request).montoSolicitado) },
               ],
@@ -334,7 +338,7 @@ export function ReturnPaymentsTable({
               actions: renderRowActions,
             }}
           />
-          {(isJefaCuentas || isAuxiliarCuentas) && returns.some((request) => isCashReturnMethod(request.tipoPago)) && <p className="border-t border-slate-100 bg-slate-50 px-5 py-3 text-xs text-slate-500">Los retornos en efectivo y retiro sin tarjeta de esta operación los atiende Caja General.</p>}
+          {(isJefaCuentas || isAuxiliarCuentas) && returns.some((request) => isCashReturnMethod(request.tipoPago)) && <p className="border-t border-slate-100 bg-slate-50 px-5 py-3 text-xs text-slate-500">Cuentas y Auxiliares registran los códigos de retiro para el cliente y verifican su cobro. No pasan por Caja General.</p>}
           {isJefaCajas && returns.some((request) => !isCashReturnMethod(request.tipoPago)) && <p className="border-t border-slate-100 bg-slate-50 px-5 py-3 text-xs text-slate-500">Los retornos por transferencia de esta operación los paga Cuentas.</p>}
         </>
       )}

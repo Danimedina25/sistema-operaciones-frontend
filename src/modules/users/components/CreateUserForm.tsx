@@ -1,3 +1,6 @@
+import { useId } from 'react';
+import { ActionDrawerFooter } from '@/shared/components/ui/ActionDrawer';
+import { useFormSubmission } from '@/shared/hooks/use-form-submission';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,11 +16,13 @@ import { BankCombobox } from '@/shared/components/ui/BankCombobox';
 
 interface CreateUserFormProps {
   isSubmitting: boolean;
+  onCancel?: () => void;
   onSubmit: (values: CreateUserFormValues) => Promise<void>;
 }
 
 export function CreateUserForm({
   isSubmitting,
+  onCancel,
   onSubmit,
 }: CreateUserFormProps) {
   const {
@@ -63,11 +68,17 @@ export function CreateUserForm({
     }
   }, [selectedRole, isSocioComercial, setValue]);
 
+  const formId = useId();
+  const { submit, busy, submitError } = useFormSubmission(onSubmit, isSubmitting);
+
   return (
-    <form
+    <form id={formId}
       className="space-y-6"
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={handleSubmit(submit)}
     >
+      {submitError && <p role="alert" className="sticky top-0 z-10 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{submitError}</p>}
+      <fieldset disabled={busy} className="min-w-0 space-y-5">
+
       {/* Información del usuario */}
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-5">
@@ -243,14 +254,18 @@ export function CreateUserForm({
         </div>
       )}
 
-      <div className="flex justify-end border-t border-slate-200 pt-4">
+      </fieldset>
+      <ActionDrawerFooter>
+      <div className="flex flex-wrap justify-end gap-3">
+        {onCancel && <Button type="button" variant="neutral" disabled={busy} onClick={onCancel}>Cancelar</Button>}
         <Button variant="primary"
-          type="submit"
-          isLoading={isSubmitting}
+          type="submit" form={formId}
+          isLoading={busy}
         >
           Crear usuario
         </Button>
       </div>
+      </ActionDrawerFooter>
     </form>
   );
 }

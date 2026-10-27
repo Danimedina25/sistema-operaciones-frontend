@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CanAccess } from '@/shared/components/CanAccess';
-import { Modal } from '@/shared/components/ui/Modal';
+import { ActionDrawer } from '@/shared/components/ui/ActionDrawer';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { DeleteConfirmationModal } from '@/shared/components/ui/DeleteConfirmationModal';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
@@ -54,7 +54,8 @@ export default function ClientesPage() {
 
   const { user, hasRole } = useAuth();
   const isSocio = hasRole('SOCIO_COMERCIAL');
-  const canAssignLevelOne = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
+  const canAssignLevelOne = hasRole(['ADMIN', 'GERENTE']);
+  const canManage = hasRole(['ADMIN', 'GERENTE', 'SOCIO_COMERCIAL']);
   const { commercialLevelOneUsers } = useCommercialLevelOneUsers({ enabled: canAssignLevelOne });
 
   const { isSubmitting: isCreating, submitCreateCliente } = useCreateCliente({
@@ -122,6 +123,9 @@ export default function ClientesPage() {
           <ClientesTable
             clientes={paginatedClientes}
             processingClienteId={processingClienteId}
+            canEdit={canManage}
+            canChangeStatus={canManage}
+            canDelete={hasRole('ADMIN')}
             onEdit={setEditingCliente}
             onActivate={handleActivate}
             onDeactivate={handleDeactivate}
@@ -141,28 +145,30 @@ export default function ClientesPage() {
 
       {isSocio && <CanAccess roles={['SOCIO_COMERCIAL']}><Button type="button" variant="dark" className="fixed bottom-[76px] right-4 z-20 h-12 rounded-full px-5 shadow-xl sm:hidden" onClick={() => setIsCreateModalOpen(true)}>＋ Nuevo cliente</Button></CanAccess>}
 
-      <Modal
-        open={isCreateModalOpen}
+      <ActionDrawer
+        open={isCreateModalOpen} busy={isCreating}
         title="Crear nuevo cliente"
         onClose={() => setIsCreateModalOpen(false)}
       >
         <CreateClienteForm
           isSubmitting={isCreating}
+          onCancel={() => setIsCreateModalOpen(false)}
           levelOneUsers={commercialLevelOneUsers}
           currentUserId={canAssignLevelOne ? 0 : (user?.userId ?? 0)}
           canAssignLevelOne={canAssignLevelOne}
           onSubmit={submitCreateCliente}
         />
-      </Modal>
+      </ActionDrawer>
 
-      <Modal
-        open={Boolean(editingCliente)}
+      <ActionDrawer
+        open={Boolean(editingCliente)} busy={isUpdating}
         title="Editar cliente"
         onClose={() => setEditingCliente(null)}
       >
         {editingCliente ? (
           <ClienteForm
             isSubmitting={isUpdating}
+          onCancel={() => setEditingCliente(null)}
             initialValues={{
               nombre: editingCliente.nombre,
               activo: editingCliente.activo,
@@ -171,7 +177,7 @@ export default function ClientesPage() {
             submitLabel="Guardar cambios"
           />
         ) : null}
-      </Modal>
+      </ActionDrawer>
 
       <DeleteConfirmationModal
         open={Boolean(deletingCliente)}

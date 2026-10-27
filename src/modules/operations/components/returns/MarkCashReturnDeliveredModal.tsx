@@ -1,5 +1,7 @@
-import { useEffect, useId, useMemo, useState } from 'react';
-import { DenominationFields } from '@/modules/caja-general/components/DenominationFields';
+import { getApiErrorMessage } from '@/shared/utils/errors';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { CompactDenominationTables } from '@/modules/caja-general/components/CompactDenominationTables';
+import { Button } from '@/shared/components/ui/Button';
 import { emptyCounts, countCents } from '@/modules/caja-general/utils/cash-amounts';
 import type { CashCounts } from '@/modules/caja-general/types/caja-general.types';
 import { ActionDrawer } from '@/shared/components/ui/ActionDrawer';
@@ -20,7 +22,7 @@ interface MarkCashReturnDeliveredModalProps {
     comprobante: File,
     personaQueRecibioEfectivo: string,
     denominaciones?: CashCounts,
-  ) => void;
+  ) => void | Promise<void>;
   onClose: () => void;
 }
 
@@ -41,6 +43,12 @@ export function MarkCashReturnDeliveredModal({
   onConfirm,
   onClose,
 }: MarkCashReturnDeliveredModalProps) {
+  const submitting = useRef(false);
+  const summaryRef = useRef<HTMLElement>(null);
+  const [localBusy, setLocalBusy] = useState(false);
+  const busy = isSubmitting || localBusy;
+  const [submitError, setSubmitError] = useState('');
+  useEffect(() => { if (submitError) summaryRef.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' }); }, [submitError]);
   const [comprobante, setComprobante] = useState<File | null>(null);
   const [selectValue, setSelectValue] = useState('');
   const [otraNombre, setOtraNombre] = useState('');
@@ -67,6 +75,7 @@ export function MarkCashReturnDeliveredModal({
   // Reinicia selección y foto al cambiar o cerrar la parcialidad.
   useEffect(() => {
     setComprobante(null);
+    setSubmitError('');
     setSelectValue('');
     setOtraNombre('');
     setDenominaciones(emptyCounts());
@@ -81,86 +90,66 @@ export function MarkCashReturnDeliveredModal({
   const fotoValida = !!comprobante && comprobante.type.startsWith('image/');
   const requiresCashBreakdown =
     target?.tipoPago === 'EFECTIVO' || target?.tipoPago === 'RETIRO_SIN_TARJETA';
-  const desgloseValido = !requiresCashBreakdown
-    || countCents(denominaciones) === Math.round((target?.monto ?? 0) * 100);
-  const canConfirm = receptorValido && fotoValida && desgloseValido && !isSubmitting;
+  const countedCents = countCents(denominaciones);
+  const differenceCents = countedCents - Math.round((target?.monto ?? 0) * 100);
+  const desgloseValido = !requiresCashBreakdown || differenceCents === 0;
+  const canConfirm = receptorValido && fotoValida && desgloseValido && !busy;
 
-  const handleConfirm = () => {
-    if (!target || !comprobante || !canConfirm) return;
-    onConfirm(
+  const handleConfirm = async () => {
+    if (!target || !comprobante || !canConfirm || submitting.current) return;
+    submitting.current = true; setLocalBusy(true); setSubmitError('');
+    try {
+    await onConfirm(
       target.id,
       target.operationId,
       comprobante,
       personaQueRecibio,
       requiresCashBreakdown ? denominaciones : undefined,
     );
+    } catch (error) { setSubmitError(getApiErrorMessage(error)); }
+    finally { submitting.current = false; setLocalBusy(false); }
   };
 
   return (
     <ActionDrawer
       open={!!target}
+      busy={busy}
       title="Marcar efectivo como entregado"
+      subtitle={target ? `Operación #${target.operationId}${target.clienteNombre ? ` · ${target.clienteNombre}` : ''}${target.scheduledAt ? ` · ${formatDateTime(target.scheduledAt)}` : ''}` : undefined}
       onClose={() => {
-        if (!isSubmitting) onClose();
+        if (!busy) onClose();
       }}
       footer={<div className="flex gap-3">
-        <button type="button" disabled={isSubmitting} onClick={onClose}
-          className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 disabled:opacity-60">
+        <Button type="button" variant="neutral" disabled={busy} onClick={onClose}>
           Cancelar
-        </button>
-        <button type="button" disabled={!canConfirm} onClick={handleConfirm}
-          className="min-h-11 flex-1 rounded-lg bg-[#3b6ef5] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
-          {isSubmitting ? 'Subiendo evidencia...' : 'Sí, marcar como entregado'}
-        </button>
+        </Button>
+        <Button type="button" disabled={!canConfirm} onClick={handleConfirm} className="h-auto min-h-11 flex-1">
+          {busy ? 'Subiendo evidencia...' : 'Sí, marcar como entregado'}
+        </Button>
       </div>}
     >
       {target ? (
         <>
-          <p className="text-sm text-slate-600">
-            {target.confirmadoPorSocio
-              ? 'El socio comercial ya confirmó que recogió esta parcialidad. Al registrar la entrega quedará completada.'
-              : 'Registra la entrega del efectivo. La parcialidad quedará en confirmación parcial hasta que el socio comercial confirme la recepción.'}
-          </p>
-
-          <div className="mt-4 space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-            <p>
-              <span className="font-medium">Monto:</span> {formatCurrency(target.monto)}
-            </p>
-            <p>
-              <span className="font-medium">Operación:</span> #{target.operationId}
-              {target.clienteNombre ? ` · ${target.clienteNombre}` : ''}
-            </p>
-            <p>
-              <span className="font-medium">Personas autorizadas:</span>{' '}
-              {hasAutorizados ? autorizados.join(', ') : 'Ninguna registrada'}
-            </p>
-            <p>
-              <span className="font-medium">Fecha programada:</span>{' '}
-              {target.scheduledAt ? formatDateTime(target.scheduledAt) : '-'}
-            </p>
-          </div>
-
           {requiresCashBreakdown ? (
-            <div className="mt-4">
-              <DenominationFields
-                value={denominaciones}
-                onChange={setDenominaciones}
-                disabled={isSubmitting}
-              />
-              {!desgloseValido ? (
-                <p role="alert" className="mt-2 text-xs text-red-600">
-                  El desglose debe sumar exactamente {formatCurrency(target.monto)}.
+            <section aria-label="Desglose y resumen de entrega" className="min-w-0">
+              <h3 className="mb-3 text-sm font-semibold text-slate-900">Desglose por denominación</h3>
+              <div className="sm:[&>div]:grid-cols-2">
+                <CompactDenominationTables dense value={denominaciones} onChange={setDenominaciones} disabled={busy} />
+              </div>
+              <section ref={summaryRef} aria-label="Resumen de entrega" className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <div aria-label="Total de denominaciones" className="grid grid-cols-2 gap-3 font-bold text-slate-950">
+                  <div><span className="block text-xs text-slate-500">A entregar</span><strong className="text-lg tabular-nums">{formatCurrency(target.monto)}</strong></div>
+                  <div className="text-right"><span className="block text-xs text-slate-500">Total contado</span><strong className="text-lg tabular-nums">{Number.isFinite(countedCents) ? formatCurrency(countedCents / 100) : '—'}</strong></div>
+                </div>
+                <p role="status" className={`mt-2 border-t border-slate-200 pt-2 text-sm font-semibold ${differenceCents === 0 ? 'text-emerald-700' : differenceCents > 0 ? 'text-red-700' : 'text-amber-800'}`}>
+                  {!Number.isFinite(differenceCents) ? 'Revisa las cantidades capturadas' : differenceCents === 0 ? 'Conteo completo' : differenceCents > 0 ? `Sobran ${formatCurrency(differenceCents / 100)} en el conteo` : `Faltan ${formatCurrency(-differenceCents / 100)} por contar`}
                 </p>
-              ) : null}
-              {target.tipoPago === 'EFECTIVO' ? (
-                <p className="mt-2 text-xs text-slate-500">
-                  Al confirmar se registrará automáticamente esta entrega como salida de Caja General.
-                </p>
-              ) : null}
-            </div>
+                {submitError && <p role="alert" className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{submitError}</p>}
+              </section>
+            </section>
           ) : null}
 
-          <div className="mt-4">
+          <div className="mt-4 border-t border-slate-200 pt-4">
             <label
               htmlFor={hasAutorizados ? selectId : otraId}
               className="mb-2 block text-sm font-semibold text-slate-800"
@@ -172,7 +161,7 @@ export function MarkCashReturnDeliveredModal({
               <select
                 id={selectId}
                 value={selectValue}
-                disabled={isSubmitting}
+                disabled={busy}
                 aria-required="true"
                 aria-invalid={selectValue === ''}
                 aria-describedby={selectValue === '' ? selectErrorId : undefined}
@@ -214,7 +203,7 @@ export function MarkCashReturnDeliveredModal({
                   id={otraId}
                   type="text"
                   value={otraNombre}
-                  disabled={isSubmitting}
+                  disabled={busy}
                   autoComplete="off"
                   aria-required="true"
                   aria-invalid={personaQueRecibio.length === 0}
@@ -239,12 +228,14 @@ export function MarkCashReturnDeliveredModal({
             ) : null}
           </div>
 
-          <div className="mt-4">
+          <div className="mt-4 border-t border-slate-200 pt-4">
             <ReceiptUploadField label="Foto de entrega del efectivo *" file={comprobante}
-              onChange={setComprobante} accept="image/*" disabled={isSubmitting}
+              onChange={setComprobante} accept="image/*" disabled={busy}
               dropHint="Tomar o seleccionar foto" />
           </div>
-
+          <p className="mt-3 text-xs text-slate-500">
+            {target.confirmadoPorSocio ? 'Recepción confirmada por el socio.' : 'Pendiente de confirmación del socio.'}
+          </p>
         </>
       ) : null}
     </ActionDrawer>

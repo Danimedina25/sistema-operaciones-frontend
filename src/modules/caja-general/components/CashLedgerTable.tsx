@@ -1,3 +1,4 @@
+import { ReceiptViewerLink } from '@/shared/components/ui/ReceiptViewerLink';
 import { useId, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowDown, ArrowUp, ChevronDown, ExternalLink, Lock } from 'lucide-react';
@@ -250,9 +251,9 @@ function LedgerEntry({ row }: { row: LedgerRow }) {
           )}
 
           {row.comprobanteUrl?.startsWith('https://') && (
-            <a className="block text-xs font-medium text-blue-700 underline" target="_blank" rel="noreferrer" href={row.comprobanteUrl}>
+            <ReceiptViewerLink className="block text-xs font-medium text-blue-700 underline" href={row.comprobanteUrl}>
               Ver comprobante
-            </a>
+            </ReceiptViewerLink>
           )}
 
           {row.meta && <p className="text-xs text-slate-500">{row.meta}</p>}

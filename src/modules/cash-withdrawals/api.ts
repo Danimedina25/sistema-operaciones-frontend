@@ -1,5 +1,5 @@
 import { api } from '@/shared/lib/axios';
-import type { BankCashWithdrawal, ConfirmWithdrawal, RegisterWithdrawal } from './types';
+import type { BankCashWithdrawal, ConfirmWithdrawal, EditWithdrawal, RegisterWithdrawal } from './types';
 
 const root = '/api/bank-cash-withdrawals';
 type Envelope<T> = { data: T };
@@ -14,6 +14,8 @@ export const cashWithdrawalsApi = {
     (await api.get<Envelope<BankCashWithdrawal[]>>(root, { params: { desde, hasta } })).data.data,
   register: async (request: RegisterWithdrawal) =>
     (await api.post<Envelope<BankCashWithdrawal>>(root, request)).data.data,
+  edit: async (id: number, request: EditWithdrawal) =>
+    (await api.put<Envelope<BankCashWithdrawal>>(`${root}/${id}`, request)).data.data,
   cancel: async (id: number, motivo: string) =>
     (await api.post<Envelope<BankCashWithdrawal>>(`${root}/${id}/cancel`, { motivo })).data.data,
   confirm: async (id: number, request: ConfirmWithdrawal) =>

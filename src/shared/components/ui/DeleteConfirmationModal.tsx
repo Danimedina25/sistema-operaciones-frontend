@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { Modal } from '@/shared/components/ui/Modal';
+import { useFormSubmission } from '@/shared/hooks/use-form-submission';
 import { Button } from '@/shared/components/ui/Button';
 
 const CONFIRMATION_WORD = 'ELIMINAR';
@@ -38,11 +39,17 @@ export function DeleteConfirmationModal({
     }
   }, [open]);
 
-  const canConfirm = confirmText === CONFIRMATION_WORD && !isSubmitting;
+  const { submit, busy, submitError } = useFormSubmission(onConfirm, isSubmitting);
+  const canConfirm = confirmText === CONFIRMATION_WORD && !busy;
 
   return (
-    <Modal open={open} title={heading} onClose={onClose}>
+    <Modal open={open} title={heading} size="compact" busy={busy} onClose={onClose} footer={<div className="flex flex-wrap justify-end gap-3">
+        <Button type="button" variant="neutral" disabled={busy} onClick={onClose}>Cancelar</Button>
+        <Button variant="destructive" type="button" isLoading={busy} disabled={!canConfirm}
+          onClick={() => { if (canConfirm) void submit(undefined); }}>Eliminar definitivamente</Button>
+      </div>}>
       <div className="space-y-4">
+        {submitError && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{submitError}</p>}
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {warning ?? (
             <>
@@ -74,34 +81,16 @@ export function DeleteConfirmationModal({
           </label>
           <input
             type="text"
+            aria-label="Escribe ELIMINAR para confirmar"
             value={confirmText}
             onChange={(event) => setConfirmText(event.target.value)}
-            disabled={isSubmitting}
+            disabled={busy}
             className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-red-500 disabled:opacity-60"
             autoComplete="off"
           />
         </div>
 
-        <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isSubmitting}
-            className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Cancelar
-          </button>
 
-          <Button variant="destructive"
-            type="button"
-            isLoading={isSubmitting}
-            disabled={!canConfirm}
-            onClick={() => void onConfirm()}
-            className="bg-red-700 hover:bg-red-800"
-          >
-            Eliminar definitivamente
-          </Button>
-        </div>
       </div>
     </Modal>
   );

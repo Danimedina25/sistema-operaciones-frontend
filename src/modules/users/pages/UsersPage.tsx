@@ -3,7 +3,7 @@ import { CanAccess } from '@/shared/components/CanAccess';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { Button } from '@/shared/components/ui/Button';
 import { SearchFilterBar } from '@/shared/components/ui/SearchFilterBar';
-import { Modal } from '@/shared/components/ui/Modal';
+import { ActionDrawer } from '@/shared/components/ui/ActionDrawer';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { DeleteConfirmationModal } from '@/shared/components/ui/DeleteConfirmationModal';
 import { UserForm } from '@/modules/users/components/UserForm';
@@ -144,25 +144,27 @@ export default function UsersPage() {
       )}
       </section>
 
-      <Modal
-        open={isCreateModalOpen}
+      <ActionDrawer
+        open={isCreateModalOpen} busy={isCreating}
         title="Crear nuevo usuario"
         onClose={() => setIsCreateModalOpen(false)}
       >
         <CreateUserForm
           isSubmitting={isCreating}
+          onCancel={() => setIsCreateModalOpen(false)}
           onSubmit={submitCreateUser}
         />
-      </Modal>
+      </ActionDrawer>
 
-      <Modal
-        open={Boolean(editingUser)}
+      <ActionDrawer
+        open={Boolean(editingUser)} busy={isUpdating}
         title="Editar usuario"
         onClose={() => setEditingUser(null)}
       >
         {editingUser ? (
           <UserForm
             isSubmitting={isUpdating}
+          onCancel={() => setEditingUser(null)}
             initialValues={{
               nombre: editingUser.nombre,
               roleId: editingUser.roleId,
@@ -183,21 +185,22 @@ export default function UsersPage() {
             submitLabel="Guardar cambios"
           />
         ) : null}
-      </Modal>
+      </ActionDrawer>
 
-      <Modal
-        open={Boolean(emailUser)}
+      <ActionDrawer
+        open={Boolean(emailUser)} busy={isUpdatingEmail}
         title="Actualizar correo"
         onClose={() => setEmailUser(null)}
       >
         {emailUser ? (
           <UpdateUserEmailForm
             isSubmitting={isUpdatingEmail}
+          onCancel={() => setEmailUser(null)}
             initialCorreo={emailUser.correo}
             onSubmit={(values) => submitUpdateUserEmail(emailUser, values)}
           />
         ) : null}
-      </Modal>
+      </ActionDrawer>
 
       <DeleteConfirmationModal
         open={Boolean(deletingUser)}

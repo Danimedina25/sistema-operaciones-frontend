@@ -10,6 +10,7 @@ import { ReturnPaymentsTable } from './returns/ReturnPaymentsTable.js';
 import { useAuth } from '@/modules/auth/store/auth.context.js';
 import type { CashCounts } from '@/modules/caja-general/types/caja-general.types';
 import { Tabs } from '@/shared/components/ui/Tabs';
+import { Button } from '@/shared/components/ui/Button';
 import { isCashReturnMethod } from '@/modules/operations/utils/return-installment';
 
 interface OperationDetailViewProps {
@@ -69,6 +70,7 @@ export function OperationDetailView({
   onAddRequestReturnPayment,
   onOpenReturn,
   onManageReturn,
+  canRequestReturn = false,
   canViewFinancialDetails,
   canViewOperationExtras,
   onOperationUpdated,
@@ -87,7 +89,7 @@ export function OperationDetailView({
   const isSocio = user?.roles.includes('SOCIO_COMERCIAL');
   const isCuentas = user?.roles.includes('JEFA_CUENTAS') || user?.roles.includes('AUXILIAR_CUENTAS');
   const isCajas = user?.roles.includes('JEFA_CAJAS');
-  const visibleReturnCount = returns.filter((item) => isCuentas ? !isCashReturnMethod(item.tipoPago) : isCajas ? isCashReturnMethod(item.tipoPago) : true).length;
+  const visibleReturnCount = returns.filter((item) => isCuentas ? !isCashReturnMethod(item.tipoPago) || item.tipoPago === 'RETIRO_SIN_TARJETA' : isCajas ? item.tipoPago === 'EFECTIVO' || item.tipoPago === 'RETIRO_SIN_TARJETA' && Boolean(item.parcialidades?.some(i => !i.codigoParaCliente)) : true).length;
 
   useEffect(() => {
     if (!scrollToPayments) return;
@@ -118,13 +120,19 @@ export function OperationDetailView({
   }, [scrollToReturns, operation.id]);
 
   const montoPendientePorSolicitar = operation.saldoPendientePorSolicitar;
+  const showStartReturns = isSocio && canRequestReturn && Boolean(onAddRequestReturnPayment)
+    && user?.userId === operation.socioComercialId
+    && operation.estatus === 'VALIDADA'
+    && operation.saldoPendientePorRegistrar === 0
+    && operation.saldoPendientePorValidar === 0
+    && returns.length === 0 && montoPendientePorSolicitar > 0;
 
   const montoPendientePorRetornar = operation.saldoPendienteRetornar;
   const sectionTabs = <Tabs variant="method" label="Secciones de la operación" value={activeTab} onChange={setActiveTab}
     className={isSocio ? 'max-sm:grid max-sm:w-full max-sm:grid-cols-2 max-sm:gap-0 max-sm:rounded-xl max-sm:bg-slate-200 max-sm:p-1 max-sm:[&>button]:justify-center max-sm:[&>button]:rounded-lg max-sm:[&>button]:border-0 max-sm:[&>button[aria-selected=true]]:bg-white max-sm:[&>button[aria-selected=true]]:text-slate-900 max-sm:[&>button[aria-selected=true]]:shadow-sm' : ''}
     options={[{ value: 'income', label: 'Ingresos', count: operation.pagos.length, icon: <ArrowDown className="size-3.5 text-emerald-600" /> }, { value: 'returns', label: isCuentas ? 'Retornos bancarios' : isCajas ? 'Retornos en efectivo' : 'Retornos', count: visibleReturnCount, icon: <ArrowUp className="size-3.5 text-slate-400" /> }]} />;
   return (
-    <div className="mx-auto max-w-[1600px] space-y-5 pb-8 max-sm:flex max-sm:flex-col max-sm:gap-4 max-sm:space-y-0">
+    <div className={`mx-auto max-w-[1600px] space-y-5 pb-8 max-sm:flex max-sm:flex-col max-sm:gap-4 max-sm:space-y-0 ${showStartReturns ? 'pb-24 max-sm:pb-28' : ''}`}>
       <div className={`flex items-center justify-between ${user?.roles.includes('SOCIO_COMERCIAL') ? 'max-sm:hidden' : ''}`}>
         <button
           type="button"
@@ -219,6 +227,14 @@ export function OperationDetailView({
         />
       </div>
 
+      {showStartReturns && <Button type="button" variant="primary"
+        className="fixed bottom-6 right-6 z-20 rounded-full shadow-lg max-sm:bottom-[calc(80px+env(safe-area-inset-bottom))] max-sm:right-4"
+        onClick={() => {
+          setActiveTab('returns');
+          onAddRequestReturnPayment?.(operation, montoPendientePorSolicitar);
+        }}>
+        <ArrowUp aria-hidden="true" className="size-4" /> Capturar retornos
+      </Button>}
     </div>
   );
 }

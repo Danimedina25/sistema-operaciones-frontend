@@ -23,16 +23,16 @@ vi.mock('@/modules/auth/store/auth.context', () => ({
 vi.mock('../api/cash-work.api', () => ({ cashWorkApi: { summary: async () => ({ withdrawals: { count: 1, amount: 300 } }) } }));
 
 const withdrawal: BankCashWithdrawal = {
-  id: 5, registradoEn: '2026-09-29T10:15:00', bankAccountId: 4, cuenta: 'Operaciones SA — BANORTE — 00001111',
+  id: 5, version: 0, registradoEn: '2026-09-29T10:15:00', bankAccountId: 4, cuenta: 'Operaciones SA — BANORTE — 00001111',
   cuentaTitular: 'Operaciones SA', cuentaNumero: '00001111', banco: 'BANORTE', forma: 'RETIRO_SIN_TARJETA',
   formaEtiqueta: 'Retiro sin tarjeta', monto: 300, referencia: 'Operador Juan', comprobanteUrl: null,
   estatus: 'PENDIENTE', motivo: null, registradoPorId: 2, registradoPorNombre: 'Jefa de Cuentas',
   resueltoPorNombre: null, resueltoEn: null, cashMovementId: null,
 };
 
-function mount(canResolve = true, openDayId: number | null = 1) {
+function mount(canResolve = true, openDayId: number | null = 1, pendingCloseDate?: string) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(<MemoryRouter><QueryClientProvider client={client}><PendingWithdrawalsInbox canResolve={canResolve} openDayId={openDayId} /></QueryClientProvider></MemoryRouter>);
+  render(<MemoryRouter><QueryClientProvider client={client}><PendingWithdrawalsInbox canResolve={canResolve} openDayId={openDayId} pendingCloseDate={pendingCloseDate} /></QueryClientProvider></MemoryRouter>);
 }
 
 beforeEach(() => {
@@ -61,7 +61,8 @@ describe('Retiros por confirmar', () => {
     expect(submit).toBeDisabled();
 
     fireEvent.change(within(dialog).getByLabelText('Cantidad de $100.00'), { target: { value: '2' } });
-    expect(within(dialog).getByText(/Faltan \$100\.00 por contar/)).toBeInTheDocument();
+    expect(within(dialog).getByRole('status')).toHaveTextContent('Faltan $100.00 por capturar.');
+    expect(within(dialog).getByRole('status')).toHaveTextContent('El total contado debe ser igual al monto retirado de $300.00.');
     expect(submit).toBeDisabled();
 
     fireEvent.change(within(dialog).getByLabelText('Cantidad de $100.00'), { target: { value: '3' } });
@@ -96,6 +97,13 @@ describe('Retiros por confirmar', () => {
     fireEvent.change(within(dialog).getByLabelText('Motivo'), { target: { value: 'Monto con centavos incorrectos' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Rechazar retiro' }));
     await waitFor(() => expect(reject).toHaveBeenCalledWith(5, 'Monto con centavos incorrectos'));
+  });
+
+  it('explica qué caja debe cerrarse antes de abrir la de hoy', async () => {
+    mount(true, null, '2026-10-21');
+    await screen.findByRole('table');
+    expect(screen.getByText(/La caja del 21 oct 2026 sigue pendiente de cierre/)).toBeInTheDocument();
+    expect(within(screen.getByRole('table')).getByRole('button', { name: 'Confirmar' })).toBeDisabled();
   });
 
   it('quien sólo consulta ve la bandeja sin acciones', async () => {

@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { chequesApi } from './api';
 import { chequeLabels, type ChequeFilters, type ChequeState } from './types';
-import { ChequeManager } from './ChequeManager';
-import { buildOperationDetailPath } from '@/routes/paths';
+import { buildOperationActionPath, buildOperationDetailPath } from '@/routes/paths';
 import { currency } from '@/modules/caja-general/utils/cash-amounts';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { MetricCard } from '@/shared/components/dashboard/MetricCard';
@@ -62,7 +61,7 @@ export default function ChequesPage() {
   // El borrador se aplica al enviar: se capturan varios criterios antes de consultar.
   const [draft, setDraft] = useState(defaults);
   const [filters, setFilters] = useState(defaults);
-  const [selected, setSelected] = useState<number | null>(null);
+  const navigate = useNavigate();
   const invalidDates = !!filters.desde && !!filters.hasta && filters.desde > filters.hasta;
   const query = useQuery({ queryKey: ['cheques', 'list', filters], queryFn: () => chequesApi.list(filters), enabled: !invalidDates, retry: false });
   const cheques = query.data?.content ?? [];
@@ -172,7 +171,7 @@ export default function ChequesPage() {
                         </td>
 
                         <td className="px-4 py-4 text-right">
-                          <button type="button" className={smallOutlineButton} onClick={() => setSelected(cheque.pagoId)}>
+                          <button type="button" className={smallOutlineButton} onClick={() => navigate(buildOperationActionPath(cheque.operacionId, 'review-payment', { paymentId: cheque.pagoId }))}>
                             Ver / gestionar
                           </button>
                         </td>
@@ -195,6 +194,5 @@ export default function ChequesPage() {
       </QueryState>
     )}
 
-    {selected !== null && <ChequeManager paymentId={selected} onClose={() => setSelected(null)} />}
   </div>;
 }

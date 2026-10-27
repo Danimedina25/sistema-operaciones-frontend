@@ -94,6 +94,22 @@ describe('BankAccountCombobox', () => {
     expect(onChange).toHaveBeenCalledTimes(1);
   });
 
+  it('puede quitar la cuenta anterior al comenzar otra búsqueda', () => {
+    const onChange = vi.fn();
+    render(<Harness onChange={onChange} clearSelectionOnInput />);
+    const input = combobox();
+    fireEvent.focus(input);
+    fireEvent.click(screen.getByRole('option', { name: /Alfa/ }));
+    expect(onChange).toHaveBeenLastCalledWith(1);
+
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: 'Beta' } });
+    expect(onChange).toHaveBeenLastCalledWith(null);
+    expect(input).toHaveValue('Beta');
+    fireEvent.click(screen.getByRole('option', { name: /Beta/ }));
+    expect(onChange).toHaveBeenLastCalledWith(2);
+  });
+
   it('Enter no envía el formulario que lo contiene', () => {
     const onSubmit = vi.fn(event => event.preventDefault());
     render(<form onSubmit={onSubmit}><Harness /></form>);

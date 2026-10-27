@@ -1,4 +1,7 @@
-import { useEffect } from 'react';
+import { ActionDrawer } from '@/shared/components/ui/ActionDrawer';
+import { Button } from '@/shared/components/ui/Button';
+import { useFormSubmission } from '@/shared/hooks/use-form-submission';
+import { useEffect, useId } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -27,6 +30,8 @@ export function BankAccountFormModal({
   onClose,
   onSubmit,
 }: BankAccountFormModalProps) {
+  const formId = useId();
+  const { submit, busy, submitError } = useFormSubmission(onSubmit, isSubmitting);
   const {
     register,
     handleSubmit,
@@ -72,27 +77,14 @@ export function BankAccountFormModal({
     return null;
   }
 
-  return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/40 p-4">
-      <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl">
-        <div className="border-b border-slate-200 px-6 py-4">
-          <h2 className="text-lg font-semibold text-slate-900">
-            {mode === 'create'
-              ? 'Nueva cuenta bancaria'
-              : 'Editar cuenta bancaria'}
-          </h2>
-
-          <p className="mt-1 text-sm text-slate-500">
-            Captura los datos de la cuenta bancaria.
-          </p>
-        </div>
-
-        <form
-          onSubmit={handleSubmit(async (values) => {
-            await onSubmit(values);
-          })}
-          className="space-y-5 px-6 py-5"
-        >
+  return <ActionDrawer open={open} title={mode === 'create' ? 'Nueva cuenta bancaria' : 'Editar cuenta bancaria'} busy={busy} onClose={onClose}
+    footer={<div className="flex justify-end gap-3">
+      <Button type="button" variant="neutral" disabled={busy} onClick={onClose}>Cancelar</Button>
+      <Button type="submit" form={formId} isLoading={busy}>{mode === 'create' ? 'Registrar cuenta' : 'Guardar cambios'}</Button>
+    </div>}>
+    <form id={formId} className="space-y-5" onSubmit={handleSubmit(submit)}>
+      {submitError && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{submitError}</p>}
+      <fieldset disabled={busy} className="min-w-0">
           <div className="grid gap-4 md:grid-cols-2">
             <BankCombobox
               label="Banco"
@@ -155,30 +147,7 @@ export function BankAccountFormModal({
             </div>
           </div>
 
-          <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isSubmitting}
-              className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
-            >
-              Cancelar
-            </button>
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-50"
-            >
-              {isSubmitting
-                ? 'Guardando...'
-                : mode === 'create'
-                  ? 'Registrar cuenta'
-                  : 'Guardar cambios'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
+      </fieldset>
+    </form>
+  </ActionDrawer>;
 }

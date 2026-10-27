@@ -15,10 +15,8 @@ vi.mock('@/modules/auth/store/auth.context', () => ({
   useAuth: () => ({ user: { userId: 1 }, hasRole: () => true }),
 }));
 
-/** El cajón de gestión tiene sus propias pruebas; aquí sólo interesa que se abra. */
-vi.mock('./ChequeManager', () => ({
-  ChequeManager: ({ paymentId }: { paymentId: number }) => <div>Cajón del pago {paymentId}</div>,
-}));
+const navigation = vi.hoisted(() => vi.fn());
+vi.mock('react-router-dom', async () => ({ ...await vi.importActual<typeof import('react-router-dom')>('react-router-dom'), useNavigate: () => navigation }));
 
 const cheque = (overrides: Partial<Cheque> = {}): Cheque => ({
   id: 1, pagoId: 77, operacionId: 12, clienteNombre: 'Ariel Ovando', numeroCheque: '00123',
@@ -127,10 +125,11 @@ describe('ChequesPage', () => {
     expect(await screen.findByRole('button', { name: /reintentar/i })).toBeInTheDocument();
   });
 
-  it('abre el cajón de gestión del cheque elegido', async () => {
+  it('abre el detalle de la operación para gestionar el cheque elegido', async () => {
     mount();
     fireEvent.click(await screen.findByRole('button', { name: 'Ver / gestionar' }));
 
-    expect(await screen.findByText('Cajón del pago 77')).toBeInTheDocument();
+    expect(navigation).toHaveBeenCalledWith('/operaciones/12?action=review-payment&scrollToPayments=true&paymentId=77');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });

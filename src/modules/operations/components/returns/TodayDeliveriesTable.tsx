@@ -18,20 +18,20 @@ function authorizedRecipient(delivery: ReturnInstallment): string {
 
 export function TodayDeliveriesTable({ deliveries, onMarkAsDelivered }: TodayDeliveriesTableProps) {
   const { openWhatsApp } = useWhatsAppLink();
-  const status = (row: ReturnInstallment) => <DeliverySemaphoreBadge estatus={row.estatus} scheduledAt={row.fechaHoraRecoleccion} />;
+  const status = (row: ReturnInstallment) => <DeliverySemaphoreBadge estatus={row.estatus} scheduledAt={row.fechaHoraRecoleccion} className="h-auto min-h-9 w-auto max-w-full shrink whitespace-normal break-words py-2" />;
   const actions = (row: ReturnInstallment) => {
     const canAct = (row.estatus === 'PROGRAMADA' || row.estatus === 'ENTREGADA') && !row.cerradoPorJefa;
     if (!canAct) return <span className="text-xs text-slate-400">Sin acciones</span>;
-    return <div className="flex flex-wrap justify-end gap-2">
+    return <div className="flex w-full min-w-0 flex-wrap justify-end gap-2">
       <button type="button" onClick={() => openWhatsApp(buildDeliveryNoticeMessage({
         operationId: row.operationId,
         scheduledAtLabel: row.fechaHoraRecoleccion ? formatDateTime(row.fechaHoraRecoleccion) : '—',
         deliveryTypeLabel: row.tipoPago === 'RETIRO_SIN_TARJETA' ? 'Retiro sin tarjeta' : 'Efectivo',
       }), row.socioComercialTelefono)}
-        className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2 text-xs font-medium text-emerald-700">
-        <MessageCircle className="h-3.5 w-3.5" /> Avisar
+        className="inline-flex min-h-9 max-w-full items-center justify-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-2 text-xs font-medium text-emerald-700">
+        <MessageCircle className="h-3.5 w-3.5 shrink-0" /> Avisar
       </button>
-      <button type="button" onClick={() => onMarkAsDelivered(row)} className="min-h-9 rounded-lg bg-[#3b6ef5] px-2 text-xs font-medium text-white">Marcar entregado</button>
+      <button type="button" onClick={() => onMarkAsDelivered(row)} className="min-h-9 max-w-full whitespace-normal rounded-lg bg-[#3b6ef5] px-2 py-2 text-xs font-medium text-white">Marcar entregado</button>
     </div>;
   };
   const columns: DataTableColumn<ReturnInstallment>[] = [

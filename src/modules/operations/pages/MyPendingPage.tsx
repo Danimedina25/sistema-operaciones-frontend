@@ -13,7 +13,7 @@ export default function MyPendingPage() {
   if (hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS'])) return <div className="mx-4 pt-2"><BankPendingSummary /></div>;
   return (
     <div className="space-y-5">
-      <PageHeader title="Mis pendientes" className={hasRole('SOCIO_COMERCIAL') ? 'hidden sm:block' : undefined} />
+      <PageHeader title="Mis pendientes" />
       <SocioPendingAccordion />
       <StaffPendingSummaryCards {...allDates} />
     </div>

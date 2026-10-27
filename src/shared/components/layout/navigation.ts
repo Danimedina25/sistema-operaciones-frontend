@@ -74,6 +74,7 @@ const cashEntries: NavEntry[] = [
     item('cash-cut', 'Corte', paths.cajaGeneral, 'cajaGeneral', icon(scroll, scrollActive)),
     item('cash-income', 'Entradas de efectivo', paths.cashIncome, 'cashIncome', icon(down, downActive), { badge: 'cashIncome' }),
     item('cash-returns', 'Salidas de efectivo', paths.cashOutflow, 'cashOutflow', icon(up, upActive), { badge: 'cashOutflow' }),
+    item('cash-cheques-sent', 'Cheques enviados a banco', paths.cashChequesSent, 'cashOutflow', icon(transfer, transferActive)),
     item('cash-session', 'Abrir/Cerrar caja', `${paths.cajaGeneral}?nav=cash-session`, 'cajaGeneral', icon(unlock, unlockActive), { cashAction: true }),
   ], true),
   operations,

@@ -1,3 +1,6 @@
+import { useId } from 'react';
+import { ActionDrawerFooter } from '@/shared/components/ui/ActionDrawer';
+import { useFormSubmission } from '@/shared/hooks/use-form-submission';
 // src/modules/socioscomerciales/components/CommercialPartnerForm.tsx
 
 import { useEffect } from 'react';
@@ -18,6 +21,7 @@ import {
 
 interface CommercialPartnerFormProps {
   isSubmitting: boolean;
+  onCancel?: () => void;
   submitLabel: string;
 
   onSubmit: (
@@ -29,13 +33,13 @@ interface CommercialPartnerFormProps {
     cuentaBancaria: string;
     banco: string;
     titularCuenta: string;
-    porcentajeComision: number;
     activo?: boolean;
   };
 }
 
 export function CommercialPartnerForm({
   isSubmitting,
+  onCancel,
   submitLabel,
   onSubmit,
   initialValues,
@@ -58,7 +62,6 @@ export function CommercialPartnerForm({
       cuentaBancaria: '',
       banco: '',
       titularCuenta: '',
-      porcentajeComision: undefined,
       activo: true,
     },
     mode: 'onChange',
@@ -74,7 +77,6 @@ export function CommercialPartnerForm({
         cuentaBancaria: initialValues.cuentaBancaria,
         banco: initialValues.banco,
         titularCuenta: initialValues.titularCuenta,
-        porcentajeComision: initialValues.porcentajeComision,
         activo: initialValues.activo ?? true,
       });
 
@@ -86,16 +88,21 @@ export function CommercialPartnerForm({
       cuentaBancaria: '',
       banco: '',
       titularCuenta: '',
-      porcentajeComision: undefined,
       activo: true,
     });
   }, [initialValues, reset]);
 
+  const formId = useId();
+  const { submit, busy, submitError } = useFormSubmission(onSubmit, isSubmitting);
+
   return (
-    <form
+    <form id={formId}
       className="space-y-6"
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={handleSubmit(submit)}
     >
+      {submitError && <p role="alert" className="sticky top-0 z-10 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{submitError}</p>}
+      <fieldset disabled={busy} className="min-w-0 space-y-5">
+
       {/* Datos generales */}
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-5">
@@ -184,33 +191,21 @@ export function CommercialPartnerForm({
             />
           </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Porcentaje de comisión sugerido
-            </label>
-
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              max="100"
-              placeholder="Ej. 5.00"
-              error={errors.porcentajeComision?.message}
-              {...register('porcentajeComision')}
-            />
-            <p className="mt-1 text-xs text-slate-500">Se usa como valor inicial y no modifica operaciones existentes.</p>
-          </div>
         </div>
       </div>
 
-      <div className="flex justify-end border-t border-slate-200 pt-4">
+      </fieldset>
+      <ActionDrawerFooter>
+      <div className="flex flex-wrap justify-end gap-3">
+        {onCancel && <Button type="button" variant="neutral" disabled={busy} onClick={onCancel}>Cancelar</Button>}
         <Button variant="primary"
-          type="submit"
-          isLoading={isSubmitting}
+          type="submit" form={formId}
+          isLoading={busy}
         >
           {submitLabel}
         </Button>
       </div>
+      </ActionDrawerFooter>
     </form>
   );
 }

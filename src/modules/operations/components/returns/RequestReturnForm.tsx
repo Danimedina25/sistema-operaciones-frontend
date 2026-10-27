@@ -1,4 +1,6 @@
-import { useId, useMemo, useState } from 'react';
+import { formErrorMessages } from '../../utils/form-error-messages';
+import { getApiErrorMessage } from '@/shared/utils/errors';
+import { useId, useMemo, useRef, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
 import { ActionDrawerFooter } from '@/shared/components/ui/ActionDrawer';
@@ -8,11 +10,13 @@ import { ReturnPaymentType } from '@/shared/utils/form.utils.js';
 import { BankCombobox } from '@/shared/components/ui/BankCombobox';
 import { useReturnDestinationAccountSuggestions } from '../../hooks/returns/use-operation-returns.js';
 import { ReturnExcelImport } from './ReturnExcelImport';
-import { RETURN_METHODS, validateReturnDraft } from '../../utils/return-excel';
+import { CASH_AMOUNT_ERROR, RETURN_METHODS, validateReturnDraft } from '../../utils/return-excel';
 import type { DraftErrors } from '../../utils/return-excel';
 import { NominaFileField } from './NominaFileField';
+import { formatMoney } from '@/shared/format';
 import {
   detectDestinationAccountKind,
+  splitDestinationAccount,
 } from '../../utils/return-destination-account';
 
 
@@ -52,6 +56,8 @@ export interface RequestReturnFormValues {
 }
 
 interface RequestReturnFormProps {
+  hideClientName?: boolean;
+  onCancel?: () => void;
   operationId: number;
   clientId: number;
   clienteNombre: string;
@@ -146,8 +152,12 @@ export function RequestReturnForm({
   isSubmitting,
   initialPayments,
   onSubmit,
+  onCancel,
+  hideClientName = false,
 }: RequestReturnFormProps) {
   const formId = useId();
+  const submitting = useRef(false);
+  const [submitError, setSubmitError] = useState('');
   const [pagos, setPagos] = useState<ReturnPaymentItem[]>(() => {
     if (initialPayments?.length) {
       return initialPayments.map(mapPaymentToForm);
@@ -208,8 +218,7 @@ export function RequestReturnForm({
             ...pago,
             banco: account.banco ?? '',
             titular: account.titular ?? '',
-            cuenta: account.cuenta ?? '',
-            clabe: account.clabe ?? '',
+            ...splitDestinationAccount(account.clabe || account.cuenta || ''),
             importIssues: Object.fromEntries(Object.entries(pago.importIssues ?? {}).filter(([key]) => !['banco', 'titular', 'cuenta', 'clabe'].includes(key))),
           }
           : pago,
@@ -282,6 +291,13 @@ export function RequestReturnForm({
   );
 
   const excedeMonto = totalSolicitado > montoDisponible;
+  const cashAmountErrors = pagos.flatMap((pago, index) =>
+    validateReturnDraft(pago).monto === CASH_AMOUNT_ERROR
+      ? [`Pago #${index + 1}: ${CASH_AMOUNT_ERROR}`] : [],
+  );
+  const validationMessages = pagos.flatMap((pago, index) => formErrorMessages({
+    ...errors[pago.id], monto: errors[pago.id]?.monto === CASH_AMOUNT_ERROR ? undefined : errors[pago.id]?.monto,
+  }).map(message => `Pago #${index + 1}: ${message}`));
   const montoSolicitadoEnVivo = Math.max(
     montoSolicitado - montoInicial + totalSolicitado,
     0,
@@ -306,7 +322,7 @@ export function RequestReturnForm({
             value === 'TRANSFERENCIA' || value === 'DEPOSITO';
 
           const requiereAutorizadosEfectivo =
-            value === 'EFECTIVO' || value === 'RETIRO_SIN_TARJETA';
+            value === 'EFECTIVO';
 
           return {
             ...pago,
@@ -373,7 +389,8 @@ export function RequestReturnForm({
           ? {
             ...pago,
             [field]: formattedValue,
-            importIssues: Object.fromEntries(Object.entries(pago.importIssues ?? {}).filter(([key]) => key !== field && !(field.startsWith('autorizado') && key === 'autorizadoParaRecibirEfectivo1'))),
+            ...(field === 'cuenta' ? splitDestinationAccount(formattedValue) : {}),
+            importIssues: Object.fromEntries(Object.entries(pago.importIssues ?? {}).filter(([key]) => key !== field && !(field === 'cuenta' && key === 'clabe') && !(field.startsWith('autorizado') && key === 'autorizadoParaRecibirEfectivo1'))),
           }
           : pago,
       ),
@@ -387,6 +404,7 @@ export function RequestReturnForm({
       const updatedPaymentErrors = { ...paymentErrors };
 
       delete updatedPaymentErrors[field];
+      if (field === 'cuenta') delete updatedPaymentErrors.clabe;
 
       return {
         ...current,
@@ -417,12 +435,14 @@ export function RequestReturnForm({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (excedeMonto || isSubmitting) return;
+    if (excedeMonto || isSubmitting || submitting.current) return;
 
     const isValid = validatePayments();
 
     if (!isValid) return;
 
+    submitting.current = true; setSubmitError('');
+    try {
     await onSubmit({
       operationId,
       archivoNomina,
@@ -432,8 +452,7 @@ export function RequestReturnForm({
         tipoPago: pago.tipoPago as ReturnPaymentType,
         banco: pago.banco?.trim(),
         titular: pago.titular?.trim(),
-        cuenta: pago.cuenta?.trim(),
-        clabe: pago.clabe?.trim(),
+        ...(pago.tipoPago === 'TRANSFERENCIA' ? splitDestinationAccount(pago.clabe || pago.cuenta || '') : { cuenta: pago.cuenta?.trim(), clabe: pago.clabe?.trim() }),
         observaciones: pago.observaciones?.trim(),
         autorizadoParaRecibirEfectivo1:
           pago.autorizadoParaRecibirEfectivo1?.trim() || undefined,
@@ -443,41 +462,21 @@ export function RequestReturnForm({
           pago.autorizadoParaRecibirEfectivo3?.trim() || undefined,
       })),
     });
+    } catch (error) { setSubmitError(getApiErrorMessage(error)); }
+    finally { submitting.current = false; }
   }
 
   return (
-    <form id={formId} className="space-y-6" onSubmit={handleSubmit}>
-      <div data-testid="return-live-summary" className="sticky top-0 z-50 -mx-4 -mt-4 grid grid-cols-2 gap-3 rounded-b-2xl border-b border-slate-200 bg-white px-4 py-3 text-sm shadow-lg before:absolute before:inset-x-0 before:-top-10 before:h-10 before:bg-white sm:-mx-7 sm:-mt-7 sm:px-5 sm:py-4 md:grid-cols-4">
-        <div>
-          <span className="block text-slate-500">Cliente</span>
-          <span className="font-semibold text-slate-900">
-            {clienteNombre}
-          </span>
-        </div>
-
-        <div>
-          <span className="block text-slate-500">Monto total a retornar</span>
-          <span className="font-semibold text-slate-900">
-            ${formatCurrencyDisplay(montoTotalRetornar)}
-          </span>
-        </div>
-
-        <div>
-          <span className="block text-slate-500">Monto solicitado</span>
-          <span className="font-semibold text-slate-900">
-            ${formatCurrencyDisplay(montoSolicitadoEnVivo)}
-          </span>
-        </div>
-
-        <div>
-          <span className="block text-slate-500">Falta por solicitar</span>
-          <span
-            className={`font-semibold ${faltaPorSolicitarEnVivo === 0 ? 'text-emerald-700' : 'text-slate-900'
-              }`}
-          >
-            ${formatCurrencyDisplay(faltaPorSolicitarEnVivo)}
-          </span>
-        </div>
+    <form id={formId} className="space-y-6" onChange={() => { if (submitError) setSubmitError(''); }} onSubmit={handleSubmit}>
+      <fieldset disabled={isSubmitting} className="min-w-0 space-y-6">
+      <div data-testid="return-live-summary" className={`sticky top-0 z-10 rounded-2xl border bg-white p-3 shadow-lg sm:p-4 ${excedeMonto || cashAmountErrors.length > 0 || validationMessages.length > 0 || submitError ? 'border-red-300' : 'border-slate-200'}`}>
+        {!hideClientName && <p className="mb-3 text-sm text-slate-500">Cliente: <span className="font-semibold text-slate-900">{clienteNombre}</span></p>}
+        <dl className="grid grid-cols-3 gap-2 text-xs sm:gap-4 sm:text-sm">
+          <div className="rounded-xl bg-blue-50 p-2 text-blue-800"><dt>Monto total a retornar</dt><dd className="mt-1 font-bold">{formatMoney(montoTotalRetornar)}</dd></div>
+          <div className="rounded-xl bg-emerald-50 p-2 text-emerald-800"><dt>Monto solicitado</dt><dd className="mt-1 font-bold">{formatMoney(montoSolicitadoEnVivo)}</dd></div>
+          <div className="rounded-xl bg-amber-50 p-2 text-amber-900"><dt>Falta por solicitar</dt><dd className="mt-1 font-bold">{formatMoney(faltaPorSolicitarEnVivo)}</dd></div>
+        </dl>
+        <div aria-live="polite">{[...validationMessages, ...(submitError ? [submitError] : [])].map(message => <p key={message} role="alert" className="mt-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{message}</p>)}{excedeMonto && <p role="alert" className="mt-2 text-sm font-semibold text-red-700">La solicitud excede el monto a retornar por {formatMoney(excedente)}.</p>}{cashAmountErrors.map(message => <p key={message} role="alert" className="mt-2 text-sm font-semibold text-red-700">{message}</p>)}</div>
       </div>
 
       <ReturnExcelImport disabled={isSubmitting} currentTotal={totalSolicitado} available={montoDisponible} onImport={(payments, sheet) => {
@@ -491,12 +490,6 @@ export function RequestReturnForm({
       {pagos.some(pago => pago.excelSource) && <p role="status" className="text-sm text-blue-800">Los retornos están prellenados. Revisa los datos antes de registrarlos.</p>}
       <NominaFileField value={archivoNomina} onChange={setArchivoNomina} />
 
-      {excedeMonto ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          La solicitud excede el monto a retornar por $
-          {formatCurrencyDisplay(excedente)}.
-        </div>
-      ) : null}
       {/*
       {solicitudCompleta ? (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
@@ -511,8 +504,7 @@ export function RequestReturnForm({
             pago.tipoPago === 'DEPOSITO';
 
           const requiereAutorizadosEfectivo =
-            pago.tipoPago === 'EFECTIVO' ||
-            pago.tipoPago === 'RETIRO_SIN_TARJETA';
+            pago.tipoPago === 'EFECTIVO';
 
           return (
             <div
@@ -553,7 +545,6 @@ export function RequestReturnForm({
                     type="text"
                     inputMode="decimal"
                     placeholder="1,000.00"
-                    error={errors[pago.id]?.monto}
                     value={pago.monto ?? ''}
                     onChange={(event) =>
                       updatePago(pago.id, 'monto', event.target.value)
@@ -577,28 +568,24 @@ export function RequestReturnForm({
                     {RETURN_METHODS.map(method => <option key={method.value} value={method.value}>{method.label}</option>)}
                   </select>
 
-                  {errors[pago.id]?.tipoPago ? (
-                    <p className="mt-1 text-xs text-red-600">
-                      {errors[pago.id]?.tipoPago}
-                    </p>
-                  ) : null}
+
                 </div>
 
                 {requiereDatosBancarios ? (
                   <>
                     <div>
                       <label className="mb-2 block text-sm font-medium text-slate-700">
-                        Número de cuenta o tarjeta (opcional con CLABE)
+                        Cuenta, CLABE o tarjeta
                       </label>
 
                       <div className="relative">
                         <Input
                           type="text"
-                          placeholder="Cuenta o tarjeta"
-                          value={pago.cuenta ?? ''}
+                          placeholder="Cuenta, CLABE o tarjeta"
+                          aria-label={`Cuenta, CLABE o tarjeta del pago ${index + 1}`}
+                          value={pago.clabe || pago.cuenta || ''}
                           inputMode="numeric"
                           maxLength={18}
-                          error={errors[pago.id]?.cuenta}
                           onFocus={() =>
                             setShowAccountOptions((prev) => ({
                               ...prev,
@@ -629,8 +616,8 @@ export function RequestReturnForm({
                               <div className="px-3 py-2 text-sm text-slate-500">
                                 Cargando cuentas...
                               </div>
-                            ) : getFilteredDestinationAccounts(pago.cuenta).length > 0 ? (
-                              getFilteredDestinationAccounts(pago.cuenta).map((account) => (
+                            ) : getFilteredDestinationAccounts(pago.clabe || pago.cuenta).length > 0 ? (
+                              getFilteredDestinationAccounts(pago.clabe || pago.cuenta).map((account) => (
                                 <button
                                   key={`${account.banco}-${account.titular}-${account.cuenta}-${account.clabe}`}
                                   type="button"
@@ -661,40 +648,18 @@ export function RequestReturnForm({
                         )}
                       </div>
 
-                      {detectDestinationAccountKind(pago.cuenta) ? (
+                      {pago.clabe || detectDestinationAccountKind(pago.cuenta) ? (
                         <p className="mt-1.5 text-xs text-slate-500">
-                          Se guardará como número de{' '}
-                          {detectDestinationAccountKind(pago.cuenta) === 'TARJETA'
-                            ? 'tarjeta'
-                            : 'cuenta'}
+                          {pago.clabe ? 'Se guardará como CLABE interbancaria' : `Se guardará como número de ${detectDestinationAccountKind(pago.cuenta) === 'TARJETA' ? 'tarjeta' : 'cuenta'}`}
                           .
                         </p>
                       ) : null}
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-slate-700">
-                        CLABE interbancaria (opcional con cuenta/tarjeta)
-                      </label>
-
-                      <Input
-                        type="text"
-                        placeholder="CLABE interbancaria"
-                        value={pago.clabe ?? ''}
-                        inputMode="numeric"
-                        maxLength={18}
-                        error={errors[pago.id]?.clabe}
-                        onChange={(event) =>
-                          updatePago(pago.id, 'clabe', event.target.value)
-                        }
-                      />
                     </div>
 
                     <BankCombobox
                       label="Banco destino"
                       value={pago.banco ?? ''}
                       onChange={bank => updatePago(pago.id, 'banco', bank)}
-                      fieldError={errors[pago.id]?.banco}
                     />
 
                     <div>
@@ -706,7 +671,6 @@ export function RequestReturnForm({
                         type="text"
                         placeholder="Nombre del beneficiario"
                         value={pago.titular}
-                        error={errors[pago.id]?.titular}
                         onChange={(event) =>
                           updatePago(pago.id, 'titular', event.target.value)
                         }
@@ -726,7 +690,6 @@ export function RequestReturnForm({
                         type="text"
                         placeholder="Nombre completo"
                         value={pago.autorizadoParaRecibirEfectivo1}
-                        error={errors[pago.id]?.autorizadoParaRecibirEfectivo1}
                         onChange={(event) =>
                           updatePago(
                             pago.id,
@@ -816,17 +779,21 @@ export function RequestReturnForm({
           </button>
       }
 
+      </fieldset>
       <ActionDrawerFooter>
+      <div className="flex flex-wrap justify-end gap-3">
+      {onCancel && <Button type="button" variant="neutral" disabled={isSubmitting} onClick={onCancel}>Cancelar</Button>}
       <Button variant="primary"
         type="submit" form={formId}
         isLoading={isSubmitting}
-        disabled={excedeMonto || totalSolicitado <= 0}
-        className="w-full justify-center"
+        disabled={excedeMonto || cashAmountErrors.length > 0 || totalSolicitado <= 0}
+        className="min-w-0 flex-1 justify-center"
       >
         {initialPayments?.length
           ? 'Actualizar solicitud'
           : 'Crear solicitud de retorno'}
       </Button>
+      </div>
       </ActionDrawerFooter>
     </form>
   );

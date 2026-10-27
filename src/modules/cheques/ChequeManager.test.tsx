@@ -10,19 +10,24 @@ vi.mock('./api', () => ({ chequesApi: { byPayment: mocks.get, command: mocks.com
 vi.mock('@/modules/auth/store/auth.context', () => ({ useAuth: () => ({ user: { userId: 1 }, hasRole: (roles: string[]) => roles.includes(mocks.role) }) }));
 vi.mock('@/modules/operations/api/operations-storage.api', () => ({ uploadOperationProof: mocks.upload }));
 vi.mock('@/modules/bank-accounts/api/bank-accounts.api', () => ({ getBankAccounts: mocks.accounts }));
+vi.mock('@/modules/caja-general/api/caja-general.api', () => ({ cajaGeneralApi: { latest: vi.fn().mockResolvedValue({ id: 1, fecha: '2026-09-20', closedAt: null }) } }));
 const cheque: Cheque = { id: 3, pagoId: 4, operacionId: 5, clienteNombre: 'Cliente', numeroCheque: '123', bancoEmisor: 'Banco', emisor: 'Emisor', beneficiario: 'Empresa', monto: 100, moneda: 'MXN', estado: 'POR_COBRAR', requiereConciliacion: false, version: 1, fechaRecepcion: '2026-09-20', cuentaDestinoId: null, cuentaDestinoEtiqueta: null, destinoCobro: null, comprobanteUrl: 'https://example.com/cheque', historial: [] };
 function mount() { render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}><MemoryRouter><ChequeManager paymentId={4} onClose={vi.fn()} /></MemoryRouter></QueryClientProvider>); }
 beforeEach(() => { vi.clearAllMocks(); mocks.role = 'JEFA_CUENTAS'; mocks.get.mockResolvedValue(cheque); mocks.upload.mockResolvedValue({ downloadUrl: 'https://example.com/deposito' }); mocks.accounts.mockResolvedValue([{ id: 8, banco: 'Bajío', titular: 'Empresa', numeroCuenta: '123456', activo: true }]); });
 describe('shared cheque manager', () => {
   it('sends a deposit command and preserves its idempotency key on an uncertain retry', async () => {
     mocks.command.mockRejectedValueOnce(new Error('Respuesta incierta')).mockResolvedValueOnce({ ...cheque, estado: 'DEPOSITADO', version: 2 });
-    mount();
+    mocks.role = 'JEFA_CAJAS'; mount();
     fireEvent.change(await screen.findByLabelText(/Acción/), { target: { value: 'DEPOSITAR' } });
     fireEvent.change(screen.getByLabelText(/Fecha efectiva/), { target: { value: '2026-09-20' } });
-    await screen.findByRole('option', { name: /Empresa — Bajío/ });
-    fireEvent.change(screen.getByLabelText('Cuenta bancaria'), { target: { value: '8' } });
+    const accountField = screen.getByRole('combobox', { name: 'Cuenta bancaria' });
+    expect(screen.queryByLabelText('Buscar cuenta')).not.toBeInTheDocument();
+    fireEvent.focus(accountField);
+    fireEvent.change(accountField, { target: { value: 'Bajío' } });
+    fireEvent.click(await screen.findByRole('option', { name: /Empresa — Bajío/ }));
+    expect((accountField as HTMLInputElement).value).toContain('Empresa');
     await userEvent.upload(screen.getByLabelText(/Comprobante/), new File(['proof'], 'proof.pdf', { type: 'application/pdf' }));
-    const form = (screen.getByRole('button', { name: 'Confirmar acción' }) as HTMLButtonElement).form!;
+    const form = (screen.getByRole('button', { name: 'Validar y enviar a depósito' }) as HTMLButtonElement).form!;
     // jsdom file validity does not track user-event's uploaded FileList.
     fireEvent.submit(form);
     await screen.findByRole('alert');
@@ -38,15 +43,20 @@ describe('shared cheque manager', () => {
     await screen.findByText(/Este cheque histórico requiere conciliación/);
     expect(screen.queryByLabelText(/Acción/)).not.toBeInTheDocument();
   });
-  it('lets the head of accounts assign cash collection without recognizing money', async () => {
-    mocks.command.mockResolvedValue({ ...cheque, estado: 'PENDIENTE_COBRO_EFECTIVO', version: 2 });
-    mount(); await screen.findByLabelText(/Acción/);
-    expect(screen.queryByRole('option', { name: 'Confirmar efectivo recibido' })).not.toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText(/Acción/), { target: { value: 'ASIGNAR_COBRO_EFECTIVO' } });
-    fireEvent.change(screen.getByLabelText(/Fecha efectiva/), { target: { value: '2026-09-20' } });
-    fireEvent.submit((screen.getByRole('button', { name: 'Confirmar acción' }) as HTMLButtonElement).form!);
-    await waitFor(() => expect(mocks.command).toHaveBeenCalledTimes(1));
-    expect(mocks.command.mock.calls[0][1]).toMatchObject({ accion: 'ASIGNAR_COBRO_EFECTIVO', version: 1 });
-    expect(mocks.upload).not.toHaveBeenCalled();
+  it('offers the head of cash a direct counted collection choice', async () => {
+    mocks.role = 'JEFA_CAJAS'; mount(); await screen.findByLabelText(/Acción/);
+    expect(screen.getByRole('option', { name: 'Se cobró en efectivo' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Se depositará en una cuenta bancaria' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Enviar a cobro en efectivo' })).not.toBeInTheDocument();
+    expect(mocks.command).not.toHaveBeenCalled();
+  });
+  it('captura el cobro en efectivo con las tablas de Caja e indica si el conteo cuadra con el cheque', async () => {
+    mocks.role = 'JEFA_CAJAS'; mount();
+    fireEvent.change(await screen.findByLabelText(/Acción/), { target: { value: 'CONFIRMAR_COBRO_EFECTIVO' } });
+    expect(screen.getByRole('columnheader', { name: 'Billetes' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Monedas' })).toBeInTheDocument();
+    expect(screen.getByText(/Total contado \$0\.00 · pendiente de cuadrar/)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Cantidad de $50.00'), { target: { value: '2' } });
+    expect(screen.getByText(/Total contado \$100\.00 · cuadra/)).toBeInTheDocument();
   });
 });

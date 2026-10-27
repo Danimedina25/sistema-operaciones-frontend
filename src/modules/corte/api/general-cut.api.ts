@@ -5,9 +5,11 @@ export interface GeneralCutMovement {
   id: string; date: string; concept: string; source: string; direction: 'ENTRADA' | 'SALIDA';
   type: 'ENTRADA' | 'SALIDA' | 'INTERNO'; amount: number;
 }
-export interface GeneralCutTransit { id: number; date: string; bank: string; accountLastFour: string; amount: number }
+export interface GeneralCutTransit { id: number; date: string; bank: string; accountLastFour: string; amount: number;
+  origin?: 'CUENTAS_A_CAJA' | 'CAJA_A_CUENTAS' | 'DEVOLUCION_PENDIENTE' }
 export interface GeneralCutBankBalance { bank: string; accounts: number; amount: number }
 export interface GeneralCut {
+  custodyInitial?: number; custodyPrepared?: number; custodyDelivered?: number; custodyFinal?: number;
   startDate: string; endDate: string;
   cashInitial: number; cashIncome: number; cashOutflow: number; cashInternal: number; cashFinal: number;
   bankInitial: number; bankIncome: number; bankOutflow: number; bankInternal: number; bankFinal: number; totalInternal: number;

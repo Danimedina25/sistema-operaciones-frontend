@@ -1,5 +1,5 @@
-import { useRef, useState, type FormEvent } from 'react';
-import { Modal } from '@/shared/components/ui/Modal';
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
+import { ActionDrawer, ActionDrawerFooter } from '@/shared/components/ui/ActionDrawer';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
 import { MoneyInput } from '@/shared/components/ui/MoneyInput';
@@ -19,10 +19,11 @@ const selectClass = 'mt-1 flex h-11 w-full rounded-xl border border-slate-300 bg
  * la Jefa de Cajas lo recibe y lo confirma: hasta entonces el saldo del banco no baja, pero
  * ese dinero ya no está disponible para otra salida.
  */
-export function RegisterWithdrawalForm({ onClose, onSubmit, showSummary = false }: {
+export function RegisterWithdrawalForm({ onClose, onSubmit, showSummary = false, onBusyChange }: {
   onClose: () => void;
   onSubmit: (request: RegisterWithdrawal) => Promise<BankCashWithdrawal>;
   showSummary?: boolean;
+  onBusyChange?: (busy: boolean) => void;
 }) {
   const { accounts, isLoading } = useBankAccounts();
   const [bankAccountId, setBankAccountId] = useState<number | null>(null);
@@ -31,6 +32,9 @@ export function RegisterWithdrawalForm({ onClose, onSubmit, showSummary = false 
   const [referencia, setReferencia] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const formId = useId();
+  const submitting = useRef(false);
+  useEffect(() => { onBusyChange?.(busy); }, [busy, onBusyChange]);
   const retry = useRef<{ signature: string; id: string } | null>(null);
   const availability = useAccountAvailability(bankAccountId);
   const amountProblem = monto.trim() ? validateCashAmountInput(monto) : null;
@@ -42,13 +46,14 @@ export function RegisterWithdrawalForm({ onClose, onSubmit, showSummary = false 
   }
 
   function close() {
-    if (busy) return;
+    if (submitting.current) return;
     reset();
     onClose();
   }
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (submitting.current) return;
     if (!bankAccountId) { setError('Selecciona la cuenta de la que sale el efectivo.'); return; }
     const amountError = validateCashAmountInput(monto, 'Captura el monto retirado.');
     if (amountError) { setError(amountError); return; }
@@ -58,6 +63,7 @@ export function RegisterWithdrawalForm({ onClose, onSubmit, showSummary = false 
     const signature = JSON.stringify(data);
     if (retry.current?.signature !== signature) retry.current = { signature, id: crypto.randomUUID() };
     setError('');
+    submitting.current = true;
     setBusy(true);
     try {
       await onSubmit({ ...data, requestId: retry.current.id });
@@ -66,26 +72,30 @@ export function RegisterWithdrawalForm({ onClose, onSubmit, showSummary = false 
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
+      submitting.current = false;
       setBusy(false);
     }
   }
 
   return (
-      <form onSubmit={submit} className="space-y-5">
+      <form id={formId} onSubmit={submit} className="space-y-5">
         <fieldset disabled={busy} className={showSummary ? 'grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]' : 'space-y-5'}>
           <div className={showSummary ? 'space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm' : 'space-y-5'}>
           {showSummary && <h2 className="text-sm font-semibold text-slate-950">Datos del retiro</h2>}
-          {!showSummary && <p className="text-sm text-slate-600">
+          {!showSummary && <section aria-label="Resumen del retiro" className="sticky top-0 z-10 space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-sm text-slate-600">
             Beneficiario: <strong className="text-slate-900">Caja General</strong>. El retiro queda en tránsito hasta que
             la Jefa de Cajas reciba y cuente el efectivo; al confirmarlo entra a la caja y baja el saldo de la cuenta.
-          </p>}
+          </p>
+            {bankAccountId ? <AvailabilityHint availability={availability} amount={error ? null : amount} /> : null}
+            {(error || amountProblem) && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error || amountProblem}</p>}
+          </section>}
           <div className="grid gap-4 md:grid-cols-2">
             <BankAccountCombobox
               label="Cuenta de la que sale el efectivo"
               ariaLabel="Cuenta"
               accounts={accounts}
               value={bankAccountId}
-              onChange={setBankAccountId}
+              onChange={id => { setBankAccountId(id); setError(''); }}
               isLoading={isLoading}
               onlyActive
             />
@@ -95,25 +105,17 @@ export function RegisterWithdrawalForm({ onClose, onSubmit, showSummary = false 
               </select>
             </label>
           </div>
-          {!showSummary && bankAccountId ? <AvailabilityHint availability={availability} amount={amount} /> : null}
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block text-sm font-medium text-slate-700">Monto
               <MoneyInput ariaLabel="Monto" value={monto} onChange={value => { setMonto(value); setError(''); }} className="mt-1" />
-              <span className={`mt-1 block text-xs font-normal ${amountProblem ? 'text-red-600' : 'text-slate-500'}`}>
-                {amountProblem ?? 'Se entrega en efectivo: centavos sólo .00 o .50.'}
-              </span>
+              <span className="mt-1 block text-xs font-normal text-slate-500">Se entrega en efectivo: centavos sólo .00 o .50.</span>
             </label>
             <label className="block text-sm font-medium text-slate-700">Referencia (opcional)
               <Input aria-label="Referencia" maxLength={300} placeholder="Número de cheque, operador…" value={referencia}
                 onChange={event => setReferencia(event.target.value)} className="mt-1" />
             </label>
           </div>
-          <div className="flex justify-end gap-3 border-t border-slate-200 pt-4">
-            <button type="button" onClick={close} className="h-11 rounded-xl px-5 text-sm font-semibold text-slate-600 hover:bg-slate-100">
-              Cancelar
-            </button>
-            <Button variant={showSummary ? 'dark' : 'primary'} type="submit" isLoading={busy}>Registrar retiro</Button>
-          </div>
+
           </div>
           {showSummary && <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" aria-label="Resumen del retiro">
             <h3 className="text-sm font-semibold text-slate-950">Resumen del retiro</h3>
@@ -121,11 +123,14 @@ export function RegisterWithdrawalForm({ onClose, onSubmit, showSummary = false 
               <div className="flex justify-between gap-3"><dt className="text-slate-500">Saldo disponible en cuenta</dt><dd className="font-semibold tabular-nums text-slate-950">{availability.disponible === null ? '—' : formatMoney(availability.disponible)}</dd></div>
               <div className="flex justify-between gap-3"><dt className="text-slate-500">Monto del retiro</dt><dd className="font-semibold tabular-nums text-red-600">{amount === null ? '—' : `−${formatMoney(amount)}`}</dd></div>
             </dl>
-            {bankAccountId && !fitsAvailable(availability, amount) && <p role="alert" className="mt-4 text-xs font-semibold text-red-700">Saldo insuficiente en la cuenta.</p>}
+            {(error || amountProblem || (bankAccountId && !fitsAvailable(availability, amount) ? 'Saldo insuficiente en la cuenta.' : '')) && <p role="alert" className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error || amountProblem || 'Saldo insuficiente en la cuenta.'}</p>}
             <p className="mt-4 text-xs text-amber-700">Queda en tránsito hasta que Caja General lo confirme.</p>
           </aside>}
         </fieldset>
-        {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+        <ActionDrawerFooter><div className="flex flex-wrap items-center justify-end gap-3">
+          <Button type="button" variant="neutral" disabled={busy} onClick={close}>Cancelar</Button>
+          <Button type="submit" form={formId} variant="primary" isLoading={busy}>Registrar retiro</Button>
+        </div></ActionDrawerFooter>
       </form>
   );
 }
@@ -135,7 +140,8 @@ export function RegisterWithdrawalModal({ open, onClose, onSubmit }: {
   onClose: () => void;
   onSubmit: (request: RegisterWithdrawal) => Promise<BankCashWithdrawal>;
 }) {
-  return <Modal open={open} title="Retiro de efectivo para Caja General" onClose={onClose}>
-    <RegisterWithdrawalForm onClose={onClose} onSubmit={onSubmit} />
-  </Modal>;
+  const [busy, setBusy] = useState(false);
+  return <ActionDrawer open={open} title="Retiro de efectivo para Caja General" busy={busy} onClose={onClose}>
+    {open && <RegisterWithdrawalForm onClose={onClose} onSubmit={onSubmit} onBusyChange={setBusy} />}
+  </ActionDrawer>;
 }

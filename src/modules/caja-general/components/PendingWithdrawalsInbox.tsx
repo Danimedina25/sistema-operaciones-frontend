@@ -11,7 +11,7 @@ import { WITHDRAWAL_METHODS, type BankCashWithdrawal } from '@/modules/cash-with
 import { maskAccountNumber } from '@/shared/utils/account-formatting';
 import { getApiErrorMessage } from '@/shared/utils/errors';
 import { currency } from '../utils/cash-amounts';
-import { formatCashDateTime } from '../utils/cash-dates';
+import { formatCashDate, formatCashDateTime } from '../utils/cash-dates';
 import { ConfirmWithdrawalModal } from './ConfirmWithdrawalModal';
 import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
@@ -21,7 +21,7 @@ import { formatMoney } from '@/shared/format';
  * Efectivo que Cuentas retiró de las cuentas para Caja General. Cajas lo revisa y, al
  * recibirlo, lo confirma con su desglose (entra a la caja de hoy) o lo rechaza con motivo.
  */
-export function PendingWithdrawalsInbox({ canResolve, openDayId, onConfirmed }: {
+export function PendingWithdrawalsInbox({ canResolve, openDayId, pendingCloseDate, onConfirmed }: {
   /**
    * Jefa de Cajas o Administración. Rechazar no mueve la caja, así que no depende de la fecha
    * que se esté viendo; confirmar además necesita `openDayId`.
@@ -29,6 +29,7 @@ export function PendingWithdrawalsInbox({ canResolve, openDayId, onConfirmed }: 
   canResolve: boolean;
   /** Caja abierta de hoy, vista en la fecha de hoy; sin ella no se puede confirmar. */
   openDayId: number | null;
+  pendingCloseDate?: string | null;
   onConfirmed?: () => void;
 }) {
   const pending = usePendingWithdrawals();
@@ -57,7 +58,7 @@ export function PendingWithdrawalsInbox({ canResolve, openDayId, onConfirmed }: 
 
   return (
     <section className="space-y-4">
-      {items.length > 0 && canResolve && !openDayId && <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-800">Para confirmar, la caja de hoy debe estar abierta. Puedes rechazar el retiro en cualquier momento.</p>}
+      {items.length > 0 && canResolve && !openDayId && <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-800">{pendingCloseDate ? `La caja del ${formatCashDate(pendingCloseDate)} sigue pendiente de cierre. Ciérrala y abre la caja de hoy para confirmar el retiro.` : 'Para confirmar, la caja de hoy debe estar abierta.'} Puedes rechazar el retiro en cualquier momento.</p>}
       {items.length === 0 ? <EmptyState title="No hay retiros de cuentas bancarias por ingresar" description="Cuando la Jefa de Cuentas registre un retiro hacia Caja General aparecerá aquí para que lo confirmes." /> : <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <DataTable columns={columns} rows={items} getRowKey={item => item.id}
         mobile={{ title: item => `${item.banco} ${maskAccountNumber(item.cuentaNumero)}`, subtitle: item => item.cuentaTitular,

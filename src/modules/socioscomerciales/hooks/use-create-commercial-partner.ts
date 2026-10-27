@@ -30,11 +30,10 @@ export function useCreateCommercialPartner(
         cuentaBancaria: values.cuentaBancaria.trim(),
         banco: values.banco.trim(),
         titularCuenta: values.titularCuenta.trim(),
-        porcentajeComision: values.porcentajeComision,
         activo: values.activo,
       });
 
-      toast.success('Socio comercial creado exitosamente');
+      toast.success('Socio creado. Gerencia debe configurar su comisión antes de usarlo en operaciones.');
 
       if (options?.onSuccess) {
         await options.onSuccess();

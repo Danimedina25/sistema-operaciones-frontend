@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Copy, Landmark, Send } from 'lucide-react';
 import { ActionDrawer } from '@/shared/components/ui/ActionDrawer';
 import { BankAccountCombobox } from '@/shared/components/ui/BankAccountCombobox';
 import { ReceiptUploadField } from '@/shared/components/ui/ReceiptUploadField';
+import { getApiErrorMessage } from '@/shared/utils/errors';
 import { Button } from '@/shared/components/ui/Button';
 import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts';
 import { formatAccount, formatMoney, formatPercent, formatPeriod } from '@/shared/format';
@@ -26,6 +27,10 @@ export function PayBeneficiaryCommissionsModal({
   const [file, setFile] = useState<File | null>(null);
   const [accountId, setAccountId] = useState<number | null>(null);
   const [accountError, setAccountError] = useState('');
+  const [submitError, setSubmitError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const submitting = useRef(false);
+  const busy = isSubmitting || saving;
   const { accounts, isLoading: loadingAccounts } = useBankAccounts({ enabled: open });
   const selectedAccount = accounts.find(account => account.id === accountId);
   const detail = useQuery({
@@ -44,29 +49,43 @@ export function PayBeneficiaryCommissionsModal({
     setFile(null);
     setAccountId(null);
     setAccountError('');
-  }, [open, beneficiary?.beneficiaryId]);
+    setSubmitError('');
+  }, [open, beneficiary?.beneficiaryId, beneficiary?.beneficiaryType]);
 
-  function submit() {
-    if (!file) return;
+  async function submit() {
+    if (submitting.current || busy || !beneficiary || !file) return;
     if (!accountId) {
       setAccountError('Selecciona la cuenta desde la que se transfiere.');
       return;
     }
-    void onSubmit(file, accountId);
+    submitting.current = true;
+    setSaving(true);
+    setAccountError('');
+    setSubmitError('');
+    try { await onSubmit(file, accountId); }
+    catch (error) { setSubmitError(getApiErrorMessage(error)); }
+    finally { submitting.current = false; setSaving(false); }
   }
 
   const accountNumber = beneficiary?.cuentaBancaria ?? '';
-  return <ActionDrawer open={open} eyebrow="Pagar comisión"
-    title={beneficiary ? `${beneficiary.nombre} · ${formatMoney(beneficiary.totalPendientes)}` : 'Pagar comisión'}
-    subtitle={`${formatPeriod(startDate, endDate)} · ${beneficiary?.totalOperaciones ?? 0} ${beneficiary?.totalOperaciones === 1 ? 'operación' : 'operaciones'}`}
-    onClose={onClose}
+  return <ActionDrawer open={open} title="Pagar comisiones"
+    subtitle={`${beneficiary?.nombre ?? ''} · ${formatPeriod(startDate, endDate)}`}
+    busy={busy} onClose={onClose}
     footer={<div className="flex items-center gap-3">
-      <Button variant="neutral" disabled={isSubmitting} onClick={onClose}>Cancelar</Button>
-      <Button variant="dark" className="min-w-0 flex-1" disabled={isSubmitting || !file} onClick={submit}>
-        <Send className="size-4" />{isSubmitting ? 'Registrando…' : `Registrar pago de ${formatMoney(beneficiary?.totalPendientes)}`}
+      <Button variant="neutral" disabled={busy} onClick={onClose}>Cancelar</Button>
+      <Button variant="primary" className="min-w-0 flex-1" isLoading={busy} disabled={!beneficiary || !file} onClick={() => void submit()}>
+        <Send className="size-4" />Registrar pago
       </Button>
     </div>}>
     {beneficiary && <div className="space-y-4">
+      <section aria-label="Resumen del pago" className="sticky top-0 z-10 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm text-slate-500">Comisiones por pagar</p>
+          <p className="text-2xl font-bold text-slate-950">{formatMoney(beneficiary.totalPendientes)}</p>
+        </div>
+        <p className="mt-1 text-sm text-slate-500">{beneficiary.totalOperaciones} {beneficiary.totalOperaciones === 1 ? 'operación' : 'operaciones'}</p>
+        {(accountError || submitError) && <p role="alert" className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{accountError || submitError}</p>}
+      </section>
       <div className="overflow-hidden rounded-xl border border-slate-200">
         <table className="w-full table-fixed text-xs">
           <thead className="bg-slate-50 text-[10px] uppercase tracking-wide text-slate-500">
@@ -93,12 +112,13 @@ export function PayBeneficiaryCommissionsModal({
             onClick={() => void navigator.clipboard.writeText(accountNumber)}><Copy className="size-3" />Copiar cuenta</button>}
         </div>
       </div>
-      <BankAccountCombobox label="Cuenta origen" accounts={accounts} value={accountId} onChange={setAccountId}
-        isLoading={loadingAccounts} onlyActive fieldError={accountError} />
-      <ReceiptUploadField file={file} onChange={setFile} label="Comprobante de pago" camera={false}
+      <BankAccountCombobox label="Cuenta origen" accounts={accounts} value={accountId}
+        onChange={id => { setAccountId(id); setAccountError(''); setSubmitError(''); }}
+        disabled={busy} isLoading={loadingAccounts} onlyActive />
+      <ReceiptUploadField file={file} onChange={value => { setFile(value); setSubmitError(''); }} disabled={busy} label="Comprobante de pago" camera={false}
         dropHint="Subir comprobante de la transferencia" />
       {selectedAccount && <p className="rounded-lg bg-blue-50 p-3 text-xs text-blue-900">
-        Se registrará como salida de {formatAccount(selectedAccount.banco, selectedAccount.numeroCuenta)} y aparecerá en Cortes y movimientos y en los movimientos de esa cuenta.
+        El pago se registrará como salida de {formatAccount(selectedAccount.banco, selectedAccount.numeroCuenta)}.
       </p>}
     </div>}
   </ActionDrawer>;

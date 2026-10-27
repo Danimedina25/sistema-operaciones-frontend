@@ -9,7 +9,6 @@ import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTabl
 import { StatusBadge } from '@/shared/components/ui/StatusBadge';
 import { Button } from '@/shared/components/ui/Button';
 import { formatAccount, formatDateTime, formatMoney } from '@/shared/format';
-import { Landmark } from 'lucide-react';
 import { officeToday, selectionFromDates } from '@/shared/utils/period';
 import type { BankAccountResponse } from '../types/bank-accounts.types';
 import { getBankAccountBalance, getBankMovementTotals, searchBankMovements } from '@/modules/corte/api/corte.api';
@@ -31,9 +30,9 @@ export function AccountMovementsModal({ account, onClose }: { account: BankAccou
   const movements = useQuery({ queryKey: ['account-movements', account?.id, dates, direction, page], queryFn: () => searchBankMovements(filters, page, 20), enabled: Boolean(account) });
   const totals = useQuery({ queryKey: ['account-movements', 'totals', account?.id, dates, direction], queryFn: () => getBankMovementTotals(filters), enabled: Boolean(account) });
   const balance = useQuery({ queryKey: ['account-balance', account?.id, dates.endDate], queryFn: () => getBankAccountBalance(account!.id, dates.endDate), enabled: Boolean(account) });
-  return <Modal open={Boolean(account)} variant="light" icon={<Landmark className="h-5 w-5" />} title="Movimientos de la cuenta"
+  return <Modal open={Boolean(account)} size="wide" title="Movimientos de la cuenta"
     subtitle={account ? `${formatAccount(account.banco, account.numeroCuenta)} · ${account.titular}` : undefined}
-    footer={<Button variant="dark" className="h-10 rounded-lg" onClick={onClose}>Cerrar</Button>} onClose={onClose}>
+    footer={<Button variant="neutral" onClick={onClose}>Cerrar</Button>} onClose={onClose}>
     {account && <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <PeriodSelector allowAll={false} allowRange label="Periodo" value={selectionFromDates(dates.startDate, dates.endDate)} onApply={selection => { setDates({ startDate: selection.startDate, endDate: selection.endDate }); setPage(0); }} />

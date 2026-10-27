@@ -52,14 +52,12 @@ export function OperationsTable({
   const { hasRole } = useAuth();
 
   const isSocioComercial = hasRole(['SOCIO_COMERCIAL']);
-  const canManageOperationFlow = !isSocioComercial;
+  const canManageOperationFlow = hasRole(['ADMIN', 'JEFA_CAJAS', 'JEFA_CUENTAS', 'AUXILIAR_CUENTAS']);
   const canModifyOperations = hasRole([
     'ADMIN',
-    'GERENTE',
-    'DIRECCION',
     'SOCIO_COMERCIAL',
   ]);
-  const canToggleOperationStatus = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
+  const canToggleOperationStatus = hasRole('ADMIN');
   // La eliminación física excluye a DIRECCION a propósito: no es lo mismo que
   // desactivar, y solo aplica mientras la operación siga pendiente de validación.
   const canDeleteOperation = hasRole(['ADMIN', 'GERENTE']);

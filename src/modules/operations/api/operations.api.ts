@@ -150,8 +150,11 @@ export async function getMyOperations(
   page: number,
   pageSize: number,
   filters: OperationsFilters,
+  /** Solo operaciones a las que aún les falta registrar pagos de ingreso, sin importar su validación. */
+  options: { missingIncome?: boolean } = {},
 ): Promise<PageResponse<PaymentOperationResponse>> {
-  const query = buildOperationsQuery(page, pageSize, filters);
+  const query = buildOperationsQuery(page, pageSize, filters)
+    + (options.missingIncome ? '&missingIncome=true' : '');
 
   const response = await api.get<OperationsPageApiResponse>(
     `${OPERATIONS_BASE_PATH}/my-operations?${query}`,

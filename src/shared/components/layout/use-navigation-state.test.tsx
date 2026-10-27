@@ -1,3 +1,4 @@
+import { officeToday } from '@/shared/utils/period';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useState, type PropsWithChildren } from 'react';
@@ -25,7 +26,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.getOperations.mockResolvedValue({ totalElements: 3 });
   mocks.cashSummary.mockResolvedValue({ income: { count: 3 }, outflow: { count: 2 } });
-  mocks.latest.mockResolvedValue({ closedAt: null });
+  mocks.latest.mockResolvedValue({ id: 1, fecha: officeToday(), closedAt: null });
   mocks.getSummaryByBeneficiary.mockResolvedValue({ socios: [] });
 });
 
@@ -56,4 +57,12 @@ describe('contadores del menú', () => {
   it('calcula la semana anterior en hora de la oficina', () => {
     expect(previousWeekInOffice(new Date('2026-10-10T18:00:00Z'))).toEqual({ startDate: '2026-09-27', endDate: '2026-10-03' });
   });
+});
+
+it('no presenta una caja anterior sin cerrar como abierta hoy', async () => {
+  mocks.latest.mockResolvedValue({ id: 1, fecha: '2020-01-01', closedAt: null });
+  const { result } = renderHook(() => useNavigationState('JEFA_CAJAS'), { wrapper: Wrapper });
+  await waitFor(() => expect(result.current.cashStateKnown).toBe(true));
+  expect(result.current.cashOpen).toBe(false);
+  expect(result.current.cashPendingClose).toBe('2020-01-01');
 });

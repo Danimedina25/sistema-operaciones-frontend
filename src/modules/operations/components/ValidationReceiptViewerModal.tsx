@@ -1,9 +1,12 @@
+import { OverlayParentContext, useOverlay } from '@/shared/hooks/use-overlay';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 
 interface ValidationReceiptViewerModalProps {
   receiptUrl: string;
+  mimeType?: string;
+  title?: string;
   canReplace: boolean;
   isSaving: boolean;
   onClose: () => void;
@@ -25,11 +28,15 @@ function isImageFile(file?: File | null) {
 
 export function ValidationReceiptViewerModal({
   receiptUrl,
+  title = 'Comprobante de validación',
+  mimeType,
   canReplace,
   isSaving,
   onClose,
   onReplace,
 }: ValidationReceiptViewerModalProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const { overlayId, zIndex } = useOverlay(true, rootRef, () => { if (!isSaving) onClose(); });
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -43,7 +50,7 @@ export function ValidationReceiptViewerModal({
   const displayUrl = pendingFile ? pendingPreviewUrl : receiptUrl;
   const displayIsImage = pendingFile
     ? isImageFile(pendingFile)
-    : isImageUrl(receiptUrl);
+    : (mimeType ? mimeType.startsWith('image/') : isImageUrl(receiptUrl));
 
   useEffect(() => {
     setScale(1);
@@ -63,17 +70,6 @@ export function ValidationReceiptViewerModal({
       URL.revokeObjectURL(objectUrl);
     };
   }, [pendingFile]);
-
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    }
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
 
   function clampScale(value: number) {
     return Math.min(MAX_SCALE, Math.max(MIN_SCALE, value));
@@ -132,15 +128,15 @@ export function ValidationReceiptViewerModal({
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[10000] flex flex-col bg-slate-950/95">
+    <OverlayParentContext.Provider value={overlayId}><div ref={rootRef} tabIndex={-1} data-overlay-root style={{ zIndex }} role="dialog" aria-modal="true" aria-label={title} className="fixed inset-0 flex flex-col bg-slate-950/95">
       <div className="flex items-center justify-between gap-4 border-b border-white/10 px-4 py-3 sm:px-6">
         <p className="text-sm font-medium text-white/80">
           {pendingFile
             ? 'Vista previa del comprobante nuevo'
-            : 'Comprobante de validación'}
+            : title}
         </p>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           {displayIsImage && (
             <>
               <button
@@ -191,14 +187,15 @@ export function ValidationReceiptViewerModal({
           displayIsImage ? (
             <img
               src={displayUrl}
-              alt="Comprobante de validación"
+              alt={title}
               draggable={false}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
               onDoubleClick={handleDoubleClick}
-              className="absolute left-1/2 top-1/2 max-h-none max-w-none select-none"
+              // A escala 1 la imagen cabe completa en el área visible; el zoom parte de ahí.
+              className="absolute left-1/2 top-1/2 max-h-[calc(100%-2rem)] max-w-[calc(100%-2rem)] select-none object-contain"
               style={{
                 transform: `translate(-50%, -50%) translate(${position.x}px, ${position.y}px) scale(${scale})`,
                 cursor: scale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'zoom-in',
@@ -211,7 +208,7 @@ export function ValidationReceiptViewerModal({
           ) : (
             <iframe
               src={displayUrl}
-              title="Comprobante de validación"
+              title={title}
               className="h-full w-full border-0"
             />
           )
@@ -263,7 +260,7 @@ export function ValidationReceiptViewerModal({
           )
         ) : null}
       </div>
-    </div>,
+    </div></OverlayParentContext.Provider>,
     document.body,
   );
 }

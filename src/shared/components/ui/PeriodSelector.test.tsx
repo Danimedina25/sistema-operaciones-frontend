@@ -80,4 +80,16 @@ describe('PeriodSelector', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Aplicar' }));
     expect(onApply).toHaveBeenCalledWith(all);
   });
+
+  it('mantiene el calendario dentro de la ventana cuando el filtro está cerca del borde izquierdo', () => {
+    const rect = vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+      left: 220, right: 480, top: 250, bottom: 303, width: 260, height: 53,
+      x: 220, y: 250, toJSON: () => ({}),
+    });
+    try {
+      const { dialog } = mount();
+      expect(dialog).toHaveStyle({ left: '220px' });
+      expect(dialog).not.toHaveStyle({ right: '0px' });
+    } finally { rect.mockRestore(); }
+  });
 });

@@ -40,7 +40,7 @@ export function SearchFilterBar({
     <div className={cn('border-b border-slate-100 bg-white', className)}>
       <div className="flex flex-wrap items-center gap-2 px-4 py-3">
         {leading}
-        <label className="flex min-h-10 min-w-[12rem] flex-1 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
+        <label className="flex h-11 min-w-0 basis-48 flex-1 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 focus-within:border-blue-400 focus-within:ring-1 focus-within:ring-blue-100">
           <Search aria-hidden="true" className="h-4 w-4 shrink-0 text-slate-400" />
           <span className="sr-only">Buscar</span>
           <input
@@ -48,7 +48,7 @@ export function SearchFilterBar({
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder={searchPlaceholder}
-            className="min-w-0 flex-1 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
+            className="search-filter-input h-full min-w-0 flex-1 appearance-none border-0 bg-transparent py-2 text-sm leading-6 text-slate-900 shadow-none outline-none placeholder:text-slate-400"
           />
         </label>
         {trailing}
@@ -61,7 +61,7 @@ export function SearchFilterBar({
             onFiltersOpenChange?.(!current);
             return !current;
           })}
-          className={cn('inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 hover:bg-slate-50', iconOnlyOnMobile && 'max-sm:w-11 max-sm:justify-center max-sm:px-0')}
+          className={cn('inline-flex h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 hover:bg-slate-50', iconOnlyOnMobile && 'max-sm:w-11 max-sm:justify-center max-sm:px-0')}
         >
           <ListFilter aria-hidden="true" className="h-4 w-4" />
           <span className={iconOnlyOnMobile ? 'max-sm:sr-only' : undefined}>Filtros</span>

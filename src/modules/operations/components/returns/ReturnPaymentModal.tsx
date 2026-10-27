@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { History, PlusCircle } from 'lucide-react';
 import { ActionDrawer } from '@/shared/components/ui/ActionDrawer';
 import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts';
@@ -23,7 +23,7 @@ import {
 import { ReturnRequestSummarySection } from './ReturnRequestSummarySection';
 import { InstallmentHistoryTable } from './InstallmentHistoryTable';
 import { formatCurrency } from '../../utils/operation-formatters';
-import { paymentTypeLabels } from '../../constants/operations.constants';
+import { CardlessCodePanel } from './CardlessCodePanel';
 
 interface ReturnPaymentModalProps {
   open: boolean;
@@ -49,6 +49,7 @@ interface ReturnPaymentModalProps {
   onDeliver: (installment: ReturnInstallment) => void;
   onCancel: (installment: ReturnInstallment) => void;
   onClose: () => void;
+  onAccountAssigned?: () => void | Promise<void>;
 }
 
 /**
@@ -78,8 +79,10 @@ export function ReturnPaymentModal({
   onDeliver,
   onCancel,
   onClose,
+  onAccountAssigned,
 }: ReturnPaymentModalProps) {
   const { user } = useAuth();
+  const [cardlessBusy, setCardlessBusy] = useState(false);
   const roles = user?.roles ?? [];
   const isSocioComercial = roles.includes('SOCIO_COMERCIAL');
   const { accounts } = useBankAccounts();
@@ -87,6 +90,13 @@ export function ReturnPaymentModal({
     requestId: null,
     amount: 0,
   });
+
+  const validationKey = `${open}-${returnRequest?.id}-${returnRequest?.montoRetornado}-${returnRequest?.montoEnProceso}`;
+  const [validationState, setValidationState] = useState<{ key: string; messages: string[] }>({ key: '', messages: [] });
+  const onValidationErrors = useCallback((messages: string[]) => {
+    setValidationState({ key: validationKey, messages });
+  }, [validationKey]);
+  const collectionErrors = validationState.key === validationKey ? validationState.messages : [];
 
   const isManage = variant === 'manage';
   const isCashManage =
@@ -122,7 +132,7 @@ export function ReturnPaymentModal({
     !!returnRequest && canManageReturnPayments && roleCanHandleMethod(returnRequest);
   const showRegisterSection = isManage && userManagesMethod;
 
-  const availability =
+  const baseAvailability =
     returnRequest && totals && showRegisterSection
       ? resolveRegisterInstallmentAvailability({
           totals,
@@ -130,6 +140,8 @@ export function ReturnPaymentModal({
           hasPermission: true,
         })
       : { canRegister: false, reason: null };
+  const availability = returnRequest?.tipoPago === 'RETIRO_SIN_TARJETA' && !returnRequest.cuentaAsignadaEn
+    ? { canRegister: false, reason: 'Jefa de Cuentas debe asignar la cuenta origen antes de preparar el retiro.' } : baseAvailability;
 
   const showHistory =
     !!totals &&
@@ -175,15 +187,17 @@ export function ReturnPaymentModal({
             bankAccounts={bankAccounts}
             isSubmitting={isSubmittingInstallment}
             hideSummary
+            onValidationErrors={isManage ? onValidationErrors : undefined}
             compactBankPanel={isBankManage}
             onCancel={onClose}
             onAmountChange={(amount) => setCashDraft({ requestId: returnRequest.id, amount })}
-            onSubmit={(values) =>
-              onSubmitInstallment(returnRequest.id, {
+            onSubmit={async (values) => {
+              await onSubmitInstallment(returnRequest.id, {
                 ...values,
                 operationId: returnRequest.operationId,
-              })
-            }
+              });
+              setCashDraft({ requestId: null, amount: 0 });
+            }}
           />
         ) : (
           <p className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
@@ -198,7 +212,7 @@ export function ReturnPaymentModal({
 
   const historyTable = (
     <InstallmentHistoryTable
-      installments={installments}
+      installments={returnRequest?.tipoPago === 'RETIRO_SIN_TARJETA' ? installments.filter(i => !i.codigoParaCliente) : installments}
       isLoading={isLoadingHistory}
       emptyMessage={emptyHistoryMessage}
       canConfirm={isManage ? canConfirm : undefined}
@@ -211,35 +225,45 @@ export function ReturnPaymentModal({
   );
 
   return (
-    <ActionDrawer open={open} title={isBankManage && returnRequest ? `Solicitud #${returnRequest.id} · ${paymentTypeLabels[returnRequest.tipoPago]}` : title} eyebrow={isBankManage ? 'Registrar retorno' : undefined} subtitle={isBankManage && returnRequest ? `Operación #${returnRequest.operationId} · ${returnRequest.clienteNombre ?? 'Cliente'} · Socio: ${returnRequest.socioComercialNombre ?? 'Socio comercial'}` : undefined} onClose={onClose}>
+    <ActionDrawer open={open} busy={isSubmittingInstallment || cardlessBusy} title={returnRequest?.tipoPago === 'RETIRO_SIN_TARJETA' && !roles.includes('JEFA_CAJAS') ? 'Códigos de retiro sin tarjeta' : isBankManage ? 'Registrar retorno' : title} subtitle={isBankManage && returnRequest ? `Solicitud #${returnRequest.id} · Operación #${returnRequest.operationId} · ${returnRequest.clienteNombre ?? 'Cliente'}` : undefined} onClose={onClose}>
       {returnRequest === null ? (
         <div className="py-8 text-center text-sm text-slate-500">Cargando...</div>
+      ) : returnRequest.tipoPago === 'RETIRO_SIN_TARJETA' && (!installments.some(i => !i.codigoParaCliente) || roles.some(r => ['JEFA_CUENTAS','AUXILIAR_CUENTAS','SOCIO_COMERCIAL','ADMIN'].includes(r))) ? (
+        <CardlessCodePanel onBusyChange={setCardlessBusy} request={returnRequest} installments={installments} readOnly={!isManage} onChanged={onAccountAssigned} onClose={onClose} legacyHistory={installments.some(i => !i.codigoParaCliente) ? historyTable : undefined} />
       ) : isCashManage ? (
         // "Confirmar recolección": solo la tabla de recolecciones (primero) y,
         // si aplica, el formulario para programar una nueva. Sin secciones
         // informativas.
         <div className="space-y-6">
           {totals ? (
-            <section data-testid="cash-collection-summary" className={`sticky top-0 z-50 -mx-4 -mt-4 grid grid-cols-2 gap-3 rounded-b-2xl border-b border-slate-200 bg-white px-4 py-3 text-sm shadow-lg before:absolute before:inset-x-0 before:-top-10 before:h-10 before:bg-white sm:-mx-7 sm:-mt-7 sm:px-5 sm:py-4 ${isSocioComercial ? 'md:grid-cols-3' : 'md:grid-cols-4'}`}>
-              <div>
-                <span className="block text-slate-500">Total solicitado</span>
-                <strong className="text-base text-slate-900">{formatCurrency(totals.montoSolicitado)}</strong>
+            <section data-testid="cash-collection-summary" className={`sticky top-0 z-10 grid grid-cols-2 gap-2 rounded-2xl border bg-white p-3 text-xs shadow-lg sm:gap-4 sm:p-4 sm:text-sm ${cashDraftAmount > totals.montoDisponible || collectionErrors.length > 0 ? 'border-red-300' : 'border-slate-200'} ${isSocioComercial ? 'md:grid-cols-3' : 'md:grid-cols-4'}`}>
+              <div className="rounded-xl bg-blue-50 p-2 text-blue-800">
+                <span className="block">Total solicitado</span>
+                <strong className="mt-1 block">{formatCurrency(totals.montoSolicitado)}</strong>
               </div>
-              <div>
-                <span className="block text-slate-500">{isSocioComercial ? 'Registrado' : 'Ya programado'}</span>
-                <strong className="text-base text-slate-900">{formatCurrency(totals.montoRetornado + totals.montoEnProceso)}</strong>
+              <div className="rounded-xl bg-emerald-50 p-2 text-emerald-800">
+                <span className="block">{isSocioComercial ? 'Registrado' : 'Ya programado'}</span>
+                <strong className="mt-1 block">{formatCurrency(totals.montoRetornado + totals.montoEnProceso)}</strong>
               </div>
               {!isSocioComercial ? (
-                <div>
-                  <span className="block text-slate-500">Nueva recolección</span>
-                  <strong className="text-base text-slate-900">{formatCurrency(cashDraftAmount)}</strong>
+                <div className={`rounded-xl p-2 ${cashDraftAmount > totals.montoDisponible ? 'bg-red-50 text-red-700' : 'bg-violet-50 text-violet-800'}`}>
+                  <span className="block">Nueva recolección</span>
+                  <strong className="mt-1 block">{formatCurrency(cashDraftAmount)}</strong>
                 </div>
               ) : null}
-              <div>
-                <span className="block text-slate-500">Pendiente</span>
-                <strong className={cashDraftAmount >= totals.montoDisponible ? 'text-base text-emerald-700' : 'text-base text-amber-700'}>
+              <div className="rounded-xl bg-amber-50 p-2 text-amber-900">
+                <span className="block">Pendiente</span>
+                <strong className="mt-1 block">
                   {formatCurrency(Math.max(totals.montoDisponible - cashDraftAmount, 0))}
                 </strong>
+              </div>
+              <div className="col-span-full" aria-live="polite">
+                {collectionErrors.filter(message => !(cashDraftAmount > totals.montoDisponible && message.startsWith('El importe no puede superar'))).map(message => (
+                  <p key={message} role="alert" className="mb-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{message}</p>
+                ))}
+                {cashDraftAmount > totals.montoDisponible && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
+                  El importe no puede superar {formatCurrency(totals.montoDisponible)}. Exceso: {formatCurrency(cashDraftAmount - totals.montoDisponible)}.
+                </p>}
               </div>
             </section>
           ) : null}
@@ -254,7 +278,10 @@ export function ReturnPaymentModal({
         </div>
       ) : (
         <div className="space-y-6">
-          <ReturnRequestSummarySection returnRequest={returnRequest} bankManage={isBankManage} />
+          <section aria-label="Resumen del retorno" className={isBankManage ? 'sticky top-0 z-10 rounded-xl border border-slate-200 bg-white p-4 shadow-sm' : ''}>
+            <ReturnRequestSummarySection returnRequest={returnRequest} bankManage={isBankManage} />
+            {collectionErrors.map(message => <p key={message} role="alert" className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{message}</p>)}
+          </section>
 
           {registerFormSection}
 

@@ -23,6 +23,7 @@ interface CommercialPartnerOption {
   id: number;
   nombre: string;
   porcentajeComision?: number;
+  commissionConfigured?: boolean;
 }
 
 interface UpdateOperationFormProps {
@@ -176,15 +177,17 @@ export function UpdateOperationForm({
 
   const sociosNivel2Disponibles = useMemo(() => {
     return commercialPartners.filter(
-      (partner) => String(partner.id) !== String(socioComercialNivel3Id),
+      (partner) => (partner.id === operation.socioComercialNivel2Id || partner.commissionConfigured === true)
+        && String(partner.id) !== String(socioComercialNivel3Id),
     );
-  }, [commercialPartners, socioComercialNivel3Id]);
+  }, [commercialPartners, operation.socioComercialNivel2Id, socioComercialNivel3Id]);
 
   const sociosNivel3Disponibles = useMemo(() => {
     return commercialPartners.filter(
-      (partner) => String(partner.id) !== String(socioComercialNivel2Id),
+      (partner) => (partner.id === operation.socioComercialNivel3Id || partner.commissionConfigured === true)
+        && String(partner.id) !== String(socioComercialNivel2Id),
     );
-  }, [commercialPartners, socioComercialNivel2Id]);
+  }, [commercialPartners, operation.socioComercialNivel3Id, socioComercialNivel2Id]);
 
   const handleCurrencyChange = (rawValue: string) => {
     setValue('montoTotal', normalizeCurrencyInput(rawValue), {

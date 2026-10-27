@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState, type FormEvent } from 'react';
-import { Modal } from '@/shared/components/ui/Modal';
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'react';
+import { ActionDrawer, ActionDrawerFooter } from '@/shared/components/ui/ActionDrawer';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
 import { MoneyInput } from '@/shared/components/ui/MoneyInput';
@@ -19,10 +19,11 @@ import { formatMoney } from '@/shared/format';
  * El UUID de la solicitud se conserva al reintentar la misma captura para que un doble clic
  * o un error de red no la registren dos veces.
  */
-export function BankTransferForm({ onClose, onSubmit, showSummary = false }: {
+export function BankTransferForm({ onClose, onSubmit, showSummary = false, onBusyChange }: {
   onClose: () => void;
   onSubmit: (request: CreateBankTransfer) => Promise<BankTransfer>;
   showSummary?: boolean;
+  onBusyChange?: (busy: boolean) => void;
 }) {
   const { accounts, isLoading } = useBankAccounts();
   const [origenId, setOrigenId] = useState<number | null>(null);
@@ -31,6 +32,9 @@ export function BankTransferForm({ onClose, onSubmit, showSummary = false }: {
   const [referencia, setReferencia] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const formId = useId();
+  const submitting = useRef(false);
+  useEffect(() => { onBusyChange?.(busy); }, [busy, onBusyChange]);
   const retry = useRef<{ signature: string; id: string } | null>(null);
 
   const destinos = useMemo(() => accounts.filter(account => account.id !== origenId), [accounts, origenId]);
@@ -46,18 +50,19 @@ export function BankTransferForm({ onClose, onSubmit, showSummary = false }: {
   }
 
   function close() {
-    if (busy) return;
+    if (submitting.current) return;
     reset();
     onClose();
   }
 
   function changeOrigen(next: number | null) {
-    setOrigenId(next);
+    setOrigenId(next); setError('');
     if (next !== null && next === destinoId) setDestinoId(null);
   }
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (submitting.current) return;
     if (!origenId) { setError('Selecciona la cuenta de la que sale el dinero.'); return; }
     if (!destinoId) { setError('Selecciona la cuenta beneficiaria.'); return; }
     const amountError = validateTransferAmount(monto);
@@ -74,6 +79,7 @@ export function BankTransferForm({ onClose, onSubmit, showSummary = false }: {
     const signature = JSON.stringify(data);
     if (retry.current?.signature !== signature) retry.current = { signature, id: crypto.randomUUID() };
     setError('');
+    submitting.current = true;
     setBusy(true);
     try {
       await onSubmit({ ...data, requestId: retry.current.id });
@@ -82,19 +88,23 @@ export function BankTransferForm({ onClose, onSubmit, showSummary = false }: {
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
+      submitting.current = false;
       setBusy(false);
     }
   }
 
   return (
-      <form onSubmit={submit} className="space-y-5">
+      <form id={formId} onSubmit={submit} className="space-y-5">
         <fieldset disabled={busy} className={showSummary ? 'grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]' : 'space-y-5'}>
           <div className={showSummary ? 'space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm' : 'space-y-5'}>
           {showSummary && <h2 className="text-sm font-semibold text-slate-950">Datos de la transferencia</h2>}
-          {!showSummary && <p className="text-sm text-slate-600">
+          {!showSummary && <section aria-label="Resumen de la transferencia" className="sticky top-0 z-10 space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-sm text-slate-600">
             El monto sale de la cuenta origen y entra a la beneficiaria en el mismo momento. Queda en el
             libro de movimientos de las dos cuentas.
-          </p>}
+          </p>
+            {origenId ? <AvailabilityHint availability={availability} amount={error ? null : amount} /> : null}
+            {error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+          </section>}
           <div className="grid gap-4 md:grid-cols-2">
             <BankAccountCombobox
               label="Cuenta origen"
@@ -108,17 +118,16 @@ export function BankTransferForm({ onClose, onSubmit, showSummary = false }: {
               label="Cuenta beneficiaria"
               accounts={destinos}
               value={destinoId}
-              onChange={setDestinoId}
+              onChange={id => { setDestinoId(id); setError(''); }}
               isLoading={isLoading}
               disabled={!origenId}
               placeholder={origenId ? undefined : 'Selecciona primero la cuenta origen'}
               onlyActive
             />
           </div>
-          {!showSummary && origenId ? <AvailabilityHint availability={availability} amount={amount} /> : null}
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block text-sm font-medium text-slate-700">Monto
-              <MoneyInput ariaLabel="Monto" value={monto} onChange={setMonto} className="mt-1" />
+              <MoneyInput ariaLabel="Monto" value={monto} onChange={value => { setMonto(value); setError(''); }} className="mt-1" />
             </label>
             <label className="block text-sm font-medium text-slate-700">Referencia (opcional)
               <Input
@@ -131,12 +140,7 @@ export function BankTransferForm({ onClose, onSubmit, showSummary = false }: {
               />
             </label>
           </div>
-          <div className="flex justify-end gap-3 border-t border-slate-200 pt-4">
-            <button type="button" onClick={close} className="h-11 rounded-xl px-5 text-sm font-semibold text-slate-600 hover:bg-slate-100">
-              Cancelar
-            </button>
-            <Button variant={showSummary ? 'dark' : 'primary'} type="submit" isLoading={busy}>Registrar transferencia</Button>
-          </div>
+
           </div>
           {showSummary && <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" aria-label="Resumen de la transferencia">
             <h3 className="text-sm font-semibold text-slate-950">Resumen de la transferencia</h3>
@@ -144,11 +148,14 @@ export function BankTransferForm({ onClose, onSubmit, showSummary = false }: {
               <div className="rounded-lg bg-slate-50 p-3"><p className="font-semibold uppercase tracking-wide text-slate-500">Origen</p><p className="mt-1 font-semibold text-slate-950">{originAccount ? `${originAccount.banco} · ${originAccount.titular}` : 'Selecciona una cuenta'}</p><p className="mt-1 text-slate-600">Saldo disponible: {availability.disponible === null ? '—' : formatMoney(availability.disponible)}</p></div>
               <div className="rounded-lg bg-slate-50 p-3"><p className="font-semibold uppercase tracking-wide text-slate-500">Beneficiaria</p><p className="mt-1 font-semibold text-slate-950">{destinationAccount ? `${destinationAccount.banco} · ${destinationAccount.titular}` : 'Selecciona una cuenta'}</p><p className="mt-1 text-slate-600">Saldo actual: {destinationAvailability.saldo === null ? '—' : formatMoney(destinationAvailability.saldo)}</p></div>
             </div>
-            {origenId && !fitsAvailable(availability, amount) && <p role="alert" className="mt-4 text-xs font-semibold text-red-700">Saldo insuficiente en la cuenta origen.</p>}
+            {(error || (origenId && !fitsAvailable(availability, amount) ? 'Saldo insuficiente en la cuenta origen.' : '')) && <p role="alert" className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error || 'Saldo insuficiente en la cuenta origen.'}</p>}
             <p className="mt-3 text-xs text-slate-500">Los saldos resultantes se registran al confirmar la transferencia.</p>
           </aside>}
         </fieldset>
-        {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+        <ActionDrawerFooter><div className="flex flex-wrap items-center justify-end gap-3">
+          <Button type="button" variant="neutral" disabled={busy} onClick={close}>Cancelar</Button>
+          <Button type="submit" form={formId} variant="primary" isLoading={busy}>Registrar transferencia</Button>
+        </div></ActionDrawerFooter>
       </form>
   );
 }
@@ -158,7 +165,8 @@ export function BankTransferModal({ open, onClose, onSubmit }: {
   onClose: () => void;
   onSubmit: (request: CreateBankTransfer) => Promise<BankTransfer>;
 }) {
-  return <Modal open={open} title="Registrar transferencia entre cuentas" onClose={onClose}>
-    <BankTransferForm onClose={onClose} onSubmit={onSubmit} />
-  </Modal>;
+  const [busy, setBusy] = useState(false);
+  return <ActionDrawer open={open} title="Registrar transferencia entre cuentas" busy={busy} onClose={onClose}>
+    {open && <BankTransferForm onClose={onClose} onSubmit={onSubmit} onBusyChange={setBusy} />}
+  </ActionDrawer>;
 }

@@ -1,4 +1,7 @@
-import { useEffect, useId, useMemo, useState } from 'react';
+import { formErrorMessages } from '../utils/form-error-messages';
+import { getApiErrorMessage } from '@/shared/utils/errors';
+import { ReceiptViewerLink } from '@/shared/components/ui/ReceiptViewerLink';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Input } from '@/shared/components/ui/Input';
 import { Button } from '@/shared/components/ui/Button';
@@ -40,6 +43,7 @@ interface UpdateOperationPaymentFormInput {
   observaciones?: string;
 }
 interface UpdateOperationPaymentFormProps {
+  onCancel?: () => void;
   isSubmitting: boolean;
   bankAccounts: SelectOption[];
   operation: PaymentOperationResponse;
@@ -93,8 +97,11 @@ export function UpdateOperationPaymentForm({
   operation,
   payment,
   onSubmit,
+  onCancel,
 }: UpdateOperationPaymentFormProps) {
   const formId = useId();
+  const submitting = useRef(false);
+  const [submitError, setSubmitError] = useState('');
   const {
     register,
     handleSubmit,
@@ -112,7 +119,8 @@ export function UpdateOperationPaymentForm({
       beneficiario: payment.beneficiario ?? '',
       cuentaDestinoId: payment.cuentaDestinoId ? String(payment.cuentaDestinoId) : '',
       comprobante: undefined,
-      observaciones: payment.observaciones ?? '',
+      // En un pago rechazado, observaciones guarda el motivo del rechazo, no una nota del Socio.
+      observaciones: payment.estatus === 'RECHAZADA' ? '' : payment.observaciones ?? '',
     },
     mode: 'onChange',
   });
@@ -166,8 +174,9 @@ export function UpdateOperationPaymentForm({
 
   const montoCapturado = parseCurrency(montoRaw);
 
+  // Un pago rechazado ya no cuenta como registrado: el faltante ya incluye su monto.
   const saldoDisponibleParaEstePago =
-    operation.saldoPendientePorRegistrar + payment.monto;
+    operation.saldoPendientePorRegistrar + (payment.estatus === 'RECHAZADA' ? 0 : payment.monto);
 
   const excedeSaldoDisponible = montoCapturado > saldoDisponibleParaEstePago;
 
@@ -201,7 +210,9 @@ export function UpdateOperationPaymentForm({
   const handleSubmitForm = async (
     values: UpdateOperationPaymentFormInput,
   ) => {
-    if (!values.tipoPago) return;
+    if (!values.tipoPago || isSubmitting || submitting.current) return;
+    submitting.current = true; setSubmitError('');
+    try {
 
     await onSubmit({
       monto: parseCurrency(values.monto),
@@ -220,16 +231,27 @@ export function UpdateOperationPaymentForm({
       comprobante: values.comprobante,
       observaciones: values.observaciones,
     });
+    } catch (error) { setSubmitError(getApiErrorMessage(error)); }
+    finally { submitting.current = false; }
   };
 
   return (
-    <form id={formId} className="space-y-6" onSubmit={handleSubmit(handleSubmitForm)}>
+    <form id={formId} className="space-y-6" onChange={() => { if (submitError) setSubmitError(''); }} onSubmit={handleSubmit(handleSubmitForm)}>
+      <fieldset disabled={isSubmitting} className="min-w-0 space-y-6">
       <input type="hidden" {...register('cuentaDestinoId', {
         validate: (value, values) => !['TRANSFERENCIA', 'DEPOSITO'].includes(values.tipoPago)
           || (Number.isInteger(Number(value)) && Number(value) > 0)
           || 'Selecciona una cuenta bancaria',
       })} />
-      <div className="grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-3 text-sm sm:p-4 md:grid-cols-4">
+      {payment.estatus === 'RECHAZADA' && (
+        <section aria-label="Motivo del rechazo" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          <p className="font-semibold">Comprobante rechazado{payment.validadoPorNombre ? ` por ${payment.validadoPorNombre}` : ''}</p>
+          <p className="mt-1">{payment.observaciones || 'Sin motivo registrado.'}</p>
+          <p className="mt-2 text-xs text-red-700">Corrige los datos o sube un comprobante nuevo. Al guardar, el pago vuelve a validación.</p>
+        </section>
+      )}
+      <section aria-label="Resumen del ingreso" className="sticky top-0 z-10 space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="grid grid-cols-2 gap-3 text-sm">
         <div>
           <span className="block text-slate-500">Monto total requerido</span>
           <span className="font-semibold text-slate-900">
@@ -259,12 +281,11 @@ export function UpdateOperationPaymentForm({
         </div>
       </div>
 
-      {excedeSaldoDisponible ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          El monto del comprobante excede el saldo disponible por $
-          {formatCurrencyDisplay(excedente)}.
+
+        <div aria-live="polite">
+          {(submitError ? [submitError] : [...formErrorMessages({ ...errors, monto: excedeSaldoDisponible ? undefined : errors.monto }), ...(excedeSaldoDisponible ? [`El monto del comprobante excede el saldo disponible por $${formatCurrencyDisplay(excedente)}.`] : [])]).map(message => <p key={message} role="alert" className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{message}</p>)}
         </div>
-      ) : null}
+      </section>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-4">
@@ -277,7 +298,7 @@ export function UpdateOperationPaymentForm({
               type="text"
               inputMode="decimal"
               placeholder="1,000.00"
-              error={montoErrorMessage}
+              aria-invalid={!!montoErrorMessage || undefined}
               {...register('monto', {
                 required: 'El monto es obligatorio',
                 validate: (value) => {
@@ -334,11 +355,7 @@ export function UpdateOperationPaymentForm({
               <option value="CHEQUE">Cheque</option>
             </select>
 
-            {errors.tipoPago ? (
-              <p className="mt-1 text-xs text-red-600">
-                {errors.tipoPago.message}
-              </p>
-            ) : null}
+
           </div>
 
           <div>
@@ -355,15 +372,11 @@ export function UpdateOperationPaymentForm({
               })}
             />
 
-            {errors.fechaComprobante ? (
-              <p className="mt-1 text-xs text-red-600">
-                {errors.fechaComprobante.message}
-              </p>
-            ) : null}
+
           </div>
 
           {tipoPago === 'CHEQUE' && <div className="space-y-3"><p className="text-sm text-slate-600">El negocio definirá el destino al gestionar el cobro.</p>
-            <label className="block">Número de cheque<input className="block w-full rounded border p-2" {...register('numeroCheque', { validate: (value, values) => values.tipoPago !== 'CHEQUE' || !!value?.trim() || 'Este dato del cheque es obligatorio' })} />{errors.numeroCheque && <span role="alert" className="text-red-700">{errors.numeroCheque.message}</span>}</label>
+            <label className="block">Número de cheque<input className="block w-full rounded border p-2" {...register('numeroCheque', { validate: (value, values) => values.tipoPago !== 'CHEQUE' || !!value?.trim() || 'Este dato del cheque es obligatorio' })} /></label>
             <Controller
               name="bancoEmisor"
               control={control}
@@ -374,12 +387,11 @@ export function UpdateOperationPaymentForm({
                   value={field.value ?? ''}
                   onChange={field.onChange}
                   onBlur={field.onBlur}
-                  fieldError={errors.bancoEmisor?.message}
                 />
               )}
             />
-            <label className="block">Emisor del cheque<input className="block w-full rounded border p-2" {...register('emisor', { validate: (value, values) => values.tipoPago !== 'CHEQUE' || !!value?.trim() || 'Este dato del cheque es obligatorio' })} />{errors.emisor && <span role="alert" className="text-red-700">{errors.emisor.message}</span>}</label>
-            <label className="block">Beneficiario<input className="block w-full rounded border p-2" {...register('beneficiario', { validate: (value, values) => values.tipoPago !== 'CHEQUE' || !!value?.trim() || 'Este dato del cheque es obligatorio' })} />{errors.beneficiario && <span role="alert" className="text-red-700">{errors.beneficiario.message}</span>}</label>
+            <label className="block">Emisor del cheque<input className="block w-full rounded border p-2" {...register('emisor', { validate: (value, values) => values.tipoPago !== 'CHEQUE' || !!value?.trim() || 'Este dato del cheque es obligatorio' })} /></label>
+            <label className="block">Beneficiario<input className="block w-full rounded border p-2" {...register('beneficiario', { validate: (value, values) => values.tipoPago !== 'CHEQUE' || !!value?.trim() || 'Este dato del cheque es obligatorio' })} /></label>
           </div>}
           {requiereCuenta ? (
             <div>
@@ -446,11 +458,7 @@ export function UpdateOperationPaymentForm({
                 )}
               </div>
 
-              {errors.cuentaDestinoId ? (
-                <p className="mt-1 text-xs text-red-600">
-                  {errors.cuentaDestinoId.message}
-                </p>
-              ) : null}
+
             </div>
           ) : null}
         </div>
@@ -481,8 +489,8 @@ export function UpdateOperationPaymentForm({
                       className="size-16 shrink-0 rounded-lg object-cover" />}
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-slate-800">Comprobante actual</p>
-                      <a href={payment.comprobanteUrl} target="_blank" rel="noreferrer"
-                        className="text-xs font-medium text-[#3b6ef5]">Ver comprobante</a>
+                      <ReceiptViewerLink href={payment.comprobanteUrl}
+                        className="text-xs font-medium text-[#3b6ef5]">Ver comprobante</ReceiptViewerLink>
                     </div>
                   </div>
                 )}
@@ -492,11 +500,7 @@ export function UpdateOperationPaymentForm({
               </div>}
             />
 
-            {errors.comprobante ? (
-              <p className="mt-1 text-xs text-red-600">
-                {errors.comprobante.message as string}
-              </p>
-            ) : null}
+
           </div>
         </div>
 
@@ -514,15 +518,19 @@ export function UpdateOperationPaymentForm({
         </div>
       </div>
 
+      </fieldset>
       <ActionDrawerFooter>
+      <div className="flex flex-wrap justify-end gap-3">
+        {onCancel && <Button type="button" variant="neutral" disabled={isSubmitting} onClick={onCancel}>Cancelar</Button>}
         <Button variant="primary"
           type="submit" form={formId}
           isLoading={isSubmitting}
           disabled={excedeSaldoDisponible}
-          className="w-full justify-center"
+          className="min-w-0 flex-1 justify-center"
         >
           Guardar cambios
         </Button>
+      </div>
       </ActionDrawerFooter>
     </form>
   );

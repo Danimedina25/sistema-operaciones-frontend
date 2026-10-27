@@ -28,8 +28,9 @@ export function RequestReturnModal({
     const isEdit = !!returnPayments?.length;
 
     return (
-        <ActionDrawer open={open} eyebrow={isEdit ? 'Editar solicitud de retorno' : 'Solicitar retorno'}
-            title={operation ? `Operación #${operation.id} · ${operation.clienteNombre}` : isEdit ? 'Editar solicitud de retorno' : 'Solicitar retorno'}
+        <ActionDrawer open={open} busy={isSubmitting}
+            title={isEdit ? 'Editar solicitud de retorno' : 'Solicitar retorno'}
+            subtitle={operation ? `Operación #${operation.id} · ${operation.clienteNombre}` : undefined}
             onClose={onClose}>
             {operation === null ? (
                 <div className="py-8 text-center text-sm text-slate-500">
@@ -37,6 +38,8 @@ export function RequestReturnModal({
                 </div>
             ) : (
                 <RequestReturnForm
+                    hideClientName
+                    onCancel={onClose}
                     isSubmitting={isSubmitting}
                     montoTotalRetornar={operation.montoTotalDevolverCliente}
                     montoSolicitado={operation.montoSolicitadoRetorno}

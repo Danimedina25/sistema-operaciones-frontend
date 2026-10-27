@@ -17,10 +17,32 @@ beforeEach(() => {
   ] }]);
 });
 describe('prellenado de retornos', () => {
+  it('bloquea efectivo imposible de desglosar y muestra el error en el resumen hasta corregirlo', async () => {
+    const submit = vi.fn();
+    render(<RequestReturnForm {...props} onSubmit={submit} />);
+    await userEvent.selectOptions(screen.getByRole('combobox'), 'EFECTIVO');
+    const amount = screen.getByPlaceholderText('1,000.00');
+    fireEvent.change(amount, { target: { value: '48.75' } });
+    const summary = screen.getByTestId('return-live-summary');
+    expect(within(summary).getByRole('alert')).toHaveTextContent('múltiplo de $0.50');
+    expect(screen.getByRole('button', { name: 'Crear solicitud de retorno' })).toBeDisabled();
+    fireEvent.submit(amount.closest('form')!);
+    expect(submit).not.toHaveBeenCalled();
+    fireEvent.change(amount, { target: { value: '48.50' } });
+    expect(within(summary).queryByText(/múltiplo de \$0.50/)).not.toBeInTheDocument();
+    expect(within(summary).getByRole('alert')).toHaveTextContent('Persona autorizada');
+    fireEvent.change(screen.getAllByPlaceholderText('Nombre completo')[0], { target: { value: 'Ana' } });
+    expect(within(summary).queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Crear solicitud de retorno' })).toBeEnabled();
+  });
   it('mantiene fijo el resumen y actualiza solicitado y faltante durante la captura', () => {
     render(<RequestReturnForm {...props} montoSolicitado={100} faltaPorSolicitar={900} onSubmit={vi.fn()} />);
     const summary = screen.getByTestId('return-live-summary');
     expect(summary).toHaveClass('sticky', 'top-0');
+    expect(summary).toHaveClass('rounded-2xl', 'border', 'shadow-lg');
+    expect(within(summary).getByText('Monto total a retornar').parentElement).toHaveClass('bg-blue-50');
+    expect(within(summary).getByText('Monto solicitado').parentElement).toHaveClass('bg-emerald-50');
+    expect(within(summary).getByText('Falta por solicitar').parentElement).toHaveClass('bg-amber-50');
     expect(within(summary).getByText('$100.00')).toBeInTheDocument();
     expect(within(summary).getByText('$900.00')).toBeInTheDocument();
 
@@ -28,6 +50,9 @@ describe('prellenado de retornos', () => {
 
     expect(within(summary).getByText('$350.00')).toBeInTheDocument();
     expect(within(summary).getByText('$650.00')).toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText('1,000.00'), { target: { value: '950' } });
+    expect(within(summary).getByRole('alert')).toHaveTextContent('$50.00');
+    expect(summary).toHaveClass('border-red-300');
   });
 
   it('cargar y prellenar no envía; permite editar y registra solo con el botón final', async () => {
@@ -78,10 +103,14 @@ describe('prellenado de retornos', () => {
     await upload(); await userEvent.click(screen.getByText('Prellenar retornos'));
     await userEvent.click(screen.getByRole('button', { name: 'Crear solicitud de retorno' }));
     expect(submit).not.toHaveBeenCalled();
-    fireEvent.change(screen.getByPlaceholderText('CLABE interbancaria'), { target: { value: '001234567890123456' } });
+    fireEvent.change(screen.getByPlaceholderText('Cuenta, CLABE o tarjeta'), { target: { value: '001234567890123456' } });
     await userEvent.click(screen.getByRole('button', { name: 'Crear solicitud de retorno' }));
     expect(submit).toHaveBeenCalledTimes(1);
     expect(submit.mock.calls[0][0].pagos[0]).toMatchObject({ clabe: '001234567890123456', cuenta: '', banco: 'BBVA', titular: 'Ana' });
+    expect(screen.queryByPlaceholderText('CLABE interbancaria')).not.toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText('Cuenta, CLABE o tarjeta'), { target: { value: '0012345678901234' } });
+    await userEvent.click(screen.getByRole('button', { name: 'Crear solicitud de retorno' }));
+    expect(submit.mock.calls[1][0].pagos[0]).toMatchObject({ cuenta: '0012345678901234', clabe: '' });
   });
   it('exige corregir un identificador numérico incluso con otro identificador válido', async () => {
     vi.mocked(readReturnExcel).mockResolvedValue([{ name: 'Banco', rows: [
@@ -90,10 +119,10 @@ describe('prellenado de retornos', () => {
     ] }]);
     const submit = vi.fn(); render(<RequestReturnForm {...props} onSubmit={submit} />);
     await upload(); await userEvent.click(screen.getByText('Prellenar retornos'));
-    expect(screen.getByPlaceholderText('Cuenta o tarjeta')).toHaveValue('');
+    expect(screen.getByPlaceholderText('Cuenta, CLABE o tarjeta')).toHaveValue('001234567890123456');
     await userEvent.click(screen.getByRole('button', { name: 'Crear solicitud de retorno' }));
     expect(submit).not.toHaveBeenCalled();
-    fireEvent.change(screen.getByPlaceholderText('Cuenta o tarjeta'), { target: { value: '001234567890' } });
+    fireEvent.change(screen.getByPlaceholderText('Cuenta, CLABE o tarjeta'), { target: { value: '001234567890' } });
     await userEvent.click(screen.getByRole('button', { name: 'Crear solicitud de retorno' }));
     expect(submit).toHaveBeenCalledTimes(1);
   });

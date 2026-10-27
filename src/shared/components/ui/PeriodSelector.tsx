@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useOverlay } from '@/shared/hooks/use-overlay';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { DayPicker } from 'react-day-picker';
 import { es } from 'date-fns/locale';
 import { differenceInCalendarDays } from 'date-fns';
@@ -50,6 +52,9 @@ export function PeriodSelector({
   const [draft, setDraft] = useState(value);
   const [month, setMonth] = useState(() => calendarDate(value.startDate || officeToday(now)));
   const rootRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const { zIndex } = useOverlay(open, dialogRef, () => setOpen(false), { modal: false });
+  const [popoverStyle, setPopoverStyle] = useState<React.CSSProperties>();
   const today = officeToday(now);
   const todayDate = calendarDate(today);
   const shortcuts = allowRange
@@ -66,17 +71,37 @@ export function PeriodSelector({
   useEffect(() => {
     if (!open) return;
     const closeOutside = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
-    };
-    const closeEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false);
+      if (!rootRef.current?.contains(event.target as Node) && !dialogRef.current?.contains(event.target as Node)) setOpen(false);
     };
     document.addEventListener('mousedown', closeOutside);
-    document.addEventListener('keydown', closeEscape);
     return () => {
       document.removeEventListener('mousedown', closeOutside);
-      document.removeEventListener('keydown', closeEscape);
     };
+  }, [open]);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    const position = () => {
+      const root = rootRef.current;
+      const dialog = dialogRef.current;
+      if (!root || !dialog || window.innerWidth < 640) { setPopoverStyle(undefined); return; }
+      const anchor = root.getBoundingClientRect();
+      const margin = 12;
+      const width = Math.min(380, window.innerWidth - margin * 2);
+      const height = Math.min(dialog.scrollHeight, window.innerHeight - margin * 2);
+      const below = window.innerHeight - anchor.bottom - margin - 8;
+      const above = anchor.top - margin - 8;
+      const openAbove = below < height && above > below;
+      const top = openAbove
+        ? Math.max(margin, anchor.top - 8 - height)
+        : Math.min(anchor.bottom + 8, window.innerHeight - margin - height);
+      setPopoverStyle({ left: Math.max(margin, Math.min(anchor.left, window.innerWidth - margin - width)),
+        top, width, maxHeight: window.innerHeight - margin * 2 });
+    };
+    position();
+    window.addEventListener('resize', position);
+    window.addEventListener('scroll', position, true);
+    return () => { window.removeEventListener('resize', position); window.removeEventListener('scroll', position, true); };
   }, [open]);
 
   function toggle() {
@@ -117,10 +142,10 @@ export function PeriodSelector({
       <img src={compact ? compactChevronIcon : chevronIcon} alt="" className="shrink-0" />
     </button>
 
-    {open && <>
-      <div aria-hidden="true" onClick={() => setOpen(false)} className="fixed inset-0 z-40 bg-slate-950/30 sm:hidden" />
-      <div role="dialog" aria-label="Seleccionar periodo"
-        className="fixed inset-x-3 top-1/2 z-50 max-h-[88vh] -translate-y-1/2 overflow-y-auto rounded-2xl border border-border-strong bg-white p-4 shadow-xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[380px] sm:max-h-[min(80vh,680px)] sm:translate-y-0">
+    {open && createPortal(<>
+      <div aria-hidden="true" onClick={() => setOpen(false)} style={{ zIndex: zIndex - 1 }} className="fixed inset-0 bg-slate-950/30 sm:hidden" />
+      <div ref={dialogRef} role="dialog" aria-label="Seleccionar periodo" style={{ ...popoverStyle, zIndex }}
+        className="fixed inset-x-3 top-1/2 max-h-[88vh] -translate-y-1/2 overflow-y-auto rounded-2xl border border-border-strong bg-white p-4 shadow-xl sm:inset-x-auto sm:top-0 sm:mt-0 sm:w-[380px] sm:max-h-[calc(100vh-24px)] sm:translate-y-0">
         <div className={cn('mb-3 grid gap-1 rounded-lg bg-slate-100 p-1', allowAll ? 'grid-cols-3' : 'grid-cols-2')} role="group" aria-label="Tipo de periodo">
           {allowAll && <button type="button" aria-pressed={draft.mode === 'all'}
             onClick={() => setDraft({ mode: 'all', startDate: '', endDate: '' })}
@@ -153,7 +178,7 @@ export function PeriodSelector({
           <Button type="button" variant="dark" className="h-9 px-3 text-xs" disabled={!isValid} onClick={apply}>Aplicar</Button></div>
         </div>
       </div>
-    </>}
+    </>, document.body)}
   </div>;
 }
 

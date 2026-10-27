@@ -68,13 +68,14 @@ El backend valida los permisos en cada petición. El frontend solo muestra u ocu
 | Enviar efectivo de Caja a una cuenta | — | Sí | — | — | — | — |
 | Confirmar retiros de cuentas a Caja | — | Sí | — | — | — | — |
 | Validar pagos bancarios | — | — | Sí | Sí | — | — |
+| Gestionar códigos de retiro sin tarjeta y verificar cobro | — | — | Sí | Sí | — | — |
 | Pagar retornos por transferencia | — | — | Sí | Sí | — | — |
 | Retirar a Caja General, transferir entre cuentas | — | — | Sí | — | — | — |
 | Confirmar envíos de Caja a cuentas | — | — | Sí | — | — | — |
 | Pagar comisiones | — | — | — | — | Sí | — |
 | Regenerar comisiones | — | — | — | — | Sí | — |
 | Eliminar operación (solo pendiente de validación) | — | — | — | — | Sí | — |
-| Catálogos (clientes, socios N2/N3, cuentas) | Su red | — | Cuentas | — | Sí | Consulta |
+| Catálogos (clientes, socios secundarios, cuentas) | Clientes propios; socios secundarios compartidos | — | Cuentas | — | Sí | Consulta |
 | Usuarios | — | — | — | — | Editar, desactivar | Crear, editar, desactivar, eliminar |
 | Configuración | — | — | — | — | Sí | Sí |
 | Reportes y bitácora | — | — | — | — | — | Sí |
@@ -83,7 +84,7 @@ Administrador (ADMIN): superusuario técnico para soporte. Puede hacer todas las
 
 - La Auxiliar de Cuentas comparte pendientes y pantallas con la Jefa de Cuentas, con las acciones limitadas a la tabla.
 - **Modo consulta**: misma pantalla, sin botones de acción, con la etiqueta "Solo consulta" junto al título y textos neutros (nunca "tu confirmación", "ciérrala").
-- Los socios de **nivel 1** son usuarios del sistema (Administración › Usuarios). Catálogos › Socios comerciales muestra solo **nivel 2 y 3**.
+- Los socios de **nivel 1** son usuarios del sistema (Administración › Usuarios). Catálogos › Socios comerciales muestra socios secundarios sin nivel fijo: cualquiera puede ocupar el nivel 2 o 3 en una operación. El catálogo es compartido entre todos los socios de nivel 1; el creador se conserva para trazabilidad y es el único socio de nivel 1 que puede editar su registro. Gerencia también puede editarlo y configura la comisión del socio secundario.
 
 ---
 
@@ -110,7 +111,9 @@ Contadores en el menú: solo donde hay trabajo (Entradas, Salidas, Comisiones de
 ### Retornos
 - Se solicitan por operación y se dividen en pagos. Tipos y campos:
   - **Transferencia**: número de cuenta o tarjeta y/o CLABE (al menos uno), banco destino, titular. La paga la Jefa de Cuentas.
-  - **Efectivo** y **Retiro sin tarjeta**: hasta 3 personas autorizadas (identificación oficial vigente). Las entrega la Jefa de Cajas. El retiro sin tarjeta lo registra Cuentas, entra a Caja como ingreso y se entrega como efectivo.
+  - **Efectivo**: hasta 3 personas autorizadas; Cajas programa y entrega con evidencia y conteo.
+  - **Retiro sin tarjeta**: el cliente recibe el código generado en el banco a través del Socio. Jefa de Cuentas y Auxiliares registran cuenta origen, código y monto de cada parcialidad, exclusivamente en Detalle › Retornos. Registrar reserva saldo sin debitar; el Socio reporta uso y Cuentas verifica cobro con comprobante. La confirmación bancaria descuenta una sola vez; ambas confirmaciones independientes completan el código. No pasa por Caja ni custodia de oficina. Solo se libera una reserva tras verificar vencimiento/cancelación sin uso, con motivo; no se permite si ya hubo reporte o cobro. Los registros históricos de efectivo/custodia conservan su tratamiento.
+
 - Se admite carga desde Excel (.xlsx, 5 MB, 1,000 filas) y archivo de nóminas opcional.
 - Los listados de retornos por pagar son **por solicitud**, no por operación.
 - Tras entregar efectivo, el Socio confirma que su cliente lo recibió.
@@ -118,6 +121,8 @@ Contadores en el menú: solo donde hay trabajo (Entradas, Salidas, Comisiones de
 ### Movimientos entre Caja y Cuentas
 - **Retiro a Caja General** (Cuentas → Caja): queda en tránsito; la cuenta baja y la caja sube cuando la Jefa de Cajas confirma.
 - **Envío a cuenta bancaria** (Caja → Cuentas): forma "Depósito en efectivo" (ventanilla, cajero u OXXO), referencia y desglose por denominación de lo que sale. Queda en tránsito; **la caja baja y la cuenta sube solo cuando la Jefa de Cuentas confirma**. La Jefa de Cuentas no cuenta denominaciones.
+- El envío de efectivo exige comprobante al registrarlo Cajas y otro comprobante bancario al confirmarlo Cuentas. Si Cuentas lo rechaza, permanece en tránsito hasta que Cajas confirme con conteo la devolución del efectivo; entonces se cancela sin mover saldos.
+- El cheque que Cajas destina a depósito aparece en la misma bandeja de envíos para Cuentas, identificado como cheque y sin desglose de billetes. Su acreditación bancaria se confirma allí sin generar movimiento de efectivo en Caja.
 - Estos movimientos no cambian el total del dinero del negocio.
 
 ### Comisiones

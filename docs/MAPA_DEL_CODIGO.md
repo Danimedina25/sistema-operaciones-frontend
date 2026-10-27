@@ -85,7 +85,7 @@ La matriz del rediseño expresa la política deseada. La tabla compara ejemplos 
 | Comisiones | Pago individual/lote: Admin y Gerente; Dirección consulta. Generación/regeneración: Admin, Gerente y Dirección. | Solo Gerente paga y regenera comisiones en el flujo de negocio; Admin conserva acceso técnico. | **Decisión resuelta:** Dirección no regenera. Pendiente: alinear permisos y probar salidas bancarias y bitácora de Admin. |
 | Eliminar operación | `DELETE /api/operations/{id}`: Admin y Gerente. | Solo Gerente, únicamente pendiente de validación. | Comprobar restricción de estado en servicio y alinear Admin/UI. |
 | Catálogos y configuración | Gerente/Dirección tienen varias escrituras en clientes, socios, cuentas y configuración; Jefa de Cuentas crea cuentas pero no las edita. | Director consulta catálogos; Gerente administra; Cuentas administra cuentas. | Ajustar permisos por entidad y acción, también en formularios. |
-| Usuarios | API permite crear, editar y desactivar a Admin, Gerente y Dirección; eliminar a Admin/Dirección. En frontend, el botón de creación de `UsersPage` está limitado a Admin. | En el flujo de negocio, solo Director crea; Gerente edita/desactiva; Director crea/edita/desactiva/elimina. Admin conserva acceso técnico. | **Decisión resuelta:** creación reservada a Director entre los roles de negocio. Pendiente: alinear backend y UI y probar por rol. |
+| Usuarios | La regla preparada en Fase 2 restringe crear a Admin/Dirección y deja editar/desactivar a Admin/Gerente/Dirección; eliminar sigue en Admin/Dirección. En frontend, el botón de creación de `UsersPage` aún está limitado a Admin. | En el flujo de negocio, solo Director crea; Gerente edita/desactiva; Director crea/edita/desactiva/elimina. Admin conserva acceso técnico. | **Decisión resuelta:** creación reservada a Director entre los roles de negocio. Prueba de permisos backend añadida; pendiente alinear UI y completar bitácora de negocio. |
 | Auxiliar y Administrador | Auxiliar tiene permisos de escritura en ciertos endpoints; Admin es superusuario de hecho. | Auxiliar valida pagos bancarios y paga retornos por transferencia; no retira a Caja ni transfiere entre cuentas y no realiza las demás acciones de la matriz. Admin puede hacer todas las acciones, queda fuera de los flujos de negocio y toda acción suya se registra en bitácora. | **Decisiones resueltas.** Pendiente: conciliar permisos de backend y UI y verificar cobertura completa de bitácora para Admin. |
 
 ### `SecurityConfig` y `/api/admin/**`
@@ -116,3 +116,23 @@ También permanecen [src/index.css](../src/index.css) y [src/App.css](../src/App
 ## Borrador de `CLAUDE.md`
 
 La sección 2 del `CLAUDE.md` existente ya quedó completada con stack y comandos verificados. Para una revisión posterior del documento, propongo mantener sus reglas de negocio y añadir estas notas breves: (1) los dos repositorios son independientes y el backend reside en la ruta indicada arriba; (2) `docs/MAPA_DEL_CODIGO.md` describe el estado actual, mientras la sección 5 define permisos objetivo; (3) todo cambio de permisos debe contrastar `SecurityConfig`, `@PreAuthorize`, servicio, `ROUTE_ACCESS` y controles de la pantalla; (4) los SQL de `migrations/` requieren procedimiento explícito y no deben confundirse con `ddl-auto=update`; (5) aplicar en backend y frontend las decisiones ya tomadas para Auxiliar y Admin.
+
+
+### Retiro sin tarjeta: cuenta origen y custodia (19 oct 2026)
+
+- `AssignCardlessAccount` dentro de `ReturnPaymentModal`: cuenta origen solo para Jefa de Cuentas. `PATCH /api/operations/returns/requests/{id}/cardless-account`.
+- Backend `CardlessReturnFlow`: asignación auditada, bloqueo de cuenta y validación de saldo al preparar. `fechaPreparacionBancaria` identifica el débito único de la parcialidad.
+- `BankLedgerQuery` registra la salida al preparar; `ReturnCustodyQuery` mantiene el efectivo separado de Caja General hasta `fechaEntrega`. `GeneralCutReadService` consolida banco + Caja + custodia.
+- `retiroEtapa` distingue `PENDIENTE_CUENTA` y `PENDIENTE_PREPARACION` antes de los estados de recolección existentes. Las filas históricas con fecha de preparación nula conservan su cálculo anterior.
+
+
+### Códigos de retiro para el cliente · 19 oct 2026 (sustituye el flujo nuevo de custodia)
+
+- `CardlessCodePanel` en `ReturnPaymentModal` utiliza la cuenta y código de cada parcialidad; conserva consulta de registros antiguos. `CardlessPendingSection` lista por solicitud, sin filtros de fecha, los códigos por registrar y cobros por verificar en Jefa de Cuentas y Auxiliares.
+- `POST /api/operations/returns/requests/{id}/installments`: para RST, cuenta + código + monto. No fecha de recolección ni conteo.
+- `PATCH /api/operations/returns/installments/{id}/confirm`: Socio dueño reporta uso.
+- `PATCH /api/operations/returns/installments/{id}/cardless-bank-confirm`: Cuentas/Auxiliares, comprobante bancario; débito único.
+- `PATCH .../cancel`: libera solo un código sin reporte ni cobro, con verificación bancaria documentada en el motivo.
+- `GET /api/operations/returns/cardless-work`: pendientes de registro/cobro; navegación a detalle/Retornos.
+- Migración aditiva `2026-10-19_codigos_retiro_cliente.sql`: `codigo_para_cliente`, `fecha_cobro_bancario`. NULL conserva contabilidad histórica.
+- `BankAvailability` resta códigos pendientes; `BankReservationGuard` protege la reserva ante otros retornos y comisiones; transferencias/retiros usan la misma disponibilidad. `BankLedgerQuery` debita códigos nuevos en la confirmación bancaria, independientemente del Socio.

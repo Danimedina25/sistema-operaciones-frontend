@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Workbook } from 'exceljs';
-import { createReturnTemplate, detectColumns, extractPayments, parseExcelAmount, readReturnExcel } from './return-excel';
+import { validateReturnDraft, createReturnTemplate, detectColumns, extractPayments, parseExcelAmount, readReturnExcel } from './return-excel';
 import type { ExcelSheet } from './return-excel';
 
 describe('importación de retornos', () => {
@@ -57,5 +57,24 @@ describe('importación de retornos', () => {
     await expect(readReturnExcel(new File([new Uint8Array(5 * 1024 * 1024 + 1)], 'a.xlsx'))).rejects.toThrow('5 MB');
     const file = new File(['bad'], 'a.xlsx'); file.arrayBuffer = async () => new Uint8Array([1, 2]).buffer;
     await expect(readReturnExcel(file)).rejects.toThrow('No se pudo leer');
+  });
+});
+
+describe('denominaciones permitidas en retornos en efectivo', () => {
+  it.each(['48', '48.50', '49.00', '0.50', '100000.50'])('acepta %s', monto => {
+    expect(validateReturnDraft({ monto, tipoPago: 'EFECTIVO' }).monto).toBeUndefined();
+  });
+  it.each(['48.75', '0.25', '48.01', '48.501'])('rechaza %s', monto => {
+    expect(validateReturnDraft({ monto, tipoPago: 'EFECTIVO' }).monto).toContain('múltiplo de $0.50');
+  });
+  it('permite centavos por transferencia', () => {
+    expect(validateReturnDraft({ monto: '48.75', tipoPago: 'TRANSFERENCIA' }).monto).toBeUndefined();
+  });
+  it('marca el importe inválido al extraer una fila de Excel', () => {
+    const sheet: ExcelSheet = { name: 'Retornos', rows: [
+      { number: 1, cells: ['Monto', 'Tipo'].map(value => ({ value })) },
+      { number: 2, cells: [48.75, 'Efectivo'].map(value => ({ value })) },
+    ] };
+    expect(extractPayments(sheet, 1, detectColumns(sheet.rows[0])).payments[0].issues.monto).toContain('múltiplo de $0.50');
   });
 });

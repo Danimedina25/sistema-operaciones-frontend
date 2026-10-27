@@ -171,7 +171,7 @@ export function isCashReturnMethod(tipoPago: PaymentType): boolean {
  * cancelada (`PROGRAMADA` o `ENTREGADA` = confirmación parcial).
  */
 function installmentAcceptsMarks(
-  i: Pick<ReturnInstallment, 'estatus' | 'tipoPago'>,
+  i: Pick<ReturnInstallment, 'estatus' | 'tipoPago' | 'fechaPreparacionBancaria'>,
 ): boolean {
   return (
     isCashReturnMethod(i.tipoPago) &&
@@ -206,7 +206,7 @@ export function canJefaDeliverInstallment(
  * confirmado (`PROGRAMADA`). En cuanto hay una marca, ya no se puede.
  */
 export function canCancelReturnInstallment(
-  i: Pick<ReturnInstallment, 'estatus' | 'tipoPago'>,
+  i: Pick<ReturnInstallment, 'estatus' | 'tipoPago' | 'fechaPreparacionBancaria'>,
   roles: {
     isAdmin: boolean;
     isJefaCajas: boolean;
@@ -214,7 +214,7 @@ export function canCancelReturnInstallment(
     isAuxiliarCuentas: boolean;
   },
 ): boolean {
-  if (i.estatus !== 'PROGRAMADA') return false;
+  if (i.estatus !== 'PROGRAMADA' || i.fechaPreparacionBancaria) return false;
   if (roles.isAdmin) return true;
   if (isCashReturnMethod(i.tipoPago)) return roles.isJefaCajas;
   return roles.isJefaCuentas || roles.isAuxiliarCuentas;
@@ -381,15 +381,27 @@ export function shouldShowInstallmentHistory(
 
 /**
  * Texto del botón para registrar el retorno. El sistema infiere si es un retorno
- * parcial o total a partir del importe capturado (y de si la solicitud ya tenía
- * actividad previa, en cuyo caso siempre es parcial).
+ * parcial, total o la última recolección a partir del saldo disponible.
  */
 export function resolveInstallmentSubmitLabel(params: {
-  totals: Pick<ReturnRequestTotals, 'montoRetornado' | 'montoEnProceso' | 'montoSolicitado'>;
+  totals: Pick<ReturnRequestTotals, 'montoRetornado' | 'montoEnProceso' | 'montoSolicitado'> & Partial<Pick<ReturnRequestTotals, 'montoDisponible'>>;
   importe: number;
   esEfectivo: boolean;
 }): string {
   const { totals, importe, esEfectivo } = params;
+
+  if (esEfectivo) {
+    const importeCentavos = Math.round(importe * 100);
+    const disponibleCentavos = Math.round((totals.montoDisponible ??
+      (totals.montoSolicitado - totals.montoRetornado - totals.montoEnProceso)) * 100);
+    if (!Number.isSafeInteger(importeCentavos) || !Number.isSafeInteger(disponibleCentavos) ||
+      importeCentavos <= 0 || disponibleCentavos <= 0 || importeCentavos > disponibleCentavos) {
+      return 'Programar recolección';
+    }
+    if (importeCentavos < disponibleCentavos) return 'Programar recolección parcial';
+    const hayRecoleccionesPrevias = Math.round(totals.montoRetornado * 100) > 0 || Math.round(totals.montoEnProceso * 100) > 0;
+    return hayRecoleccionesPrevias ? 'Programar última recolección' : 'Programar recolección total';
+  }
 
   const yaHayActividad = totals.montoRetornado > 0 || totals.montoEnProceso > 0;
   const cubreTotal =
@@ -398,8 +410,5 @@ export function resolveInstallmentSubmitLabel(params: {
     importe >= totals.montoSolicitado - 0.005;
   const esParcial = !cubreTotal && (yaHayActividad || importe > 0);
 
-  if (esEfectivo) {
-    return esParcial ? 'Programar recolección parcial' : 'Programar recolección del retorno';
-  }
   return esParcial ? 'Registrar retorno parcial' : 'Registrar retorno';
 }

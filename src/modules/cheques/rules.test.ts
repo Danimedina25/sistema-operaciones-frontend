@@ -8,8 +8,9 @@ const role = (name: RoleName) => (roles: RoleName[]) => roles.includes(name);
 const command: ChequeCommand = { requestId: 'abc', version: 1, accion: 'COBRAR_BANCO', fecha: '2026-09-20', cuentaDestinoId: 1, comprobanteUrl: 'proof' };
 describe('cheque collection boundaries', () => {
   it('separates cash reception from bank management', () => {
-    expect(allowedChequeActions(cheque, role('JEFA_CUENTAS'))).toContain('ASIGNAR_COBRO_EFECTIVO');
-    expect(allowedChequeActions(cheque, role('JEFA_CAJAS'))).toEqual([]);
+    expect(allowedChequeActions(cheque, role('JEFA_CUENTAS'))).toEqual([]);
+    expect(allowedChequeActions(cheque, role('AUXILIAR_CUENTAS'))).toEqual([]);
+    expect(allowedChequeActions(cheque, role('JEFA_CAJAS'))).toEqual(['CONFIRMAR_COBRO_EFECTIVO', 'DEPOSITAR', 'CANCELAR']);
     const assigned = { ...cheque, estado: 'PENDIENTE_COBRO_EFECTIVO' as const };
     expect(allowedChequeActions(assigned, role('JEFA_CAJAS'))).toEqual(['CONFIRMAR_COBRO_EFECTIVO', 'DEVOLVER_A_CUENTAS']);
     expect(allowedChequeActions(assigned, role('JEFA_CUENTAS'))).toEqual(['RETIRAR_COBRO_EFECTIVO']);
@@ -25,6 +26,7 @@ describe('cheque collection boundaries', () => {
   it('only lets the head of accounts resolve a cheque while clearing', () => {
     expect(allowedChequeActions({ ...cheque, estado: 'DEPOSITADO' }, role('ADMIN'))).toEqual(['COBRAR_BANCO', 'DEVOLVER']);
     expect(allowedChequeActions({ ...cheque, estado: 'DEPOSITADO' }, role('AUXILIAR_CUENTAS'))).toEqual([]);
+    expect(allowedChequeActions({ ...cheque, estado: 'DEPOSITADO', depositoCompartido: true }, role('JEFA_CUENTAS'))).toEqual([]);
   });
   it('requires account and proof for bank collection', () => {
     expect(validateChequeCommand(cheque, command, ['COBRAR_BANCO'])).toBeNull();

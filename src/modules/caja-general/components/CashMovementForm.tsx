@@ -1,8 +1,8 @@
 import { useRef, useState, type FormEvent } from 'react';
 import { getApiErrorMessage } from '@/shared/utils/errors';
 import type { CashDay, CreateCashMovement } from '../types/caja-general.types';
-import { countCents, emptyCounts, validateCashAmount } from '../utils/cash-amounts';
-import { DenominationFields } from './DenominationFields';
+import { countCents, currency, emptyCounts, validateCashAmount } from '../utils/cash-amounts';
+import { CompactDenominationTables } from './CompactDenominationTables';
 import { Button } from '@/shared/components/ui/Button';
 
 type Direction = 'ENTRADA' | 'SALIDA';
@@ -61,7 +61,10 @@ export function CashMovementForm({ direction, day, busy, onSubmit }: {
         {incoming ? ' Los cheques y retiros de una cuenta entran desde "Retiros por confirmar".' : null}
       </p>
 
-      <DenominationFields value={counts} onChange={setCounts} />
+      <CompactDenominationTables value={counts} onChange={setCounts} />
+      <p aria-live="polite" className="flex items-baseline justify-end gap-3 text-sm text-slate-500">
+        Total <strong className="text-xl font-semibold tabular-nums text-slate-950">{Number.isFinite(totalCents) ? currency(totalCents / 100) : 'Revisa las cantidades'}</strong>
+      </p>
 
       <div className="flex justify-end border-t border-slate-200 pt-4">
         <Button variant={incoming ? 'success' : 'destructive'} disabled={busy || !Number.isFinite(totalCents) || totalCents <= 0}

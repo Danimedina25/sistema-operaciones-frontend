@@ -1,3 +1,4 @@
+import { useFormSubmission } from '@/shared/hooks/use-form-submission';
 // src/modules/configuraciones/components/ConfiguracionGeneralForm.tsx
 
 import { useEffect } from 'react';
@@ -53,8 +54,12 @@ export function ConfiguracionGeneralForm({
     }
   }, [initialValues, reset]);
 
+  const { submit, busy, submitError } = useFormSubmission(onSubmit, isSubmitting);
+
   return (
-    <form className="max-w-[640px] space-y-3 rounded-xl border border-slate-200 bg-white p-7 shadow-sm" onSubmit={handleSubmit(onSubmit)}>
+    <form className="max-w-[640px] space-y-3 rounded-xl border border-slate-200 bg-white p-7 shadow-sm" onSubmit={handleSubmit(submit)}>
+      {submitError && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{submitError}</p>}
+      <fieldset disabled={busy} className="min-w-0 space-y-3">
       <div>
         <div className="mb-4 flex items-start gap-3">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-blue-50 text-blue-600"><Percent size={16} /></span>
@@ -78,10 +83,11 @@ export function ConfiguracionGeneralForm({
 
       <div className="flex justify-end gap-2">
         <Button variant="neutral" type="button" onClick={() => reset({ porcentajeComisionOficina: initialValues?.porcentajeComisionOficina.toFixed(2) })}>Descartar</Button>
-        <Button variant="dark" type="submit" isLoading={isSubmitting}>
+        <Button variant="primary" type="submit" isLoading={busy}>
           Guardar cambios
         </Button>
       </div>
+      </fieldset>
     </form>
   );
 }

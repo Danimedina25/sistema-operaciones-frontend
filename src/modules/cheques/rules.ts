@@ -1,14 +1,13 @@
 import type { RoleName } from '@/modules/auth/types/auth.types';
 import type { Cheque, ChequeAction, ChequeCommand } from './types';
 import { countCents } from '@/modules/caja-general/utils/cash-amounts';
-export function allowedChequeActions(cheque: Pick<Cheque, 'estado' | 'requiereConciliacion'>, hasRole: (roles: RoleName[]) => boolean): ChequeAction[] {
+export function allowedChequeActions(cheque: Pick<Cheque, 'estado' | 'requiereConciliacion' | 'depositoCompartido'>, hasRole: (roles: RoleName[]) => boolean): ChequeAction[] {
   if (cheque.requiereConciliacion || !cheque.estado) return [];
   const actions: ChequeAction[] = [];
   if (cheque.estado === 'POR_COBRAR') {
-    if (hasRole(['ADMIN', 'JEFA_CUENTAS', 'AUXILIAR_CUENTAS'])) actions.push('DEPOSITAR');
-    if (hasRole(['ADMIN', 'JEFA_CUENTAS'])) actions.push('COBRAR_BANCO', 'ASIGNAR_COBRO_EFECTIVO', 'CANCELAR');
+    if (hasRole(['ADMIN', 'JEFA_CAJAS'])) actions.push('CONFIRMAR_COBRO_EFECTIVO', 'DEPOSITAR', 'CANCELAR');
   }
-  if (cheque.estado === 'DEPOSITADO' && hasRole(['ADMIN', 'JEFA_CUENTAS'])) {
+  if (cheque.estado === 'DEPOSITADO' && !cheque.depositoCompartido && hasRole(['ADMIN', 'JEFA_CUENTAS'])) {
     actions.push('COBRAR_BANCO', 'DEVOLVER');
   }
   if (cheque.estado === 'PENDIENTE_COBRO_EFECTIVO') {

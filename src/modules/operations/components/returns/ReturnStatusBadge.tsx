@@ -16,6 +16,11 @@ const tones: Record<ReturnPaymentStatus, StatusTone> = {
   RETORNADO: 'success',
 };
 
-export function ReturnStatusBadge({ status }: { status: ReturnPaymentStatus }) {
+export function ReturnStatusBadge({ status, stage }: { status: ReturnPaymentStatus; stage?: string | null }) {
+  if (stage === 'PENDIENTE_CODIGO') return <StatusBadge tone="pending">Por registrar código</StatusBadge>;
+  if (stage === 'CODIGOS_EN_SEGUIMIENTO') return <StatusBadge tone="pending">Códigos en seguimiento</StatusBadge>;
+  if (stage === 'CODIGOS_CONCLUIDOS') return <StatusBadge tone="success">Retiros completados</StatusBadge>;
+  if (stage === 'PENDIENTE_CUENTA') return <StatusBadge tone="pending">Pendiente de Cuentas</StatusBadge>;
+  if (stage === 'PENDIENTE_PREPARACION') return <StatusBadge tone="pending">Por preparar en Caja</StatusBadge>;
   return <StatusBadge tone={tones[status]} className="whitespace-nowrap">{labels[status]}</StatusBadge>;
 }

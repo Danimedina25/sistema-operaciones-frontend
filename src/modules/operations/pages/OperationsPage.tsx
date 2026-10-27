@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Modal } from '@/shared/components/ui/Modal';
-import { ActionDrawer } from '@/shared/components/ui/ActionDrawer';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { useUrlFilters } from '@/shared/hooks/use-url-filters';
 import { OperationsFilters } from '@/modules/operations/components/OperationsFilters';
@@ -10,9 +9,7 @@ import { OperationsTable } from '@/modules/operations/components/OperationsTable
 import { useOperations } from '@/modules/operations/hooks/use-operations';
 import { getOperations, searchStalledOperations } from '@/modules/operations/api/operations.api';
 import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts';
-import { AddOperationPaymentForm } from '@/modules/operations/components/AddOperationPaymentForm';
-import { useAddOperationPayment } from '@/modules/operations/hooks/use-add-operation-payment';
-import { buildOperationDetailPath, paths } from '@/routes/paths';
+import { buildOperationActionPath, buildOperationDetailPath, paths } from '@/routes/paths';
 import {
   OperationsFilters as OperationsFiltersType,
   PaymentOperationResponse,
@@ -87,8 +84,6 @@ export default function OperationsPage() {
     }, 300);
     return () => window.clearTimeout(timer);
   }, [filters.search]);
-  const [isAddPaymentModalOpen, setIsAddPaymentModalOpen] = useState(false);
-  const [selectedOperation, setSelectedOperation] = useState<PaymentOperationResponse | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [operationToEdit, setOperationToEdit] =
     useState<PaymentOperationResponse | null>(null);
@@ -113,8 +108,6 @@ export default function OperationsPage() {
   } = useCommercialLevelOneUsers({ enabled: showSocioFilter && (filtersOpen || Boolean(filters.socioComercialId)) });
   const canEditOperations = hasRole([
     'ADMIN',
-    'GERENTE',
-    'DIRECCION',
     'SOCIO_COMERCIAL',
   ]);
   const needsOperationCatalogs = canEditOperations && isEditModalOpen;
@@ -236,27 +229,13 @@ export default function OperationsPage() {
       }));
   }, [clientesCatalog]);
 
-  const { isSubmitting: isSubmittingPayment, submitAddOperationPayment } =
-    useAddOperationPayment({
-      onSuccess: async () => {
-        setIsAddPaymentModalOpen(false);
-        setSelectedOperation(null);
-        await refreshVisibleOperations();
-      },
-    });
-
   function handleOpenAddPayment(operationId: number) {
-    const operation = visibleOperations.find((item) => item.id === operationId);
-
-    if (!operation) {
-      return;
-    }
-
-    setSelectedOperation(operation);
-    setIsAddPaymentModalOpen(true);
+    if (!canCreateOperation) return;
+    navigate(buildOperationActionPath(operationId, 'register-payment'));
   }
 
   function handleOpenEditOperation(operationId: number) {
+    if (!canEditOperations) return;
     const operation = visibleOperations.find((item) => item.id === operationId);
 
     if (!operation) return;
@@ -273,17 +252,7 @@ export default function OperationsPage() {
 
   const {
     accounts: bankAccountsCatalog,
-    isLoading: isLoadingBankAccounts,
-  } = useBankAccounts({ enabled: isAddPaymentModalOpen || (filtersOpen && !showingStalled) || Boolean(filters.cuentaDestinoId) });
-
-  const bankAccounts = useMemo(() => {
-    return bankAccountsCatalog
-      .filter((account) => account.activo)
-      .map((account) => ({
-        id: account.id,
-        label: `${account.banco} - ${account.titular} - ${account.numeroCuenta}`,
-      }));
-  }, [bankAccountsCatalog]);
+  } = useBankAccounts({ enabled: (filtersOpen && !showingStalled) || Boolean(filters.cuentaDestinoId) });
 
   const activeFilters: ActiveFilter[] = [];
   if (filters.status !== 'ALL') activeFilters.push({
@@ -469,32 +438,6 @@ export default function OperationsPage() {
           />
         )}
       </Modal>
-
-      <ActionDrawer
-        open={isAddPaymentModalOpen}
-        title="Registrar pago de ingreso"
-        onClose={() => {
-          setIsAddPaymentModalOpen(false);
-          setSelectedOperation(null);
-        }}
-      >
-        {isLoadingBankAccounts || selectedOperation === null ? (
-          <div className="py-8 text-center text-sm text-slate-500">
-            Cargando formulario...
-          </div>
-        ) : (
-          <AddOperationPaymentForm
-            isSubmitting={isSubmittingPayment}
-            bankAccounts={bankAccounts}
-            montoTotal={selectedOperation.montoTotal}
-            montoRegistrado={selectedOperation.montoRegistrado}
-            saldoPendiente={selectedOperation.saldoPendientePorRegistrar}
-            onSubmit={(values) =>
-              submitAddOperationPayment(selectedOperation.id, values)
-            }
-          />
-        )}
-      </ActionDrawer>
 
       <DeleteConfirmationModal
         open={Boolean(operationToDelete)}

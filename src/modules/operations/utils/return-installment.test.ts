@@ -201,11 +201,30 @@ describe('resolveInstallmentSubmitLabel', () => {
     ).toBe('Programar recolección parcial');
   });
 
-  it('efectivo con importe total → "Programar recolección del retorno"', () => {
+  it('efectivo con importe total → "Programar recolección total"', () => {
     expect(
       resolveInstallmentSubmitLabel({ totals: base, importe: 40000, esEfectivo: true }),
-    ).toBe('Programar recolección del retorno');
+    ).toBe('Programar recolección total');
   });
+  it.each([0, -1, NaN, Infinity, 40001])('efectivo con importe inválido %s usa texto neutro', importe => {
+    expect(resolveInstallmentSubmitLabel({ totals: base, importe, esEfectivo: true })).toBe('Programar recolección');
+  });
+  it.each([
+    { montoRetornado: 10000, montoEnProceso: 0 },
+    { montoRetornado: 0, montoEnProceso: 10000 },
+    { montoRetornado: 5000, montoEnProceso: 5000 },
+  ])('identifica la última recolección con actividad previa %j', previous => {
+    expect(resolveInstallmentSubmitLabel({ totals: { ...base, ...previous, montoDisponible: 30000 }, importe: 30000, esEfectivo: true })).toBe('Programar última recolección');
+    expect(resolveInstallmentSubmitLabel({ totals: { ...base, ...previous, montoDisponible: 30000 }, importe: 20000, esEfectivo: true })).toBe('Programar recolección parcial');
+  });
+  it('distingue los centavos de la solicitud y usa el disponible del servidor', () => {
+    const totals = { montoRetornado: 0, montoEnProceso: 0, montoSolicitado: 48.75, montoDisponible: 48.75 };
+    expect(resolveInstallmentSubmitLabel({ totals, importe: 48.5, esEfectivo: true })).toBe('Programar recolección parcial');
+    expect(resolveInstallmentSubmitLabel({ totals, importe: 48.75, esEfectivo: true })).toBe('Programar recolección total');
+    expect(resolveInstallmentSubmitLabel({ totals: { ...totals, montoEnProceso: 48.5, montoDisponible: 0.25 }, importe: 0.25, esEfectivo: true })).toBe('Programar última recolección');
+    expect(resolveInstallmentSubmitLabel({ totals: { ...totals, montoDisponible: 48.5 }, importe: 48.75, esEfectivo: true })).toBe('Programar recolección');
+  });
+
 });
 
 describe('cleanAuthorizedRecipients', () => {
@@ -580,4 +599,8 @@ describe('canCancelReturnInstallment', () => {
       ),
     ).toBe(true);
   });
+});
+
+it('impide cancelar dinero retirado del banco aunque la recolección siga programada', () => {
+  expect(canCancelReturnInstallment({ estatus: 'PROGRAMADA', tipoPago: 'RETIRO_SIN_TARJETA', fechaPreparacionBancaria: '2026-10-19T10:00:00' }, { isAdmin: false, isJefaCajas: true, isJefaCuentas: false, isAuxiliarCuentas: false })).toBe(false);
 });

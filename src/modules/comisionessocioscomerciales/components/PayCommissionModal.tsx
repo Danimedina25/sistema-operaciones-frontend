@@ -1,3 +1,4 @@
+import { ReceiptViewerLink } from '@/shared/components/ui/ReceiptViewerLink';
 import { useEffect, useState } from 'react';
 
 import { Modal } from '@/shared/components/ui/Modal';
@@ -205,14 +206,12 @@ export function PayCommissionModal({
                       </p>
 
                       {previewUrl && (
-                        <a
-                          href={previewUrl}
-                          target="_blank"
-                          rel="noreferrer"
+                        <ReceiptViewerLink
+                          href={previewUrl} mimeType={paymentProofFile.type}
                           className="mt-3 inline-flex rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-200"
                         >
                           Ver imagen
-                        </a>
+                        </ReceiptViewerLink>
                       )}
                     </div>
                   </div>

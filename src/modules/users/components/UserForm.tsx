@@ -1,3 +1,6 @@
+import { useId } from 'react';
+import { ActionDrawerFooter } from '@/shared/components/ui/ActionDrawer';
+import { useFormSubmission } from '@/shared/hooks/use-form-submission';
 import { useEffect } from 'react';
 import { BankCombobox } from '@/shared/components/ui/BankCombobox';
 import { useForm } from 'react-hook-form';
@@ -13,6 +16,7 @@ import {
 
 interface UserFormProps {
   isSubmitting: boolean;
+  onCancel?: () => void;
   onSubmit: (values: UpdateUserFormValues) => Promise<void>;
   submitLabel: string;
   initialValues?: {
@@ -31,6 +35,7 @@ interface UserFormProps {
 
 export function UserForm({
   isSubmitting,
+  onCancel,
   onSubmit,
   submitLabel,
   initialValues,
@@ -166,16 +171,14 @@ export function UserForm({
     setValue,
   ]);
 
+  const formId = useId();
+  const { submit, busy, submitError } = useFormSubmission(onSubmit, isSubmitting);
+
   return (
-    <form className="space-y-5" onSubmit={handleSubmit(
-      async (values) => {
-        console.log('SUBMIT OK USER FORM:', values);
-        await onSubmit(values);
-      },
-      (errors) => {
-        console.log('SUBMIT ERRORS USER FORM:', errors);
-      },
-    )}>
+    <form id={formId} className="space-y-5" onSubmit={handleSubmit(submit)}>
+      {submitError && <p role="alert" className="sticky top-0 z-10 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{submitError}</p>}
+      <fieldset disabled={busy} className="min-w-0 space-y-5">
+
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-5">
           <h3 className="text-lg font-semibold text-slate-800">
@@ -339,14 +342,18 @@ export function UserForm({
         </div>
       )}
 
-      <div className="flex justify-end border-t border-slate-200 pt-4">
+      </fieldset>
+      <ActionDrawerFooter>
+      <div className="flex flex-wrap justify-end gap-3">
+        {onCancel && <Button type="button" variant="neutral" disabled={busy} onClick={onCancel}>Cancelar</Button>}
         <Button variant="primary"
-          type="submit"
-          isLoading={isSubmitting}
+          type="submit" form={formId}
+          isLoading={busy}
         >
           {submitLabel}
         </Button>
       </div>
+      </ActionDrawerFooter>
     </form>
   );
 }

@@ -12,6 +12,7 @@ dist
 build
 .env
 .env.local
+.qa-local/
 .vscode
 .DS_Store
 *.tsbuildinfo

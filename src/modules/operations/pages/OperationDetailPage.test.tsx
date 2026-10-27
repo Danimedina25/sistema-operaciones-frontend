@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, expect, it, vi } from 'vitest';
 import OperationDetailPage from './OperationDetailPage';
 import { paths } from '@/routes/paths';
-import type { PaymentOperationResponse } from '../types/operations.types.ts';
+import type { PaymentOperationResponse, ReturnPaymentResponse } from '../types/operations.types.ts';
 
 const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
@@ -49,12 +49,19 @@ const operation = {
 vi.mock('../components/OperationDetailContainer', () => ({
   OperationDetailContainer: ({
     onDeleteOperation,
+    onManageReturn, scrollToReturns, scrollToPayments,
   }: {
     onDeleteOperation?: (operation: PaymentOperationResponse) => void;
+    onManageReturn?: (request: ReturnPaymentResponse) => void;
+    scrollToReturns?: boolean; scrollToPayments?: boolean;
   }) => (
+    <>
+    <output>{scrollToReturns && !scrollToPayments ? 'retornos-activos' : 'ingresos-activos'}</output>
+    <button onClick={() => onManageReturn?.({ id: 37, operationId: 42, tipoPago: 'EFECTIVO' } as ReturnPaymentResponse)}>Programar retorno</button>
     <button type="button" onClick={() => onDeleteOperation?.(operation)}>
       Eliminar operación
     </button>
+    </>
   ),
 }));
 
@@ -75,7 +82,11 @@ vi.mock('../hooks/returns/use-update-request-return-payment', () => ({
   useUpdateRequestReturnPayment: () => ({ ...emptySubmit, submitUpdateRequestReturnPayment: vi.fn() }),
 }));
 vi.mock('../hooks/returns/use-create-return-installment', () => ({
-  useCreateReturnInstallment: () => ({ ...emptySubmit, submitCreateReturnInstallment: vi.fn() }),
+  useCreateReturnInstallment: ({ onSuccess }: { onSuccess: () => Promise<void> }) => ({ ...emptySubmit, submitCreateReturnInstallment: async () => onSuccess() }),
+}));
+vi.mock('../components/returns/ReturnPaymentModal', () => ({
+  ReturnPaymentModal: ({ open, onSubmitInstallment }: { open: boolean; onSubmitInstallment: (id: number, values: unknown) => Promise<void> }) => open
+    ? <button onClick={() => void onSubmitInstallment(37, { monto: '100', operationId: 42 })}>Guardar parcialidad de prueba</button> : null,
 }));
 vi.mock('../hooks/returns/use-confirm-return-installment', () => ({
   useConfirmReturnInstallment: () => ({ ...emptySubmit, submitConfirmReturnInstallment: vi.fn() }),
@@ -112,6 +123,14 @@ beforeEach(() => {
   window.sessionStorage.clear();
   window.sessionStorage.setItem(OPERATIONS_FILTERS_KEY, SAVED_FILTERS);
   mocks.deleteOperation.mockResolvedValue(undefined);
+});
+
+it('cierra el panel y deja Retornos activo tras registrar una parcialidad', async () => {
+  renderPage();
+  await userEvent.click(screen.getByRole('button', { name: 'Programar retorno' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Guardar parcialidad de prueba' }));
+  await waitFor(() => expect(screen.queryByRole('button', { name: 'Guardar parcialidad de prueba' })).not.toBeInTheDocument());
+  expect(screen.getByText('retornos-activos')).toBeInTheDocument();
 });
 
 it('regresa al listado conservando los filtros tras eliminar desde el detalle', async () => {

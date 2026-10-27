@@ -47,11 +47,37 @@ it('paga solo comisiones pendientes con comprobante y cuenta origen elegida', as
   expect(screen.getByRole('dialog')).toHaveTextContent('$10.00');
 
   await user.click(screen.getByRole('button', { name: 'Adjuntar comprobante' }));
-  await user.click(screen.getByRole('button', { name: /Registrar pago de/ }));
+  await user.click(screen.getByRole('button', { name: 'Registrar pago' }));
   expect(onSubmit).not.toHaveBeenCalled();
   expect(screen.getByRole('alert')).toHaveTextContent('Selecciona la cuenta');
 
   await user.click(screen.getByRole('button', { name: 'Elegir BANORTE' }));
-  await user.click(screen.getByRole('button', { name: /Registrar pago de/ }));
+  await user.click(screen.getByRole('button', { name: 'Registrar pago' }));
   expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ name: 'pago.pdf' }), 126);
+});
+
+it('conserva el comprobante cuando falla el pago y permite reintentar', async () => {
+  const onSubmit = vi.fn().mockRejectedValueOnce(new Error('No fue posible registrar el pago')).mockResolvedValueOnce(undefined);
+  render(<PayBeneficiaryCommissionsModal open beneficiary={beneficiary} startDate="2026-10-01" endDate="2026-10-14" onClose={vi.fn()} onSubmit={onSubmit} />);
+  const user = userEvent.setup();
+  await user.click(screen.getByRole('button', { name: 'Adjuntar comprobante' }));
+  await user.click(screen.getByRole('button', { name: 'Elegir BANORTE' }));
+  await user.click(screen.getByRole('button', { name: 'Registrar pago' }));
+  expect(screen.getByRole('alert')).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Registrar pago' }));
+  expect(onSubmit).toHaveBeenCalledTimes(2);
+  expect(onSubmit.mock.calls[1][0]).toBe(onSubmit.mock.calls[0][0]);
+});
+
+it('bloquea un segundo pago y cancelar mientras se registra', async () => {
+  let finish!: () => void;
+  const onSubmit = vi.fn(() => new Promise<void>(resolve => { finish = resolve; }));
+  render(<PayBeneficiaryCommissionsModal open beneficiary={beneficiary} startDate="2026-10-01" endDate="2026-10-14" onClose={vi.fn()} onSubmit={onSubmit} />);
+  const user = userEvent.setup();
+  await user.click(screen.getByRole('button', { name: 'Adjuntar comprobante' }));
+  await user.click(screen.getByRole('button', { name: 'Elegir BANORTE' }));
+  await user.dblClick(screen.getByRole('button', { name: 'Registrar pago' }));
+  expect(onSubmit).toHaveBeenCalledTimes(1);
+  expect(screen.getByRole('button', { name: 'Cancelar' })).toBeDisabled();
+  await import('@testing-library/react').then(({ act }) => act(async () => finish()));
 });

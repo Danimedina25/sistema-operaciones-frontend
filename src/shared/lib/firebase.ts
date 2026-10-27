@@ -1,7 +1,15 @@
 import { initializeApp } from 'firebase/app';
-import { getStorage } from 'firebase/storage';
+import { connectStorageEmulator, getStorage } from 'firebase/storage';
 
-const firebaseConfig = {
+const useStorageEmulator = import.meta.env.VITE_FIREBASE_STORAGE_EMULATOR === 'true';
+
+const firebaseConfig = useStorageEmulator ? {
+  apiKey: 'demo-api-key',
+  authDomain: 'demo-sistema-operaciones-qa.firebaseapp.com',
+  projectId: 'demo-sistema-operaciones-qa',
+  storageBucket: 'demo-sistema-operaciones-qa.firebasestorage.app',
+  appId: 'demo-sistema-operaciones-qa',
+} : {
   apiKey: "AIzaSyDGBBlUKP8fmxJRRpO3lOTXp3Kz-XIHzH0",
   authDomain: "sistema-de-operaciones.firebaseapp.com",
   projectId: "sistema-de-operaciones",
@@ -14,3 +22,7 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 
 export const firebaseStorage = getStorage(firebaseApp);
+
+if (useStorageEmulator) {
+  connectStorageEmulator(firebaseStorage, '127.0.0.1', 9199);
+}

@@ -1,4 +1,5 @@
-import { useEffect, useId, useMemo, useState } from 'react';
+import { ReceiptViewerLink } from '@/shared/components/ui/ReceiptViewerLink';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import uploadIcon from '@/shared/assets/panel-upload.svg';
 
 interface ReceiptUploadFieldProps {
@@ -32,6 +33,8 @@ export function ReceiptUploadField({
 }: ReceiptUploadFieldProps) {
   const generatedId = useId();
   const id = inputId ?? generatedId;
+  const fileInput = useRef<HTMLInputElement>(null);
+  const cameraInput = useRef<HTMLInputElement>(null);
   const [error, setError] = useState('');
   const [dragging, setDragging] = useState(false);
   const previewUrl = useMemo(() => file && typeof URL.createObjectURL === 'function'
@@ -56,18 +59,18 @@ export function ReceiptUploadField({
   }
 
   const isImage = file?.type.startsWith('image/') ?? false;
-  return <div className="space-y-2">
-    {label && <label className="block text-[13px] font-medium text-slate-700" htmlFor={id}>{label}</label>}
+  return <div className="relative min-w-0 space-y-2">
+    {label && <span className="block text-[13px] font-medium text-slate-700">{label}</span>}
     {file ? <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
       {previewUrl && isImage && <img src={previewUrl} alt={`Vista previa de ${file.name}`}
-        className="mb-3 max-h-56 w-full rounded-lg object-contain" />}
+        className="mb-3 h-56 w-full rounded-lg object-contain" />}
       {previewUrl && !isImage && file.type === 'application/pdf' &&
         <iframe src={previewUrl} title={`Vista previa de ${file.name}`} className="mb-3 h-52 w-full rounded-lg border border-slate-200 bg-white" />}
       {selectedLabel && <p className="text-xs font-semibold text-slate-700">{selectedLabel}</p>}
       <p className="truncate text-sm font-semibold text-slate-800" title={file.name}>{file.name}</p>
       <div className="mt-2 flex flex-wrap gap-3 text-sm">
-        {previewUrl && <a href={previewUrl} target="_blank" rel="noreferrer" className="font-medium text-[#3b6ef5]">Abrir comprobante</a>}
-        <label htmlFor={id} className="cursor-pointer font-medium text-[#3b6ef5]">Cambiar archivo</label>
+        {previewUrl && <ReceiptViewerLink href={previewUrl} mimeType={file.type} className="font-medium text-[#3b6ef5]">Abrir comprobante</ReceiptViewerLink>}
+        <button type="button" disabled={disabled} onClick={() => fileInput.current?.click()} className="font-medium text-[#3b6ef5]">Cambiar archivo</button>
         <button type="button" disabled={disabled} onClick={() => { setError(''); onChange(null); }}
           className="font-medium text-slate-600">Quitar</button>
       </div>
@@ -75,18 +78,18 @@ export function ReceiptUploadField({
       onDragLeave={() => setDragging(false)}
       onDrop={event => { event.preventDefault(); setDragging(false); if (!disabled) select(event.dataTransfer.files?.[0] ?? null); }}
       className={`rounded-xl border border-dashed px-3 py-4 text-center ${dragging ? 'border-[#3b6ef5] bg-blue-50' : 'border-slate-300 bg-white'}`}>
-      <label htmlFor={id} className="flex cursor-pointer items-center justify-center gap-2 text-[13px] font-semibold text-[#3b6ef5]">
+      <button type="button" disabled={disabled} onClick={() => fileInput.current?.click()} className="flex w-full items-center justify-center gap-2 text-[13px] font-semibold text-[#3b6ef5]">
         <img src={uploadIcon} alt="" /> {dropHint}
-      </label>
+      </button>
       <p className="mt-1 text-xs text-slate-500">PDF, JPG, PNG o WEBP</p>
     </div>}
-    <input id={id} type="file" accept={accept} aria-label={label || dropHint} disabled={disabled} className="sr-only"
+    <input ref={fileInput} id={id} type="file" accept={accept} aria-label={label || dropHint} disabled={disabled} hidden
       onChange={event => { select(event.target.files?.[0] ?? null); event.target.value = ''; }} />
-    {camera && <label className="inline-flex cursor-pointer items-center text-xs font-medium text-[#3b6ef5]">
-      Tomar foto
-      <input type="file" accept="image/*" capture="environment" disabled={disabled} className="sr-only"
+    {camera && <>
+      <button type="button" disabled={disabled} onClick={() => cameraInput.current?.click()} className="inline-flex items-center text-xs font-medium text-[#3b6ef5]">Tomar foto</button>
+      <input ref={cameraInput} type="file" accept="image/*" capture="environment" disabled={disabled} hidden
         onChange={event => { select(event.target.files?.[0] ?? null); event.target.value = ''; }} />
-    </label>}
+    </>}
     {error && <p role="alert" className="text-xs text-red-600">{error}</p>}
   </div>;
 }

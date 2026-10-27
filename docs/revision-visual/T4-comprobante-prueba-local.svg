@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="640" viewBox="0 0 960 640" role="img" aria-labelledby="title description">
+  <title id="title">Comprobante de prueba local</title>
+  <desc id="description">Archivo de muestra para revisar enlaces de comprobantes en el entorno local. No acredita un pago real.</desc>
+  <rect width="960" height="640" fill="#f8fafc"/>
+  <rect x="80" y="64" width="800" height="512" rx="24" fill="#fff" stroke="#cbd5e1" stroke-width="2"/>
+  <rect x="80" y="64" width="800" height="24" rx="12" fill="#3b6ef5"/>
+  <text x="480" y="190" text-anchor="middle" fill="#0f172a" font-family="Arial, sans-serif" font-size="42" font-weight="700">COMPROBANTE DE PRUEBA</text>
+  <text x="480" y="255" text-anchor="middle" fill="#475569" font-family="Arial, sans-serif" font-size="27">Fase 2 · Tarea 4 · Cheques</text>
+  <line x1="160" y1="310" x2="800" y2="310" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="480" y="370" text-anchor="middle" fill="#334155" font-family="Arial, sans-serif" font-size="24">Solo para revisar la interfaz en 127.0.0.1</text>
+  <text x="480" y="420" text-anchor="middle" fill="#b45309" font-family="Arial, sans-serif" font-size="25" font-weight="700">SIN VALIDEZ COMO COMPROBANTE DE PAGO</text>
+  <text x="480" y="485" text-anchor="middle" fill="#64748b" font-family="Arial, sans-serif" font-size="18">Los importes y estados de la operación provienen de la API local.</text>
+</svg>

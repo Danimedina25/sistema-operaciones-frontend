@@ -52,11 +52,11 @@ export default function BankAccountsPage() {
   const pageSize = 10;
 
   const { hasRole } = useAuth();
-  const canDelete = hasRole(['ADMIN', 'DIRECCION']);
+  const canDelete = hasRole('ADMIN');
   const canView = hasRole(['ADMIN', 'GERENTE', 'DIRECCION', 'JEFA_CUENTAS', 'AUXILIAR_CUENTAS']);
-  const canCreate = hasRole(['ADMIN', 'GERENTE', 'DIRECCION', 'JEFA_CUENTAS']);
-  const canEdit = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
-  const canToggleStatus = hasRole(['ADMIN', 'GERENTE', 'DIRECCION']);
+  const canCreate = hasRole(['ADMIN', 'GERENTE', 'JEFA_CUENTAS']);
+  const canEdit = hasRole(['ADMIN', 'GERENTE']);
+  const canToggleStatus = hasRole(['ADMIN', 'GERENTE']);
 
   const { accounts, isLoading, loadBankAccounts, loadBankAccount } =
     useBankAccounts();

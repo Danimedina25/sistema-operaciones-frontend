@@ -4,14 +4,12 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { ClientesTable } from './ClientesTable';
 import type { ClienteResponse } from '../types/clientes.types';
 
-const role = vi.hoisted(() => ({ value: 'SOCIO_COMERCIAL' }));
-vi.mock('@/modules/auth/store/auth.context', () => ({ useAuth: () => ({ hasRole: (roles: string[]) => roles.includes(role.value) }) }));
 const client = { id: 27, nombre: 'Cliente de prueba', activo: true } as ClienteResponse;
 const handlers = { onEdit: vi.fn(), onActivate: vi.fn(), onDeactivate: vi.fn(), onDelete: vi.fn() };
-beforeEach(() => { role.value = 'SOCIO_COMERCIAL'; vi.clearAllMocks(); });
+beforeEach(() => { vi.clearAllMocks(); });
 
-it('muestra dos columnas y mantiene editar y desactivar para el Socio', async () => {
-  render(<ClientesTable clientes={[client]} processingClienteId={null} {...handlers} />);
+it('muestra dos columnas y permite gestionar solo su red al Socio', async () => {
+  render(<ClientesTable clientes={[client]} processingClienteId={null} canEdit canChangeStatus canDelete={false} {...handlers} />);
   expect(screen.getAllByRole('columnheader')).toHaveLength(2);
   expect(screen.getByTestId('data-table-mobile')).toHaveTextContent('Cliente de prueba');
   await userEvent.click(screen.getAllByRole('button', { name: 'Opciones de Cliente de prueba' })[0]);
@@ -20,9 +18,8 @@ it('muestra dos columnas y mantiene editar y desactivar para el Socio', async ()
   expect(screen.queryByRole('button', { name: 'Eliminar definitivamente' })).not.toBeInTheDocument();
 });
 
-it('mantiene eliminar para Dirección', async () => {
-  role.value = 'DIRECCION';
-  render(<ClientesTable clientes={[client]} processingClienteId={null} {...handlers} />);
-  await userEvent.click(screen.getAllByRole('button', { name: 'Opciones de Cliente de prueba' })[0]);
-  expect(screen.getByRole('button', { name: 'Eliminar definitivamente' })).toBeInTheDocument();
+it('Dirección consulta sin columna ni menú de acciones', () => {
+  render(<ClientesTable clientes={[client]} processingClienteId={null} canEdit={false} canChangeStatus={false} canDelete={false} {...handlers} />);
+  expect(screen.getAllByRole('columnheader')).toHaveLength(1);
+  expect(screen.queryByRole('button', { name: 'Opciones de Cliente de prueba' })).not.toBeInTheDocument();
 });

@@ -1,6 +1,8 @@
+import { useNavigate } from 'react-router-dom';
+import { buildOperationActionPath } from '@/routes/paths';
 import { useSearchParams } from 'react-router-dom';
 import PendingDeliveriesPage from './PendingDeliveriesPage';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Clock, HandCoins, ListChecks, PackageCheck, Wallet } from 'lucide-react';
 import { DashboardSection } from '@/shared/components/layout/DashboardSection';
 import { MetricCard } from '@/shared/components/dashboard/MetricCard';
@@ -9,16 +11,12 @@ import { QueryState } from '@/shared/components/ui/QueryState';
 import { TableFilterSection } from '@/shared/components/ui/TableFilterSection';
 import { useTableUrlFilters } from '@/shared/hooks/use-table-filters';
 import { useTodayCashDeliveries } from '@/modules/operations/hooks/returns/use-today-cash-deliveries';
-import { useDeliverReturnInstallment } from '@/modules/operations/hooks/returns/use-deliver-return-installment';
 import { TodayDeliveriesTable } from '@/modules/operations/components/returns/TodayDeliveriesTable';
-import { MarkCashReturnDeliveredModal } from '@/modules/operations/components/returns/MarkCashReturnDeliveredModal';
-import { installmentToCashDeliveryTarget } from '@/modules/operations/utils/return-installment';
 import {
   computeDailyDeliverySummary,
   installmentToDeliveryLike,
 } from '@/modules/operations/utils/daily-delivery-summary';
 import { formatCurrency, formatDateTime } from '@/modules/operations/utils/operation-formatters';
-import type { ReturnInstallment } from '@/modules/operations/types/operations.types.ts';
 
 const QUICK_TIPO_RETORNO_FILTERS = [
   { value: '', label: 'Todos' },
@@ -35,17 +33,10 @@ export default function TodayCashDeliveriesPage() {
 
 function TodayCashDeliveriesOverview() {
   const { filters, setFilters } = useTableUrlFilters(initialFilters);
-  const [selectedDelivery, setSelectedDelivery] = useState<ReturnInstallment | null>(null);
+  const navigate = useNavigate();
 
   const { data, isLoading, error, refetch } = useTodayCashDeliveries({
     tipoPago: filters.tipoPago || undefined,
-  });
-
-  const { isSubmitting, submitDeliverReturnInstallment } = useDeliverReturnInstallment({
-    onSuccess: async () => {
-      setSelectedDelivery(null);
-      await refetch();
-    },
   });
 
   const deliveries = useMemo(() => data?.content ?? [], [data]);
@@ -128,26 +119,10 @@ function TodayCashDeliveriesOverview() {
           emptyDescription="Las recolecciones de efectivo y retiro sin tarjeta de hoy aparecerán aquí."
           errorTitle="No se pudieron cargar las entregas de hoy."
         >
-          <TodayDeliveriesTable deliveries={deliveries} onMarkAsDelivered={setSelectedDelivery} />
+          <TodayDeliveriesTable deliveries={deliveries} onMarkAsDelivered={row => navigate(buildOperationActionPath(row.operationId, 'deliver-installment', { returnRequestId: row.returnRequestId, installmentId: row.id }))} />
         </QueryState>
       </section>
 
-      <MarkCashReturnDeliveredModal
-        target={
-          selectedDelivery ? installmentToCashDeliveryTarget(selectedDelivery) : null
-        }
-        isSubmitting={isSubmitting}
-        onConfirm={(installmentId, operationId, comprobante, personaQueRecibioEfectivo, denominaciones) =>
-          void submitDeliverReturnInstallment(
-            installmentId,
-            operationId,
-            comprobante,
-            personaQueRecibioEfectivo,
-            denominaciones,
-          )
-        }
-        onClose={() => setSelectedDelivery(null)}
-      />
     </div>
   );
 }

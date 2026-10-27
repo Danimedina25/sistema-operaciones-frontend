@@ -106,6 +106,7 @@ Detalle de operación
 Fondo oscuro, 4 montos, red de socios
 4. Página de muestra (opcional pero muy útil): una ruta interna, por ejemplo /ui, donde se ven todos los componentes juntos. Sirve para revisarlos contra Figma de un vistazo.
 Fase 2 · Fundaciones del backend (1–2 semanas)
+Las decisiones cerradas y el orden de implementación para permisos y envíos de Caja a Cuentas están en [PLAN_FASE2_PERMISOS_Y_ENVIOS.md](PLAN_FASE2_PERMISOS_Y_ENVIOS.md).
 Estas piezas las usan casi todas las pantallas, por eso van antes que la lógica nueva.
 1. Permisos por rol y acción. Una tabla central que diga qué puede hacer cada rol (ver, crear, editar, validar, pagar, eliminar) sobre cada cosa. El backend la revisa en cada petición; el frontend la usa solo para mostrar u ocultar botones. El "modo consulta" del Gerente y el Director sale de aquí, no de pantallas copiadas.
 Acción

@@ -55,6 +55,41 @@ function renderModal(overrides: Partial<Parameters<typeof MarkCashReturnDelivere
 }
 
 describe('MarkCashReturnDeliveredModal', () => {
+  it('muestra el conteo y la diferencia para faltantes, sobrantes y el importe exacto', async () => {
+    const user = userEvent.setup();
+    renderModal();
+    expect(screen.getAllByRole('table')).toHaveLength(2);
+    const summary = screen.getByRole('region', { name: 'Resumen de entrega' });
+    expect(within(summary).getByRole('status')).toHaveTextContent('Faltan $10,000.00 por contar');
+    expect(within(summary).getByRole('status')).toHaveTextContent('$10,000.00');
+    const quantity = screen.getByLabelText('Cantidad de $100.00');
+    await user.clear(quantity);
+    await user.type(quantity, '101');
+    expect(within(summary).getByRole('status')).toHaveTextContent('Sobran $100.00 en el conteo');
+    expect(within(summary).getByRole('status')).toHaveTextContent('$100.00');
+    expect(confirmButton()).toBeDisabled();
+    await user.clear(quantity);
+    await user.type(quantity, '100');
+    expect(within(summary).getByRole('status')).toHaveTextContent('Conteo completo');
+    expect(within(summary).getByRole('status')).toHaveTextContent('Conteo completo');
+  });
+
+  it('muestra la suma de billetes y monedas en negritas junto al desglose', async () => {
+    const user = userEvent.setup();
+    renderModal();
+    const total = screen.getByLabelText('Total de denominaciones');
+    expect(total).toHaveClass('font-bold');
+    expect(within(total).getByText('$0.00')).toBeInTheDocument();
+    await user.type(screen.getByLabelText('Cantidad de $50.00'), '1');
+    await user.type(screen.getByLabelText('Cantidad de $20.00'), '2');
+    await user.type(screen.getByLabelText('Cantidad de $0.50'), '1');
+    expect(within(total).getByText('$90.50').tagName).toBe('STRONG');
+    expect(total.closest('section[aria-label="Desglose y resumen de entrega"]')).toContainElement(screen.getAllByRole('table')[0]);
+    expect(total.closest('section[aria-label="Desglose y resumen de entrega"]')).toContainElement(screen.getAllByRole('table')[1]);
+    expect(screen.getAllByText('Total contado')).toHaveLength(1);
+    expect(screen.queryByText(/Diferencia:/)).not.toBeInTheDocument();
+  });
+
   it('lista los autorizados + la opción "Otra persona (no autorizada)"', () => {
     renderModal();
 
@@ -196,7 +231,7 @@ describe('MarkCashReturnDeliveredModal', () => {
 
   it('mensaje según confirmación del socio', () => {
     const { rerender } = renderModal();
-    expect(screen.getByText(/el socio comercial ya confirmó/i)).toBeInTheDocument();
+    expect(screen.getByText(/recepción confirmada por el socio/i)).toBeInTheDocument();
 
     rerender(
       <MarkCashReturnDeliveredModal
@@ -206,7 +241,7 @@ describe('MarkCashReturnDeliveredModal', () => {
         onClose={vi.fn()}
       />,
     );
-    expect(screen.getByText(/quedará en confirmación parcial/i)).toBeInTheDocument();
+    expect(screen.getByText(/pendiente de confirmación del socio/i)).toBeInTheDocument();
   });
 
   it('previene el doble envío mientras isSubmitting', () => {
@@ -235,4 +270,19 @@ describe('MarkCashReturnDeliveredModal', () => {
     expect(selectEl()).toHaveValue('');
     expect(confirmButton()).toBeDisabled();
   });
+  it('mantiene el error del servidor junto al conteo y conserva receptor y fotografía', async () => {
+    const user = userEvent.setup();
+    const confirm = vi.fn().mockRejectedValue({ isAxiosError: true, response: { data: { message: 'La caja está cerrada' } } });
+    renderModal({ onConfirm: confirm });
+    await user.selectOptions(selectEl(), 'Juan Pérez');
+    await user.upload(fileInput(), imageFile());
+    await fillCashBreakdown(user);
+    await user.click(confirmButton());
+    const summary = screen.getByRole('region', { name: 'Resumen de entrega' });
+    expect(await within(summary).findByRole('alert')).toHaveTextContent('La caja está cerrada');
+    expect(selectEl()).toHaveValue('Juan Pérez');
+    expect(screen.getByLabelText('Cantidad de $100.00')).toHaveValue(100);
+    expect(confirm).toHaveBeenCalledTimes(1);
+  });
+
 });

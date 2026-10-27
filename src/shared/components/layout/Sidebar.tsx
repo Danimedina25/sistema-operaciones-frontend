@@ -10,7 +10,6 @@ import cashLock from '@/shared/assets/navigation/73584.svg';
 import cashLockActive from '@/shared/assets/navigation/c2d05.svg';
 import { getNavProfile, getVisibleEntries, isNavItemActive, type NavEntry, type NavGroup, type NavItem } from './navigation';
 import { useNavigationState } from './use-navigation-state';
-import { paths } from '@/routes/paths';
 
 interface SidebarProps { isOpen: boolean; onClose: () => void }
 type Counts = ReturnType<typeof useNavigationState>['counts'];
@@ -30,11 +29,13 @@ function Badge({ count, active = false }: { count: number; active?: boolean }) {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { logout, user } = useAuth();
   const location = useLocation();
-  const visiblePathname = location.state?.backgroundBankOutflow === true ? paths.bankOutflow : location.pathname;
-  const visibleSearch = location.state?.backgroundBankOutflow === true ? '' : location.search;
+  const visiblePathname = location.pathname;
+  const visibleSearch = location.search;
   const profile = getNavProfile(user?.roles);
   const entries = profile ? getVisibleEntries(profile, user?.roles ?? []) : [];
-  const { counts, cashOpen, cashStateKnown } = useNavigationState(profile?.role);
+  const { counts, cashOpen, cashPendingClose, cashStateKnown } = useNavigationState(profile?.role);
+  const cashNeedsClose = cashOpen || Boolean(cashPendingClose);
+  const cashStatusLabel = cashPendingClose ? 'Pendiente de cierre' : cashOpen ? 'Abierta' : 'Cerrada';
   const routeKey = `${visiblePathname}${visibleSearch}`;
   const [compactExpanded, setCompactExpanded] = useState(false);
   const compactHidden = compactExpanded ? '' : 'lg:max-xl:hidden';
@@ -44,8 +45,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   function renderItem(item: NavItem, nested = false) {
     const active = isNavItemActive(item, visiblePathname, visibleSearch);
-    const label = item.cashAction && cashStateKnown ? `${cashOpen ? 'Cerrar' : 'Abrir'} caja` : item.label;
-    const glyph = item.cashAction && cashOpen
+    const label = item.cashAction && cashStateKnown ? `${cashNeedsClose ? 'Cerrar' : 'Abrir'} caja` : item.label;
+    const glyph = item.cashAction && cashNeedsClose
       ? (active ? cashLockActive : cashLock)
       : (active ? item.icon.active : item.icon.normal);
     const badge = item.badge ? counts[item.badge] : null;
@@ -55,7 +56,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         nested ? 'min-h-[39px] px-3 py-2 text-sm' : 'min-h-[46px] px-4 py-[13px] text-base',
         compactCentered,
         active ? 'bg-brand font-semibold text-white shadow-brand' : nested ? 'text-[#a7b0c2] hover:bg-white/7 hover:text-white' : 'font-medium text-ink-inverse hover:bg-white/7 hover:text-white',
-        item.cashAction && !active && (cashOpen ? 'text-[#f87171]' : 'text-[#4ade80]'))}>
+        item.cashAction && !active && (cashNeedsClose ? 'text-[#f87171]' : 'text-[#4ade80]'))}>
       <img alt="" src={glyph} className={cn('shrink-0', nested ? 'h-4 w-4' : 'h-5 w-5')} />
       <span className={cn('min-w-0 flex-1', compactHidden)}>{label}</span>
       {badge !== null && badge > 0 && <span className={compactHidden}><Badge count={badge} active={active} /></span>}
@@ -67,7 +68,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     const expanded = groupOverrides[group.id] ?? childActive;
     return <div key={group.id}>
       <button type="button" aria-expanded={expanded} aria-controls={`sidebar-group-${group.id}`}
-        aria-label={`${group.label}${group.cashStatus && cashStateKnown ? ` ${cashOpen ? 'Abierta' : 'Cerrada'}` : ''}`} title={group.label}
+        aria-label={`${group.label}${group.cashStatus && cashStateKnown ? ` ${cashStatusLabel}` : ''}`} title={group.label}
         onClick={() => {
           if (!compactExpanded && window.matchMedia?.('(min-width: 1024px) and (max-width: 1279px)').matches) {
             setCompactExpanded(true);
@@ -78,7 +79,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           expanded && 'bg-white/7 font-semibold text-white')}>
         <img alt="" src={expanded ? group.icon.active : group.icon.normal} className="h-5 w-5 shrink-0" />
         <span className={cn('min-w-0 flex-1', compactHidden)}>{group.label}</span>
-        {group.cashStatus && cashStateKnown && <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-medium', compactHidden, cashOpen ? 'bg-green-500/15 text-[#4ade80]' : 'bg-slate-500/20 text-slate-300')}>{cashOpen ? 'Abierta' : 'Cerrada'}</span>}
+        {group.cashStatus && cashStateKnown && <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-medium', compactHidden, cashPendingClose ? 'bg-amber-500/15 text-amber-300' : cashOpen ? 'bg-green-500/15 text-[#4ade80]' : 'bg-slate-500/20 text-slate-300')}>{cashStatusLabel}</span>}
         {!expanded && <span className={compactHidden}><GroupBadge group={group} counts={counts} /></span>}
         <img alt="" src={expanded ? chevronUp : chevronDown} className={cn('h-[18px] w-[18px] shrink-0', compactHidden)} />
       </button>

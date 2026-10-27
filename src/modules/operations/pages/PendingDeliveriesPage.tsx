@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom';
+import { buildOperationActionPath } from '@/routes/paths';
 import { TableFilterSection } from '@/shared/components/ui/TableFilterSection';
 import { useState } from 'react';
 import { useTableUrlFilters } from '@/shared/hooks/use-table-filters';
@@ -5,11 +7,7 @@ import { QuickFilters } from '@/shared/components/dashboard/QuickFilters';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { QueryState } from '@/shared/components/ui/QueryState';
 import { TodayDeliveriesTable } from '../components/returns/TodayDeliveriesTable';
-import { MarkCashReturnDeliveredModal } from '../components/returns/MarkCashReturnDeliveredModal';
-import { useDeliverReturnInstallment } from '../hooks/returns/use-deliver-return-installment';
 import { usePendingDeliveries } from '../hooks/use-pending-deliveries';
-import { installmentToCashDeliveryTarget } from '../utils/return-installment';
-import type { ReturnInstallment } from '../types/operations.types.ts';
 
 const defaults = { queue: '', tipoPago: '', supervisedRole: '' };
 export default function PendingDeliveriesPage() {
@@ -17,8 +15,7 @@ export default function PendingDeliveriesPage() {
   const [pagination, setPagination] = useState({ filters, page: 0 });
   const page = pagination.filters === filters ? pagination.page : 0;
   const query = usePendingDeliveries(filters.queue, page, filters.tipoPago, filters.supervisedRole);
-  const [selected, setSelected] = useState<ReturnInstallment | null>(null);
-  const { isSubmitting, submitDeliverReturnInstallment } = useDeliverReturnInstallment({ onSuccess: async () => { setSelected(null); await query.refetch(); } });
+  const navigate = useNavigate();
   return <div className="space-y-3">
     <header className="rounded-2xl bg-white p-4 shadow-sm">
       <h1 className="text-lg font-semibold">{filters.queue === 'CONFIRMATION' ? 'Entregas pendientes de tu confirmación' : 'Entregas pendientes de hoy'}</h1>
@@ -31,10 +28,8 @@ export default function PendingDeliveriesPage() {
         value={filters.tipoPago} onChange={(tipoPago) => setFilters({ ...filters, tipoPago })} />
     </TableFilterSection>
     <QueryState isLoading={query.isFetching} error={query.error} isEmpty={!query.data?.content.length} onRetry={() => void query.refetch()} emptyTitle="Sin entregas pendientes">
-      <TodayDeliveriesTable deliveries={query.data?.content ?? []} onMarkAsDelivered={setSelected} />
+      <TodayDeliveriesTable deliveries={query.data?.content ?? []} onMarkAsDelivered={row => navigate(buildOperationActionPath(row.operationId, 'deliver-installment', { returnRequestId: row.returnRequestId, installmentId: row.id }))} />
     </QueryState>
     <Pagination currentPage={page + 1} totalPages={query.data?.totalPages ?? 0} totalElements={query.data?.totalElements ?? 0} isLoading={query.isFetching} onPageChange={(value) => setPagination({ filters, page: value - 1 })} />
-    <MarkCashReturnDeliveredModal target={selected ? installmentToCashDeliveryTarget(selected) : null} isSubmitting={isSubmitting}
-      onConfirm={(id, operationId, proof, person, denominaciones) => void submitDeliverReturnInstallment(id, operationId, proof, person, denominaciones)} onClose={() => setSelected(null)} />
   </div>;
 }

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { BankTransferModal } from './BankTransferModal';
 import { validateTransferAmount } from '../utils/transfer-amount';
@@ -131,4 +131,23 @@ describe('BankTransferModal', () => {
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(2));
     expect(onSubmit.mock.calls[1][0].requestId).toBe(onSubmit.mock.calls[0][0].requestId);
   });
+  it('mantiene las acciones fijas y bloquea cierre y doble envío durante el registro', async () => {
+    let finish!: (value: BankTransfer) => void;
+    const submit = vi.fn<(r: CreateBankTransfer) => Promise<BankTransfer>>().mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+    const { onClose } = mount(submit);
+    choose('Cuenta origen', 'BBVA'); choose('Cuenta beneficiaria', 'Banorte');
+    fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '100' } });
+    const dialog = screen.getByRole('dialog', { name: 'Registrar transferencia entre cuentas' });
+    const button = within(dialog).getByRole('button', { name: 'Registrar transferencia' });
+    expect(dialog.querySelector('footer')).toContainElement(button);
+    fireEvent.click(button);
+    fireEvent.submit(dialog.querySelector('form')!);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(submit).toHaveBeenCalledTimes(1);
+    expect(within(dialog).getByRole('button', { name: 'Cancelar' })).toBeDisabled();
+    expect(onClose).not.toHaveBeenCalled();
+    finish(saved);
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+  });
+
 });

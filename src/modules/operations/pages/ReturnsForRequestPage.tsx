@@ -7,12 +7,9 @@ import { OperationsFilters } from '@/modules/operations/components/OperationsFil
 import { useOperationsAvailableToRequestReturn } from '../hooks/returns/use-operation-returns';
 import {
   OperationsFilters as OperationsFiltersType,
-  PaymentOperationResponse,
 } from '../types/operations.types.ts';
 import { ReturnsForRequestTable } from '../components/returns/ReturnsForRequestTable';
-import { buildReturnRequestDetailPath } from '@/routes/paths';
-import { useRequestReturnPayment } from '../hooks/returns/use-request-return-payment';
-import { RequestReturnModal } from '../components/returns/RequestReturnModal';
+import { buildOperationDetailPath, buildOperationActionPath } from '@/routes/paths';
 import { useTableCacheKey } from '@/shared/hooks/use-table-filters';
 import { useUrlFilters } from '@/shared/hooks/use-url-filters';
 import { useDefaultAllDatesMigration } from '@/shared/hooks/use-default-all-dates-migration';
@@ -48,29 +45,10 @@ export default function ReturnsForRequestPage() {
   const {
     data,
     isLoading,
-    refetch,
   } = useOperationsAvailableToRequestReturn(currentPage, PAGE_SIZE, filters);
 
-  const { isSubmitting, submitRequestReturnPayment } =
-  useRequestReturnPayment({
-    onSuccess: async () => {
-      setIsRequestReturnModalOpen(false);
-      setSelectedOperation(null);
-      await refetch();
-    },
-  });
-
-  const [isRequestReturnModalOpen, setIsRequestReturnModalOpen] = useState(false);
-  const [selectedOperation, setSelectedOperation] =
-    useState<PaymentOperationResponse | null>(null);
-
   function handleOpenRequestReturn(operationId: number) {
-    const operation = operations.find((item) => item.id === operationId);
-
-    if (!operation) return;
-
-    setSelectedOperation(operation);
-    setIsRequestReturnModalOpen(true);
+    navigate(buildOperationActionPath(operationId, 'request-return'));
   }
 
   const operations = data?.content ?? [];
@@ -115,7 +93,7 @@ export default function ReturnsForRequestPage() {
           operations={operations}
           isLoading={isLoading}
           onViewDetail={(operationId) => {
-            navigate(buildReturnRequestDetailPath(operationId));
+            navigate(buildOperationDetailPath(operationId));
           }}
           onRequestReturn={handleOpenRequestReturn}
         />
@@ -131,16 +109,6 @@ export default function ReturnsForRequestPage() {
         </div>
       </section>
 
-      <RequestReturnModal
-        open={isRequestReturnModalOpen}
-        operation={selectedOperation}
-        isSubmitting={isSubmitting}
-        onClose={() => {
-          setIsRequestReturnModalOpen(false);
-          setSelectedOperation(null);
-        }}
-        onSubmit={submitRequestReturnPayment}
-      />
     </div>
   );
 }

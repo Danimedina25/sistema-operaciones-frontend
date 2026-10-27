@@ -1,3 +1,6 @@
+import { Button } from '@/shared/components/ui/Button';
+import { getApiErrorMessage } from '@/shared/utils/errors';
+import { ReceiptViewerLink } from '@/shared/components/ui/ReceiptViewerLink';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { PaymentStatusBadge } from '@/modules/operations/components/PaymentStatusBadge';
@@ -121,8 +124,6 @@ export function PaymentsTable({
 
   const canModifyPayments = hasRole([
     'ADMIN',
-    'GERENTE',
-    'DIRECCION',
     'SOCIO_COMERCIAL',
   ]);
   const { copy } = useClipboard();
@@ -138,9 +139,13 @@ export function PaymentsTable({
   // desglose por denominación. Se captura aquí, con quien recibe físicamente el dinero.
   const [cashCounts, setCashCounts] = useState<CashCounts>(emptyCounts);
   const [cashCountsError, setCashCountsError] = useState('');
+  const [reviewSubmitError, setReviewSubmitError] = useState('');
+  const [reviewBusy, setReviewBusy] = useState(false);
+  const reviewLock = useRef(false);
   const [validationReceipt, setValidationReceipt] = useState<File | null>(null);
   const [validationReceiptError, setValidationReceiptError] = useState('');
   const [chequePaymentId, setChequePaymentId] = useState<number | null>(null);
+  const [viewingReceiptKind, setViewingReceiptKind] = useState<'income' | 'validation'>('validation');
   const [viewingPaymentId, setViewingPaymentId] = useState<number | null>(null);
 
   const isAdmin = hasRole(['ADMIN']);
@@ -163,11 +168,7 @@ export function PaymentsTable({
   function canSeePayment(payment: OperationPaymentResponse) {
     if (isAdmin) return true;
     if (isJefaCajas) {
-      if (payment.tipoPago === 'EFECTIVO') return true;
-      return payment.tipoPago === 'CHEQUE' && (
-        payment.chequeEstado === 'PENDIENTE_COBRO_EFECTIVO' ||
-        (payment.chequeEstado === 'COBRADO' && payment.cuentaDestinoId === null)
-      );
+      return payment.tipoPago === 'EFECTIVO' || payment.tipoPago === 'CHEQUE';
     }
     if (isCuentas) return BANK_PAYMENT_TYPES.includes(payment.tipoPago);
     return true; // ADMIN, GERENTE, DIRECCION, SOCIO_COMERCIAL ven todo
@@ -189,6 +190,7 @@ export function PaymentsTable({
   }, [viewingPaymentId, payments]);
 
   const resetReviewFormState = () => {
+    setReviewSubmitError('');
     setActiveAction(null);
     setRejectReasonCode('');
     setRejectReason('');
@@ -215,11 +217,17 @@ export function PaymentsTable({
   };
 
   const initialReviewHandled = useRef(false);
+  useEffect(() => { initialReviewHandled.current = false; }, [initialReviewPaymentId]);
   useEffect(() => {
     if (!initialReviewPaymentId || initialReviewHandled.current) return;
     const payment = visiblePayments.find(item => item.id === initialReviewPaymentId);
     if (!payment || (payment.tipoPago !== 'CHEQUE' && !canValidatePaymentType(payment.tipoPago))) return;
     initialReviewHandled.current = true;
+    // Un pago ya resuelto no vuelve a abrir el panel: la acción de la URL quedó atendida.
+    if (payment.tipoPago !== 'CHEQUE' && payment.estatus !== 'PENDIENTE_VALIDACION' && payment.estatus !== 'EN_PROCESO') {
+      onInitialReviewHandled?.();
+      return;
+    }
     openReviewDrawer(payment.id);
   }, [initialReviewPaymentId, visiblePayments]);
 
@@ -246,7 +254,8 @@ export function PaymentsTable({
   };
 
   const handleConfirmAction = async () => {
-    if (reviewingPaymentId === null || !activeAction) return;
+    if (reviewingPaymentId === null || !activeAction || reviewLock.current || processingPaymentId === reviewingPaymentId) return;
+    reviewLock.current = true; setReviewSubmitError('');
 
     try {
       if (activeAction === 'VALIDATE') {
@@ -271,6 +280,7 @@ export function PaymentsTable({
           }
         }
 
+        setReviewBusy(true);
         await onValidatePayment?.(
           reviewingPaymentId,
           validationReceipt,
@@ -297,13 +307,14 @@ export function PaymentsTable({
 
       const finalReason = buildRejectReasonText(rejectReasonCode, trimmedReason);
 
+      setReviewBusy(true);
       await onRejectPayment?.(reviewingPaymentId, finalReason);
       setReviewingPaymentId(null);
       resetReviewFormState();
       if (initialReviewPaymentId) onInitialReviewHandled?.();
     } catch (error) {
-      console.error('Error al procesar la acción del pago:', error);
-    }
+      setReviewSubmitError(getApiErrorMessage(error));
+    } finally { reviewLock.current = false; setReviewBusy(false); }
   };
 
   if (visiblePayments.length === 0) {
@@ -328,7 +339,7 @@ export function PaymentsTable({
   }
 
   const isConfirmingAction =
-    reviewingPaymentId !== null && processingPaymentId === reviewingPaymentId;
+    reviewBusy || (reviewingPaymentId !== null && processingPaymentId === reviewingPaymentId);
 
   const isRejectAction = activeAction === 'REJECT';
 
@@ -346,7 +357,9 @@ export function PaymentsTable({
     const isInProgress = payment.estatus === 'EN_PROCESO';
     const isProcessing = processingPaymentId === payment.id;
     const chequeEditable = payment.tipoPago !== 'CHEQUE' || payment.chequeEstado === 'POR_COBRAR';
-    const canEdit = chequeEditable && isPendingValidation && !!onEditPayment && canModifyPayments;
+    // Un pago rechazado (que no sea cheque) se corrige sobre el mismo registro y vuelve a validación.
+    const isRejectedCorrectable = payment.estatus === 'RECHAZADA' && payment.tipoPago !== 'CHEQUE';
+    const canEdit = ((chequeEditable && isPendingValidation) || isRejectedCorrectable) && !!onEditPayment && canModifyPayments;
     // "Revisar" abre el panel con Validar / Rechazar / Marcar en proceso /
     // Liberar; disponible tanto en pendiente como en proceso.
     const canValidate =
@@ -360,7 +373,10 @@ export function PaymentsTable({
     // para el usuario: revisar el pago. Por eso vive en Acciones junto a las demás.
     const canManageCheque =
       payment.tipoPago === 'CHEQUE' && (
-        isAdmin || isCuentas || (isJefaCajas && payment.chequeEstado === 'PENDIENTE_COBRO_EFECTIVO')
+        isAdmin || isCuentas || (isJefaCajas && (
+          payment.chequeEstado === 'POR_COBRAR' ||
+          payment.chequeEstado === 'PENDIENTE_COBRO_EFECTIVO'
+        ))
       );
     const canReview = canValidate || canManageCheque;
     const hasActions = canEdit || canReview || canNotify;
@@ -371,19 +387,18 @@ export function PaymentsTable({
   function renderViewOptions(payment: OperationPaymentResponse): ReactNode {
     return (
       <>
-        <a
-          href={payment.comprobanteUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="block px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+        <button
+          type="button"
+          onClick={() => { setViewingReceiptKind('income'); setViewingPaymentId(payment.id); }}
+          className="block w-full px-4 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
         >
           Ver comprobante de ingreso
-        </a>
+        </button>
 
         {payment.comprobanteValidacionUrl ? (
           <button
             type="button"
-            onClick={() => setViewingPaymentId(payment.id)}
+            onClick={() => { setViewingReceiptKind('validation'); setViewingPaymentId(payment.id); }}
             className="block w-full border-t border-slate-100 px-4 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
           >
             Ver comprobante de validación
@@ -409,7 +424,7 @@ export function PaymentsTable({
                 : openReviewDrawer(payment.id)
             }
             className="
-  flex-1
+  whitespace-nowrap
   inline-flex
   h-9
   items-center
@@ -437,7 +452,7 @@ export function PaymentsTable({
             type="button"
             onClick={() => onEditPayment?.(payment.id)}
             className="
-  flex-1
+  whitespace-nowrap
   inline-flex
   h-9
   items-center
@@ -455,7 +470,7 @@ export function PaymentsTable({
   hover:-translate-y-0.5
 "
           >
-            Editar pago
+            {payment.estatus === 'RECHAZADA' ? 'Corregir pago' : 'Editar pago'}
           </button>
         )}
 
@@ -464,7 +479,7 @@ export function PaymentsTable({
             type="button"
             onClick={() => handleNotifyPaymentStatus(payment)}
             className="
-  flex-1
+  whitespace-nowrap
   inline-flex
   items-center
   justify-center
@@ -494,9 +509,9 @@ export function PaymentsTable({
   }
 
   function paymentActions(payment: OperationPaymentResponse): ReactNode {
-    return <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
-      <a href={payment.comprobanteUrl} target="_blank" rel="noreferrer"
-        className="inline-flex min-h-9 items-center rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50">Ver</a>
+    // Acción principal visible; los comprobantes y los datos viven en el menú ⋯.
+    return <div className="flex min-w-0 items-center justify-end gap-2">
+      {renderRowActions(payment)}
       <RowActionsMenu triggerLabel="" ariaLabel="Más opciones" triggerClassName="min-w-9 justify-center px-2">
         {renderViewOptions(payment)}
         <button type="button" onClick={() => void handleCopyPaymentData(payment)}
@@ -509,7 +524,6 @@ export function PaymentsTable({
           {payment.observaciones && <p className="break-words">{payment.observaciones}</p>}
         </div>
       </RowActionsMenu>
-      <div className="flex flex-wrap justify-end gap-1">{renderRowActions(payment)}</div>
     </div>;
   }
 
@@ -595,7 +609,7 @@ export function PaymentsTable({
             { key: 'amount', header: 'Monto', width: '132px', cell: (payment: OperationPaymentResponse) => <span className="font-semibold tabular-nums text-slate-900">{formatCurrency(payment.monto)}</span> },
             { key: 'type', header: 'Tipo', width: '128px', cell: (payment: OperationPaymentResponse) => <span>{paymentTypeLabels[payment.tipoPago]}{payment.tipoPago === 'CHEQUE' && <span className="block text-xs text-slate-500">{payment.chequeEstado ? chequeLabels[payment.chequeEstado] : 'Requiere conciliación'}</span>}</span> },
             { key: 'account', header: 'Cuenta destino', cell: (payment: OperationPaymentResponse) => payment.tipoPago === 'EFECTIVO' ? <span>Caja General<span className="block text-xs text-slate-500">Entrega directa</span></span> : <span className="block min-w-0 truncate" title={`${payment.cuentaDestinoBanco ?? '—'} · ${payment.cuentaDestinoTitular ?? ''}`}>{payment.cuentaDestinoBanco ?? '—'}<span className="block truncate text-xs text-slate-500">{payment.cuentaDestinoTitular}</span></span> },
-            { key: 'date', header: 'Fecha comprobante', width: '132px', cell: (payment: OperationPaymentResponse) => formatDate(payment.fechaComprobante) },
+            { key: 'date', header: 'Fecha comprobante', width: '190px', className: 'whitespace-nowrap', cell: (payment: OperationPaymentResponse) => formatDate(payment.fechaComprobante) },
             { key: 'status', header: 'Estatus', kind: 'status', width: '162px', cell: (payment: OperationPaymentResponse) => <span><PaymentStatusBadge status={payment.estatus} />{payment.validadoPorNombre && <span className="mt-1 block text-xs text-slate-500">por {payment.validadoPorNombre}</span>}</span> },
             { key: 'actions', header: 'Acciones', kind: 'actions', align: 'right', width: '250px', cell: (payment: OperationPaymentResponse) => paymentActions(payment) },
           ] satisfies DataTableColumn<OperationPaymentResponse>[]}
@@ -622,40 +636,43 @@ export function PaymentsTable({
       </div>}
 
       {reviewingPayment ? (
-        <ActionDrawer open eyebrow="Validar pago de ingreso"
-          title={`${formatCurrency(reviewingPayment.monto)} · ${paymentTypeLabels[reviewingPayment.tipoPago]}`}
+        <ActionDrawer open busy={isConfirmingAction}
+          title={`${isRejectAction ? 'Rechazar' : 'Validar'} pago de ingreso · ${paymentTypeLabels[reviewingPayment.tipoPago]}`}
           subtitle={operationId ? `Operación #${operationId}${socioComercialNombre ? ` · Socio: ${socioComercialNombre}` : clienteNombre ? ` · ${clienteNombre}` : ''}` : undefined}
           onClose={() => { if (!isConfirmingAction) closeReviewDrawer(); }}
-          footer={activeAction ? <div className="space-y-2"><div className="flex gap-3">
-            <button type="button" onClick={() => { setActiveAction(isRejectAction ? 'VALIDATE' : 'REJECT'); setRejectReasonError(''); }} disabled={isConfirmingAction}
-              className={`rounded-lg border px-4 py-2 text-sm font-medium disabled:opacity-50 ${!isRejectAction ? 'border-red-300 bg-white text-red-700' : 'border-slate-300 bg-white text-slate-700'}`}>{!isRejectAction ? 'Rechazar' : 'Volver'}</button>
-            <button type="button" onClick={() => void handleConfirmAction()} disabled={isConfirmingAction}
-              className={`min-h-11 flex-1 rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 ${isRejectAction ? 'bg-rose-600' : 'bg-emerald-700'}`}>
+          footer={activeAction ? <div className="space-y-2"><div className="flex flex-wrap gap-3">
+            <Button type="button" variant="neutral" disabled={isConfirmingAction} onClick={closeReviewDrawer}>Cancelar</Button>
+            <Button type="button" variant={isRejectAction ? 'destructive' : 'success'} onClick={() => void handleConfirmAction()} disabled={isConfirmingAction} className="min-w-0 flex-1">
               {!isRejectAction ? 'Validar ingreso' : confirmButtonText}
-            </button>
+            </Button>
           </div>
+          <button type="button" onClick={() => { setActiveAction(isRejectAction ? 'VALIDATE' : 'REJECT'); setRejectReasonError(''); setReviewSubmitError(''); }} disabled={isConfirmingAction}
+            className="min-h-10 w-full rounded-lg px-3 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">{!isRejectAction ? 'Rechazar' : 'Volver a validación'}</button>
           {!isRejectAction && (reviewingPayment.tipoPago === 'TRANSFERENCIA' || reviewingPayment.tipoPago === 'DEPOSITO') && reviewingPayment.estatus === 'PENDIENTE_VALIDACION' && onMarkPaymentInProgress &&
-            <button type="button" disabled={isConfirmingAction} onClick={async () => { try { await onMarkPaymentInProgress(reviewingPayment.id); setReviewingPaymentId(null); resetReviewFormState(); if (initialReviewPaymentId) onInitialReviewHandled?.(); } catch { /* El hook muestra el error. */ } }}
+            <button type="button" disabled={isConfirmingAction} onClick={async () => { try { await onMarkPaymentInProgress(reviewingPayment.id); setReviewingPaymentId(null); resetReviewFormState(); if (initialReviewPaymentId) onInitialReviewHandled?.(); } catch (error) { setReviewSubmitError(getApiErrorMessage(error)); } }}
               className="min-h-10 w-full rounded-lg bg-blue-50 px-3 text-sm font-semibold text-blue-700 hover:bg-blue-100 disabled:opacity-50">Marcar en proceso</button>}
           {!isRejectAction && reviewingPayment.estatus === 'EN_PROCESO' && onReleasePayment &&
-            <button type="button" disabled={isConfirmingAction} onClick={async () => { try { await onReleasePayment(reviewingPayment.id); setReviewingPaymentId(null); resetReviewFormState(); if (initialReviewPaymentId) onInitialReviewHandled?.(); } catch { /* El hook muestra el error. */ } }}
+            <button type="button" disabled={isConfirmingAction} onClick={async () => { try { await onReleasePayment(reviewingPayment.id); setReviewingPaymentId(null); resetReviewFormState(); if (initialReviewPaymentId) onInitialReviewHandled?.(); } catch (error) { setReviewSubmitError(getApiErrorMessage(error)); } }}
               className="min-h-10 w-full rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">Liberar (volver a pendiente)</button>}
           </div> : undefined}>
-            <div className="space-y-5">
+            <div className="space-y-5" onChange={() => { if (reviewSubmitError) setReviewSubmitError(''); }}>
+              <section aria-label="Resumen del ingreso" className="sticky top-0 z-10 space-y-2 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p className="text-sm text-slate-500">Monto del ingreso</p>
+                <p className="text-2xl font-bold tabular-nums text-slate-950">{formatCurrency(reviewingPayment.monto)}</p>
+                {[reviewSubmitError, ...(isRejectAction ? [rejectReasonError] : [cashCountsError, validationReceiptError])].filter(Boolean).map(message => <p key={message} role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{message}</p>)}
+              </section>
               <div>
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold text-slate-700">
                     Comprobante del socio
                   </p>
 
-                  <a
+                  <ReceiptViewerLink
                     href={reviewingPayment.comprobanteUrl}
-                    target="_blank"
-                    rel="noreferrer"
                     className="text-xs font-medium text-blue-600 hover:underline"
                   >
-                    Ver en pestaña nueva
-                  </a>
+                    Ver comprobante
+                  </ReceiptViewerLink>
                 </div>
 
                 <div className={`mt-2 flex items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 ${reviewingPayment.tipoPago === 'EFECTIVO' ? 'h-[150px]' : 'h-[220px]'}`}>
@@ -780,9 +797,7 @@ export function PaymentsTable({
                         dense
                       />
                       <p className={`rounded-lg border px-3 py-2 text-xs font-semibold ${countCents(cashCounts) === Math.round(reviewingPayment.monto * 100) ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>Total contado {currency(countCents(cashCounts) / 100)} · {countCents(cashCounts) === Math.round(reviewingPayment.monto * 100) ? 'cuadra' : 'pendiente de cuadrar'}</p>
-                      {cashCountsError ? (
-                        <p role="alert" className="text-xs font-medium text-rose-600">{cashCountsError}</p>
-                      ) : null}
+
                     </div>
                   ) : null}
 
@@ -790,7 +805,7 @@ export function PaymentsTable({
                     onChange={next => { setValidationReceipt(next); setValidationReceiptError(''); }}
                     dropHint={reviewingPayment.tipoPago === 'EFECTIVO' ? 'Subir comprobante' : 'Sube el movimiento del estado de cuenta'}
                     disabled={isConfirmingAction} />
-                  {validationReceiptError && <p role="alert" className="mt-2 text-sm text-rose-600">{validationReceiptError}</p>}
+
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -890,19 +905,20 @@ export function PaymentsTable({
                     />
                   </div>
 
-                  {rejectReasonError ? (
-                    <p className="text-sm text-rose-600">{rejectReasonError}</p>
-                  ) : null}
+
                 </div>
               )}
             </div>
         </ActionDrawer>
       ) : null}
 
-      {viewingPayment?.comprobanteValidacionUrl ? (
+      {viewingPayment && (viewingReceiptKind === 'income' ? viewingPayment.comprobanteUrl : viewingPayment.comprobanteValidacionUrl) ? (
         <ValidationReceiptViewerModal
-          receiptUrl={viewingPayment.comprobanteValidacionUrl}
+          key={`${viewingPayment.id}-${viewingReceiptKind}`}
+          title={viewingReceiptKind === 'income' ? 'Comprobante de ingreso' : 'Comprobante de validación'}
+          receiptUrl={(viewingReceiptKind === 'income' ? viewingPayment.comprobanteUrl : viewingPayment.comprobanteValidacionUrl)!}
           canReplace={
+            viewingReceiptKind === 'validation' && !!onEditValidationReceipt &&
             viewingPayment.estatus === 'VALIDADA' &&
             canValidatePaymentType(viewingPayment.tipoPago)
           }

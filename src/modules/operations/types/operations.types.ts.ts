@@ -64,8 +64,7 @@ export type OperationActivoFilter = 'ALL' | 'ACTIVE' | 'INACTIVE';
 
 export interface OperationsFilters {
   workQueue?: string;
-  supervisedRole?: 'JEFA_CAJAS' | 'JEFA_CUENTAS' | 'AUXILIAR_CUENTAS' | '';
-  operationId: number;
+  supervisedRole?: 'JEFA_CAJAS' | 'JEFA_CUENTAS' | 'AUXILIAR_CUENTAS' | '';  operationId: number;
   search: string;
   status: OperationStatus | 'ALL';
   dateFilter: OperationDateFilter | '';
@@ -320,6 +319,9 @@ export interface CancelReturnInstallmentRequest {
 }
 
 export interface ReturnInstallment {
+  codigoParaCliente?: boolean | null;
+  fechaCobroBancario?: string | null;
+  fechaPreparacionBancaria?: string | null;
   id: number;
   returnRequestId: number;
   operationId: number;
@@ -420,6 +422,10 @@ export interface MarkCashReturnDeliveredRequest {
 }
 
 export interface ReturnPaymentResponse {
+  cuentaAsignadaEn?: string | null;
+  cuentaOrigenTitular?: string | null;
+  cuentaOrigenNumero?: string | null;
+  retiroEtapa?: string | null;
   id: number;
   operationId: number;
   clientId: number;

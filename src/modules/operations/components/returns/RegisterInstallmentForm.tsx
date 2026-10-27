@@ -1,4 +1,5 @@
-import { useId, useMemo, useState } from 'react';
+import { getApiErrorMessage } from '@/shared/utils/errors';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Button } from '@/shared/components/ui/Button';
 import { ActionDrawerFooter } from '@/shared/components/ui/ActionDrawer';
@@ -12,6 +13,8 @@ import {
 } from '@/modules/operations/utils/return-installment';
 import type { ReturnPaymentResponse } from '../../types/operations.types.ts';
 import { FileUploadField } from './FileUploadField';
+import { CollectionTimeField } from './CollectionTimeField';
+import { formatDateTime } from '@/shared/format';
 
 interface SelectOption {
   id: number;
@@ -35,6 +38,7 @@ interface RegisterInstallmentFormProps {
   isSubmitting: boolean;
   onSubmit: (values: RegisterInstallmentFormValues) => Promise<void>;
   onAmountChange?: (amount: number) => void;
+  onValidationErrors?: (messages: string[]) => void;
   /** Oculta el panel "Solicitud seleccionada" (lo muestra ReturnRequestSummarySection). */
   hideSummary?: boolean;
   compactBankPanel?: boolean;
@@ -53,18 +57,20 @@ export function RegisterInstallmentForm({
   isSubmitting,
   onSubmit,
   onAmountChange,
+  onValidationErrors,
   hideSummary = false,
   compactBankPanel = false,
   onCancel,
 }: RegisterInstallmentFormProps) {
   const formId = useId();
+  const submitting = useRef(false);
+  const [submitError, setSubmitError] = useState('');
   const totals = resolveReturnRequestTotals(returnRequest);
   const esEfectivo = isCashReturnMethod(returnRequest.tipoPago);
   const esRetiroSinTarjeta = returnRequest.tipoPago === 'RETIRO_SIN_TARJETA';
   const requiereCuentaOrigen =
     returnRequest.tipoPago === 'TRANSFERENCIA' ||
-    returnRequest.tipoPago === 'DEPOSITO' ||
-    esRetiroSinTarjeta;
+    returnRequest.tipoPago === 'DEPOSITO';
   const requiereComprobante = !esEfectivo;
   const requiereFechaHora = esEfectivo;
 
@@ -86,7 +92,15 @@ export function RegisterInstallmentForm({
     mode: 'onChange',
   });
 
+  const errorMessages = JSON.stringify([...Object.values(errors).map(error => error?.message).filter((message): message is string => typeof message === 'string'), ...(submitError ? [submitError] : [])]);
+  useEffect(() => {
+    onValidationErrors?.(JSON.parse(errorMessages) as string[]);
+  }, [errorMessages, onValidationErrors]);
+  useEffect(() => () => onValidationErrors?.([]), [onValidationErrors]);
+
   const montoRaw = useWatch({ control, name: 'monto' }) ?? '';
+  const collectionDate = useWatch({ control, name: 'fechaRecoleccion' });
+  const collectionTime = useWatch({ control, name: 'horaRecoleccion' });
   const importe = parseMonto(montoRaw);
   const pendienteDespues = computeBalanceAfterInstallment(totals.montoDisponible, importe);
 
@@ -100,8 +114,16 @@ export function RegisterInstallmentForm({
     return bankAccounts.filter((a) => a.label.toLowerCase().includes(search));
   }, [bankAccounts, accountSearch]);
 
+  async function submitInstallment(values: RegisterInstallmentFormValues) {
+    if (isSubmitting || submitting.current) return;
+    submitting.current = true; setSubmitError('');
+    try { await onSubmit(values); } catch (error) { setSubmitError(getApiErrorMessage(error)); }
+    finally { submitting.current = false; }
+  }
+
   return (
-    <form id={formId} className={compactBankPanel ? 'space-y-5' : 'space-y-6'} onSubmit={handleSubmit(onSubmit)}>
+    <form id={formId} className={compactBankPanel ? 'space-y-5' : 'space-y-6'} onChange={() => { if (submitError) setSubmitError(''); }} onSubmit={handleSubmit(submitInstallment)}>
+      <fieldset disabled={isSubmitting} className="min-w-0 space-y-5">
       {!hideSummary ? (
         <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <h3 className="mb-3 text-sm font-semibold text-slate-900">Solicitud seleccionada</h3>
@@ -143,6 +165,7 @@ export function RegisterInstallmentForm({
           </dl>
         </section>
       ) : null}
+      {esRetiroSinTarjeta && <p className="rounded-xl bg-blue-50 p-3 text-sm text-blue-900">Cuenta asignada por Cuentas: <strong>{returnRequest.cuentaOrigenNombre} ••{returnRequest.cuentaOrigenNumero} · {returnRequest.cuentaOrigenTitular}</strong>. Al preparar esta parcialidad se descuenta del banco y queda en custodia para el cliente, sin ingresar a Caja General.</p>}
 
       <div>
         <label className="mb-2 block text-sm font-medium text-slate-700">
@@ -168,7 +191,7 @@ export function RegisterInstallmentForm({
         />
         {compactBankPanel && <button type="button" onClick={() => { setValue('monto', String(totals.montoDisponible), { shouldValidate: true }); onAmountChange?.(totals.montoDisponible); }} className="absolute right-2 top-1/2 -translate-y-1/2 rounded bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-600">Pagar todo</button>}
         </div>
-        {errors.monto ? (
+        {!onValidationErrors && errors.monto && !(esEfectivo && onAmountChange && importe > totals.montoDisponible) ? (
           <p className="mt-1 text-xs text-red-600">{errors.monto.message}</p>
         ) : !esEfectivo ? (
           <p className={compactBankPanel ? 'mt-1 text-xs text-emerald-700' : 'mt-1 text-xs text-slate-500'}>
@@ -226,7 +249,7 @@ export function RegisterInstallmentForm({
               </div>
             )}
           </div>
-          {errors.cuentaOrigenId ? (
+          {!onValidationErrors && errors.cuentaOrigenId ? (
             <p className="mt-1 text-xs text-red-600">{errors.cuentaOrigenId.message}</p>
           ) : null}
         </div>
@@ -246,26 +269,19 @@ export function RegisterInstallmentForm({
                   !requiereFechaHora || !!value?.trim() || 'La fecha de recolección es obligatoria',
               })}
             />
-            {errors.fechaRecoleccion ? (
+            {!onValidationErrors && errors.fechaRecoleccion ? (
               <p className="mt-1 text-xs text-red-600">{errors.fechaRecoleccion.message}</p>
             ) : null}
           </div>
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Hora de recolección
-            </label>
-            <input
-              type="time"
-              className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
-              {...register('horaRecoleccion', {
-                validate: (value) =>
-                  !requiereFechaHora || !!value?.trim() || 'La hora de recolección es obligatoria',
-              })}
-            />
-            {errors.horaRecoleccion ? (
+            <Controller name="horaRecoleccion" control={control}
+              rules={{ validate: value => !!value?.trim() || 'Indica una hora de 1 a 12 y minutos de 00 a 59' }}
+              render={({ field }) => <CollectionTimeField value={field.value} onChange={field.onChange} onBlur={field.onBlur} disabled={isSubmitting} />} />
+            {!onValidationErrors && errors.horaRecoleccion ? (
               <p className="mt-1 text-xs text-red-600">{errors.horaRecoleccion.message}</p>
             ) : null}
           </div>
+          {collectionDate && collectionTime && <p className="text-sm text-blue-800 md:col-span-2">Recolección: {formatDateTime(`${collectionDate}T${collectionTime}:00`)} · hora de Ciudad de México</p>}
         </div>
       ) : null}
 
@@ -285,7 +301,7 @@ export function RegisterInstallmentForm({
                 'El código de retiro sin tarjeta es obligatorio',
             })}
           />
-          {errors.codigoRetiroSinTarjeta ? (
+          {!onValidationErrors && errors.codigoRetiroSinTarjeta ? (
             <p className="mt-1 text-xs text-red-600">{errors.codigoRetiroSinTarjeta.message}</p>
           ) : null}
         </div>
@@ -315,7 +331,7 @@ export function RegisterInstallmentForm({
               />
             )}
           />
-          {errors.evidenciaImportePreparado ? (
+          {!onValidationErrors && errors.evidenciaImportePreparado ? (
             <p className="mt-1 text-xs text-red-600">
               {errors.evidenciaImportePreparado.message}
             </p>
@@ -349,7 +365,7 @@ export function RegisterInstallmentForm({
               />
             )}
           />
-          {errors.comprobante ? (
+          {!onValidationErrors && errors.comprobante ? (
             <p className="mt-1 text-xs text-red-600">{errors.comprobante.message}</p>
           ) : null}
         </div>
@@ -366,10 +382,11 @@ export function RegisterInstallmentForm({
       </div>}
       {compactBankPanel && !showObservations && <button type="button" onClick={() => setShowObservations(true)} className="text-xs font-semibold text-blue-600">+ Agregar observación</button>}
 
+      </fieldset>
       <ActionDrawerFooter>
-      <div className={compactBankPanel ? 'flex items-center gap-3' : ''}>
-        {compactBankPanel && <Button variant="neutral" type="button" onClick={onCancel} className="h-11 px-4">Cancelar</Button>}
-        <Button variant={compactBankPanel ? 'dark' : 'primary'} type="submit" form={formId} isLoading={isSubmitting} className={compactBankPanel ? 'flex-1 justify-center' : 'w-full justify-center'}>
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        {onCancel && <Button variant="neutral" type="button" disabled={isSubmitting} onClick={onCancel} className="h-11 px-4">Cancelar</Button>}
+        <Button variant="primary" type="submit" form={formId} isLoading={isSubmitting} className="min-w-0 flex-1 justify-center">
           {compactBankPanel ? 'Registrar retorno' : resolveInstallmentSubmitLabel({ totals, importe, esEfectivo })}
         </Button>
       </div>

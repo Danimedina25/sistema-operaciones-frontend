@@ -1,6 +1,8 @@
+import { formErrorMessages } from '../../utils/form-error-messages';
+import { getApiErrorMessage } from '@/shared/utils/errors';
 // EditReturnPaymentForm.tsx
 
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Button } from '@/shared/components/ui/Button';
 import { ActionDrawerFooter } from '@/shared/components/ui/ActionDrawer';
 import { Input } from '@/shared/components/ui/Input';
@@ -37,6 +39,7 @@ export interface EditReturnPaymentFormValues {
 }
 
 interface EditReturnPaymentFormProps {
+    onCancel?: () => void;
     payment: ReturnPaymentResponse;
     clientId: number;
     isSubmitting: boolean;
@@ -80,8 +83,11 @@ export function EditReturnPaymentForm({
     clientId,
     isSubmitting,
     onSubmit,
+    onCancel,
 }: EditReturnPaymentFormProps) {
   const formId = useId();
+  const submitting = useRef(false);
+  const [submitError, setSubmitError] = useState('');
     const [form, setForm] = useState<FormState>(
         () => mapPaymentToForm(payment),
     );
@@ -253,9 +259,12 @@ export function EditReturnPaymentForm({
         e: React.FormEvent<HTMLFormElement>,
     ) {
         e.preventDefault();
+        if (isSubmitting || submitting.current) return;
 
         if (!validate()) return;
 
+        submitting.current = true; setSubmitError('');
+        try {
         await onSubmit({
             id: payment.id,
             operationId: payment.operationId,
@@ -275,6 +284,8 @@ export function EditReturnPaymentForm({
             archivoNominaFile,
             archivoNominaUrl,
         });
+        } catch (error) { setSubmitError(getApiErrorMessage(error)); }
+        finally { submitting.current = false; }
     }
 
     const requiereDatosBancarios =
@@ -284,12 +295,17 @@ export function EditReturnPaymentForm({
     return (
         <form id={formId}
             className="space-y-6"
-            onSubmit={handleSubmit}
+            onSubmit={handleSubmit} onChange={() => { if (submitError) setSubmitError(''); }}
         >
+          <fieldset disabled={isSubmitting} className="min-w-0 space-y-6">
+            <section aria-label="Resumen del retorno" className="sticky top-0 z-10 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-sm text-slate-500">Solicitud #{payment.id} · Operación #{payment.operationId}</p>
+              {[...formErrorMessages(errors), ...(submitError ? [submitError] : [])].map(message => <p key={message} role="alert" className="mt-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{message}</p>)}
+            </section>
             <div className="grid gap-4 lg:grid-cols-2">
                 <div>
                     <label className="mb-2 block text-sm font-medium text-slate-700">
-                        Monto a retornar {clientId}
+                        Monto a retornar
                     </label>
 
                     <Input
@@ -297,7 +313,6 @@ export function EditReturnPaymentForm({
                         inputMode="decimal"
                         placeholder="1,000.00"
                         value={form.monto}
-                        error={errors.monto}
                         onChange={(e) =>
                             updateField(
                                 'monto',
@@ -357,7 +372,6 @@ export function EditReturnPaymentForm({
                                     inputMode="numeric"
                                     maxLength={18}
                                     value={form.cuenta ?? ''}
-                                    error={errors.cuenta}
                                     onFocus={() => setShowAccountOptions(true)}
                                     onBlur={() => {
                                         setTimeout(() => {
@@ -429,7 +443,6 @@ export function EditReturnPaymentForm({
                                 inputMode="numeric"
                                 maxLength={18}
                                 value={form.clabe}
-                                error={errors.clabe}
                                 onChange={(event) =>
                                     updateField('clabe', event.target.value)
                                 }
@@ -439,7 +452,6 @@ export function EditReturnPaymentForm({
                             label="Banco destino"
                             value={form.banco}
                             onChange={bank => updateField('banco', bank)}
-                            fieldError={errors.banco}
                         />
 
                         <div>
@@ -451,7 +463,6 @@ export function EditReturnPaymentForm({
                                 type="text"
                                 placeholder="Nombre del titular"
                                 value={form.titular}
-                                error={errors.titular}
                                 onChange={(event) =>
                                     updateField('titular', event.target.value)
                                 }
@@ -472,7 +483,6 @@ export function EditReturnPaymentForm({
                                 type="text"
                                 placeholder="Nombre completo"
                                 value={form.autorizadoParaRecibirEfectivo1}
-                                error={errors.autorizadoParaRecibirEfectivo1}
                                 onChange={(event) =>
                                     updateField(
                                         'autorizadoParaRecibirEfectivo1',
@@ -565,14 +575,18 @@ export function EditReturnPaymentForm({
                 onRemoveExisting={() => setArchivoNominaUrl(null)}
             />
 
+          </fieldset>
       <ActionDrawerFooter>
+        <div className="flex flex-wrap justify-end gap-3">
+          {onCancel && <Button type="button" variant="neutral" disabled={isSubmitting} onClick={onCancel}>Cancelar</Button>}
             <Button variant="primary"
                 type="submit" form={formId}
                 isLoading={isSubmitting}
-                className="w-full justify-center"
+                className="min-w-0 flex-1 justify-center"
             >
                 Actualizar solicitud
             </Button>
+        </div>
       </ActionDrawerFooter>
         </form>
     );

@@ -9,6 +9,7 @@ import { formatElapsedSince, formatMoney } from '@/shared/format';
 import { cashWorkApi, type WorkTotal } from '@/modules/caja-general/api/cash-work.api';
 import { cajaGeneralApi } from '@/modules/caja-general/api/caja-general.api';
 import { bankWorkApi } from '@/modules/corte/api/bank-work.api';
+import { cashBankDepositsApi } from '@/modules/cash-bank-deposits/api';
 import { getSummary } from '@/modules/comisionessocioscomerciales/api/commercial-partner-commissions.api';
 import { useGerenteDashboardSummary } from '@/modules/gerente/hooks/use-gerente-dashboard-summary';
 import { useStalledOperations } from '@/modules/gerente/hooks/use-stalled-operations';
@@ -61,6 +62,7 @@ export function GerenteDashboard() {
   const cash = useQuery({ queryKey: ['cash-work-summary'], queryFn: cashWorkApi.summary });
   const cashDay = useQuery({ queryKey: ['cash-day-latest'], queryFn: cajaGeneralApi.latest });
   const bank = useQuery({ queryKey: ['bank-work-summary'], queryFn: bankWorkApi.summary });
+  const cashDeposits = useQuery({ queryKey: ['cash-bank-deposits', 'pending-summary'], queryFn: cashBankDepositsApi.summary });
   const stalled = useStalledOperations();
   const oldestStalled = stalled.data?.content[0];
   const todayLabel = new Intl.DateTimeFormat('es-MX', {
@@ -95,6 +97,7 @@ export function GerenteDashboard() {
         <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-4 flex items-center justify-between gap-2"><div className="flex items-center gap-3 font-semibold"><span className="flex size-10 items-center justify-center rounded-xl bg-blue-100 text-blue-700"><Landmark className="size-5" /></span>Cuentas bancarias</div><span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">Jefa + auxiliares</span></div>
           <WorkRow label="Ingresos de operaciones por validar" total={bank.data?.income} />
+          <WorkRow label="Envíos desde Caja a Cuentas por confirmar" total={cashDeposits.data} />
           <WorkRow label="Retiros a Caja en tránsito" total={bank.data?.withdrawalsInTransit} />
           <WorkRow label="Retornos de operaciones por pagar" total={bank.data?.outflow} />
           <Link className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-[#3b6ef5]" to={paths.bankAccounts}><Eye className="size-3.5" />Ver detalle (solo consulta)</Link>

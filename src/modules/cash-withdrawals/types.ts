@@ -24,6 +24,7 @@ export const WITHDRAWAL_STATUSES: Record<WithdrawalStatus, string> = {
 
 export interface BankCashWithdrawal {
   id: number;
+  version: number;
   registradoEn: string;
   bankAccountId: number;
   cuenta: string;
@@ -53,6 +54,7 @@ export interface RegisterWithdrawal {
   referencia: string | null;
   comprobanteUrl: string | null;
 }
+export interface EditWithdrawal extends Omit<RegisterWithdrawal, 'requestId'> { version: number }
 
 export interface ConfirmWithdrawal {
   diaCajaId: number;

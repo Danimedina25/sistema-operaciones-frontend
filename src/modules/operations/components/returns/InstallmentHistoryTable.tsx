@@ -1,3 +1,4 @@
+import { ReceiptViewerLink } from '@/shared/components/ui/ReceiptViewerLink';
 import { Banknote, Camera, Check, FileText } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -22,15 +23,13 @@ function ProofButton({
   icon: LucideIcon;
 }) {
   return (
-    <a
+    <ReceiptViewerLink
       href={href}
-      target="_blank"
-      rel="noreferrer"
       className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1 text-[11px] font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
     >
       <Icon className="h-3 w-3 shrink-0" aria-hidden="true" />
       {label}
-    </a>
+    </ReceiptViewerLink>
   );
 }
 

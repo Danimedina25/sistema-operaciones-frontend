@@ -1,3 +1,4 @@
+import { ReceiptViewerLink } from '@/shared/components/ui/ReceiptViewerLink';
 import {
     CommissionBeneficiaryResponse,
 } from '../types/commercial-partner-commissions.types';
@@ -145,14 +146,7 @@ export function OperationBeneficiariesTable({
                                         <td className="px-4 py-4">
                                             <div className="flex justify-center">
                                                 {canViewProof ? (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            window.open(
-                                                                beneficiary.paymentProofUrl!,
-                                                                '_blank',
-                                                            )
-                                                        }
+                                                    <ReceiptViewerLink href={beneficiary.paymentProofUrl!}
                                                         className="
     inline-flex
     min-h-[40px]
@@ -172,7 +166,7 @@ export function OperationBeneficiariesTable({
   "
                                                     >
                                                         Ver comprobante
-                                                    </button>
+                                                    </ReceiptViewerLink>
                                                 ) : isPaid ? (
                                                     <span className="text-xs text-slate-400">
                                                         Sin comprobante

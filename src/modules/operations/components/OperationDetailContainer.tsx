@@ -1,3 +1,6 @@
+import type { OperationDetailAction } from '@/routes/paths';
+import { useReturnRequestSummary } from '../hooks/returns/use-return-request-summary';
+import { canJefaDeliverInstallment } from '../utils/return-installment';
 import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { OperationDetailView } from '@/modules/operations/components/OperationDetailView';
@@ -7,7 +10,7 @@ import { useRejectPayment } from '../hooks/use-reject-payment';
 import { useUpdateValidationReceipt } from '../hooks/use-update-validation-receipt';
 import { useMarkPaymentInProgress } from '../hooks/use-mark-payment-in-progress';
 import { useAuth } from '@/modules/auth/store/auth.context';
-import { PaymentOperationResponse, ReturnPaymentResponse } from '../types/operations.types.ts';
+import { PaymentOperationResponse, ReturnPaymentResponse, ReturnInstallment } from '../types/operations.types.ts';
 import { useReturnsByOperationId } from '../hooks/returns/use-operation-returns';
 
 interface OperationDetailContainerProps {
@@ -20,7 +23,9 @@ interface OperationDetailContainerProps {
   onManageReturn?: (returnRequest: ReturnPaymentResponse) => void;
   scrollToPayments?: boolean;
   scrollToReturns?: boolean;
-  initialAction?: 'register-payment' | 'request-return' | 'review-payment' | 'manage-return';
+  initialAction?: OperationDetailAction;
+  initialInstallmentId?: number;
+  onDeliverInstallment?: (installment: ReturnInstallment) => void;
   initialTargetId?: number;
   onInitialActionHandled?: () => void;
   onEditPayment: (operation: PaymentOperationResponse, paymentId: number) => void;
@@ -42,6 +47,8 @@ export function OperationDetailContainer({
   scrollToReturns = false,
   initialAction,
   initialTargetId,
+  initialInstallmentId,
+  onDeliverInstallment,
   onInitialActionHandled,
   onEditPayment,
   onEditReturn,
@@ -53,22 +60,31 @@ export function OperationDetailContainer({
   const canViewFinancialDetails = !hasRole(['SOCIO_COMERCIAL', 'JEFA_CUENTAS', 'AUXILIAR_CUENTAS', 'JEFA_CAJAS']);
   const canViewOperationExtras = !hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS', 'JEFA_CAJAS']);
   const canRequestReturn = hasRole(['SOCIO_COMERCIAL']) || hasRole(['ADMIN']);
+  const canRegisterPayment = hasRole(['SOCIO_COMERCIAL', 'ADMIN']);
   // Misma regla que en el listado: rol ADMIN/GERENTE y operación aún pendiente.
   const canDeleteOperation = hasRole(['ADMIN', 'GERENTE']);
 
   const { operation, isLoading, error, fetchOperation } =
     useOperationDetail(operationId);
   const handledInitialAction = useRef(false);
+  useEffect(() => { handledInitialAction.current = false; }, [operationId, initialAction, initialTargetId, initialInstallmentId]);
 
   useEffect(() => {
-    if (!operation || !initialAction || initialAction === 'review-payment' || initialAction === 'manage-return' || handledInitialAction.current) return;
+    if (!operation || !initialAction || initialAction === 'review-payment' || initialAction === 'manage-return' || initialAction === 'deliver-installment' || initialAction === 'confirm-return' || handledInitialAction.current) return;
     handledInitialAction.current = true;
-    if (initialAction === 'register-payment' && operation.saldoPendientePorRegistrar > 0) onAddPayment(operation);
+    if (initialAction === 'register-payment' && canRegisterPayment && operation.saldoPendientePorRegistrar > 0) onAddPayment(operation);
+    if (initialAction === 'review-rejected-payment' && canRegisterPayment) {
+      // El rechazo se corrige sobre el mismo pago; solo el cheque rechazado se sustituye con uno nuevo.
+      const rejected = operation.pagos.filter(payment => payment.estatus === 'RECHAZADA');
+      const correctable = rejected.find(payment => payment.tipoPago !== 'CHEQUE');
+      if (correctable) onEditPayment(operation, correctable.id);
+      else if (rejected.length > 0 && operation.saldoPendientePorRegistrar > 0) onAddPayment(operation);
+    }
     if (initialAction === 'request-return' && canRequestReturn && operation.saldoPendientePorSolicitar > 0) {
       onAddRequestReturnPayment?.(operation, operation.saldoPendientePorSolicitar);
     }
     onInitialActionHandled?.();
-  }, [operation, initialAction, canRequestReturn, onAddPayment, onAddRequestReturnPayment, onInitialActionHandled]);
+  }, [operation, initialAction, canRegisterPayment, canRequestReturn, onAddPayment, onAddRequestReturnPayment, onEditPayment, onInitialActionHandled]);
 
   const {
     data: returns = [],
@@ -76,14 +92,38 @@ export function OperationDetailContainer({
     refetch: refetchReturns,
   } = useReturnsByOperationId(operationId);
 
+  const deliverySummary = useReturnRequestSummary(initialAction === 'deliver-installment' && returns.some(item => item.id === initialTargetId) ? initialTargetId : undefined);
+
   useEffect(() => {
-    if (initialAction !== 'manage-return' || !initialTargetId || !returns.length || handledInitialAction.current) return;
-    const target = returns.find(item => item.id === initialTargetId);
-    if (!target) return;
-    handledInitialAction.current = true;
-    onManageReturn?.(target);
-    onInitialActionHandled?.();
-  }, [initialAction, initialTargetId, returns, onManageReturn, onInitialActionHandled]);
+    if (!operation || isLoadingReturns || handledInitialAction.current) return;
+    if (initialAction === 'manage-return' && initialTargetId) {
+      const target = returns.find(item => item.id === initialTargetId);
+      handledInitialAction.current = true;
+      if (target) {
+        const allowed = hasRole(['ADMIN', 'SOCIO_COMERCIAL']) ||
+          (target.tipoPago === 'EFECTIVO' ? hasRole(['JEFA_CAJAS']) : target.tipoPago === 'RETIRO_SIN_TARJETA' ? hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS']) || (hasRole(['JEFA_CAJAS']) && target.parcialidades?.some(i => !i.codigoParaCliente)) : hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS']));
+        if (allowed) onManageReturn?.(target);
+        else onOpenReturn?.(target);
+      }
+      onInitialActionHandled?.();
+    }
+    if (initialAction === 'confirm-return' && hasRole(['SOCIO_COMERCIAL', 'ADMIN'])) {
+      const target = returns.find(item => item.parcialidades?.some(i => !i.confirmadoPorSocio && i.estatus !== 'CANCELADA' && i.estatus !== 'COMPLETADA' && (i.tipoPago === 'EFECTIVO' || i.tipoPago === 'RETIRO_SIN_TARJETA')));
+      handledInitialAction.current = true;
+      if (target) onManageReturn?.(target);
+      onInitialActionHandled?.();
+    }
+    if (initialAction === 'deliver-installment' && initialTargetId && initialInstallmentId) {
+      if (!returns.some(item => item.id === initialTargetId)) {
+        handledInitialAction.current = true; onInitialActionHandled?.(); return;
+      }
+      if (!deliverySummary.data && !deliverySummary.isError) return;
+      const target = deliverySummary.data?.parcialidades.find(i => i.id === initialInstallmentId && i.operationId === operationId && i.returnRequestId === initialTargetId);
+      handledInitialAction.current = true;
+      if (target && !target.codigoParaCliente && canJefaDeliverInstallment(target, { isJefaCajas: hasRole(['JEFA_CAJAS']), isAdmin: hasRole(['ADMIN']) })) onDeliverInstallment?.(target);
+      onInitialActionHandled?.();
+    }
+  }, [operation, operationId, isLoadingReturns, initialAction, initialTargetId, initialInstallmentId, returns, deliverySummary.data, deliverySummary.isError, onManageReturn, onOpenReturn, onDeliverInstallment, onInitialActionHandled, hasRole]);
 
   const { processingPaymentId: validatingPaymentId, submitValidatePayment } =
     useValidatePayment({

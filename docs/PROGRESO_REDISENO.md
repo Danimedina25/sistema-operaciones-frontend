@@ -34,7 +34,7 @@ Director: se compararon sus 14 frames con `prueba.director@prueba.test` a 1440 p
 | C1 `21:567` | Jefa de Cajas · Corte | Banda de saldo y etapas separadas del corte; encabezado, ancho y orden del libro distintos; tarjetas diarias duplicadas. | Banda, etapas, tabla compacta y espaciado corregidos con cifras del backend. El estado local refleja datos de otro día. |
 | C2 `109:2010` | Jefa de Cajas · Entradas, pagos | Faltaban pestañas con conteos y monto, columnas y acciones del frame; el listado mostraba información técnica. | Estructura, pestañas, tabla y botones corregidos. Fecha de creación de la operación, antigüedad del comprobante, banco y destino de cheque faltan en la respuesta de `/cash-work/income`; pendiente de lectura en fase 2. Se conserva el buscador visible por la regla de interfaz. |
 | C2a `111:1954` | Jefa de Cajas · Validar efectivo | El panel abría sobre el detalle, empezaba con un selector de acción y tenía un conteo más largo. | Abre sobre Entradas con el mismo flujo y permisos, inicia en validación y muestra conteo compacto y botones del frame. El comprobante local es de prueba y difiere de la imagen del frame. |
-| C2a2 `165:2273` | Jefa de Cajas · Validar cheque | El frame permite elegir cobro en efectivo o depósito bancario; el cheque local ya llega asignado a cobro en efectivo y el panel solo permite confirmar ese estado. | Pendiente de reglas y escritura de backend para que Cajas elija destino; se conserva el gestor vigente. Captura «después» documenta el estado aún pendiente. |
+| C2a2 `165:2273` | Jefa de Cajas · Validar cheque | El frame permite elegir cobro en efectivo o depósito bancario; el gestor anterior asignaba el destino desde Cuentas. | Tarea 4: Cajas puede confirmar efectivo con conteo en un paso o enviar el cheque a la cuenta elegida; Cuentas confirma en la bandeja común. Código y pruebas H2 completos; migración aplicada solo en MySQL local y flujo de depósito, confirmación y rechazo comprobado por API. Pendiente repetir la captura en navegador con el flujo real. |
 | C2b `22:654` | Jefa de Cajas · Entradas, retiros bancarios | Resumen duplicado, faltaba beneficiario y los botones no seguían la jerarquía verde/rojo del frame. | Pestaña, tabla, botones y enlace a Corte corregidos. El día abierto de la captura se simuló solo en respuestas de lectura del navegador. |
 | C2c `31:1006` | Jefa de Cajas · Retiros vacíos | Faltaban texto y enlace de retorno al Corte. | Estado vacío y enlace corregidos con datos simulados de lectura; la captura «antes» se tomó después de C2b, que ya había corregido este estado. |
 | C3 `94:2280` | Jefa de Cajas · Salidas, retornos | Faltaban franja de pendientes, avance, estatus visual, columnas y acción principal oscura. | Franja, siete columnas, progreso y acciones corregidos. La API entrega solicitudes, por lo que permanece una fila por solicitud y no por operación como en el ejemplo del frame; no se agrupan pagos ni importes en frontend. |
@@ -143,3 +143,25 @@ El listado general del MCP devolvió solo dos lienzos, pero los otros cinco se p
 ### Director (`177:1214`)
 
 `177:1215` D1 Inicio · `177:2389` D2 Operaciones · `177:2517` D2b Detalle de consulta · `177:2627` D3 Comisiones de consulta · `177:2858` D5 Cuentas y saldos · `177:3222` D7 Clientes · `177:3332` D8 Socios comerciales · `178:1924` D9 Reportes · `178:2165` D12 Bitácora · `179:2079` D10 Usuarios · `179:2431` D10b Eliminar usuario · `180:2255` D11 Configuración · `180:2483` D1b Alertas abiertas · `184:2521` D13 Corte general.
+
+
+### 19 oct 2026 · Retiro sin tarjeta por código para el cliente
+
+Implementado el flujo aprobado: registro por Jefa de Cuentas/Auxiliares de cuenta, código bancario y monto completo/parcial; notificación al Socio; reporte de uso por el Socio y confirmación de cobro bancaria con comprobante, en cualquier orden. Reserva de saldo al registrar, débito único al confirmar Cuentas y liberación manual auditada solo sin uso/cobro. La sección de pendientes lleva al detalle/Retornos; no usa fechas. Cajas mantiene únicamente las entregas históricas. Se reutilizan ActionDrawer, BankAccountCombobox, ReceiptUploadField y Button; no se proporcionó un frame nuevo para este flujo.
+
+Verificación: 302 pruebas backend H2, 612 frontend, build correcto y prueba de concurrencia de reservas. API local actualizada con perfil local/MySQL 127.0.0.1: la bandeja devuelve el folio 47 para Jefa y Auxiliares; Cajas y Socio reciben 403 en la bandeja interna. No se crearon códigos ficticios en operaciones existentes ni se accedió a producción.
+
+
+### Corrección · Mis pendientes de Cuentas
+
+La sección de códigos se había conectado a StaffPendingSummaryCards, pero MyPendingPage devuelve BankPendingSummary directamente para Jefa y Auxiliares. Se movió CardlessPendingSection al resumen que usan esos perfiles, fuera del estado de carga de las otras tarjetas. Pruebas de integración de MyPendingPage con ambos roles verifican sección, folio 47 y enlace a detalle/Retornos. Verificación: 11 pruebas pertinentes y build correctos.
+
+
+### Pendientes de Cuentas · tarjeta única de retornos
+
+Se eliminó la tarjeta independiente de retiros sin tarjeta. BankPendingSummary integra el desglose Transferencias / Retiros sin tarjeta dentro de la tarjeta existente de retornos, conserva los totales canónicos de bank-work sin volver a sumar solicitudes y enlaza a Salidas › Retornos. useCardlessPending mantiene actualizado el desglose y refresca el resumen ante notificaciones. Verificación: cinco pruebas de la página real para Jefa/Auxiliares, mezcla de métodos sin duplicar total y build correctos.
+
+
+### Registro de código · éxito y navegación por saldo pendiente
+
+CardlessCodePanel consulta el resumen actualizado tras registrar y notificar: si montoDisponible es cero, cierra el panel con aviso global de éxito (6 s). Si queda saldo, mantiene abierto el panel y desplaza/enfoca el historial de códigos, respetando la altura del resumen fijo. Los errores de registro no muestran éxito ni cierran; si falla la actualización después del guardado, se informa que ya quedó registrado para evitar reintentos duplicados. Verificación: 13 pruebas de componentes y build correctos.

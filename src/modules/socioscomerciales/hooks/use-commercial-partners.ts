@@ -28,9 +28,13 @@ export function useCommercialPartners({ enabled = true }: { enabled?: boolean } 
     try {
       setIsLoading(true);
 
-      const response = await getCommercialPartners({ size: 200 });
-
-      setCommercialPartners(response.content);
+      const firstPage = await getCommercialPartners({ page: 0, size: 200 });
+      const partners = [...firstPage.content];
+      for (let page = 1; page < firstPage.totalPages; page += 1) {
+        const response = await getCommercialPartners({ page, size: 200 });
+        partners.push(...response.content);
+      }
+      setCommercialPartners(partners);
     } catch (error) {
       toast.error(getApiErrorMessage(error));
     } finally {

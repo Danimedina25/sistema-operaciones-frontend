@@ -1,3 +1,6 @@
+import { useId } from 'react';
+import { ActionDrawerFooter } from '@/shared/components/ui/ActionDrawer';
+import { useFormSubmission } from '@/shared/hooks/use-form-submission';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,6 +14,7 @@ import {
 
 interface ClienteFormProps {
   isSubmitting: boolean;
+  onCancel?: () => void;
   onSubmit: (values: UpdateClienteFormValues) => Promise<void>;
   submitLabel: string;
   initialValues?: {
@@ -21,6 +25,7 @@ interface ClienteFormProps {
 
 export function ClienteForm({
   isSubmitting,
+  onCancel,
   onSubmit,
   submitLabel,
   initialValues,
@@ -65,8 +70,14 @@ export function ClienteForm({
     reset(values);
   };
 
+  const formId = useId();
+  const { submit, busy, submitError } = useFormSubmission(handleFormSubmit, isSubmitting);
+
   return (
-    <form className="space-y-5" onSubmit={handleSubmit(handleFormSubmit)}>
+    <form id={formId} className="space-y-5" onSubmit={handleSubmit(submit)}>
+      {submitError && <p role="alert" className="sticky top-0 z-10 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{submitError}</p>}
+      <fieldset disabled={busy} className="min-w-0 space-y-5">
+
       <div>
         <label className="mb-2 block text-sm font-medium text-slate-700">
           Nombre del cliente
@@ -87,11 +98,15 @@ export function ClienteForm({
         Cliente activo
       </label>
 
-      <div className="flex justify-end pt-2">
-        <Button variant="primary" type="submit" isLoading={isSubmitting}>
+      </fieldset>
+      <ActionDrawerFooter>
+      <div className="flex gap-3 justify-end pt-2">
+        {onCancel && <Button type="button" variant="neutral" disabled={busy} onClick={onCancel}>Cancelar</Button>}
+        <Button variant="primary" type="submit" form={formId} isLoading={busy}>
           {submitLabel}
         </Button>
       </div>
+      </ActionDrawerFooter>
     </form>
   );
 }

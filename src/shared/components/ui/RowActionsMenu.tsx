@@ -1,3 +1,4 @@
+import { useOverlay } from '@/shared/hooks/use-overlay';
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { MoreHorizontal } from 'lucide-react';
@@ -39,6 +40,7 @@ export function RowActionsMenu({
 
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const { zIndex } = useOverlay(isOpen, menuRef, () => setIsOpen(false), { modal: false });
 
   useEffect(() => {
     if (!isOpen) return;
@@ -123,10 +125,11 @@ export function RowActionsMenu({
             ref={menuRef}
             onClick={close}
             className={cn(
-              'fixed z-[9999] w-52 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg',
+              'fixed w-52 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg',
               menuClassName,
             )}
             style={{
+              zIndex,
               top: position?.top ?? -9999,
               left: position?.left ?? -9999,
               transform: position?.openUp ? 'translateY(-100%)' : 'none',

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { getOperationById } from '@/modules/operations/api/operations.api';
 import { getApiErrorMessage } from '@/shared/utils/errors';
@@ -8,13 +8,17 @@ export function useOperationDetail(operationId: number) {
   const [operation, setOperation] = useState<PaymentOperationResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Solo la primera carga de cada operación muestra el esqueleto. Un refresco tras validar o
+  // rechazar conserva la vista: desmontarla reabría paneles iniciados desde la URL.
+  const loadedOperationId = useRef<number | null>(null);
 
   const fetchOperation = useCallback(async () => {
     try {
-      setIsLoading(true);
+      if (loadedOperationId.current !== operationId) setIsLoading(true);
       setError(null);
       const result = await getOperationById(operationId);
       setOperation(result);
+      loadedOperationId.current = operationId;
     } catch (fetchError) {
       const message = getApiErrorMessage(fetchError);
       setError(message);

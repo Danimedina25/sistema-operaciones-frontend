@@ -20,3 +20,30 @@ it('valida el tipo y tamaño, ofrece cámara y permite reemplazar el comprobante
   fireEvent.click(screen.getByRole('button', { name: 'Quitar' }));
   expect(onChange).toHaveBeenLastCalledWith(null);
 });
+
+it('abre el selector desde un botón y mantiene los campos de archivo fuera del scroll y del foco', () => {
+  const onChange = vi.fn();
+  const view = render(<ReceiptUploadField file={null} onChange={onChange} />);
+  const input = document.querySelector<HTMLInputElement>('input[accept=".pdf,.jpg,.jpeg,.png,.webp"]')!;
+  const click = vi.spyOn(input, 'click');
+  const upload = screen.getByRole('button', { name: 'Subir comprobante' });
+  upload.focus();
+  fireEvent.click(upload);
+  expect(click).toHaveBeenCalledOnce();
+  expect(upload).toHaveFocus();
+  for (const field of document.querySelectorAll('input[type="file"]')) {
+    expect(field).toHaveAttribute('hidden');
+    expect(field).not.toHaveClass('sr-only');
+  }
+  const image = new File(['image'], 'foto.png', { type: 'image/png' });
+  fireEvent.change(input, { target: { files: [image] } });
+  expect(onChange).toHaveBeenLastCalledWith(image);
+  view.rerender(<ReceiptUploadField file={image} onChange={onChange} />);
+  const change = screen.getByRole('button', { name: 'Cambiar archivo' });
+  change.focus();
+  fireEvent.click(change);
+  expect(change).toHaveFocus();
+  expect(click).toHaveBeenCalledTimes(2);
+  fireEvent.click(screen.getByRole('button', { name: 'Quitar' }));
+  expect(onChange).toHaveBeenLastCalledWith(null);
+});

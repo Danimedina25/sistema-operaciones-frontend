@@ -1,8 +1,8 @@
 // src/modules/socioscomerciales/pages/CommercialPartnersPage.tsx
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { Modal } from '@/shared/components/ui/Modal';
+import { ActionDrawer, ActionDrawerFooter } from '@/shared/components/ui/ActionDrawer';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { DeleteConfirmationModal } from '@/shared/components/ui/DeleteConfirmationModal';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
@@ -32,6 +32,9 @@ import { useUpdateCommercialPartner } from '../hooks/use-update-commercial-partn
 import { useTableFilters } from '@/shared/hooks/use-table-filters';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { SocioMobileNetworkTabs } from '@/shared/components/layout/SocioMobileNetworkTabs';
+import { configureCommercialPartnerCommission } from '../api/socioscomerciales.api';
+import { getApiErrorMessage } from '@/shared/utils/errors';
+import toast from 'react-hot-toast';
 
 const initialFilters: CommercialPartnersFiltersType = {
   search: '',
@@ -39,10 +42,14 @@ const initialFilters: CommercialPartnersFiltersType = {
 };
 
 export default function CommercialPartnersPage() {
-  const { hasRole } = useAuth();
+  const { hasRole, user } = useAuth();
   const isSocio = hasRole('SOCIO_COMERCIAL');
+  const canManage = hasRole(['ADMIN', 'GERENTE', 'SOCIO_COMERCIAL']);
+  const canConfigureCommission = hasRole(['ADMIN', 'GERENTE']);
   const { filters, setFilters } = useTableFilters('table-filters:commercial-partners', initialFilters);
 
+  const configurationSubmitting = useRef(false);
+  const [configurationError, setConfigurationError] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const [editingPartner, setEditingPartner] =
@@ -50,6 +57,9 @@ export default function CommercialPartnersPage() {
 
   const [deletingPartner, setDeletingPartner] =
     useState<CommercialPartnerResponse | null>(null);
+  const [configuringPartner, setConfiguringPartner] = useState<CommercialPartnerResponse | null>(null);
+  const [configurationPercent, setConfigurationPercent] = useState('');
+  const [configurationBusy, setConfigurationBusy] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -108,10 +118,10 @@ export default function CommercialPartnersPage() {
 
   return (
     <div className="space-y-3 sm:space-y-6">
-      <PageHeader title="Socios comerciales" className={isSocio ? 'max-sm:hidden' : undefined} actions={<Button type="button" variant="dark" onClick={() => setIsCreateModalOpen(true)}>＋ Nuevo socio comercial</Button>} />
+      <PageHeader title="Socios comerciales" className={isSocio ? 'max-sm:hidden' : undefined} actions={isSocio ? <Button type="button" variant="dark" onClick={() => setIsCreateModalOpen(true)}>＋ Nuevo socio comercial</Button> : undefined} />
 
       {!isSocio && <div className="space-y-3">
-        <p className="flex flex-wrap items-center gap-2 text-sm text-slate-500"><span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-semibold text-violet-700">Nivel 2</span><span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-semibold text-violet-700">Nivel 3</span>Socios de la red que reciben comisión pero no entran al sistema.</p>
+        <p className="text-sm text-slate-500">Los socios secundarios pueden ocupar el nivel 2 o 3 en cada operación y no entran al sistema.</p>
         <p className="rounded-xl bg-blue-50 px-4 py-3 text-sm text-blue-800">Los socios de nivel 1 tienen acceso al sistema y se administran en <a href="/usuarios" className="font-semibold text-blue-600 hover:underline">Administración › Usuarios →</a></p>
       </div>}
 
@@ -129,6 +139,12 @@ export default function CommercialPartnersPage() {
           <CommercialPartnersTable
             commercialPartners={paginatedPartners}
             processingPartnerId={processingPartnerId}
+            canEdit={canManage}
+            canChangeStatus={canManage}
+            canDelete={hasRole('ADMIN')}
+            canConfigureCommission={canConfigureCommission}
+            editableOwnerId={isSocio ? user?.userId : undefined}
+            onConfigureCommission={partner => { setConfigurationError(''); setConfiguringPartner(partner); setConfigurationPercent(partner.commissionConfigured === false ? '' : String(partner.porcentajeComision)); }}
             onEdit={setEditingPartner}
             onActivate={handleActivate}
             onDeactivate={handleDeactivate}
@@ -148,32 +164,33 @@ export default function CommercialPartnersPage() {
 
       {isSocio && <Button type="button" variant="dark" className="fixed bottom-[76px] right-4 z-20 h-12 rounded-full px-5 shadow-xl sm:hidden" onClick={() => setIsCreateModalOpen(true)}>＋ Nuevo socio</Button>}
 
-      <Modal
-        open={isCreateModalOpen}
+      <ActionDrawer
+        open={isCreateModalOpen} busy={isCreating}
         title="Crear socio comercial"
         onClose={() => setIsCreateModalOpen(false)}
       >
         <CreateCommercialPartnerForm
           isSubmitting={isCreating}
+          onCancel={() => setIsCreateModalOpen(false)}
           onSubmit={submitCreateCommercialPartner}
         />
-      </Modal>
+      </ActionDrawer>
 
-      <Modal
-        open={Boolean(editingPartner)}
+      <ActionDrawer
+        open={Boolean(editingPartner)} busy={isUpdating}
         title="Editar socio comercial"
         onClose={() => setEditingPartner(null)}
       >
         {editingPartner ? (
           <CommercialPartnerForm
             isSubmitting={isUpdating}
+          onCancel={() => setEditingPartner(null)}
             submitLabel="Guardar cambios"
             initialValues={{
               nombre: editingPartner.nombre,
               cuentaBancaria: editingPartner.cuentaBancaria,
               banco: editingPartner.banco,
               titularCuenta: editingPartner.titularCuenta,
-              porcentajeComision: editingPartner.porcentajeComision,
               activo: editingPartner.activo,
             }}
             onSubmit={(values) =>
@@ -184,7 +201,33 @@ export default function CommercialPartnersPage() {
             }
           />
         ) : null}
-      </Modal>
+      </ActionDrawer>
+
+      <ActionDrawer open={Boolean(configuringPartner)} busy={configurationBusy} title="Configurar comisión" onClose={() => setConfiguringPartner(null)}>
+        {configuringPartner && <form id="partner-commission-settings" className="space-y-4" onSubmit={async event => {
+          event.preventDefault();
+          if (configurationSubmitting.current || configurationBusy) return;
+          setConfigurationError('');
+          const percent = Number(configurationPercent);
+          if (!configurationPercent.trim() || !Number.isFinite(percent) || percent < 0 || percent > 100) return;
+          configurationSubmitting.current = true;
+          setConfigurationBusy(true);
+          try {
+            await configureCommercialPartnerCommission(configuringPartner.id, { porcentajeComision: percent });
+            await fetchCommercialPartners();
+            setConfiguringPartner(null);
+            toast.success('Comisión configurada para operaciones nuevas');
+          } catch (error) { setConfigurationError(getApiErrorMessage(error)); }
+          finally { configurationSubmitting.current = false; setConfigurationBusy(false); }
+        }}>
+          {configurationError && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{configurationError}</p>}
+          <p className="text-sm text-slate-600"><strong>{configuringPartner.nombre}</strong> · Registrado por: {configuringPartner.socioComercialNombre}</p>
+          <label className="block text-sm font-medium text-slate-700">Porcentaje de comisión
+            <input disabled={configurationBusy} required type="number" min="0" max="100" step="0.01" value={configurationPercent} onChange={event => setConfigurationPercent(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-300 px-3" /></label>
+          <p className="text-xs text-slate-500">Aplica como valor inicial a operaciones nuevas. No modifica operaciones existentes.</p>
+          <ActionDrawerFooter><div className="flex justify-end gap-3"><Button type="button" variant="neutral" disabled={configurationBusy} onClick={() => setConfiguringPartner(null)}>Cancelar</Button><Button form="partner-commission-settings" type="submit" variant="primary" isLoading={configurationBusy}>Guardar configuración</Button></div></ActionDrawerFooter>
+        </form>}
+      </ActionDrawer>
 
       <DeleteConfirmationModal
         open={Boolean(deletingPartner)}

@@ -9,7 +9,7 @@ export function AppProviders({ children }: { children?: ReactNode }) {
     <AuthProvider>
       {children}
       <RouterProvider router={router} />
-      <Toaster position="top-right" />
+      <Toaster position="bottom-left" />
     </AuthProvider>
   );
 }

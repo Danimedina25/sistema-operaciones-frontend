@@ -41,17 +41,20 @@ export function parseExcelAmount(value: string | number): string {
   else return '';
   return parseExcelAmount(Number(normalized));
 }
+export const CASH_AMOUNT_ERROR = 'El monto en efectivo debe ser múltiplo de $0.50 para completar el desglose de denominaciones.';
+
 export function validateReturnDraft(pago: Partial<PaymentDraft>): DraftErrors {
   const errors: DraftErrors = {};
   const amount = Number(pago.monto?.replace(/,/g, ''));
   if (!Number.isFinite(amount) || amount <= 0) errors.monto = 'El monto debe ser mayor a cero';
+  else if (pago.tipoPago === 'EFECTIVO' && !Number.isInteger(amount * 2)) errors.monto = CASH_AMOUNT_ERROR;
   if (!pago.tipoPago) errors.tipoPago = 'El tipo de retorno es obligatorio';
   if (pago.tipoPago === 'TRANSFERENCIA' || pago.tipoPago === 'DEPOSITO') {
     if (!pago.banco?.trim()) errors.banco = 'El banco destino es obligatorio';
     if (!pago.titular?.trim()) errors.titular = 'El titular de la cuenta es obligatorio';
     Object.assign(errors, validateDestinationAccountIdentifiers(pago.cuenta, pago.clabe));
   }
-  if ((pago.tipoPago === 'EFECTIVO' || pago.tipoPago === 'RETIRO_SIN_TARJETA') && ![pago.autorizadoParaRecibirEfectivo1, pago.autorizadoParaRecibirEfectivo2, pago.autorizadoParaRecibirEfectivo3].some(v => v?.trim())) errors.autorizadoParaRecibirEfectivo1 = 'Debes capturar al menos una persona autorizada para recibir efectivo';
+  if (pago.tipoPago === 'EFECTIVO' && ![pago.autorizadoParaRecibirEfectivo1, pago.autorizadoParaRecibirEfectivo2, pago.autorizadoParaRecibirEfectivo3].some(v => v?.trim())) errors.autorizadoParaRecibirEfectivo1 = 'Debes capturar al menos una persona autorizada para recibir efectivo';
   return errors;
 }
 export function extractPayments(sheet: ExcelSheet, header: number, mapping: ColumnMapping) {
@@ -84,7 +87,7 @@ export function extractPayments(sheet: ExcelSheet, header: number, mapping: Colu
         }
       }
     }
-    if (draft.tipoPago === 'EFECTIVO' || draft.tipoPago === 'RETIRO_SIN_TARJETA') {
+    if (draft.tipoPago === 'EFECTIVO') {
       for (const field of ['banco', 'titular', 'cuenta', 'clabe'] as const) { draft[field] = ''; delete issues[field]; }
     } else if (draft.tipoPago === 'TRANSFERENCIA') {
       for (const field of ['autorizadoParaRecibirEfectivo1', 'autorizadoParaRecibirEfectivo2', 'autorizadoParaRecibirEfectivo3'] as const) { draft[field] = ''; delete issues[field]; }

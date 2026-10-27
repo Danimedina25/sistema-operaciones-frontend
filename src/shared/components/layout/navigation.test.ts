@@ -10,7 +10,7 @@ function labels(entries: NavEntry[]): string[] {
 describe('navegación por rol', () => {
   it.each<[RoleName, string[]]>([
     ['SOCIO_COMERCIAL', ['Mis pendientes', 'Operaciones', 'Mi red (Clientes, Socios comerciales)', 'Mis comisiones']],
-    ['JEFA_CAJAS', ['Mis pendientes', 'Caja (Corte, Entradas de efectivo, Salidas de efectivo, Abrir/Cerrar caja)', 'Operaciones']],
+    ['JEFA_CAJAS', ['Mis pendientes', 'Caja (Corte, Entradas de efectivo, Salidas de efectivo, Cheques enviados a banco, Abrir/Cerrar caja)', 'Operaciones']],
     ['JEFA_CUENTAS', ['Mis pendientes', 'Cuentas (Cuentas bancarias y saldos, Cortes y movimientos, Entradas bancarias, Salidas bancarias, Transferir entre cuentas)', 'Operaciones']],
     ['AUXILIAR_CUENTAS', ['Mis pendientes', 'Cuentas (Cuentas bancarias y saldos, Cortes y movimientos, Entradas bancarias, Salidas bancarias)', 'Operaciones']],
     ['GERENTE', ['Inicio', 'Operaciones', 'Comisiones', 'Dinero (Corte general, Cuentas bancarias y saldos)', 'Catálogos (Clientes, Socios comerciales)', 'Administración (Usuarios, Configuración)']],
@@ -43,5 +43,6 @@ describe('navegación por rol', () => {
     expect(group.children.find(child => child.label === 'Corte')?.to).toBe('/caja-general');
     expect(group.children.find(child => child.label === 'Entradas de efectivo')?.to).toBe('/caja/entradas');
     expect(group.children.find(child => child.label === 'Salidas de efectivo')?.to).toBe('/caja/salidas');
+    expect(group.children.find(child => child.label === 'Cheques enviados a banco')?.to).toBe('/caja/cheques-enviados');
   });
 });

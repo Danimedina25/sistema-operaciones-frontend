@@ -1,57 +1,52 @@
-import type { ReactNode } from 'react';
+import { useId, useRef, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { OverlayParentContext, useOverlay } from '@/shared/hooks/use-overlay';
 import { X } from 'lucide-react';
+import { overlayStyles } from './overlay-styles';
 
 interface ModalProps {
   open: boolean;
   title: string;
   onClose: () => void;
   children: ReactNode;
+  /** Compatibilidad con pantallas existentes: ambas variantes usan la misma base visual. */
   variant?: 'default' | 'light';
   subtitle?: ReactNode;
   icon?: ReactNode;
   footer?: ReactNode;
+  size?: 'compact' | 'default' | 'wide';
+  busy?: boolean;
 }
 
-export function Modal({ open, title, onClose, children, variant = 'default', subtitle, icon, footer }: ModalProps) {
+const sizes = { compact: 'sm:max-w-[480px]', default: 'sm:max-w-[820px]', wide: 'sm:max-w-[1360px]' };
+
+export function Modal({ open, title, onClose, children, subtitle, icon, footer, size = 'default', busy = false }: ModalProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  const subtitleId = useId();
+  const close = () => { if (!busy) onClose(); };
+  const { overlayId, zIndex } = useOverlay(open, rootRef, close);
   if (!open) return null;
 
-  if (variant === 'light') return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/55 sm:items-center sm:p-6">
-      <div role="dialog" aria-modal="true" aria-labelledby="system-modal-title" className="flex max-h-[100dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:max-h-[92vh] sm:max-w-[820px] sm:rounded-2xl">
-        <div className="flex shrink-0 items-start gap-4 border-b border-slate-100 px-5 py-5 sm:px-7">
-          {icon && <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#3b6ef5]">{icon}</span>}
-          <div className="min-w-0 flex-1"><h2 id="system-modal-title" className="text-xl font-bold text-slate-950">{title}</h2>{subtitle && <p className="mt-1 break-words text-sm text-slate-500">{subtitle}</p>}</div>
-          <button type="button" onClick={onClose} aria-label="Cerrar modal" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50"><X className="h-4 w-4" aria-hidden /></button>
-        </div>
-        <div className="modal-content min-h-0 flex-1 overflow-y-auto overscroll-contain p-5 sm:p-7">{children}</div>
-        {footer && <div className="flex shrink-0 justify-end gap-3 border-t border-slate-100 px-5 py-4 sm:px-7">{footer}</div>}
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 backdrop-blur-sm sm:items-center sm:p-6">
-      <div role="dialog" aria-modal="true" aria-labelledby="system-modal-title" className="flex max-h-[100dvh] w-full max-w-5xl flex-col overflow-hidden rounded-t-2xl border border-white/10 bg-white shadow-2xl shadow-black/30 sm:max-h-[92vh] sm:rounded-[1.75rem]">
-        <div className="relative flex shrink-0 items-center justify-between gap-3 overflow-hidden bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 px-4 py-3 text-white sm:px-7 sm:py-5">
-          <div className="absolute inset-y-0 left-0 w-1 bg-blue-500" />
-          <div>
-            <p className="hidden text-[10px] font-bold uppercase tracking-[0.22em] text-blue-300 sm:block">Sistema de operaciones</p>
-            <h2 id="system-modal-title" className="text-base font-bold tracking-tight text-white sm:mt-1 sm:text-xl">{title}</h2>
+  return createPortal(<OverlayParentContext.Provider value={overlayId}>
+    <div ref={rootRef} tabIndex={-1} style={{ zIndex }} data-overlay-root
+      onClick={event => { if (event.target === event.currentTarget) close(); }}
+      className={`fixed inset-0 flex items-end justify-center sm:items-center sm:p-6 ${overlayStyles.backdrop}`}>
+      <section role="dialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={subtitle ? subtitleId : undefined} aria-busy={busy || undefined}
+        className={`flex max-h-dvh w-full min-w-0 flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:max-h-[92dvh] sm:rounded-2xl ${sizes[size]}`}>
+        <header className={overlayStyles.header}>
+          {icon && <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand">{icon}</span>}
+          <div className="min-w-0 flex-1">
+            <h2 id={titleId} className={overlayStyles.title}>{title}</h2>
+            {subtitle && <p id={subtitleId} className={overlayStyles.subtitle}>{subtitle}</p>}
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar modal"
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-300 transition hover:bg-white/10 hover:text-white sm:h-9 sm:w-9"
-          >
-            <X className="h-4 w-4" aria-hidden="true" />
+          <button type="button" onClick={close} disabled={busy} aria-label="Cerrar modal" className={overlayStyles.close}>
+            <X className="size-4" aria-hidden="true" />
           </button>
-        </div>
-
-        <div className="modal-content min-h-0 flex-1 overflow-y-auto overscroll-contain bg-slate-50/70 p-4 sm:p-7">
-          {children}
-        </div>
-      </div>
+        </header>
+        <div className={`modal-content ${overlayStyles.body} ${size === 'wide' ? 'bg-slate-50/70' : ''}`}>{children}</div>
+        {footer && <footer className={`${overlayStyles.footer} flex flex-wrap justify-end gap-3`}>{footer}</footer>}
+      </section>
     </div>
-  );
+  </OverlayParentContext.Provider>, document.body);
 }

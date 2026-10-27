@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { paths } from '@/routes/paths';
+import { paths, type OperationDetailAction } from '@/routes/paths';
 import { Modal } from '@/shared/components/ui/Modal';
 import { ActionDrawer } from '@/shared/components/ui/ActionDrawer';
 import { OperationDetailContainer } from '../components/OperationDetailContainer';
@@ -38,7 +38,6 @@ import {
 import { formatCurrency } from '../utils/operation-formatters';
 import { DeleteConfirmationModal } from '@/shared/components/ui/DeleteConfirmationModal';
 import { useDeleteOperation } from '../hooks/use-delete-operation';
-import BankOutflowPage from '@/modules/corte/pages/BankOutflowPage';
 
 export default function OperationDetailPage() {
   const navigate = useNavigate();
@@ -46,18 +45,22 @@ export default function OperationDetailPage() {
   const queryClient = useQueryClient();
 
   const searchParams = new URLSearchParams(location.search);
+  const [focusReturnsAfterSave, setFocusReturnsAfterSave] = useState(false);
 
+  const requestedAction = searchParams.get('action');
+  const incomeAction = ['register-payment', 'review-payment', 'review-rejected-payment'].includes(requestedAction ?? '');
+  const returnsAction = ['request-return', 'manage-return', 'deliver-installment', 'confirm-return'].includes(requestedAction ?? '');
   const scrollToPayments =
-    Boolean(location.state?.scrollToPayments) ||
-    searchParams.get('scrollToPayments') === 'true';
+    incomeAction || (!focusReturnsAfterSave && (Boolean(location.state?.scrollToPayments) ||
+    searchParams.get('scrollToPayments') === 'true'));
 
   const scrollToReturns =
-    Boolean(location.state?.scrollToReturns) ||
-    searchParams.get('scrollToReturns') === 'true';
-  const requestedAction = searchParams.get('action');
-  const initialAction = requestedAction === 'register-payment' || requestedAction === 'request-return' || requestedAction === 'review-payment' || requestedAction === 'manage-return'
-    ? requestedAction : undefined;
+    !incomeAction && (focusReturnsAfterSave || returnsAction || Boolean(location.state?.scrollToReturns) ||
+    searchParams.get('scrollToReturns') === 'true');
+  const initialAction = ['register-payment', 'request-return', 'review-payment', 'manage-return', 'deliver-installment', 'confirm-return', 'review-rejected-payment'].includes(requestedAction ?? '')
+    ? requestedAction as OperationDetailAction : undefined;
   const initialTargetId = Number(searchParams.get(initialAction === 'review-payment' ? 'paymentId' : 'returnRequestId')) || undefined;
+  const initialInstallmentId = Number(searchParams.get('installmentId')) || undefined;
   const isReturnsForRequestDetail = location.pathname.startsWith(paths.returnsforrequest);
   const isReturnPaymentDetail = location.pathname.startsWith(paths.returnsforpayment);
   const isReturnsRequestedDetail = location.pathname.startsWith(paths.returnsRequested);
@@ -188,8 +191,8 @@ export default function OperationDetailPage() {
   const { isSubmitting: isSubmittingInstallment, submitCreateReturnInstallment } =
     useCreateReturnInstallment({
       onSuccess: async () => {
-        // El modal permanece abierto: el historial y los totales se refrescan
-        // y el formulario se limpia (via key en ReturnPaymentModal).
+        setSelectedReturnRequest(null);
+        setFocusReturnsAfterSave(true);
         await refreshAll();
       },
     });
@@ -198,6 +201,7 @@ export default function OperationDetailPage() {
     useConfirmReturnInstallment({
       onSuccess: async () => {
         setConfirmTarget(null);
+        setFocusReturnsAfterSave(true);
         await refreshAll();
       },
     });
@@ -206,6 +210,7 @@ export default function OperationDetailPage() {
     useDeliverReturnInstallment({
       onSuccess: async () => {
         setDeliverTarget(null);
+        setFocusReturnsAfterSave(true);
         await refreshAll();
       },
     });
@@ -232,7 +237,6 @@ export default function OperationDetailPage() {
   const isAdmin = roles.includes('ADMIN');
   const isJefaCuentas = roles.includes('JEFA_CUENTAS');
   const isAuxiliarCuentas = roles.includes('AUXILIAR_CUENTAS');
-  const backgroundBankOutflow = location.state?.backgroundBankOutflow === true && (isJefaCuentas || isAuxiliarCuentas || isAdmin);
 
   function canConfirmInstallment(i: ReturnInstallment): boolean {
     return canSocioConfirmInstallment(i, { isSocioComercial });
@@ -251,15 +255,16 @@ export default function OperationDetailPage() {
 
   return (
     <>
-      {backgroundBankOutflow && <BankOutflowPage />}
-      <div className={backgroundBankOutflow ? 'hidden' : undefined}>
+      <div>
       <OperationDetailContainer
-        key={refreshKey}
+        key={`${parsedOperationId}-${refreshKey}`}
         operationId={parsedOperationId}
         scrollToPayments={scrollToPayments}
         scrollToReturns={scrollToReturns}
         initialAction={initialAction}
         initialTargetId={initialTargetId}
+        initialInstallmentId={initialInstallmentId}
+        onDeliverInstallment={setDeliverTarget}
         onInitialActionHandled={() => navigate(location.pathname, {
           replace: true,
           state: { ...location.state, scrollToPayments, scrollToReturns },
@@ -272,6 +277,7 @@ export default function OperationDetailPage() {
           navigate(paths.operations);
         }}
         onAddPayment={(operation) => {
+          setFocusReturnsAfterSave(false);
           setSelectedOperation(operation);
           setIsAddPaymentModalOpen(true);
         }}
@@ -285,16 +291,19 @@ export default function OperationDetailPage() {
         onAddRequestReturnPayment={
           canRequestReturn
             ? (operation) => {
+                setFocusReturnsAfterSave(true);
                 setSelectedReturnOperation(operation);
                 setIsAddReturnModalOpen(true);
               }
             : undefined
         }
         onOpenReturn={(returnRequest) => {
+          setFocusReturnsAfterSave(true);
           setReturnModalVariant('view');
           setSelectedReturnRequest(returnRequest);
         }}
         onManageReturn={(returnRequest) => {
+          setFocusReturnsAfterSave(true);
           setReturnModalVariant('manage');
           setSelectedReturnRequest(returnRequest);
         }}
@@ -350,6 +359,7 @@ export default function OperationDetailPage() {
 
       <ActionDrawer
         open={isAddPaymentModalOpen}
+        busy={isSubmittingPayment}
         title="Registrar pago de ingreso"
         onClose={() => {
           setIsAddPaymentModalOpen(false);
@@ -360,6 +370,7 @@ export default function OperationDetailPage() {
           <div className="py-8 text-center text-sm text-slate-500">Cargando formulario...</div>
         ) : (
           <AddOperationPaymentForm
+            onCancel={() => { setIsAddPaymentModalOpen(false); setSelectedOperation(null); }}
             isSubmitting={isSubmittingPayment}
             bankAccounts={bankAccounts}
             montoTotal={selectedOperation.montoTotal}
@@ -372,7 +383,8 @@ export default function OperationDetailPage() {
 
       <ActionDrawer
         open={isEditPaymentModalOpen}
-        title="Editar pago de ingreso"
+        busy={isSubmittingUpdatePayment}
+        title={selectedPayment?.estatus === 'RECHAZADA' ? 'Corregir pago rechazado' : 'Editar pago de ingreso'}
         onClose={() => {
           setIsEditPaymentModalOpen(false);
           setSelectedPayment(null);
@@ -383,6 +395,7 @@ export default function OperationDetailPage() {
           <div className="py-8 text-center text-sm text-slate-500">Cargando formulario...</div>
         ) : (
           <UpdateOperationPaymentForm
+            onCancel={() => { setIsEditPaymentModalOpen(false); setSelectedPayment(null); setSelectedOperation(null); }}
             isSubmitting={isSubmittingUpdatePayment}
             bankAccounts={bankAccounts}
             operation={selectedOperation}
@@ -412,6 +425,7 @@ export default function OperationDetailPage() {
 
       <ActionDrawer
         open={isEditReturnModalOpen}
+        busy={isSubmittingUpdateReturn}
         title="Editar solicitud de retorno"
         onClose={() => {
           setIsEditReturnModalOpen(false);
@@ -422,6 +436,7 @@ export default function OperationDetailPage() {
           <div className="py-8 text-center text-sm text-slate-500">Cargando formulario...</div>
         ) : (
           <EditReturnPaymentForm
+            onCancel={() => { setIsEditReturnModalOpen(false); setSelectedReturnToEdit(null); }}
             payment={selectedReturnToEdit}
             clientId={selectedReturnToEdit?.clientId ?? 0}
             isSubmitting={isSubmittingUpdateReturn}
@@ -431,6 +446,7 @@ export default function OperationDetailPage() {
       </ActionDrawer>
 
       <ReturnPaymentModal
+        onAccountAssigned={async () => { setFocusReturnsAfterSave(true); await refreshAll(); }}
         open={!!selectedReturnRequest}
         variant={returnModalVariant}
         returnRequest={returnRequestFresh}
@@ -452,7 +468,6 @@ export default function OperationDetailPage() {
         }}
         onClose={() => {
           setSelectedReturnRequest(null);
-          if (backgroundBankOutflow) navigate(paths.bankOutflow);
         }}
       />
 
@@ -460,7 +475,7 @@ export default function OperationDetailPage() {
         target={deliverTarget ? installmentToCashDeliveryTarget(deliverTarget) : null}
         isSubmitting={isSubmittingDeliver}
         onConfirm={(installmentId, operationId, comprobante, personaQueRecibioEfectivo, denominaciones) =>
-          void submitDeliverReturnInstallment(
+          submitDeliverReturnInstallment(
             installmentId,
             operationId,
             comprobante,

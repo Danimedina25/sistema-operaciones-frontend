@@ -234,9 +234,9 @@ export const createOperationSchema = z
     pagos: z.array(paymentSchema).min(1, 'Debes registrar al menos un pago'),
   })
   .superRefine((value, ctx) => {
-    const totalPagos = value.pagos.reduce((acc, pago) => acc + pago.monto, 0);
+    const totalPagos = value.pagos.reduce((acc, pago) => acc + Math.round(pago.monto * 100), 0);
 
-    if (totalPagos > value.montoTotal) {
+    if (totalPagos > Math.round(value.montoTotal * 100)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['pagos'],

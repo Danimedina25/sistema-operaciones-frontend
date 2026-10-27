@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { RegisterWithdrawalModal } from './RegisterWithdrawalModal';
 import type { BankAccountResponse } from '@/modules/bank-accounts/types/bank-accounts.types';
@@ -79,4 +79,17 @@ describe('Retiro de efectivo para Caja General', () => {
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
     expect(onSubmit.mock.calls[0][0].monto).toBe(100.5);
   });
+  it('ubica la validación y las acciones en el patrón compartido del panel', async () => {
+    const { onSubmit } = mount();
+    const dialog = screen.getByRole('dialog', { name: 'Retiro de efectivo para Caja General' });
+    const button = within(dialog).getByRole('button', { name: 'Registrar retiro' });
+    expect(dialog.querySelector('footer')).toContainElement(button);
+    fireEvent.click(button);
+    const summary = within(dialog).getByRole('region', { name: 'Resumen del retiro' });
+    expect(await within(summary).findByRole('alert')).toHaveTextContent('Selecciona la cuenta');
+    chooseAccount();
+    expect(within(summary).queryByRole('alert')).not.toBeInTheDocument();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
 });

@@ -9,6 +9,7 @@ import { ReceiptUploadField } from '@/shared/components/ui/ReceiptUploadField';
 import { BankCombobox } from '@/shared/components/ui/BankCombobox';
 import { ClienteCombobox } from '@/shared/components/ui/ClienteCombobox';
 import { formatDate } from '@/shared/utils/weeks';
+import { formatMoney } from '@/shared/format';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import {
   createOperationSchema,
@@ -57,6 +58,7 @@ interface CommercialPartnerOption {
   id: number;
   nombre: string;
   porcentajeComision?: number;
+  commissionConfigured?: boolean;
 }
 
 function parseCurrency(value: unknown) {
@@ -148,6 +150,13 @@ export function CreateOperationForm({
     control,
     name: 'pagos',
   }) ?? [];
+  const montoTotalCapturado = useWatch({ control, name: 'montoTotal' });
+  // Comparaciones de captura en centavos para evitar errores como 0.1 + 0.2.
+  const totalCentavos = Math.round(parseCurrency(montoTotalCapturado) * 100);
+  const registradoCentavos = pagos.reduce((sum, pago) => sum + Math.round(parseCurrency(pago?.monto) * 100), 0);
+  const excesoCentavos = Math.max(0, registradoCentavos - totalCentavos);
+  const pagosCubiertos = totalCentavos > 0 && registradoCentavos >= totalCentavos;
+  const mostrarResumen = totalCentavos > 0 && pagos.some(pago => parseCurrency(pago?.monto) > 0);
 
   useEffect(() => {
     pagos.forEach((pago, index) => {
@@ -188,13 +197,15 @@ export function CreateOperationForm({
 
   const sociosNivel2Disponibles = useMemo(() => {
     return commercialPartners.filter(
-      (partner) => String(partner.id) !== String(socioComercialNivel3Id),
+      (partner) => partner.commissionConfigured === true
+        && String(partner.id) !== String(socioComercialNivel3Id),
     );
   }, [commercialPartners, socioComercialNivel3Id]);
 
   const sociosNivel3Disponibles = useMemo(() => {
     return commercialPartners.filter(
-      (partner) => String(partner.id) !== String(socioComercialNivel2Id),
+      (partner) => partner.commissionConfigured === true
+        && String(partner.id) !== String(socioComercialNivel2Id),
     );
   }, [commercialPartners, socioComercialNivel2Id]);
 
@@ -247,6 +258,15 @@ export function CreateOperationForm({
 
   return (
     <form className="space-y-5 max-sm:pb-20" onSubmit={handleSubmit(onSubmit, onInvalid)}>
+      {mostrarResumen && <aside aria-label="Resumen de pagos de ingreso" className={`sticky top-0 z-10 rounded-2xl border bg-white p-3 shadow-lg sm:p-4 ${excesoCentavos ? 'border-red-300' : 'border-slate-200'}`}>
+        <dl className="grid grid-cols-3 gap-2 text-xs sm:gap-4 sm:text-sm">
+          <div className="rounded-xl bg-blue-50 p-2 text-blue-800"><dt>Monto total</dt><dd className="mt-1 font-bold">{formatMoney(totalCentavos / 100)}</dd></div>
+          <div className="rounded-xl bg-emerald-50 p-2 text-emerald-800"><dt>Registrado en pagos</dt><dd className="mt-1 font-bold">{formatMoney(registradoCentavos / 100)}</dd></div>
+          <div className="rounded-xl bg-amber-50 p-2 text-amber-900"><dt>Falta por cubrir</dt><dd className="mt-1 font-bold">{formatMoney(Math.max(0, totalCentavos - registradoCentavos) / 100)}</dd></div>
+        </dl>
+        <div aria-live="polite">{excesoCentavos > 0 ? <p role="alert" className="mt-2 text-sm font-semibold text-red-700">Los pagos exceden el monto total por {formatMoney(excesoCentavos / 100)}. Corrige los montos para continuar.</p>
+          : pagosCubiertos ? <p className="mt-2 text-sm font-medium text-emerald-800">Monto total cubierto. No necesitas agregar más pagos.</p> : null}</div>
+      </aside>}
       <div className="mt-6 rounded-2xl border border-slate-200 p-4 sm:p-5 max-sm:mt-0 max-sm:border-0 max-sm:p-0">
         <div className="grid gap-5 md:grid-cols-2 max-sm:rounded-2xl max-sm:border max-sm:border-slate-200 max-sm:bg-white max-sm:p-4 max-sm:shadow-sm">
           <h3 className="text-base font-semibold text-slate-900 md:col-span-2"><span className="mr-2 hidden size-6 items-center justify-center rounded-full bg-slate-950 text-xs text-white max-sm:inline-flex">1</span><span className="max-sm:hidden">Datos generales de la operación</span><span className="hidden max-sm:inline">Cliente y monto</span></h3>
@@ -403,6 +423,8 @@ export function CreateOperationForm({
           )}
         </div>
 
+        {nivelesRedComercial >= 2 && commercialPartners.some(partner => partner.commissionConfigured === false) &&
+          <p className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">Los socios con comisión pendiente no se pueden seleccionar. Gerencia debe configurarla primero.</p>}
         {nivelesRedComercial >= 2 && (
             <div className="mt-5">
               <label className="mb-2 block text-sm font-medium text-slate-700">
@@ -413,6 +435,7 @@ export function CreateOperationForm({
                 className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-900"
                 {...register('socioComercialNivel2Id', {
                   onChange: (e) => {
+                    setValue('socioComercialNivel3Id', undefined, { shouldValidate: true, shouldDirty: true });
                     const partner = commercialPartners.find(
                       (p) => String(p.id) === e.target.value,
                     );
@@ -860,7 +883,9 @@ export function CreateOperationForm({
 
       <button
         type="button"
+        disabled={pagosCubiertos}
         onClick={() => {
+          if (pagosCubiertos) return;
           append({
             monto: '',
             tipoPago: '',
@@ -872,7 +897,7 @@ export function CreateOperationForm({
 
           void trigger('pagos');
         }}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <Plus className="h-4 w-4" />
         Agregar otro pago
@@ -880,7 +905,7 @@ export function CreateOperationForm({
       </section>
       {!canAssignLevelOne && <details className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm"><summary className="cursor-pointer text-sm font-semibold text-slate-900">Observaciones <span className="float-right text-blue-600">+ Agregar</span></summary>{operationNotesField}</details>}
       <div className="flex flex-wrap justify-end gap-3 border-t border-slate-200 pt-5 max-sm:fixed max-sm:bottom-[64px] max-sm:left-0 max-sm:right-0 max-sm:z-20 max-sm:bg-white max-sm:px-4 max-sm:py-3">
-        <Button variant={canAssignLevelOne ? 'primary' : 'dark'} className="max-sm:w-full" type="submit" isLoading={isSubmitting} disabled={Boolean(errors.pagos?.message)}>
+        <Button variant={canAssignLevelOne ? 'primary' : 'dark'} className="max-sm:w-full" type="submit" isLoading={isSubmitting} disabled={excesoCentavos > 0 || Boolean(errors.pagos?.message)}>
           Registrar operación
         </Button>
       </div>

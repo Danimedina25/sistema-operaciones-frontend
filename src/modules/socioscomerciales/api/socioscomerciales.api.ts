@@ -1,7 +1,7 @@
 // src/modules/socioscomerciales/api/socioscomerciales.api.ts
 
 import { api } from '@/shared/lib/axios';
-import { CommercialPartnersPageResponse, CommercialPartnerListApiResponse, CommercialPartnerResponse, CommercialPartnerApiResponse, CreateCommercialPartnerRequest, UpdateCommercialPartnerRequest } from '../types/socioscomerciales.types';
+import { CommercialPartnersPageResponse, CommercialPartnerListApiResponse, CommercialPartnerResponse, CommercialPartnerApiResponse, CreateCommercialPartnerRequest, UpdateCommercialPartnerRequest, type ConfigureCommercialPartnerCommissionRequest } from '../types/socioscomerciales.types';
 
 
 
@@ -60,6 +60,11 @@ export async function updateCommercialPartner(
     payload,
   );
 
+  return response.data.data;
+}
+
+export async function configureCommercialPartnerCommission(id: number, payload: ConfigureCommercialPartnerCommissionRequest): Promise<CommercialPartnerResponse> {
+  const response = await api.put<CommercialPartnerApiResponse>(`${COMMERCIAL_PARTNERS_BASE_PATH}/${id}/commission`, payload);
   return response.data.data;
 }
 

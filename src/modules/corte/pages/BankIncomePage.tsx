@@ -1,6 +1,6 @@
 import { useDeferredValue, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
@@ -10,30 +10,31 @@ import { Button } from '@/shared/components/ui/Button';
 import { QueryState } from '@/shared/components/ui/QueryState';
 import { Pagination } from '@/shared/components/ui/Pagination';
 import { formatElapsedSince, formatMoney } from '@/shared/format';
-import { buildOperationDetailPath } from '@/routes/paths';
-import { ChequeManager } from '@/modules/cheques/ChequeManager';
-import { IncomePaymentReview } from '@/modules/operations/components/IncomePaymentReview';
-import { Check, Clock3, ExternalLink, ReceiptText } from 'lucide-react';
+import { buildOperationActionPath, buildOperationDetailPath } from '@/routes/paths';
+import { Check, Clock3, ExternalLink, Landmark, ReceiptText } from 'lucide-react';
 import { bankWorkApi, type BankIncomeRow } from '../api/bank-work.api';
+import { Tabs } from '@/shared/components/ui/Tabs';
+import { CashBankDepositIncome } from '@/modules/cash-bank-deposits/CashBankDepositIncome';
+import { cashBankDepositsApi } from '@/modules/cash-bank-deposits/api';
 
 const methodLabel = (method: BankIncomeRow['tipoPago']) => ({ TRANSFERENCIA: 'Transferencia', DEPOSITO: 'Depósito', CHEQUE: 'Cheque' })[method];
 
 export default function BankIncomePage() {
-  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { hasRole } = useAuth();
   const canReview = hasRole(['JEFA_CUENTAS', 'AUXILIAR_CUENTAS', 'ADMIN']);
   const [search, setSearch] = useState('');
   const [method, setMethod] = useState('');
   const [page, setPage] = useState(0);
-  const [chequeId, setChequeId] = useState<number | null>(null);
-  const [reviewTarget, setReviewTarget] = useState<{ operationId: number; paymentId: number } | null>(null);
+  const view = searchParams.get('view') === 'deposits' ? 'deposits' : 'payments';
+  const setView = (next: 'payments' | 'deposits') =>
+    setSearchParams(next === 'deposits' ? { view: 'deposits' } : {});
   const deferredSearch = useDeferredValue(search);
-  const query = useQuery({ queryKey: ['bank-work', 'income', page, deferredSearch, method], queryFn: () => bankWorkApi.income(page, deferredSearch, method) });
+  const query = useQuery({ queryKey: ['bank-work', 'income', page, deferredSearch, method], queryFn: () => bankWorkApi.income(page, deferredSearch, method), enabled: view === 'payments' });
   const summary = useQuery({ queryKey: ['bank-work', 'summary'], queryFn: bankWorkApi.summary });
-  const review = (row: BankIncomeRow) => {
-    if (row.tipoPago === 'CHEQUE') setChequeId(row.id);
-    else setReviewTarget({ operationId: row.operationId, paymentId: row.id });
-  };
+  const depositsSummary = useQuery({ queryKey: ['cash-bank-deposits', 'pending-summary'], queryFn: cashBankDepositsApi.summary });
+  const review = (row: BankIncomeRow) => navigate(buildOperationActionPath(row.operationId, 'review-payment', { paymentId: row.id }));
   const actions = (row: BankIncomeRow) => <div className="flex items-center justify-end gap-2 whitespace-nowrap">
     <Link to={buildOperationDetailPath(row.operationId)} aria-label={`Ver operación #${row.operationId}`}><Button variant="neutral" className="h-9 gap-1 px-2.5 text-xs"><ExternalLink className="h-3.5 w-3.5" />Ver operación</Button></Link>
     {canReview && <Button variant="success" className="h-9 gap-1 px-2.5 text-xs" onClick={() => review(row)}><Check className="h-3.5 w-3.5" />{row.tipoPago === 'CHEQUE' ? 'Gestionar cheque' : 'Confirmar'}</Button>}
@@ -47,9 +48,20 @@ export default function BankIncomePage() {
     { key: 'amount', header: 'Monto', width: '10%', align: 'right', cell: row => <strong className="whitespace-nowrap tabular-nums text-slate-900">{formatMoney(row.monto)}</strong> },
     { key: 'actions', header: '', kind: 'actions', width: '25%', cell: actions },
   ];
+  const tabBar = <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-5 pt-2 shadow-sm">
+    <Tabs label="Tipo de entrada bancaria" variant="method" value={view} onChange={setView}
+      options={[{ value: 'payments', label: 'Pagos de ingreso de operaciones', count: summary.data?.income.count, icon: <ReceiptText className="h-4 w-4" /> },
+        { value: 'deposits', label: 'Envíos desde Caja General', count: depositsSummary.data?.count, icon: <Landmark className="h-4 w-4" /> }]} />
+    <p className="pb-2 text-sm text-slate-500">{view === 'payments' ? 'Por validar' : 'Por confirmar'} <strong className="ml-2 text-lg tabular-nums text-slate-950">{formatMoney(view === 'payments' ? summary.data?.income.amount : depositsSummary.data?.amount)}</strong></p>
+  </div>;
+  if (view === 'deposits') return <div className="mx-4 space-y-6 pt-2">
+    <PageHeader title="Entradas bancarias" />
+    {tabBar}
+    <CashBankDepositIncome />
+  </div>;
   return <div className="mx-4 space-y-6 pt-2">
     <PageHeader title="Entradas bancarias" />
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-sm"><h2 className="flex items-center gap-2 text-sm font-semibold text-slate-950"><ReceiptText className="h-4 w-4 text-emerald-600" />Pagos de ingreso de operaciones <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-700">{summary.data?.income.count ?? '—'}</span></h2><p className="text-sm text-slate-500">Por validar <strong className="ml-2 text-lg tabular-nums text-slate-950">{formatMoney(summary.data?.income.amount)}</strong></p></div>
+    {tabBar}
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <SearchFilterBar search={search} onSearchChange={value => { setSearch(value); setPage(0); }} searchPlaceholder="Buscar folio, cliente, socio o cuenta"
         activeFilters={method ? [{ key: 'method', label: methodLabel(method as BankIncomeRow['tipoPago']), onRemove: () => { setMethod(''); setPage(0); } }] : []}
@@ -65,10 +77,8 @@ export default function BankIncomePage() {
             { key: 'amount', label: 'Monto', value: row => formatMoney(row.monto) },
           ], actions }} emptyTitle="Sin pagos por validar" emptyDescription="Los pagos bancarios pendientes aparecerán aquí." />
       </QueryState>
-      <p className="border-t border-slate-100 px-4 py-3 text-xs text-slate-500">«Confirmar» abre la validación del pago aquí. «Ver operación» abre su detalle.</p>
+      <p className="border-t border-slate-100 px-4 py-3 text-xs text-slate-500">«Confirmar» abre el detalle de la operación y la validación del pago seleccionado.</p>
       {(query.data?.totalPages ?? 0) > 1 && <div className="border-t border-slate-100 p-3"><Pagination currentPage={page + 1} totalPages={query.data?.totalPages ?? 0} totalElements={query.data?.totalElements ?? 0} isLoading={query.isFetching} onPageChange={value => setPage(value - 1)} /></div>}
     </section>
-    {chequeId !== null && <ChequeManager paymentId={chequeId} onClose={() => setChequeId(null)} onChanged={async () => { await queryClient.invalidateQueries({ queryKey: ['bank-work'] }); }} />}
-    {reviewTarget && <IncomePaymentReview operationId={reviewTarget.operationId} paymentId={reviewTarget.paymentId} workQueryKey="bank-work" onClose={() => setReviewTarget(null)} />}
   </div>;
 }

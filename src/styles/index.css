@@ -84,6 +84,11 @@ body {
   @apply bg-canvas font-sans text-ink antialiased;
 }
 
+/* El panel desplaza solo su área principal; el documento no debe crear otra barra. */
+body:has(#admin-layout) {
+  overflow: hidden;
+}
+
 button {
   @apply cursor-pointer;
 }
@@ -95,10 +100,10 @@ main form label,
   font-weight: 600;
 }
 
-main input:not([type='checkbox']):not([type='radio']):not([type='file']),
+main input:not([type='checkbox']):not([type='radio']):not([type='file']):not(.search-filter-input),
 main select,
 main textarea,
-.modal-content input:not([type='checkbox']):not([type='radio']):not([type='file']),
+.modal-content input:not([type='checkbox']):not([type='radio']):not([type='file']):not(.search-filter-input),
 .modal-content select,
 .modal-content textarea {
   border-color: #cbd5e1;
@@ -109,10 +114,10 @@ main textarea,
   transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
 }
 
-main input:not([type='checkbox']):not([type='radio']):not([type='file']):focus,
+main input:not([type='checkbox']):not([type='radio']):not([type='file']):not(.search-filter-input):focus,
 main select:focus,
 main textarea:focus,
-.modal-content input:not([type='checkbox']):not([type='radio']):not([type='file']):focus,
+.modal-content input:not([type='checkbox']):not([type='radio']):not([type='file']):not(.search-filter-input):focus,
 .modal-content select:focus,
 .modal-content textarea:focus {
   border-color: var(--color-brand);

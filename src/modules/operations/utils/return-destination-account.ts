@@ -1,5 +1,11 @@
 export type DestinationAccountKind = 'CUENTA' | 'TARJETA';
 
+/** Un identificador capturado: 18 dígitos se envían como CLABE. */
+export function splitDestinationAccount(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 18);
+  return digits.length === 18 ? { cuenta: '', clabe: digits } : { cuenta: digits, clabe: '' };
+}
+
 export interface DestinationAccountIdentifierErrors {
   cuenta?: string;
   clabe?: string;

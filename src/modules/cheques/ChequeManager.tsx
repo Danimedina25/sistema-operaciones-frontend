@@ -1,3 +1,4 @@
+import { ReceiptViewerLink } from '@/shared/components/ui/ReceiptViewerLink';
 import { useId, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -6,8 +7,8 @@ import { ActionDrawer, ActionDrawerFooter } from '@/shared/components/ui/ActionD
 import { ReceiptUploadField } from '@/shared/components/ui/ReceiptUploadField';
 import { formatDate, formatDateTime } from '@/shared/format';
 import { cajaGeneralApi } from '@/modules/caja-general/api/caja-general.api';
-import { DenominationFields } from '@/modules/caja-general/components/DenominationFields';
-import { emptyCounts, currency } from '@/modules/caja-general/utils/cash-amounts';
+import { CompactDenominationTables } from '@/modules/caja-general/components/CompactDenominationTables';
+import { countCents, emptyCounts, currency } from '@/modules/caja-general/utils/cash-amounts';
 import { uploadOperationProof } from '@/modules/operations/api/operations-storage.api';
 import { getBankAccounts } from '@/modules/bank-accounts/api/bank-accounts.api';
 import { getApiErrorMessage } from '@/shared/utils/errors';
@@ -65,6 +66,8 @@ function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () =>
   const [reason, setReason] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [counts, setCounts] = useState(emptyCounts);
+  const countedCents = countCents(counts);
+  const countMatches = countedCents === Math.round(cheque.monto * 100);
   const [error, setError] = useState('');
   const [completed, setCompleted] = useState(false);
   // Preserve exactly the same command and idempotency key after an uncertain response.
@@ -121,7 +124,7 @@ function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () =>
 
     <div className="flex flex-wrap gap-4">
       <Link to={buildOperationDetailPath(cheque.operacionId)} className={linkStyle}>Ver operación #{cheque.operacionId}</Link>
-      <a href={cheque.comprobanteUrl} target="_blank" rel="noreferrer" className={linkStyle}>Ver cheque</a>
+      <ReceiptViewerLink href={cheque.comprobanteUrl} className={linkStyle}>Ver cheque</ReceiptViewerLink>
     </div>
 
     {cheque.requiereConciliacion && (
@@ -134,7 +137,7 @@ function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () =>
           <label htmlFor="cheque-action" className={fieldLabel}>Acción <span className="text-rose-600">*</span></label>
           <select id="cheque-action" className={fieldControl} value={action} onChange={e => { setAction(e.target.value as ChequeAction); setError(''); }} required>
             <option value="">Selecciona una acción</option>
-            {allowed.map(a => <option key={a} value={a}>{actionLabels[a]}</option>)}
+            {allowed.map(a => <option key={a} value={a}>{cheque.estado === 'POR_COBRAR' && a === 'CONFIRMAR_COBRO_EFECTIVO' ? 'Se cobró en efectivo' : cheque.estado === 'POR_COBRAR' && a === 'DEPOSITAR' ? 'Se depositará en una cuenta bancaria' : actionLabels[a]}</option>)}
           </select>
         </div>
 
@@ -146,11 +149,11 @@ function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () =>
 
           {['DEPOSITAR', 'COBRAR_BANCO'].includes(action) && <BankAccountSelect value={account} onChange={setAccount} disabled={locked} historicalLabel={cheque.cuentaDestinoEtiqueta} />}
 
-          {action === 'DEPOSITAR' && <p className={noteBanner}>El depósito quedará en compensación y no aumentará el saldo disponible.</p>}
+          {action === 'DEPOSITAR' && <p className={noteBanner}>Cuentas lo confirmará en Entradas bancarias › Envíos desde Caja General cuando se acredite. Este paso no aumenta el saldo bancario ni mueve efectivo de Caja.</p>}
           {action === 'COBRAR_BANCO' && <p className={noteBanner}>Confirma únicamente cuando el banco haya acreditado los recursos.</p>}
-          {action === 'ASIGNAR_COBRO_EFECTIVO' && <p className={noteBanner}>La responsabilidad pasará a la Jefa de Cajas. Esta acción no registra todavía un ingreso.</p>}
+          {action === 'ASIGNAR_COBRO_EFECTIVO' && <p className={noteBanner}>El cheque quedará pendiente de cobro en efectivo. Caja lo registrará con conteo cuando reciba el dinero.</p>}
           {action === 'RETIRAR_COBRO_EFECTIVO' && <p className={noteBanner}>El cheque volverá a Cuentas para decidir un nuevo medio de cobro.</p>}
-          {action === 'DEVOLVER_A_CUENTAS' && <p className={noteBanner}>El intento quedará en el historial y el cheque regresará a Cuentas; todavía podrá depositarse.</p>}
+          {action === 'DEVOLVER_A_CUENTAS' && <p className={noteBanner}>El intento quedará en el historial y el cheque volverá a estar disponible para Cajas.</p>}
 
           {action === 'CONFIRMAR_COBRO_EFECTIVO' && <>
             <p className={noteBanner}>Registra el efectivo recibido en Caja General. No se retirarán fondos de una cuenta propia.</p>
@@ -158,7 +161,10 @@ function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () =>
               : cash.isError ? <p role="alert" className={alertBanner}>No se pudo consultar Caja General. <button type="button" onClick={() => void cash.refetch()} className="font-semibold underline">Reintentar</button></p>
                 : !cash.data || cash.data.closedAt ? <p role="alert" className={alertBanner}>Debes abrir Caja General antes de recibir el efectivo.</p>
                   : <p className="text-sm text-slate-600">Caja abierta: {formatDate(cash.data.fecha)}</p>}
-            <DenominationFields value={counts} onChange={setCounts} disabled={locked} />
+            <CompactDenominationTables value={counts} onChange={setCounts} disabled={locked} dense />
+            <p aria-live="polite" className={`rounded-lg border px-3 py-2 text-xs font-semibold ${countMatches ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
+              Total contado {Number.isFinite(countedCents) ? currency(countedCents / 100) : '—'} · {countMatches ? 'cuadra' : 'pendiente de cuadrar'}
+            </p>
           </>}
 
           {(requiresReason || optionalReason) && (
@@ -183,7 +189,7 @@ function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () =>
         disabled={!action || mutation.isPending || (action === 'CONFIRMAR_COBRO_EFECTIVO' && (cash.isPending || cash.isError || !cash.data || !!cash.data.closedAt))}
         className={`inline-flex h-11 w-full items-center justify-center rounded-xl text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 ${requiresReason ? 'bg-rose-600 hover:bg-rose-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
       >
-        {mutation.isPending ? 'Guardando…' : pendingCommand.current ? 'Reintentar solicitud' : 'Confirmar acción'}
+        {mutation.isPending ? 'Guardando…' : pendingCommand.current ? 'Reintentar solicitud' : action === 'DEPOSITAR' ? 'Validar y enviar a depósito' : action === 'CONFIRMAR_COBRO_EFECTIVO' ? 'Validar con este conteo' : 'Confirmar acción'}
       </button>
       </ActionDrawerFooter>
     </form>}
@@ -203,7 +209,7 @@ function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () =>
               <p className="font-medium text-slate-900">{actionLabels[h.accion as ChequeAction] ?? h.accion.replace(/_/g, ' ').toLocaleLowerCase('es-MX')} · {formatDateTime(h.fecha)}</p>
               <p className="text-xs text-slate-500">{h.usuarioNombre}</p>
               {h.motivo && <p className="mt-1 text-xs text-slate-600">{h.motivo}</p>}
-              {h.comprobanteUrl && <a className={`${linkStyle} mt-1 inline-block`} href={h.comprobanteUrl} target="_blank" rel="noreferrer">Ver comprobante</a>}
+              {h.comprobanteUrl && <ReceiptViewerLink className={`${linkStyle} mt-1 inline-block`} href={h.comprobanteUrl}>Ver comprobante</ReceiptViewerLink>}
             </li>
           ))}
         </ul>

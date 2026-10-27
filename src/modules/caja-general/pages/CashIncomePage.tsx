@@ -1,6 +1,7 @@
+import { resolveCashDayState } from '../utils/cash-dates';
 import { useDeferredValue, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { Tabs } from '@/shared/components/ui/Tabs';
 import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
@@ -14,9 +15,6 @@ import { buildOperationDetailPath } from '@/routes/paths';
 import { cashWorkApi, type CashIncomeRow } from '../api/cash-work.api';
 import { cajaGeneralApi } from '../api/caja-general.api';
 import { PendingWithdrawalsInbox } from '../components/PendingWithdrawalsInbox';
-import { ChequeManager } from '@/modules/cheques/ChequeManager';
-import { IncomePaymentReview } from '@/modules/operations/components/IncomePaymentReview';
-import { officeToday } from '@/shared/utils/period';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { Banknote, Check, ExternalLink, Landmark, ReceiptText } from 'lucide-react';
 
@@ -31,26 +29,22 @@ const columns: DataTableColumn<CashIncomeRow>[] = [
 ];
 
 export default function CashIncomePage() {
-  const { hasRole } = useAuth();
+  const { hasRole, user } = useAuth();
   const canResolve = hasRole(['JEFA_CAJAS', 'ADMIN']);
-  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const section: Section = params.get('tab') === 'withdrawals' ? 'withdrawals' : 'payments';
   const setSection = (value: Section) => setParams(value === 'withdrawals' ? { tab: 'withdrawals' } : {});
   const [search, setSearch] = useState('');
   const [method, setMethod] = useState('');
   const [page, setPage] = useState(0);
-  const [chequeId, setChequeId] = useState<number | null>(null);
-  const [reviewTarget, setReviewTarget] = useState<{ operationId: number; paymentId: number } | null>(null);
   const deferredSearch = useDeferredValue(search);
   const query = useQuery({ queryKey: ['cash-work', 'income', page, deferredSearch, method], queryFn: () => cashWorkApi.income(page, deferredSearch, method), enabled: section === 'payments' });
   const summary = useQuery({ queryKey: ['cash-work', 'summary'], queryFn: cashWorkApi.summary });
-  const latest = useQuery({ queryKey: ['caja-general', 'latest'], queryFn: cajaGeneralApi.latest, enabled: section === 'withdrawals' });
-  const today = officeToday();
-  const openDayId = latest.data?.fecha === today && !latest.data.closedAt ? latest.data.id : null;
+  const latest = useQuery({ queryKey: ['caja-general', user?.userId, 'latest'], queryFn: cajaGeneralApi.latest, enabled: section === 'withdrawals' });
+  const { openDayId, pendingCloseDate } = resolveCashDayState(latest.data);
   const openPayment = (row: CashIncomeRow) => {
-    if (row.tipoPago === 'CHEQUE') setChequeId(row.id);
-    else setReviewTarget({ operationId: row.operationId, paymentId: row.id });
+    navigate(`${buildOperationDetailPath(row.operationId)}?action=review-payment&paymentId=${row.id}&scrollToPayments=true`);
   };
   const actions = (row: CashIncomeRow) => <div className="flex items-center justify-end gap-2 whitespace-nowrap">
     <Link to={buildOperationDetailPath(row.operationId)} aria-label={`Ver operación #${row.operationId}`}><Button variant="neutral" className="h-9 px-3 text-xs"><ExternalLink className="h-3.5 w-3.5" />Ver operación</Button></Link>
@@ -76,9 +70,7 @@ export default function CashIncomePage() {
             ], actions }} emptyTitle="Sin pagos por validar" emptyDescription="Los pagos en efectivo y cheques pendientes aparecerán aquí." />
         </QueryState>
         {(query.data?.totalPages ?? 0) > 1 && <div className="border-t border-slate-100 p-3"><Pagination currentPage={page + 1} totalPages={query.data?.totalPages ?? 0} totalElements={query.data?.totalElements ?? 0} isLoading={query.isFetching} onPageChange={value => setPage(value - 1)} /></div>}
-      </div> : <PendingWithdrawalsInbox canResolve={canResolve} openDayId={openDayId} />}
+      </div> : <PendingWithdrawalsInbox canResolve={canResolve} openDayId={openDayId} pendingCloseDate={pendingCloseDate} />}
     {section === 'payments' && <p className="text-sm text-slate-500">Los pagos ya validados aparecen en el libro de movimientos del <Link to="/caja-general" className="font-semibold text-blue-600 hover:underline">Corte →</Link></p>}
-    {chequeId !== null && <ChequeManager paymentId={chequeId} onClose={() => setChequeId(null)} onChanged={async () => { await queryClient.invalidateQueries({ queryKey: ['cash-work'] }); }} />}
-    {reviewTarget && <IncomePaymentReview operationId={reviewTarget.operationId} paymentId={reviewTarget.paymentId} workQueryKey="cash-work" onClose={() => setReviewTarget(null)} />}
   </div>;
 }

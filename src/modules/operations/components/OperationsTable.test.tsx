@@ -188,8 +188,8 @@ describe('listado compartido de operaciones', () => {
     ['JEFA_CAJAS', ['Ver detalle', 'Validar pagos de ingreso'], ['Registrar pago de ingreso', 'Editar', 'Desactivar', 'Eliminar definitivamente']],
     ['JEFA_CUENTAS', ['Ver detalle', 'Validar pagos de ingreso'], ['Registrar pago de ingreso', 'Editar', 'Desactivar', 'Eliminar definitivamente']],
     ['AUXILIAR_CUENTAS', ['Ver detalle', 'Validar pagos de ingreso'], ['Registrar pago de ingreso', 'Editar', 'Desactivar', 'Eliminar definitivamente']],
-    ['GERENTE', ['Ver detalle', 'Validar pagos de ingreso', 'Registrar pago de ingreso', 'Editar', 'Desactivar', 'Eliminar definitivamente'], []],
-    ['DIRECCION', ['Ver detalle', 'Validar pagos de ingreso', 'Registrar pago de ingreso', 'Editar', 'Desactivar'], ['Eliminar definitivamente']],
+    ['GERENTE', ['Ver detalle', 'Eliminar definitivamente'], ['Validar pagos de ingreso', 'Registrar pago de ingreso', 'Editar', 'Desactivar']],
+    ['DIRECCION', ['Ver detalle'], ['Validar pagos de ingreso', 'Registrar pago de ingreso', 'Editar', 'Desactivar', 'Eliminar definitivamente']],
     ['ADMIN', ['Ver detalle', 'Validar pagos de ingreso', 'Registrar pago de ingreso', 'Editar', 'Desactivar', 'Eliminar definitivamente'], []],
   ])('conserva las acciones del rol %s', async (role, expected, absent) => {
     await renderTableAndOpenMenu([role]);

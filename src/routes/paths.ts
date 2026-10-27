@@ -16,6 +16,7 @@ export const paths = {
   cajaGeneral: '/caja-general',
   cashIncome: '/caja/entradas',
   cashOutflow: '/caja/salidas',
+  cashChequesSent: '/caja/cheques-enviados',
   cheques: '/cheques-por-cobrar',
 
   users: '/usuarios',
@@ -63,3 +64,12 @@ export const buildReturnsForPaymentDetailPath = (
 export const buildReturnsRequestedDetailPath = (
   id: number | string,
 ) => `/retornos-solicitados/${id}`;
+
+export type OperationDetailAction = 'register-payment' | 'request-return' | 'review-payment' | 'manage-return' | 'deliver-installment' | 'confirm-return' | 'review-rejected-payment';
+
+/** Los accesos de trabajo siempre abren la acción sobre el detalle canónico. */
+export function buildOperationActionPath(operationId: number | string, action: OperationDetailAction, target?: { paymentId?: number; returnRequestId?: number; installmentId?: number }) {
+  const params = new URLSearchParams({ action, [action === 'register-payment' || action === 'review-payment' || action === 'review-rejected-payment' ? 'scrollToPayments' : 'scrollToReturns']: 'true' });
+  for (const [key, value] of Object.entries(target ?? {})) if (value !== undefined) params.set(key, String(value));
+  return `${buildOperationDetailPath(operationId)}?${params}`;
+}

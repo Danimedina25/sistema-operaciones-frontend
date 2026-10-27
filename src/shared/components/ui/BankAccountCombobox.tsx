@@ -24,6 +24,8 @@ export interface BankAccountComboboxProps {
   /** Opción vacía, para filtros donde "todas las cuentas" es válido. */
   allowEmpty?: boolean;
   emptyLabel?: string;
+  /** En formularios de pago, buscar otra cuenta invalida la selección anterior. */
+  clearSelectionOnInput?: boolean;
 }
 
 /**
@@ -48,6 +50,7 @@ export function BankAccountCombobox({
   onlyActive = true,
   allowEmpty = false,
   emptyLabel = 'Todas las cuentas',
+  clearSelectionOnInput = false,
 }: BankAccountComboboxProps) {
   const reactId = useId();
   const inputId = `bank-account-${reactId}`;
@@ -176,7 +179,12 @@ export function BankAccountCombobox({
           disabled={disabled}
           placeholder={isLoading ? 'Cargando cuentas…' : placeholder}
           value={displayValue}
-          onChange={event => { setQuery(event.target.value); setOpen(true); setActiveIndex(0); }}
+          onChange={event => {
+            if (clearSelectionOnInput && value !== null) onChange(null);
+            setQuery(event.target.value);
+            setOpen(true);
+            setActiveIndex(0);
+          }}
           onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}
           className={`h-11 w-full rounded-xl border bg-white px-3 text-sm font-normal text-slate-900 shadow-sm outline-none transition disabled:cursor-not-allowed disabled:bg-slate-100 ${

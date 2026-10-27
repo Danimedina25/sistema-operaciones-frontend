@@ -7,6 +7,7 @@ import { Sidebar } from './Sidebar';
 const mocks = vi.hoisted(() => ({
   roles: ['JEFA_CAJAS'] as string[],
   counts: { cashIncome: 3 as number | null, cashOutflow: 2 as number | null, bankIncome: 5 as number | null, commissions: 4 as number | null },
+  cashPendingClose: null as string | null,
   cashOpen: true,
   cashStateKnown: true,
 }));
@@ -15,7 +16,7 @@ vi.mock('@/modules/auth/store/auth.context', () => ({
   useAuth: () => ({ user: { userId: 1, nombre: 'Prueba', roles: mocks.roles }, logout: vi.fn() }),
 }));
 vi.mock('./use-navigation-state', () => ({
-  useNavigationState: () => ({ counts: mocks.counts, cashOpen: mocks.cashOpen, cashStateKnown: mocks.cashStateKnown }),
+  useNavigationState: () => ({ counts: mocks.counts, cashOpen: mocks.cashOpen, cashPendingClose: mocks.cashPendingClose, cashStateKnown: mocks.cashStateKnown }),
 }));
 
 function show(path: string) {
@@ -26,6 +27,7 @@ beforeEach(() => {
   mocks.roles = ['JEFA_CAJAS'];
   mocks.counts = { cashIncome: 3, cashOutflow: 2, bankIncome: 5, commissions: 4 };
   mocks.cashOpen = true;
+  mocks.cashPendingClose = null;
   mocks.cashStateKnown = true;
 });
 
@@ -58,6 +60,15 @@ describe('Sidebar', () => {
     expect(screen.queryByRole('link', { name: 'Entregas de hoy' })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Salidas de efectivo/ })).toHaveTextContent('2');
     expect(screen.queryByRole('link', { name: 'Pendientes del equipo' })).toBeNull();
+  });
+
+  it('marca la caja anterior pendiente de cierre y conserva la acción Cerrar caja', () => {
+    mocks.cashOpen = false;
+    mocks.cashPendingClose = '2026-10-21';
+    show('/caja/entradas');
+    expect(screen.getByRole('button', { name: /Caja.*Pendiente de cierre/ })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Cerrar caja' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Abrir caja' })).not.toBeInTheDocument();
   });
 
   it('muestra Abrir o Cerrar caja según el estado real', () => {

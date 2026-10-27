@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { validateDestinationAccountIdentifiers } from './return-destination-account';
+import { splitDestinationAccount, validateDestinationAccountIdentifiers } from './return-destination-account';
+
+it.each([
+  ['0012345678', { cuenta: '0012345678', clabe: '' }],
+  ['0012345678901234', { cuenta: '0012345678901234', clabe: '' }],
+  ['001234567890123456', { cuenta: '', clabe: '001234567890123456' }],
+])('distribuye el identificador %s sin perder ceros', (value, expected) => {
+  expect(splitDestinationAccount(value)).toEqual(expected);
+});
 
 describe('validateDestinationAccountIdentifiers', () => {
   it('acepta una cuenta o tarjeta válida sin CLABE', () => {

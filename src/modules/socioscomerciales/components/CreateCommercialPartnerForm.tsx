@@ -1,3 +1,6 @@
+import { useId } from 'react';
+import { ActionDrawerFooter } from '@/shared/components/ui/ActionDrawer';
+import { useFormSubmission } from '@/shared/hooks/use-form-submission';
 // src/modules/socioscomerciales/components/CreateCommercialPartnerForm.tsx
 
 import { useForm } from 'react-hook-form';
@@ -16,6 +19,7 @@ import { BankCombobox } from '@/shared/components/ui/BankCombobox';
 
 interface CreateCommercialPartnerFormProps {
   isSubmitting: boolean;
+  onCancel?: () => void;
 
   onSubmit: (
     values: CreateCommercialPartnerFormValues,
@@ -24,6 +28,7 @@ interface CreateCommercialPartnerFormProps {
 
 export function CreateCommercialPartnerForm({
   isSubmitting,
+  onCancel,
   onSubmit,
 }: CreateCommercialPartnerFormProps) {
   const {
@@ -43,7 +48,6 @@ export function CreateCommercialPartnerForm({
       cuentaBancaria: '',
       banco: '',
       titularCuenta: '',
-      porcentajeComision: undefined,
       activo: true,
     },
     mode: 'onBlur',
@@ -51,11 +55,17 @@ export function CreateCommercialPartnerForm({
 
 
 
+  const formId = useId();
+  const { submit, busy, submitError } = useFormSubmission(onSubmit, isSubmitting);
+
   return (
-    <form
+    <form id={formId}
       className="space-y-6"
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={handleSubmit(submit)}
     >
+      {submitError && <p role="alert" className="sticky top-0 z-10 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{submitError}</p>}
+      <fieldset disabled={busy} className="min-w-0 space-y-5">
+
       {/* Datos generales */}
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-5">
@@ -80,6 +90,7 @@ export function CreateCommercialPartnerForm({
             })}
           />
         </div>
+        <p className="mt-4 text-sm text-slate-500">Podrá participar como socio nivel 2 o nivel 3 según la operación. Gerencia configurará su comisión.</p>
       </div>
 
       {/* Datos bancarios */}
@@ -139,33 +150,22 @@ export function CreateCommercialPartnerForm({
             />
           </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Porcentaje de comisión sugerido
-            </label>
-
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              max="100"
-              placeholder="Ej. 5.00"
-              error={errors.porcentajeComision?.message}
-              {...register('porcentajeComision')}
-            />
-            <p className="mt-1 text-xs text-slate-500">Se usará como valor inicial; podrá ajustarse en cada operación.</p>
-          </div>
+          <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">Gerencia configurará la comisión antes de que este socio participe en una operación.</p>
         </div>
       </div>
 
-      <div className="flex justify-end border-t border-slate-200 pt-4">
+      </fieldset>
+      <ActionDrawerFooter>
+      <div className="flex flex-wrap justify-end gap-3">
+        {onCancel && <Button type="button" variant="neutral" disabled={busy} onClick={onCancel}>Cancelar</Button>}
         <Button variant="primary"
-          type="submit"
-          isLoading={isSubmitting}
+          type="submit" form={formId}
+          isLoading={busy}
         >
           Crear socio comercial
         </Button>
       </div>
+      </ActionDrawerFooter>
     </form>
   );
 }

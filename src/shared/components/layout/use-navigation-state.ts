@@ -1,8 +1,10 @@
+import { resolveCashDayState } from '@/modules/caja-general/utils/cash-dates';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { cajaGeneralApi } from '@/modules/caja-general/api/caja-general.api';
 import { cashWorkApi } from '@/modules/caja-general/api/cash-work.api';
 import { bankWorkApi } from '@/modules/corte/api/bank-work.api';
+import { cashBankDepositsApi } from '@/modules/cash-bank-deposits/api';
 import { getSummaryByBeneficiary } from '@/modules/comisionessocioscomerciales/api/commercial-partner-commissions.api';
 import type { RoleName } from '@/modules/auth/types/auth.types';
 
@@ -36,6 +38,18 @@ export function useNavigationState(role: RoleName | undefined) {
     enabled: isBank,
     refetchInterval: 30_000,
   });
+  const bankDeposits = useQuery({
+    queryKey: ['cash-bank-deposits', 'pending-summary'],
+    queryFn: cashBankDepositsApi.summary,
+    enabled: role === 'JEFA_CUENTAS',
+    refetchInterval: 30_000,
+  });
+  const cashReturns = useQuery({
+    queryKey: ['cash-bank-deposits', 'returns'],
+    queryFn: cashBankDepositsApi.returns,
+    enabled: isCash,
+    refetchInterval: 30_000,
+  });
   const commissions = useQuery({
     queryKey: ['navigation', user?.userId, 'commissions', commissionWeek],
     queryFn: () => getSummaryByBeneficiary(commissionWeek),
@@ -52,12 +66,13 @@ export function useNavigationState(role: RoleName | undefined) {
   return {
     counts: {
       cashIncome: cashWork.data?.income.count ?? null,
-      cashOutflow: cashWork.data?.outflow.count ?? null,
-      bankIncome: bankWork.data?.income.count ?? null,
+      cashOutflow: cashWork.data ? cashWork.data.outflow.count + (cashReturns.data?.length ?? 0) : null,
+      bankIncome: bankWork.data ? bankWork.data.income.count + (bankDeposits.data?.count ?? 0) : null,
       bankOutflow: bankWork.data?.outflow.count ?? null,
       commissions: commissions.data?.socios.filter(socio => socio.totalPendientes > 0 && socio.totalComisionesPendientes > 0).length ?? null,
     },
-    cashOpen: cashDay.data ? !cashDay.data.closedAt : false,
+    cashOpen: resolveCashDayState(cashDay.data).openToday,
+    cashPendingClose: resolveCashDayState(cashDay.data).pendingCloseDate,
     cashStateKnown: cashDay.isSuccess,
   };
 }

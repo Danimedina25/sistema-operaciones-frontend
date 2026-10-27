@@ -1,3 +1,4 @@
+import { ReceiptViewerLink } from '@/shared/components/ui/ReceiptViewerLink';
 import { useEffect, useState } from 'react';
 import { MessageCircle } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
@@ -36,7 +37,7 @@ export function CommissionBeneficiariesTable({ beneficiaries, onPayBeneficiary, 
       <Button variant="neutral" className="h-8 px-3 text-xs" onClick={() => onViewDetail(row)}>Ver detalle</Button>
       {canPay ? canManagePayments ? <Button variant="dark" className="h-8 px-3 text-xs" onClick={() => onPayBeneficiary(row)}>Pagar</Button>
         : <span className="text-xs text-slate-400">Pendiente de pago</span>
-        : row.paymentProofUrl ? <Button variant="neutral" onClick={() => window.open(row.paymentProofUrl!, '_blank')}>Ver comprobante</Button>
+        : row.paymentProofUrl ? <ReceiptViewerLink href={row.paymentProofUrl} className="inline-flex h-11 items-center rounded-control border border-slate-300 px-5 text-sm font-semibold text-slate-900">Ver comprobante</ReceiptViewerLink>
           : <span className="text-xs text-slate-400">Sin comprobante</span>}
       {!canPay && row.telefono && <Button variant="neutral" onClick={() => openWhatsApp(buildCommissionPaidMessage({
         monto: row.totalPagadas, publicUrl: window.location.origin + paths.miscomisiones,
