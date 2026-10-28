@@ -85,12 +85,19 @@ export function SocioPendingAccordion() {
     listRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
   }, [listVisit]);
   function openList(panel: Panel) { setOpen(panel); setListVisit(current => current + 1); }
-  // Lo más atrasado primero: el semáforo toma la operación con más tiempo sin cambios.
-  const income = useQuery({ queryKey: ['socio-pending-income-list'], queryFn: () => getMyOperations(0, PAGE_SIZE, filters, { missingIncome: true, sort: OLDEST_FIRST }), enabled });
-  const request = useQuery({ queryKey: ['socio-pending-request-list'], queryFn: () => getOperationsAvailableToRequestReturn(0, PAGE_SIZE, filters, OLDEST_FIRST), enabled });
+  // El listado va de la operación más reciente a la más antigua.
+  const income = useQuery({ queryKey: ['socio-pending-income-list'], queryFn: () => getMyOperations(0, PAGE_SIZE, filters, { missingIncome: true }), enabled });
+  const request = useQuery({ queryKey: ['socio-pending-request-list'], queryFn: () => getOperationsAvailableToRequestReturn(0, PAGE_SIZE, filters), enabled });
   const follow = useQuery({ queryKey: ['socio-pending-follow-list'], queryFn: () => getOperationsWithRequestedReturns(0, PAGE_SIZE, { ...filters, returnStatuses: 'SOLICITADO,EN_RECOLECCION,ENTREGADO,PARCIALMENTE_RETORNADO' }), enabled });
-  const rejected = useQuery({ queryKey: ['socio-pending-rejected-list'], queryFn: () => getMyOperations(0, PAGE_SIZE, { ...filters, paymentStatus: 'RECHAZADA' }, { sort: OLDEST_FIRST }), enabled });
-  const confirmation = useQuery({ queryKey: ['socio-pending-confirm-list'], queryFn: () => getOperationsWithRequestedReturns(0, PAGE_SIZE, { ...filters, returnStatuses: 'EN_RECOLECCION' }, OLDEST_FIRST), enabled });
+  const rejected = useQuery({ queryKey: ['socio-pending-rejected-list'], queryFn: () => getMyOperations(0, PAGE_SIZE, { ...filters, paymentStatus: 'RECHAZADA' }), enabled });
+  const confirmation = useQuery({ queryKey: ['socio-pending-confirm-list'], queryFn: () => getOperationsWithRequestedReturns(0, PAGE_SIZE, { ...filters, returnStatuses: 'EN_RECOLECCION' }), enabled });
+  // El semáforo mide la operación con más tiempo sin cambios: una consulta aparte de un solo registro.
+  const oldest = {
+    income: useQuery({ queryKey: ['socio-pending-income-oldest'], queryFn: () => getMyOperations(0, 1, filters, { missingIncome: true, sort: OLDEST_FIRST }), enabled }),
+    request: useQuery({ queryKey: ['socio-pending-request-oldest'], queryFn: () => getOperationsAvailableToRequestReturn(0, 1, filters, OLDEST_FIRST), enabled }),
+    rejected: useQuery({ queryKey: ['socio-pending-rejected-oldest'], queryFn: () => getMyOperations(0, 1, { ...filters, paymentStatus: 'RECHAZADA' }, { sort: OLDEST_FIRST }), enabled }),
+    confirm: useQuery({ queryKey: ['socio-pending-confirm-oldest'], queryFn: () => getOperationsWithRequestedReturns(0, 1, { ...filters, returnStatuses: 'EN_RECOLECCION' }, OLDEST_FIRST), enabled }),
+  };
   const urgencyOf = usePendingUrgency();
   if (!enabled) return null;
   const error = [income, request, follow, rejected, confirmation].find((query) => query.isError);
@@ -111,8 +118,8 @@ export function SocioPendingAccordion() {
         <div className="flex items-start gap-3"><span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${iconColor}`}><Icon aria-hidden="true" className="h-5 w-5" /></span><h2 className="min-w-0 flex-1 text-base font-semibold leading-5 text-slate-950">{title}</h2></div>
         <p className="mt-5 flex items-baseline gap-2" aria-live="polite"><strong className="text-4xl font-bold tabular-nums text-slate-950">{query.isPending ? '…' : query.isError ? '—' : count(query.data)}</strong><span className="text-sm text-slate-500">{count(query.data) === 1 ? 'operación' : 'operaciones'}</span></p>
         <p className="mt-3 min-h-10 text-sm text-slate-500">{description}</p>
-        <div className="mb-5 mt-3">{query.isSuccess && key !== 'follow' && urgencyOf(count(query.data), oldestUpdate(query.data))
-          ? <PendingUrgencyBadge urgency={urgencyOf(count(query.data), oldestUpdate(query.data))} />
+        <div className="mb-5 mt-3">{query.isSuccess && key !== 'follow' && oldest[key].isSuccess && urgencyOf(count(query.data), oldestUpdate(oldest[key].data))
+          ? <PendingUrgencyBadge urgency={urgencyOf(count(query.data), oldestUpdate(oldest[key].data))} />
           : <StatusBadge tone={query.isError ? 'danger' : key === 'follow' ? 'neutral' : query.isSuccess && count(query.data) === 0 ? 'success' : 'pending'}>{query.isPending ? 'Cargando' : query.isError ? 'No disponible' : key === 'follow' ? count(query.data) === 0 ? 'Sin retornos en seguimiento' : 'Solo seguimiento' : count(query.data) === 0 ? 'Sin pendientes' : 'Requiere atención'}</StatusBadge>}</div>
         <Button variant="dark" className="mt-auto w-full text-xs" disabled={!query.isSuccess} aria-controls="socio-pending-list" aria-expanded={open === key} onClick={() => openList(key)}>{action}<ArrowRight aria-hidden="true" className="h-4 w-4" /></Button>
       </article>)}

@@ -44,7 +44,8 @@ it('muestra tarjetas con contadores del servidor y un único listado, sin filtra
   await userEvent.click(screen.getByRole('button', { name: 'Ver retornos por solicitar' }));
   expect(income).toHaveAttribute('aria-expanded', 'false');
   expect(screen.queryByRole('region', { name: 'Listado de pagos de ingreso por registrar' })).not.toBeInTheDocument();
-  expect(api.getMyOperations).toHaveBeenCalledWith(0, 10, expect.objectContaining({ dateFilter: '', startDate: '', endDate: '', status: 'ALL' }), { missingIncome: true, sort: 'updatedAt,asc' });
+  expect(api.getMyOperations).toHaveBeenCalledWith(0, 10, expect.objectContaining({ dateFilter: '', startDate: '', endDate: '', status: 'ALL' }), { missingIncome: true });
+  expect(api.getMyOperations).toHaveBeenCalledWith(0, 1, expect.objectContaining({ status: 'ALL' }), { missingIncome: true, sort: 'updatedAt,asc' });
 });
 
 it('navega al detalle para registrar el pago', async () => {
@@ -114,7 +115,7 @@ it('lista en comprobantes rechazados las operaciones con algún pago rechazado y
   const rejected = screen.getByRole('button', { name: 'Ver comprobantes rechazados' });
   await waitFor(() => expect(rejected).toBeEnabled());
   expect(within(screen.getByRole('article', { name: 'Comprobantes rechazados' })).getByText('1')).toBeInTheDocument();
-  expect(api.getMyOperations).toHaveBeenCalledWith(0, 10, expect.objectContaining({ status: 'ALL', paymentStatus: 'RECHAZADA' }), { sort: 'updatedAt,asc' });
+  expect(api.getMyOperations).toHaveBeenCalledWith(0, 10, expect.objectContaining({ status: 'ALL', paymentStatus: 'RECHAZADA' }));
   await userEvent.click(rejected);
   await userEvent.click((await screen.findAllByRole('button', { name: 'Revisar' }))[0]);
   expect(screen.getByLabelText('destino')).toHaveTextContent('/operaciones/48?action=review-rejected-payment');
