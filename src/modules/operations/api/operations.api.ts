@@ -151,9 +151,9 @@ export async function getMyOperations(
   pageSize: number,
   filters: OperationsFilters,
   /** Solo operaciones a las que aún les falta registrar pagos de ingreso, sin importar su validación. */
-  options: { missingIncome?: boolean } = {},
+  options: { missingIncome?: boolean; sort?: string } = {},
 ): Promise<PageResponse<PaymentOperationResponse>> {
-  const query = buildOperationsQuery(page, pageSize, filters)
+  const query = buildOperationsQuery(page, pageSize, filters, options.sort)
     + (options.missingIncome ? '&missingIncome=true' : '');
 
   const response = await api.get<OperationsPageApiResponse>(
@@ -327,8 +327,9 @@ export async function getOperationsAvailableToRequestReturn(
   page: number,
   pageSize: number,
   filters: OperationsFilters,
+  sort?: string,
 ): Promise<PageResponse<PaymentOperationResponse>> {
-  const query = buildOperationsQuery(page, pageSize, filters);
+  const query = buildOperationsQuery(page, pageSize, filters, sort);
 
   const response = await api.get<OperationsPageApiResponse>(
     `${RETURNS_BASE_PATH}/available-to-request?${query}`,
@@ -341,8 +342,9 @@ export async function getOperationsWithRequestedReturns(
   page: number,
   pageSize: number,
   filters: OperationsFilters,
+  sort?: string,
 ): Promise<PageResponse<PaymentOperationResponse>> {
-  const query = buildOperationsQuery(page, pageSize, filters);
+  const query = buildOperationsQuery(page, pageSize, filters, sort);
 
   const response = await api.get<OperationsPageApiResponse>(
     `${RETURNS_BASE_PATH}/requested?${query}`,

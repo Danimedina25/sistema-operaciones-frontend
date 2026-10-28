@@ -13,17 +13,19 @@ import { useNavigationState } from './use-navigation-state';
 
 interface SidebarProps { isOpen: boolean; onClose: () => void }
 type Counts = ReturnType<typeof useNavigationState>['counts'];
+type Urgency = ReturnType<typeof useNavigationState>['urgency'];
 
-function GroupBadge({ group, counts }: { group: NavGroup; counts: Counts }) {
+function GroupBadge({ group, counts, urgency }: { group: NavGroup; counts: Counts; urgency: Urgency }) {
   const badgeChildren = group.children.filter(child => child.badge);
   if (!badgeChildren.length || badgeChildren.some(child => counts[child.badge!] === null)) return null;
   const total = badgeChildren.reduce((sum, child) => sum + (counts[child.badge!] ?? 0), 0);
-  return total > 0 ? <Badge count={total} /> : null;
+  return total > 0 ? <Badge count={total} urgent={badgeChildren.some(child => urgency[child.badge!] === 'urgent')} /> : null;
 }
 
-function Badge({ count, active = false }: { count: number; active?: boolean }) {
-  return <span aria-hidden="true" className={cn('inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-full px-[7px] text-xs font-bold',
-    active ? 'bg-white text-brand' : 'bg-warning text-slate-950')}>{count}</span>;
+/** Ámbar = hay trabajo; rojo = algo ya pasó el umbral de urgente. */
+function Badge({ count, active = false, urgent = false }: { count: number; active?: boolean; urgent?: boolean }) {
+  return <span aria-hidden="true" data-urgent={urgent || undefined} className={cn('inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-full px-[7px] text-xs font-bold',
+    active ? urgent ? 'bg-white text-red-600' : 'bg-white text-brand' : urgent ? 'bg-red-500 text-white' : 'bg-warning text-slate-950')}>{count}</span>;
 }
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
@@ -33,7 +35,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const visibleSearch = location.search;
   const profile = getNavProfile(user?.roles);
   const entries = profile ? getVisibleEntries(profile, user?.roles ?? []) : [];
-  const { counts, cashOpen, cashPendingClose, cashStateKnown } = useNavigationState(profile?.role);
+  const { counts, urgency, cashOpen, cashPendingClose, cashStateKnown } = useNavigationState(profile?.role);
   const cashNeedsClose = cashOpen || Boolean(cashPendingClose);
   const cashStatusLabel = cashPendingClose ? 'Pendiente de cierre' : cashOpen ? 'Abierta' : 'Cerrada';
   const routeKey = `${visiblePathname}${visibleSearch}`;
@@ -59,7 +61,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         item.cashAction && !active && (cashNeedsClose ? 'text-[#f87171]' : 'text-[#4ade80]'))}>
       <img alt="" src={glyph} className={cn('shrink-0', nested ? 'h-4 w-4' : 'h-5 w-5')} />
       <span className={cn('min-w-0 flex-1', compactHidden)}>{label}</span>
-      {badge !== null && badge > 0 && <span className={compactHidden}><Badge count={badge} active={active} /></span>}
+      {badge !== null && badge > 0 && <span className={compactHidden}><Badge count={badge} active={active} urgent={item.badge ? urgency[item.badge] === 'urgent' : false} /></span>}
     </Link>;
   }
 
@@ -80,7 +82,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         <img alt="" src={expanded ? group.icon.active : group.icon.normal} className="h-5 w-5 shrink-0" />
         <span className={cn('min-w-0 flex-1', compactHidden)}>{group.label}</span>
         {group.cashStatus && cashStateKnown && <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-medium', compactHidden, cashPendingClose ? 'bg-amber-500/15 text-amber-300' : cashOpen ? 'bg-green-500/15 text-[#4ade80]' : 'bg-slate-500/20 text-slate-300')}>{cashStatusLabel}</span>}
-        {!expanded && <span className={compactHidden}><GroupBadge group={group} counts={counts} /></span>}
+        {!expanded && <span className={compactHidden}><GroupBadge group={group} counts={counts} urgency={urgency} /></span>}
         <img alt="" src={expanded ? chevronUp : chevronDown} className={cn('h-[18px] w-[18px] shrink-0', compactHidden)} />
       </button>
       {expanded && <div id={`sidebar-group-${group.id}`} className={cn('ml-[26px] flex border-l-2 border-[#2a3245] pl-2.5', compactHidden)}>

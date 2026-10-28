@@ -6,12 +6,15 @@ import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { QueryState } from '@/shared/components/ui/QueryState';
 import { formatDateTime, formatMoney } from '@/shared/format';
 import { cashWorkApi, type WorkTotal } from '../api/cash-work.api';
+import { PendingUrgencyBadge } from '@/shared/components/ui/PendingUrgencyBadge';
+import { usePendingUrgency } from '@/shared/hooks/use-pending-urgency';
 
 function Card({ label, total, to, action, icon: Icon, kind, unit }: { label: string; total: WorkTotal; to: string; action: string; icon: typeof ArrowDown; kind: 'income' | 'withdrawal' | 'outflow'; unit: string }) {
+  const urgency = usePendingUrgency()(total.count, total.oldest);
   const colors = kind === 'income' ? 'border-t-blue-500 bg-blue-100 text-blue-700' : kind === 'withdrawal' ? 'border-t-emerald-600 bg-emerald-100 text-emerald-700' : 'border-t-teal-600 bg-teal-100 text-teal-700';
   return <article className={`flex min-w-0 flex-col rounded-2xl border border-t-[3px] border-slate-200 bg-white p-6 shadow-sm ${colors.split(' ')[0]}`}>
     <div className="flex items-start gap-3"><span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${colors.split(' ').slice(1).join(' ')}`}><Icon aria-hidden className="h-5 w-5" /></span><h2 className="min-w-0 flex-1 text-base font-semibold leading-5 text-slate-950">{label}</h2><span className={`shrink-0 rounded-full px-2 py-1 text-xs font-semibold ${kind === 'outflow' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>{kind === 'outflow' ? <ArrowUp className="mr-1 inline h-3.5 w-3.5" /> : <ArrowDown className="mr-1 inline h-3.5 w-3.5" />}{kind === 'outflow' ? 'Salida' : 'Entrada'}</span></div>
-    <p className="mt-5 flex items-baseline gap-2"><strong className="text-4xl font-bold tabular-nums text-slate-950">{total.count}</strong><span className="text-sm text-slate-500">{unit}</span></p>
+    <div className="mt-5 flex flex-wrap items-center justify-between gap-2"><p className="flex items-baseline gap-2"><strong className="text-4xl font-bold tabular-nums text-slate-950">{total.count}</strong><span className="text-sm text-slate-500">{unit}</span></p><PendingUrgencyBadge urgency={urgency} /></div>
     <p className="mt-2 text-lg font-semibold tabular-nums text-slate-950">{formatMoney(total.amount)}</p>
     <p className="mt-3 min-h-10 text-sm text-slate-500">{total.oldest ? <><Clock3 className="mr-1 inline h-4 w-4" /> Más antiguo: {formatDateTime(total.oldest)}</> : 'Sin pendientes'}</p>
     <Link to={to} className="mt-auto inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-xs font-semibold text-white hover:bg-slate-800">{action} <ArrowRight className="h-4 w-4" /></Link>

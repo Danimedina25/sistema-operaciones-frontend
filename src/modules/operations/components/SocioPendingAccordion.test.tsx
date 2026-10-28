@@ -7,6 +7,8 @@ import { SocioPendingAccordion } from './SocioPendingAccordion';
 
 const api = vi.hoisted(() => ({ getMyOperations: vi.fn(), getOperationsAvailableToRequestReturn: vi.fn(), getOperationsWithRequestedReturns: vi.fn() }));
 vi.mock('../api/operations.api', () => api);
+const thresholds = vi.hoisted(() => ({ get: vi.fn() }));
+vi.mock('@/modules/configuraciones/api/configuraciones.api', () => ({ getPendingUrgencyThresholds: thresholds.get }));
 vi.mock('@/modules/auth/store/auth.context', () => ({ useAuth: () => ({ hasRole: (role: string) => role === 'SOCIO_COMERCIAL' }) }));
 vi.mock('@/modules/bank-accounts/hooks/use-bank-accounts', () => ({ useBankAccounts: () => ({ accounts: [], isLoading: false }) }));
 const operation = { id: 43, clienteNombre: 'Cliente de prueba', montoTotal: 1000, montoRegistrado: 400, saldoPendientePorRegistrar: 600, saldoPendientePorSolicitar: 500 };
@@ -21,6 +23,7 @@ function renderAccordion() {
 }
 beforeEach(() => {
   vi.clearAllMocks();
+  thresholds.get.mockResolvedValue({ horasPendienteAtencion: 4, horasPendienteUrgente: 24 });
   api.getMyOperations.mockImplementation((_page, _size, _filters, options) => Promise.resolve({ totalElements: options?.missingIncome ? 1 : 0, content: options?.missingIncome ? [operation] : [] }));
   api.getOperationsAvailableToRequestReturn.mockResolvedValue({ totalElements: 0, content: [] });
   api.getOperationsWithRequestedReturns.mockResolvedValue({ totalElements: 0, content: [] });
@@ -41,7 +44,7 @@ it('muestra tarjetas con contadores del servidor y un único listado, sin filtra
   await userEvent.click(screen.getByRole('button', { name: 'Ver retornos por solicitar' }));
   expect(income).toHaveAttribute('aria-expanded', 'false');
   expect(screen.queryByRole('region', { name: 'Listado de pagos de ingreso por registrar' })).not.toBeInTheDocument();
-  expect(api.getMyOperations).toHaveBeenCalledWith(0, 10, expect.objectContaining({ dateFilter: '', startDate: '', endDate: '', status: 'ALL' }), { missingIncome: true });
+  expect(api.getMyOperations).toHaveBeenCalledWith(0, 10, expect.objectContaining({ dateFilter: '', startDate: '', endDate: '', status: 'ALL' }), { missingIncome: true, sort: 'updatedAt,asc' });
 });
 
 it('navega al detalle para registrar el pago', async () => {
@@ -111,8 +114,20 @@ it('lista en comprobantes rechazados las operaciones con algún pago rechazado y
   const rejected = screen.getByRole('button', { name: 'Ver comprobantes rechazados' });
   await waitFor(() => expect(rejected).toBeEnabled());
   expect(within(screen.getByRole('article', { name: 'Comprobantes rechazados' })).getByText('1')).toBeInTheDocument();
-  expect(api.getMyOperations).toHaveBeenCalledWith(0, 10, expect.objectContaining({ status: 'ALL', paymentStatus: 'RECHAZADA' }));
+  expect(api.getMyOperations).toHaveBeenCalledWith(0, 10, expect.objectContaining({ status: 'ALL', paymentStatus: 'RECHAZADA' }), { sort: 'updatedAt,asc' });
   await userEvent.click(rejected);
   await userEvent.click((await screen.findAllByRole('button', { name: 'Revisar' }))[0]);
   expect(screen.getByLabelText('destino')).toHaveTextContent('/operaciones/48?action=review-rejected-payment');
+});
+
+it('marca cada grupo con el semáforo según la operación con más tiempo sin cambios', async () => {
+  const old = new Date(Date.now() - 30 * 3_600_000);
+  const stamp = (date: Date) => new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Mexico_City', dateStyle: 'short', timeStyle: 'medium' }).format(date).replace(' ', 'T');
+  api.getMyOperations.mockImplementation((_page, _size, _filters, options) => Promise.resolve(options?.missingIncome
+    ? { totalElements: 1, content: [{ ...operation, updatedAt: stamp(old) }] } : { totalElements: 0, content: [] }));
+  renderAccordion();
+  const income = screen.getByRole('article', { name: 'Pagos de ingreso por registrar' });
+  expect(await within(income).findByText('Urgente')).toBeInTheDocument();
+  expect(await within(screen.getByRole('article', { name: 'Comprobantes rechazados' })).findByText('Al día')).toBeInTheDocument();
+  expect(within(screen.getByRole('article', { name: 'Retornos en seguimiento' })).queryByText('Al día')).toBeNull();
 });

@@ -7,6 +7,8 @@ import { bankWorkApi } from '@/modules/corte/api/bank-work.api';
 import { cashBankDepositsApi } from '@/modules/cash-bank-deposits/api';
 import { getSummaryByBeneficiary } from '@/modules/comisionessocioscomerciales/api/commercial-partner-commissions.api';
 import type { RoleName } from '@/modules/auth/types/auth.types';
+import { usePendingUrgency } from '@/shared/hooks/use-pending-urgency';
+import { oldestOf, type PendingUrgency } from '@/shared/utils/pending-urgency';
 
 function previousWeekInOffice(now: Date) {
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -63,14 +65,26 @@ export function useNavigationState(role: RoleName | undefined) {
     refetchInterval: 30_000,
   });
 
+  const urgencyOf = usePendingUrgency();
+  const counts = {
+    cashIncome: cashWork.data?.income.count ?? null,
+    cashOutflow: cashWork.data ? cashWork.data.outflow.count + (cashReturns.data?.length ?? 0) : null,
+    bankIncome: bankWork.data ? bankWork.data.income.count + (bankDeposits.data?.count ?? 0) : null,
+    bankOutflow: bankWork.data?.outflow.count ?? null,
+    commissions: commissions.data?.socios.filter(socio => socio.totalPendientes > 0 && socio.totalComisionesPendientes > 0).length ?? null,
+  };
+
   return {
-    counts: {
-      cashIncome: cashWork.data?.income.count ?? null,
-      cashOutflow: cashWork.data ? cashWork.data.outflow.count + (cashReturns.data?.length ?? 0) : null,
-      bankIncome: bankWork.data ? bankWork.data.income.count + (bankDeposits.data?.count ?? 0) : null,
-      bankOutflow: bankWork.data?.outflow.count ?? null,
-      commissions: commissions.data?.socios.filter(socio => socio.totalPendientes > 0 && socio.totalComisionesPendientes > 0).length ?? null,
-    },
+    counts,
+    // Color del contador según el pendiente más antiguo; las comisiones no tienen antigüedad.
+    urgency: {
+      cashIncome: urgencyOf(counts.cashIncome, cashWork.data?.income.oldest),
+      cashOutflow: urgencyOf(counts.cashOutflow, oldestOf(cashWork.data?.outflow.oldest,
+        ...(cashReturns.data ?? []).map(row => row.resueltoEn ?? row.registradoEn))),
+      bankIncome: urgencyOf(counts.bankIncome, oldestOf(bankWork.data?.income.oldest, bankDeposits.data?.oldest)),
+      bankOutflow: urgencyOf(counts.bankOutflow, bankWork.data?.outflow.oldest),
+      commissions: null,
+    } satisfies Record<keyof typeof counts, PendingUrgency | null>,
     cashOpen: resolveCashDayState(cashDay.data).openToday,
     cashPendingClose: resolveCashDayState(cashDay.data).pendingCloseDate,
     cashStateKnown: cashDay.isSuccess,

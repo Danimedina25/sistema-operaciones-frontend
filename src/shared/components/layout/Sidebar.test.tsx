@@ -10,13 +10,14 @@ const mocks = vi.hoisted(() => ({
   cashPendingClose: null as string | null,
   cashOpen: true,
   cashStateKnown: true,
+  urgency: {} as Record<string, string | null>,
 }));
 
 vi.mock('@/modules/auth/store/auth.context', () => ({
   useAuth: () => ({ user: { userId: 1, nombre: 'Prueba', roles: mocks.roles }, logout: vi.fn() }),
 }));
 vi.mock('./use-navigation-state', () => ({
-  useNavigationState: () => ({ counts: mocks.counts, cashOpen: mocks.cashOpen, cashPendingClose: mocks.cashPendingClose, cashStateKnown: mocks.cashStateKnown }),
+  useNavigationState: () => ({ counts: mocks.counts, urgency: mocks.urgency, cashOpen: mocks.cashOpen, cashPendingClose: mocks.cashPendingClose, cashStateKnown: mocks.cashStateKnown }),
 }));
 
 function show(path: string) {
@@ -29,6 +30,7 @@ beforeEach(() => {
   mocks.cashOpen = true;
   mocks.cashPendingClose = null;
   mocks.cashStateKnown = true;
+  mocks.urgency = {};
 });
 
 describe('Sidebar', () => {
@@ -96,5 +98,16 @@ describe('Sidebar', () => {
     mocks.roles = ['DIRECCION'];
     show('/comisiones-socios');
     expect(screen.getByRole('link', { name: 'Comisiones' })).not.toHaveTextContent('4');
+  });
+
+  it('pinta en rojo el contador con pendientes urgentes, también en su grupo cerrado', () => {
+    mocks.urgency = { cashIncome: 'urgent', cashOutflow: 'attention' };
+    show('/caja/entradas');
+    const income = screen.getByRole('link', { name: /Entradas de efectivo/ });
+    expect(within(income).getByText('3')).toHaveClass('bg-white', 'text-red-600');
+    expect(within(screen.getByRole('link', { name: /Salidas de efectivo/ })).getByText('2')).not.toHaveAttribute('data-urgent');
+    cleanup();
+    show('/operaciones');
+    expect(within(screen.getByRole('button', { name: /Caja.*Abierta/ })).getByText('5')).toHaveClass('bg-red-500');
   });
 });

@@ -107,6 +107,16 @@ export function formatElapsedSince(value: DateInput, now: Date = new Date()): st
   return hours < 24 ? `${hours} h` : `${Math.floor(hours / 24)} días`;
 }
 
+/** Horas completas entre una hora de la oficina y ahora; null si no se puede leer. */
+export function hoursSince(value: DateInput, now: Date = new Date()): number | null {
+  const start = parseDateParts(value);
+  const end = parseDateParts(now);
+  if (!start || !end) return null;
+  const toMinutes = ({ year, month, day, hour, minute }: DateParts) =>
+    Date.UTC(year, month - 1, day, hour, minute) / 60_000;
+  return Math.max(0, Math.floor((toMinutes(end) - toMinutes(start)) / 60));
+}
+
 export function formatMoney(value: number | null | undefined): string {
   if (value == null || !Number.isFinite(value)) return EMPTY;
   return `${value < 0 ? '−' : ''}$${decimal.format(Math.abs(value))}`;

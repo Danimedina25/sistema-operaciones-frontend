@@ -30,6 +30,8 @@ export default function ConfiguracionesPage() {
               ? {
                   porcentajeComisionOficina:
                     configuracionGeneral.porcentajeComisionOficina,
+                  horasPendienteAtencion: configuracionGeneral.horasPendienteAtencion,
+                  horasPendienteUrgente: configuracionGeneral.horasPendienteUrgente,
                 }
               : undefined
           }

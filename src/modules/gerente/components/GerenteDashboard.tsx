@@ -1,4 +1,6 @@
 import { useMemo, type ReactNode } from 'react';
+import { PendingUrgencyBadge } from '@/shared/components/ui/PendingUrgencyBadge';
+import { usePendingUrgency } from '@/shared/hooks/use-pending-urgency';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { AlertCircle, ArrowRight, Banknote, Eye, Landmark, Wallet } from 'lucide-react';
@@ -37,9 +39,11 @@ function Priority({ icon, title, value, detail, alert, link, action, footnote, t
 }
 
 function WorkRow({ label, total }: { label: string; total?: WorkTotal }) {
-  return <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 border-t border-slate-100 py-2.5 text-sm">
+  const urgency = usePendingUrgency()(total?.count, total?.oldest);
+  return <div className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-3 border-t border-slate-100 py-2.5 text-sm">
     <span className="min-w-0 text-slate-600">{label}</span>
-    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold tabular-nums text-amber-800">{total?.count ?? '—'}</span>
+    <PendingUrgencyBadge urgency={urgency} />
+    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold tabular-nums text-slate-800">{total?.count ?? '—'}</span>
     <strong className="min-w-24 text-right tabular-nums">{formatMoney(total?.amount)}</strong>
   </div>;
 }
