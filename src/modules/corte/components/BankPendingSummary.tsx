@@ -15,6 +15,9 @@ export function BankPendingSummary() {
   const query = useQuery({ queryKey: ['bank-work', 'summary'], queryFn: bankWorkApi.summary });
   const deposits = useQuery({ queryKey: ['cash-bank-deposits', 'pending-summary'],
     queryFn: cashBankDepositsApi.summary, enabled: seesDeposits });
+  // Mismo listado que Entradas › Envíos; solo se usa para separar efectivo de cheques.
+  const depositRows = useQuery({ queryKey: ['cash-bank-deposits', 'pending'], queryFn: cashBankDepositsApi.pending, enabled: seesDeposits });
+  const chequeDeposits = depositRows.data ? depositRows.data.filter(row => row.origen === 'CHEQUE').length : null;
   const cardless = useCardlessPending();
   const cardlessCount = cardless.data ? new Set(cardless.data.map(task => task.requestId)).size : null;
   const count = query.data && (!seesDeposits || deposits.data)
@@ -38,7 +41,14 @@ export function BankPendingSummary() {
         {seesDeposits && deposits.data &&
           <BankPendingTaskCard label="Envíos desde Caja por confirmar" total={deposits.data}
             to={`${paths.bankIncome}?view=deposits`} action="Ir a Entradas › Envíos"
-            kind="income" unit={deposits.data.count === 1 ? 'envío' : 'envíos'} />}
+            kind="income" unit={deposits.data.count === 1 ? 'envío' : 'envíos'}>
+            <div className="mb-4 space-y-1 rounded-xl bg-slate-50 p-3 text-sm text-slate-600" aria-label="Envíos por origen">
+              {depositRows.error ? <p role="alert">No se pudo cargar el desglose. <button className="underline" onClick={() => void depositRows.refetch()}>Reintentar</button></p> : chequeDeposits === null ? <p>Cargando desglose por origen…</p> : <>
+                <p className="flex justify-between gap-3"><span>Efectivo de Caja</span><strong className="tabular-nums text-slate-900">{depositRows.data!.length - chequeDeposits}</strong></p>
+                <p className="flex justify-between gap-3"><span>Cheques depositados</span><strong className="tabular-nums text-slate-900">{chequeDeposits}</strong></p>
+              </>}
+            </div>
+          </BankPendingTaskCard>}
       </div>}
     </QueryState>
   </div>;

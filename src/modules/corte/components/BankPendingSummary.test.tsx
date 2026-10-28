@@ -9,8 +9,9 @@ vi.mock('@/shared/lib/axios', () => ({ api: { get: vi.fn(async () => ({ data: { 
 
 const summary = vi.fn();
 const deposits = vi.fn();
+const depositRows = vi.fn(async () => [] as { origen: string }[]);
 vi.mock('../api/bank-work.api', () => ({ bankWorkApi: { summary: () => summary() } }));
-vi.mock('@/modules/cash-bank-deposits/api', () => ({ cashBankDepositsApi: { summary: () => deposits() } }));
+vi.mock('@/modules/cash-bank-deposits/api', () => ({ cashBankDepositsApi: { summary: () => deposits(), pending: () => depositRows() } }));
 vi.mock('@/modules/auth/store/auth.context', () => ({ useAuth: () => ({
   hasRole: (roles: string | string[]) => Array.isArray(roles) ? roles.includes(auth.role) : roles === auth.role,
 }) }));
@@ -61,4 +62,16 @@ it('el total de retornos ya incluye los códigos y no los suma otra vez', async 
   expect(screen.getByLabelText('Retornos por método')).toHaveTextContent('Retiros sin tarjeta1');
   expect(screen.getByText('7 pendientes')).toBeInTheDocument();
   expect(screen.getAllByRole('heading', { name: 'Retornos de operaciones para pagar' })).toHaveLength(1);
+});
+
+it('separa los envíos pendientes en efectivo de Caja y cheques depositados', async () => {
+  summary.mockResolvedValue({ income: { count: 0, amount: 0, oldest: null }, outflow: { count: 0, amount: 0, oldest: null } });
+  deposits.mockResolvedValue({ count: 3, amount: 4500, oldest: null });
+  depositRows.mockResolvedValueOnce([{ origen: 'EFECTIVO_CAJA' }, { origen: 'CHEQUE' }, { origen: 'CHEQUE' }]);
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  render(<QueryClientProvider client={client}><MemoryRouter><BankPendingSummary /></MemoryRouter></QueryClientProvider>);
+  await screen.findByText('Cheques depositados');
+  expect(screen.getByLabelText('Envíos por origen')).toHaveTextContent('Efectivo de Caja1');
+  expect(screen.getByLabelText('Envíos por origen')).toHaveTextContent('Cheques depositados2');
+  expect(screen.getByText('3 pendientes')).toBeInTheDocument();
 });
