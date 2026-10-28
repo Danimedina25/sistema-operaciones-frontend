@@ -32,10 +32,10 @@ function payment(overrides: Partial<OperationPaymentResponse> = {}): OperationPa
   };
 }
 
-function mount(payments: OperationPaymentResponse[]) {
+function mount(payments: OperationPaymentResponse[], socioComercialTelefono?: string) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(<QueryClientProvider client={client}><MemoryRouter>
-    <PaymentsTable payments={payments} operationId={45} />
+    <PaymentsTable payments={payments} operationId={45} socioComercialTelefono={socioComercialTelefono} />
   </MemoryRouter></QueryClientProvider>);
 }
 
@@ -54,6 +54,18 @@ describe('Cheques en el detalle para Jefa de Cajas', () => {
 
     expect(screen.getAllByText('Cheque').length).toBeGreaterThan(0);
     expect(screen.queryByRole('button', { name: 'Revisar' })).not.toBeInTheDocument();
+  });
+
+  it('avisa por WhatsApp al socio cuando el cheque ya quedó validado', () => {
+    mount([payment({ chequeEstado: 'COBRADO', estatus: 'VALIDADA' })], '9991234567');
+
+    expect(screen.getAllByRole('button', { name: /Avisar por WhatsApp/ }).length).toBeGreaterThan(0);
+  });
+
+  it('no ofrece el aviso mientras el cheque sigue pendiente', () => {
+    mount([payment({ chequeEstado: 'DEPOSITADO' })], '9991234567');
+
+    expect(screen.queryByRole('button', { name: /Avisar por WhatsApp/ })).not.toBeInTheDocument();
   });
 
   it('mantiene fuera los pagos bancarios ajenos a Cajas', () => {

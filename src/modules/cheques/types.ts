@@ -11,7 +11,7 @@ export type ChequeAction =
   | 'CANCELAR';
 export const chequeLabels: Record<ChequeState, string> = {
   POR_COBRAR: 'Recibido',
-  DEPOSITADO: 'En compensación',
+  DEPOSITADO: 'Depositado · esperando acreditación',
   PENDIENTE_COBRO_EFECTIVO: 'Pendiente de cobro en efectivo',
   COBRADO: 'Cobrado',
   DEVUELTO: 'Devuelto',

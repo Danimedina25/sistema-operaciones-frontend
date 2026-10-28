@@ -25,10 +25,11 @@ import { RowActionsMenu } from '@/shared/components/ui/RowActionsMenu';
 import { StatusBadge } from '@/shared/components/ui/StatusBadge';
 import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
 import { ActionDrawer } from '@/shared/components/ui/ActionDrawer';
+import { FinancialSummaryCard } from '@/shared/components/ui/FinancialSummaryCard';
 import { ReceiptUploadField } from '@/shared/components/ui/ReceiptUploadField';
 import { FileCheck2, MessageCircle, Plus, ReceiptText } from 'lucide-react';
 import { CompactDenominationTables } from '@/modules/caja-general/components/CompactDenominationTables';
-import { countCents, currency, emptyCounts } from '@/modules/caja-general/utils/cash-amounts';
+import { checkCount, countCents, currency, emptyCounts } from '@/modules/caja-general/utils/cash-amounts';
 import type { CashCounts } from '@/modules/caja-general/types/caja-general.types';
 
 import { ChequeManager } from '@/modules/cheques/ChequeManager';
@@ -342,6 +343,9 @@ export function PaymentsTable({
     reviewBusy || (reviewingPaymentId !== null && processingPaymentId === reviewingPaymentId);
 
   const isRejectAction = activeAction === 'REJECT';
+  // El efectivo se valida contando lo recibido; debe cuadrar exacto con el ingreso.
+  const cashCount = activeAction === 'VALIDATE' && reviewingPayment?.tipoPago === 'EFECTIVO'
+    ? checkCount(countCents(cashCounts), Math.round(reviewingPayment.monto * 100)) : null;
 
   const confirmButtonText =
     activeAction === 'VALIDATE'
@@ -365,15 +369,17 @@ export function PaymentsTable({
     const canValidate =
       canValidatePaymentType(payment.tipoPago) &&
       (isPendingValidation || isInProgress);
+    // El cheque lo resuelven Cajas (cobro en efectivo) o Cuentas (depósito); ambas pueden avisar al socio.
     const canNotify =
       (payment.estatus === 'VALIDADA' || payment.estatus === 'RECHAZADA') &&
-      canValidatePaymentType(payment.tipoPago) &&
+      (payment.tipoPago === 'CHEQUE' ? isAdmin || isJefaCajas || isCuentas : canValidatePaymentType(payment.tipoPago)) &&
       !!socioComercialTelefono;
     // El cheque no se valida por el panel genérico, pero su gestión es la misma acción
     // para el usuario: revisar el pago. Por eso vive en Acciones junto a las demás.
     const canManageCheque =
       payment.tipoPago === 'CHEQUE' && (
-        isAdmin || isCuentas || (isJefaCajas && (
+        // Cuentas solo interviene cuando el cheque se depositó y falta confirmar la acreditación.
+        isAdmin || (isCuentas && payment.chequeEstado === 'DEPOSITADO') || (isJefaCajas && (
           payment.chequeEstado === 'POR_COBRAR' ||
           payment.chequeEstado === 'PENDIENTE_COBRO_EFECTIVO'
         ))
@@ -411,6 +417,8 @@ export function PaymentsTable({
   function renderRowActions(payment: OperationPaymentResponse): ReactNode {
     const { isProcessing, canEdit, canManageCheque, canReview, canNotify } =
       getPaymentActionFlags(payment);
+    // Un solo botón visible por fila: si hay que revisar o editar, el aviso pasa al menú ⋯.
+    const showNotify = canNotify && !canReview && !canEdit;
 
     return (
       <>
@@ -474,7 +482,7 @@ export function PaymentsTable({
           </button>
         )}
 
-        {canNotify && (
+        {showNotify && (
           <button
             type="button"
             onClick={() => handleNotifyPaymentStatus(payment)}
@@ -510,10 +518,16 @@ export function PaymentsTable({
 
   function paymentActions(payment: OperationPaymentResponse): ReactNode {
     // Acción principal visible; los comprobantes y los datos viven en el menú ⋯.
+    const { canEdit, canReview, canNotify } = getPaymentActionFlags(payment);
+    const notifyInMenu = canNotify && (canReview || canEdit);
     return <div className="flex min-w-0 items-center justify-end gap-2">
       {renderRowActions(payment)}
       <RowActionsMenu triggerLabel="" ariaLabel="Más opciones" triggerClassName="min-w-9 justify-center px-2">
         {renderViewOptions(payment)}
+        {notifyInMenu && <button type="button" onClick={() => handleNotifyPaymentStatus(payment)}
+          className="block w-full px-4 py-3 text-left text-sm text-slate-700 hover:bg-slate-50">
+          Avisar por WhatsApp
+        </button>}
         <button type="button" onClick={() => void handleCopyPaymentData(payment)}
           className="block w-full px-4 py-3 text-left text-sm text-slate-700 hover:bg-slate-50">
           {copiedPaymentId === payment.id ? 'Copiado' : 'Copiar datos del comprobante'}
@@ -607,7 +621,7 @@ export function PaymentsTable({
           rowClassName={(payment) => isCuentas && payment.estatus === 'PENDIENTE_VALIDACION' ? 'bg-amber-50/70' : ''}
           columns={[
             { key: 'amount', header: 'Monto', width: '132px', cell: (payment: OperationPaymentResponse) => <span className="font-semibold tabular-nums text-slate-900">{formatCurrency(payment.monto)}</span> },
-            { key: 'type', header: 'Tipo', width: '128px', cell: (payment: OperationPaymentResponse) => <span>{paymentTypeLabels[payment.tipoPago]}{payment.tipoPago === 'CHEQUE' && <span className="block text-xs text-slate-500">{payment.chequeEstado ? chequeLabels[payment.chequeEstado] : 'Requiere conciliación'}</span>}</span> },
+            { key: 'type', header: 'Tipo', width: '168px', cell: (payment: OperationPaymentResponse) => <span>{paymentTypeLabels[payment.tipoPago]}{payment.tipoPago === 'CHEQUE' && <span className="block text-xs text-slate-500">{payment.chequeEstado ? chequeLabels[payment.chequeEstado] : 'Requiere conciliación'}</span>}</span> },
             { key: 'account', header: 'Cuenta destino', cell: (payment: OperationPaymentResponse) => payment.tipoPago === 'EFECTIVO' ? <span>Caja General<span className="block text-xs text-slate-500">Entrega directa</span></span> : <span className="block min-w-0 truncate" title={`${payment.cuentaDestinoBanco ?? '—'} · ${payment.cuentaDestinoTitular ?? ''}`}>{payment.cuentaDestinoBanco ?? '—'}<span className="block truncate text-xs text-slate-500">{payment.cuentaDestinoTitular}</span></span> },
             { key: 'date', header: 'Fecha comprobante', width: '190px', className: 'whitespace-nowrap', cell: (payment: OperationPaymentResponse) => formatDate(payment.fechaComprobante) },
             { key: 'status', header: 'Estatus', kind: 'status', width: '162px', cell: (payment: OperationPaymentResponse) => <span><PaymentStatusBadge status={payment.estatus} />{payment.validadoPorNombre && <span className="mt-1 block text-xs text-slate-500">por {payment.validadoPorNombre}</span>}</span> },
@@ -656,11 +670,10 @@ export function PaymentsTable({
               className="min-h-10 w-full rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">Liberar (volver a pendiente)</button>}
           </div> : undefined}>
             <div className="space-y-5" onChange={() => { if (reviewSubmitError) setReviewSubmitError(''); }}>
-              <section aria-label="Resumen del ingreso" className="sticky top-0 z-10 space-y-2 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                <p className="text-sm text-slate-500">Monto del ingreso</p>
-                <p className="text-2xl font-bold tabular-nums text-slate-950">{formatCurrency(reviewingPayment.monto)}</p>
-                {[reviewSubmitError, ...(isRejectAction ? [rejectReasonError] : [cashCountsError, validationReceiptError])].filter(Boolean).map(message => <p key={message} role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{message}</p>)}
-              </section>
+              <FinancialSummaryCard label="Resumen del ingreso"
+                metrics={[{ label: 'Monto del ingreso', value: formatCurrency(reviewingPayment.monto), tone: 'blue' }]}
+                status={cashCount ? { text: cashCount.text, tone: cashCount.tone } : undefined}
+                errors={[reviewSubmitError, ...(isRejectAction ? [rejectReasonError] : [cashCount?.error, cashCountsError, validationReceiptError])]} />
               <div>
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold text-slate-700">
@@ -796,8 +809,6 @@ export function PaymentsTable({
                         disabled={isConfirmingAction}
                         dense
                       />
-                      <p className={`rounded-lg border px-3 py-2 text-xs font-semibold ${countCents(cashCounts) === Math.round(reviewingPayment.monto * 100) ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>Total contado {currency(countCents(cashCounts) / 100)} · {countCents(cashCounts) === Math.round(reviewingPayment.monto * 100) ? 'cuadra' : 'pendiente de cuadrar'}</p>
-
                     </div>
                   ) : null}
 

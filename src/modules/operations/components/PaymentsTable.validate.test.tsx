@@ -153,6 +153,23 @@ describe('Validación de un pago en efectivo', () => {
     expect(screen.getAllByText('El comprobante de validación es obligatorio.')[0]).toBeInTheDocument();
     expect(onValidatePayment).not.toHaveBeenCalled();
   });
+
+  it('muestra el conteo y el error del desglose dentro del resumen fijo', async () => {
+    mount(vi.fn());
+    openValidate();
+    attachReceipt();
+    const summary = screen.getByRole('region', { name: 'Resumen del ingreso' });
+    expect(summary).toHaveClass('sticky', 'top-0');
+    expect(within(summary).getByText('Total contado $0.00 · faltan $1,200.00')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Validar ingreso' }));
+    expect(await within(summary).findByRole('alert')).toHaveTextContent('Captura el desglose del efectivo recibido.');
+
+    fireEvent.change(screen.getAllByLabelText('Cantidad de $1,000.00')[0], { target: { value: '1' } });
+    fireEvent.change(screen.getAllByLabelText('Cantidad de $100.00')[0], { target: { value: '2' } });
+    expect(within(summary).getByText('Total contado $1,200.00 · cuadra')).toBeInTheDocument();
+    expect(screen.getAllByText(/Total contado/)).toHaveLength(1);
+  });
 });
 
 describe('Cheques recibidos', () => {
