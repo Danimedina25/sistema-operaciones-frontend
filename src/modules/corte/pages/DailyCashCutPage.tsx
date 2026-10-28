@@ -100,6 +100,8 @@ export default function DailyCashCutPage() {
     const isBankBalancesView = mainView === 'bankBalances';
     const isBankMovementsView = mainView === 'bankMovements';
     const isDailyMode = dateMode === 'daily';
+    // Solo el día de hoy sigue cambiando; un día pasado sin registrar ya está completo.
+    const isLiveToday = fecha === officeToday();
 
     const currentData = useMemo<
         DailyCashCutResponse | CashCutRangeResponse | null
@@ -329,7 +331,9 @@ export default function DailyCashCutPage() {
                                             {isDailyMode
                                                 ? dailyCut?.registrado
                                                     ? 'Corte registrado en sistema.'
-                                                    : 'Corte calculado en vivo, aún no registrado.'
+                                                    : isLiveToday
+                                                        ? 'Corte calculado en vivo, aún no registrado.'
+                                                        : 'Corte calculado, aún no registrado.'
                                                 : rangeCut?.incluyeDiaActualEnVivo
                                                     ? 'Este rango incluye información del día actual en vivo.'
                                                     : 'Resumen calculado con cortes registrados.'}
@@ -361,7 +365,7 @@ export default function DailyCashCutPage() {
                                         value={currentData.saldoFinal}
                                         helper={
                                             isDailyMode && !dailyCut?.registrado
-                                                ? 'Calculado hasta este momento'
+                                                ? isLiveToday ? 'Calculado hasta este momento' : 'Calculado al cierre del día'
                                                 : 'Saldo final del periodo'
                                         }
                                         variant="dark"
@@ -372,7 +376,7 @@ export default function DailyCashCutPage() {
                                         value={currentData.totalComisionesOficina}
                                         helper={
                                             isDailyMode && !dailyCut?.registrado
-                                                ? 'Calculado hasta este momento'
+                                                ? isLiveToday ? 'Calculado hasta este momento' : 'Calculado al cierre del día'
                                                 : 'Saldo final del periodo'
                                         }
                                         variant="success"

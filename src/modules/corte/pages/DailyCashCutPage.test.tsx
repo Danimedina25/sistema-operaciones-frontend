@@ -12,10 +12,11 @@ const fetchRangeCut = vi.fn();
 const fetchBankBalancesGrouped = vi.fn();
 const searchBankMovements = vi.fn();
 const getBankMovementTotals = vi.fn();
+const hookState = vi.hoisted(() => ({ dailyCut: null as unknown }));
 
 vi.mock('../hooks/use-daily-cash-cut', () => ({
   useDailyCashCut: () => ({
-    dailyCut: null,
+    dailyCut: hookState.dailyCut,
     rangeCut: null,
     isLoadingDailyCut: false,
     isLoadingRangeCut: false,
@@ -69,6 +70,7 @@ function tab(name: string) {
 describe('DailyCashCutPage', () => {
   beforeEach(() => {
     window.sessionStorage.clear();
+    hookState.dailyCut = null;
     fetchDailyCut.mockReset();
     fetchRangeCut.mockReset();
     fetchBankBalancesGrouped.mockReset();
@@ -164,4 +166,32 @@ describe('DailyCashCutPage', () => {
 
     await waitFor(() => expect(fetchBankBalancesGrouped.mock.calls.length).toBe(before + 1));
   });
+  it('un día pasado sin registrar se presenta como completo, no en vivo', async () => {
+    hookState.dailyCut = unregisteredCut(shiftDay(officeToday(), -1));
+    mount(paths.bankMovements);
+    fireEvent.click(screen.getByRole('button', { name: /Periodo del corte:/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ayer' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar' }));
+
+    expect(await screen.findByText('Corte calculado, aún no registrado.')).toBeInTheDocument();
+    expect(screen.getAllByText('Calculado al cierre del día')).toHaveLength(2);
+    expect(screen.queryByText('Calculado hasta este momento')).toBeNull();
+  });
+
+  it('el día de hoy sin registrar sigue marcado en vivo', async () => {
+    hookState.dailyCut = unregisteredCut(officeToday());
+    mount(paths.bankMovements);
+
+    expect(await screen.findByText('Corte calculado en vivo, aún no registrado.')).toBeInTheDocument();
+    expect(screen.getAllByText('Calculado hasta este momento')).toHaveLength(2);
+  });
 });
+
+function unregisteredCut(fecha: string) {
+  return {
+    fecha, saldoInicial: 1000, saldoFinal: 4000,
+    entradasTransferencia: 3000, entradasDeposito: 0, entradasEfectivo: 0, entradasCheque: 0, totalEntradas: 3000,
+    retornosTransferencia: 0, retornosDeposito: 0, retornosEfectivo: 0, retornosCheque: 0, retornosRetiroSinTarjeta: 0, totalRetornos: 0,
+    salidasCajaGeneral: 0, totalComisionesSocios: 0, totalComisionesOficina: 0, totalSalidas: 0, registrado: false,
+  };
+}

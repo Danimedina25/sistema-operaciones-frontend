@@ -44,6 +44,8 @@ export function useDailyCashCut(options?: UseDailyCashCutOptions) {
 
             return response;
         } catch (error) {
+            // Sin esto la pantalla mostraría las cifras del día anterior bajo el título del nuevo.
+            setDailyCut(null);
             toast.error(getApiErrorMessage(error));
             throw error;
         } finally {
@@ -64,6 +66,7 @@ export function useDailyCashCut(options?: UseDailyCashCutOptions) {
 
             return response;
         } catch (error) {
+            setRangeCut(null);
             toast.error(getApiErrorMessage(error));
             throw error;
         } finally {
