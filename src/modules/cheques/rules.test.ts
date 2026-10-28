@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { officeToday, shiftDay } from '@/shared/utils/period';
 import { allowedChequeActions, validateChequeCommand } from './rules';
 import type { Cheque, ChequeCommand } from './types';
 import type { RoleName } from '@/modules/auth/types/auth.types';
@@ -7,6 +8,11 @@ const cheque = { estado: 'POR_COBRAR', requiereConciliacion: false, monto: 100 }
 const role = (name: RoleName) => (roles: RoleName[]) => roles.includes(name);
 const command: ChequeCommand = { requestId: 'abc', version: 1, accion: 'COBRAR_BANCO', fecha: '2026-09-20', cuentaDestinoId: 1, comprobanteUrl: 'proof' };
 describe('cheque collection boundaries', () => {
+  it('rechaza una fecha efectiva posterior al día de la oficina', () => {
+    const allowed = ['COBRAR_BANCO'] as const;
+    expect(validateChequeCommand(cheque, { ...command, fecha: shiftDay(officeToday(), 1) }, [...allowed])).toBe('La fecha efectiva no puede ser posterior a hoy.');
+    expect(validateChequeCommand(cheque, { ...command, fecha: officeToday() }, [...allowed])).toBeNull();
+  });
   it('separates cash reception from bank management', () => {
     expect(allowedChequeActions(cheque, role('JEFA_CUENTAS'))).toEqual([]);
     expect(allowedChequeActions(cheque, role('AUXILIAR_CUENTAS'))).toEqual([]);

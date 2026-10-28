@@ -1,6 +1,7 @@
 import type { RoleName } from '@/modules/auth/types/auth.types';
 import type { Cheque, ChequeAction, ChequeCommand } from './types';
 import { countCents } from '@/modules/caja-general/utils/cash-amounts';
+import { officeToday } from '@/shared/utils/period';
 export function allowedChequeActions(cheque: Pick<Cheque, 'estado' | 'requiereConciliacion' | 'depositoCompartido'>, hasRole: (roles: RoleName[]) => boolean): ChequeAction[] {
   if (cheque.requiereConciliacion || !cheque.estado) return [];
   const actions: ChequeAction[] = [];
@@ -19,6 +20,7 @@ export function allowedChequeActions(cheque: Pick<Cheque, 'estado' | 'requiereCo
 export function validateChequeCommand(cheque: Cheque, command: ChequeCommand, allowed: ChequeAction[]): string | null {
   if (!allowed.includes(command.accion)) return 'Esta acción no está permitida para el cheque.';
   if (!/^\d{4}-\d{2}-\d{2}$/.test(command.fecha) || !Number.isFinite(Date.parse(command.fecha)) || new Date(command.fecha).toISOString().slice(0, 10) !== command.fecha) return 'Selecciona una fecha válida.';
+  if (command.fecha > officeToday()) return 'La fecha efectiva no puede ser posterior a hoy.';
   if (['DEVOLVER', 'CANCELAR', 'DEVOLVER_A_CUENTAS', 'RETIRAR_COBRO_EFECTIVO'].includes(command.accion)) return command.motivo?.trim() ? null : 'Indica el motivo.';
   if (['ASIGNAR_COBRO_EFECTIVO'].includes(command.accion)) return null;
   if (!command.comprobanteUrl) return 'Adjunta el comprobante.';

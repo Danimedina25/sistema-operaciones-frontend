@@ -1,5 +1,6 @@
 import { ReceiptViewerLink } from '@/shared/components/ui/ReceiptViewerLink';
 import { useId, useRef, useState } from 'react';
+import axios from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Button } from '@/shared/components/ui/Button';
@@ -15,6 +16,7 @@ import { uploadOperationProof } from '@/modules/operations/api/operations-storag
 import { getBankAccounts } from '@/modules/bank-accounts/api/bank-accounts.api';
 import { getApiErrorMessage } from '@/shared/utils/errors';
 import { buildOperationDetailPath } from '@/routes/paths';
+import { officeToday } from '@/shared/utils/period';
 import { chequesApi } from './api';
 import { actionLabels, chequeLabels, type Cheque, type ChequeAction, type ChequeCommand, type ChequeState } from './types';
 import { allowedChequeActions, validateChequeCommand } from './rules';
@@ -24,6 +26,26 @@ import { ResolveCashBankDepositDrawer, type DepositResolution } from '@/modules/
 
 /** Error de captura que se muestra tal cual en el resumen (no viene del servidor). */
 class ChequeFormError extends Error {}
+
+const fieldNames: Record<string, string> = {
+  fecha: 'Fecha efectiva', comprobanteUrl: 'Comprobante', motivo: 'Motivo',
+  cuentaDestinoId: 'Cuenta bancaria', diaCajaId: 'Caja General', denominaciones: 'Desglose',
+};
+
+/** El servidor rechazó la captura (400): no se aplicó nada y se puede corregir. */
+function isRejectedInput(error: unknown) {
+  return axios.isAxiosError(error) && error.response?.status === 400;
+}
+
+/** Nombra el campo que rechazó el servidor en lugar del genérico "Error de validación". */
+function chequeErrorMessage(error: unknown) {
+  const fields = axios.isAxiosError(error) ? error.response?.data?.errors : null;
+  if (fields && typeof fields === 'object' && !Array.isArray(fields)) {
+    const detail = Object.entries(fields as Record<string, string>).map(([field, message]) => `${fieldNames[field] ?? 'Dato'}: ${message}`);
+    if (detail.length) return detail.join(' · ');
+  }
+  return getApiErrorMessage(error);
+}
 
 /** Mismos tokens que el cajón de revisión de comprobantes, para que el sistema se vea igual. */
 const fieldLabel = 'mb-2 block text-sm font-medium text-slate-700';
@@ -125,7 +147,11 @@ function ChequeDetail({ cheque, onChanged, depositResolution }: {
       window.dispatchEvent(new CustomEvent('cheque-updated', { detail: { operationId: cheque.operacionId } }));
       await onChanged?.();
     },
-    onError: e => setError(e instanceof ChequeFormError ? e.message : getApiErrorMessage(e)),
+    onError: e => {
+      // Un rechazo de captura no registró nada: se libera el formulario para corregirlo.
+      if (isRejectedInput(e)) pendingCommand.current = null;
+      setError(e instanceof ChequeFormError ? e.message : chequeErrorMessage(e));
+    },
   });
   const locked = mutation.isPending || pendingCommand.current !== null || completed;
   const requiresReason = ['DEVOLVER', 'CANCELAR', 'DEVOLVER_A_CUENTAS', 'RETIRAR_COBRO_EFECTIVO'].includes(action);
@@ -189,7 +215,7 @@ function ChequeDetail({ cheque, onChanged, depositResolution }: {
         {action && <>
           <div>
             <label htmlFor="cheque-date" className={fieldLabel}>Fecha efectiva <span className="text-rose-600">*</span></label>
-            <input id="cheque-date" className={fieldControl} type="date" required value={date} onChange={e => setDate(e.target.value)} />
+            <input id="cheque-date" className={fieldControl} type="date" required max={officeToday()} value={date} onChange={e => setDate(e.target.value)} />
           </div>
 
           {['DEPOSITAR', 'COBRAR_BANCO'].includes(action) && <BankAccountSelect value={account} onChange={setAccount} disabled={locked} historicalLabel={cheque.cuentaDestinoEtiqueta} />}
