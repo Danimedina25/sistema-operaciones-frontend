@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Copy, Landmark, Send } from 'lucide-react';
 import { ActionDrawer } from '@/shared/components/ui/ActionDrawer';
 import { BankAccountCombobox } from '@/shared/components/ui/BankAccountCombobox';
+import { FinancialSummaryCard } from '@/shared/components/ui/FinancialSummaryCard';
 import { ReceiptUploadField } from '@/shared/components/ui/ReceiptUploadField';
 import { getApiErrorMessage } from '@/shared/utils/errors';
 import { Button } from '@/shared/components/ui/Button';
@@ -78,14 +79,9 @@ export function PayBeneficiaryCommissionsModal({
       </Button>
     </div>}>
     {beneficiary && <div className="space-y-4">
-      <section aria-label="Resumen del pago" className="sticky top-0 z-10 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm text-slate-500">Comisiones por pagar</p>
-          <p className="text-2xl font-bold text-slate-950">{formatMoney(beneficiary.totalPendientes)}</p>
-        </div>
-        <p className="mt-1 text-sm text-slate-500">{beneficiary.totalOperaciones} {beneficiary.totalOperaciones === 1 ? 'operación' : 'operaciones'}</p>
-        {(accountError || submitError) && <p role="alert" className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{accountError || submitError}</p>}
-      </section>
+      <FinancialSummaryCard label="Resumen del pago" errors={[accountError, submitError]}
+        context={`${beneficiary.totalOperaciones} ${beneficiary.totalOperaciones === 1 ? 'operación' : 'operaciones'}`}
+        metrics={[{ label: 'Comisiones por pagar', value: formatMoney(beneficiary.totalPendientes), tone: 'blue' }]} />
       <div className="overflow-hidden rounded-xl border border-slate-200">
         <table className="w-full table-fixed text-xs">
           <thead className="bg-slate-50 text-[10px] uppercase tracking-wide text-slate-500">

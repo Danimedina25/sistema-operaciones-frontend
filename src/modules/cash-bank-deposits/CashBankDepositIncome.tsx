@@ -7,6 +7,7 @@ import { useAuth } from '@/modules/auth/store/auth.context';
 import { uploadOperationProof } from '@/modules/operations/api/operations-storage.api';
 import { ActionDrawer } from '@/shared/components/ui/ActionDrawer';
 import { Button } from '@/shared/components/ui/Button';
+import { FinancialSummaryCard } from '@/shared/components/ui/FinancialSummaryCard';
 import { ReceiptUploadField } from '@/shared/components/ui/ReceiptUploadField';
 import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
 import { formatDateTime, formatMoney } from '@/shared/format';
@@ -104,11 +105,11 @@ export function CashBankDepositIncome() {
           isLoading={busy} className="min-w-0 flex-1 sm:flex-none">{mode === 'confirm' ? 'Confirmar depósito' : 'Rechazar envío'}</Button>
       </div>}>
       {selected && <form id={formId} onSubmit={event => { event.preventDefault(); void submit(); }} className="space-y-5" aria-describedby={error ? errorId : undefined}>
-        <section aria-label="Resumen del envío" className={`sticky top-0 z-10 rounded-xl border bg-white p-4 shadow-sm ${error ? 'border-red-200' : 'border-slate-200'}`}>
-          <p className="text-sm text-slate-500">Monto del depósito</p>
-          <p className="mt-1 text-2xl font-bold tabular-nums text-slate-950">{formatMoney(selected.monto)}</p>
-          {error && <p id={errorId} role="alert" className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">{error}</p>}
-        </section>
+        <FinancialSummaryCard label="Resumen del envío" className={error ? 'border-red-300' : ''}
+          metrics={[{ label: 'Monto del depósito', value: formatMoney(selected.monto), tone: 'blue' }]}>
+          {/* El error conserva su id: el formulario y el motivo lo referencian con aria-describedby. */}
+          {error && <p id={errorId} role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+        </FinancialSummaryCard>
         <dl className="grid min-w-0 grid-cols-1 gap-4 text-sm sm:grid-cols-2">
           <div className="min-w-0 sm:col-span-2"><dt className="text-slate-500">Cuenta destino</dt><dd className="mt-1 break-words font-semibold text-slate-900">{selected.cuenta}</dd></div>
           <div className="min-w-0 sm:col-span-2"><dt className="text-slate-500">Titular de la cuenta</dt><dd className="mt-1 break-words font-semibold text-slate-900">{selected.cuentaTitular}</dd></div>

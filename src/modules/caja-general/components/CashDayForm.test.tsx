@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { CashDayForm } from './CashDayForm';
@@ -121,7 +121,8 @@ describe('Formulario de apertura y cierre', () => {
     const { rerender } = render(<CashDayForm mode="close" day={day} busy={false} onSubmit={submit} />);
     rerender(<CashDayForm mode="close" day={{ ...day, version: 1, saldoActual: 200 }} busy={false} onSubmit={submit} />);
     expect(screen.getByRole('button', { name: 'Cerrar caja con este conteo' })).toBeDisabled();
-    expect(screen.getAllByRole('alert').some(alert => alert.textContent?.includes('cambió durante el conteo'))).toBe(true);
+    const card = screen.getByRole('region', { name: 'Resumen de la caja' });
+    expect(within(card).getAllByRole('status').some(notice => notice.textContent?.includes('cambió durante el conteo'))).toBe(true);
   });
   it('prellena el cierre con el desglose esperado para solo revisarlo', async () => {
     const submit = vi.fn().mockResolvedValue(undefined);
@@ -143,7 +144,8 @@ describe('Formulario de apertura y cierre', () => {
       day={{ ...day, saldoActual: 900, denominacionesEsperadas: { ...emptyCounts(), D1000: 1, D100: -1 } }} />);
 
     expect((screen.getByLabelText('Cantidad de $100.00') as HTMLInputElement).value).toBe('0');
-    expect(screen.getAllByRole('alert').some(alert => alert.textContent?.includes('quedó en negativo'))).toBe(true);
+    const card = screen.getByRole('region', { name: 'Resumen de la caja' });
+    expect(within(card).getAllByRole('status').some(notice => notice.textContent?.includes('quedó en negativo'))).toBe(true);
   });
 
   it('explica que la caja quedó abierta de un día anterior', () => {
@@ -159,7 +161,7 @@ describe('Formulario de apertura y cierre', () => {
     expect(screen.getAllByRole('table')).toHaveLength(2);
     expect(screen.getByRole('row', { name: /Total en billetes/ })).toHaveTextContent('$1,200.00');
     expect(screen.getByRole('row', { name: /Total en monedas/ })).toHaveTextContent('$0.00');
-    expect(screen.getByRole('status')).toHaveTextContent('Dif. $0.00');
+    expect(within(screen.getByRole('region', { name: 'Resumen de la caja' })).getByText(/Dif\./)).toHaveTextContent('Dif. $0.00');
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
   });
 
@@ -176,4 +178,15 @@ describe('Formulario de apertura y cierre', () => {
     expect(screen.getByRole('button', { name: 'Abrir caja con este conteo' })).toBeInTheDocument();
   });
 
+  it('muestra el error del formulario y los avisos dentro del resumen fijo de la caja', () => {
+    render(<CashDayForm mode="close" day={day} busy={false} onSubmit={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText('Cantidad de $0.50'), { target: { value: '199' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar caja con este conteo' }));
+    const card = screen.getByRole('region', { name: 'Resumen de la caja' });
+    expect(card).toHaveClass('sticky', 'order-first');
+    expect(within(card).getByRole('alert')).toHaveTextContent('Explica la diferencia antes de cerrar la caja.');
+    expect(within(card).getByText('Saldo esperado')).toBeInTheDocument();
+    expect(within(card).getByText('$99.50')).toBeInTheDocument();
+    expect(within(card).getByText('Faltante en el conteo')).toBeInTheDocument();
+  });
 });

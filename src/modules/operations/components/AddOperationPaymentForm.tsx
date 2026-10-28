@@ -5,6 +5,7 @@ import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Input } from '@/shared/components/ui/Input';
 import { Button } from '@/shared/components/ui/Button';
 import { ActionDrawerFooter } from '@/shared/components/ui/ActionDrawer';
+import { FinancialSummaryCard } from '@/shared/components/ui/FinancialSummaryCard';
 import { BankCombobox } from '@/shared/components/ui/BankCombobox';
 import { FileUploadField } from './returns/FileUploadField';
 import { formatDate } from '@/shared/utils/weeks';
@@ -179,36 +180,13 @@ export function AddOperationPaymentForm({
           || (Number.isInteger(Number(value)) && Number(value) > 0)
           || 'Selecciona una cuenta bancaria',
       })} />
-      <section aria-label="Resumen del ingreso" className="sticky top-0 z-10 space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="grid grid-cols-2 gap-3 text-sm">
-        <div>
-          <span className="block text-slate-500">Monto total requerido</span>
-          <span className="font-semibold text-slate-900">
-            ${formatCurrencyDisplay(montoTotal)}
-          </span>
-        </div>
-
-        <div>
-          <span className="block text-slate-500">Monto registrado</span>
-          <span className="font-semibold text-slate-900">
-            ${formatCurrencyDisplay(montoRegistrado)}
-          </span>
-        </div>
-
-        <div>
-          <span className="block text-slate-500">Faltante actual</span>
-          <span className="font-semibold text-slate-900">
-            ${formatCurrencyDisplay(saldoPendiente)}
-          </span>
-        </div>
-
-      </div>
-
-
-        <div aria-live="polite">
-          {(submitError ? [submitError] : [...formErrorMessages({ ...errors, monto: excedeSaldoPendiente ? undefined : errors.monto }), ...(excedeSaldoPendiente ? [`El monto del comprobante excede el saldo disponible por $${formatCurrencyDisplay(excedente)}.`] : [])]).map(message => <p key={message} role="alert" className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{message}</p>)}
-        </div>
-      </section>
+      <FinancialSummaryCard label="Resumen del ingreso"
+        metrics={[
+          { label: 'Monto total requerido', value: `$${formatCurrencyDisplay(montoTotal)}`, tone: 'blue' },
+          { label: 'Monto registrado', value: `$${formatCurrencyDisplay(montoRegistrado)}`, tone: 'green' },
+          { label: 'Faltante actual', value: `$${formatCurrencyDisplay(saldoPendiente)}`, tone: saldoPendiente > 0 ? 'amber' : 'neutral' },
+        ]}
+        errors={submitError ? [submitError] : [...formErrorMessages({ ...errors, monto: excedeSaldoPendiente ? undefined : errors.monto }), ...(excedeSaldoPendiente ? [`El monto del comprobante excede el saldo disponible por $${formatCurrencyDisplay(excedente)}.`] : [])]} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="space-y-4 lg:contents">

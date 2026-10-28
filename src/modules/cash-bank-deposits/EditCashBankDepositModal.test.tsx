@@ -28,7 +28,17 @@ it('muestra el rechazo del servidor junto al total y conserva el formulario', as
   const close = vi.fn();
   render(<EditCashBankDepositModal deposit={deposit} accounts={accounts} onClose={close} onSaved={vi.fn()} />);
   fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
-  expect(await screen.findByRole('alert')).toHaveTextContent('Saldo insuficiente');
+  const card = screen.getByRole('region', { name: 'Resumen del envío' });
+  expect(await within(card).findByRole('alert')).toHaveTextContent('Saldo insuficiente');
+  expect(card).toHaveClass('sticky');
+  expect(within(card).getByText('Total contado')).toBeInTheDocument();
   expect(screen.getByLabelText('Cantidad de $100.00')).toHaveValue(3);
   expect(close).not.toHaveBeenCalled();
+});
+
+it('muestra el aviso de datos incompletos dentro del resumen y bloquea el guardado', () => {
+  render(<EditCashBankDepositModal deposit={{ ...deposit, denominaciones: null } as unknown as CashBankDeposit} accounts={accounts} onClose={vi.fn()} onSaved={vi.fn()} />);
+  const card = screen.getByRole('region', { name: 'Resumen del envío' });
+  expect(within(card).getByRole('alert')).toHaveTextContent('No pudimos cargar los datos completos del envío');
+  expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeDisabled();
 });

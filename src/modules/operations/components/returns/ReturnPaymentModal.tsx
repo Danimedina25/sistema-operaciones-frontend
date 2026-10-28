@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { History, PlusCircle } from 'lucide-react';
 import { ActionDrawer } from '@/shared/components/ui/ActionDrawer';
+import { FinancialSummaryCard } from '@/shared/components/ui/FinancialSummaryCard';
 import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import {
@@ -236,36 +237,17 @@ export function ReturnPaymentModal({
         // informativas.
         <div className="space-y-6">
           {totals ? (
-            <section data-testid="cash-collection-summary" className={`sticky top-0 z-10 grid grid-cols-2 gap-2 rounded-2xl border bg-white p-3 text-xs shadow-lg sm:gap-4 sm:p-4 sm:text-sm ${cashDraftAmount > totals.montoDisponible || collectionErrors.length > 0 ? 'border-red-300' : 'border-slate-200'} ${isSocioComercial ? 'md:grid-cols-3' : 'md:grid-cols-4'}`}>
-              <div className="rounded-xl bg-blue-50 p-2 text-blue-800">
-                <span className="block">Total solicitado</span>
-                <strong className="mt-1 block">{formatCurrency(totals.montoSolicitado)}</strong>
-              </div>
-              <div className="rounded-xl bg-emerald-50 p-2 text-emerald-800">
-                <span className="block">{isSocioComercial ? 'Registrado' : 'Ya programado'}</span>
-                <strong className="mt-1 block">{formatCurrency(totals.montoRetornado + totals.montoEnProceso)}</strong>
-              </div>
-              {!isSocioComercial ? (
-                <div className={`rounded-xl p-2 ${cashDraftAmount > totals.montoDisponible ? 'bg-red-50 text-red-700' : 'bg-violet-50 text-violet-800'}`}>
-                  <span className="block">Nueva recolección</span>
-                  <strong className="mt-1 block">{formatCurrency(cashDraftAmount)}</strong>
-                </div>
-              ) : null}
-              <div className="rounded-xl bg-amber-50 p-2 text-amber-900">
-                <span className="block">Pendiente</span>
-                <strong className="mt-1 block">
-                  {formatCurrency(Math.max(totals.montoDisponible - cashDraftAmount, 0))}
-                </strong>
-              </div>
-              <div className="col-span-full" aria-live="polite">
-                {collectionErrors.filter(message => !(cashDraftAmount > totals.montoDisponible && message.startsWith('El importe no puede superar'))).map(message => (
-                  <p key={message} role="alert" className="mb-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{message}</p>
-                ))}
-                {cashDraftAmount > totals.montoDisponible && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
-                  El importe no puede superar {formatCurrency(totals.montoDisponible)}. Exceso: {formatCurrency(cashDraftAmount - totals.montoDisponible)}.
-                </p>}
-              </div>
-            </section>
+            <FinancialSummaryCard label="Resumen de la recolección" testId="cash-collection-summary"
+              metrics={[
+                { label: 'Total solicitado', value: formatCurrency(totals.montoSolicitado), tone: 'blue' },
+                { label: isSocioComercial ? 'Registrado' : 'Ya programado', value: formatCurrency(totals.montoRetornado + totals.montoEnProceso), tone: 'green' },
+                { label: 'Pendiente', value: formatCurrency(Math.max(totals.montoDisponible - cashDraftAmount, 0)), tone: 'amber' },
+              ]}
+              status={!isSocioComercial ? { text: `Nueva recolección: ${formatCurrency(cashDraftAmount)}`, ok: cashDraftAmount > 0 && cashDraftAmount <= totals.montoDisponible } : undefined}
+              errors={[
+                ...collectionErrors.filter(message => !(cashDraftAmount > totals.montoDisponible && message.startsWith('El importe no puede superar'))),
+                cashDraftAmount > totals.montoDisponible && `El importe no puede superar ${formatCurrency(totals.montoDisponible)}. Exceso: ${formatCurrency(cashDraftAmount - totals.montoDisponible)}.`,
+              ]} />
           ) : null}
           <section className="rounded-2xl border border-slate-200 bg-white p-4">
             <h3 className="mb-3 text-sm font-semibold text-slate-900">
@@ -278,10 +260,13 @@ export function ReturnPaymentModal({
         </div>
       ) : (
         <div className="space-y-6">
-          <section aria-label="Resumen del retorno" className={isBankManage ? 'sticky top-0 z-10 rounded-xl border border-slate-200 bg-white p-4 shadow-sm' : ''}>
-            <ReturnRequestSummarySection returnRequest={returnRequest} bankManage={isBankManage} />
+          {/* Solo la gestión bancaria usa el resumen fijo; en las demás vistas es una sección normal. */}
+          {isBankManage ? <FinancialSummaryCard label="Resumen del retorno" errors={collectionErrors}>
+            <ReturnRequestSummarySection returnRequest={returnRequest} bankManage />
+          </FinancialSummaryCard> : <section aria-label="Resumen del retorno">
+            <ReturnRequestSummarySection returnRequest={returnRequest} />
             {collectionErrors.map(message => <p key={message} role="alert" className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{message}</p>)}
-          </section>
+          </section>}
 
           {registerFormSection}
 

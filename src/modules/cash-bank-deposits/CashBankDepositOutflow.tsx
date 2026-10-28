@@ -4,11 +4,12 @@ import { useAuth } from '@/modules/auth/store/auth.context';
 import { getBankAccounts } from '@/modules/bank-accounts/api/bank-accounts.api';
 import { cajaGeneralApi } from '@/modules/caja-general/api/caja-general.api';
 import { CompactDenominationTables } from '@/modules/caja-general/components/CompactDenominationTables';
-import { countCents, emptyCounts } from '@/modules/caja-general/utils/cash-amounts';
+import { checkCount, countCents, emptyCounts } from '@/modules/caja-general/utils/cash-amounts';
 import type { CashCounts } from '@/modules/caja-general/types/caja-general.types';
 import { uploadOperationProof } from '@/modules/operations/api/operations-storage.api';
 import { Button } from '@/shared/components/ui/Button';
 import { BankAccountCombobox } from '@/shared/components/ui/BankAccountCombobox';
+import { FinancialSummaryCard } from '@/shared/components/ui/FinancialSummaryCard';
 import { ReceiptUploadField } from '@/shared/components/ui/ReceiptUploadField';
 import { ActionDrawer } from '@/shared/components/ui/ActionDrawer';
 import { StatusBadge } from '@/shared/components/ui/StatusBadge';
@@ -39,6 +40,7 @@ export function CashBankDepositOutflow() {
   const [returning, setReturning] = useState<CashBankDeposit | null>(null);
   const [editing, setEditing] = useState<CashBankDeposit | null>(null);
   const [returnCounts, setReturnCounts] = useState<CashCounts>(emptyCounts);
+  const returnCount = returning ? checkCount(countCents(returnCounts), Math.round(returning.monto * 100)) : null;
   const [returnError, setReturnError] = useState('');
   const returnFormId = useId();
   const submitting = useRef(false);
@@ -186,14 +188,13 @@ export function CashBankDepositOutflow() {
         <Button type="submit" form={returnFormId} variant="success" isLoading={busy}>Confirmar devolución</Button>
       </div>}>
       {returning && <form id={returnFormId} className="space-y-4" onSubmit={event => { event.preventDefault(); void confirmReturn(); }}>
-        <section aria-label="Resumen de la devolución" className="sticky top-0 z-10 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <dl className="grid grid-cols-2 gap-3 text-sm">
-            <div><dt className="text-slate-500">Monto devuelto</dt><dd className="mt-1 text-lg font-bold tabular-nums">{formatMoney(returning.monto)}</dd></div>
-            <div className="text-right"><dt className="text-slate-500">Total contado</dt><dd className="mt-1 text-lg font-bold tabular-nums">{Number.isFinite(countCents(returnCounts)) ? formatMoney(countCents(returnCounts) / 100) : '—'}</dd></div>
-          </dl>
-          <p className="mt-2 text-xs text-slate-500">La reserva se libera al confirmar el conteo del efectivo devuelto.</p>
-          {returnError && <p role="alert" className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{returnError}</p>}
-        </section>
+        <FinancialSummaryCard label="Resumen de la devolución" errors={[returnCount?.error, returnError]}
+          note="La reserva se libera al confirmar el conteo del efectivo devuelto."
+          metrics={[
+            { label: 'Monto devuelto', value: formatMoney(returning.monto), tone: 'blue' },
+            { label: 'Total contado', value: Number.isFinite(countCents(returnCounts)) ? formatMoney(countCents(returnCounts) / 100) : '—', tone: returnCount?.tone },
+          ]}
+          status={returnCount ? { text: returnCount.text, tone: returnCount.tone } : undefined} />
         <div className="sm:[&>div]:grid-cols-2"><CompactDenominationTables value={returnCounts} onChange={value => { setReturnCounts(value); setReturnError(''); }} disabled={busy} dense /></div>
       </form>}
     </ActionDrawer>

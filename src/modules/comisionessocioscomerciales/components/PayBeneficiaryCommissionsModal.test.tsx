@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, it, vi } from 'vitest';
 import { PayBeneficiaryCommissionsModal } from './PayBeneficiaryCommissionsModal';
@@ -80,4 +80,16 @@ it('bloquea un segundo pago y cancelar mientras se registra', async () => {
   expect(onSubmit).toHaveBeenCalledTimes(1);
   expect(screen.getByRole('button', { name: 'Cancelar' })).toBeDisabled();
   await import('@testing-library/react').then(({ act }) => act(async () => finish()));
+});
+
+it('muestra el total y los errores dentro del resumen fijo del pago', async () => {
+  render(<PayBeneficiaryCommissionsModal open beneficiary={beneficiary} startDate="2026-10-01" endDate="2026-10-14" onClose={vi.fn()} onSubmit={vi.fn()} />);
+  const user = userEvent.setup();
+  const summary = screen.getByRole('region', { name: 'Resumen del pago' });
+  expect(summary).toHaveTextContent('Comisiones por pagar');
+  expect(summary).toHaveTextContent('$10.00');
+  expect(summary).toHaveTextContent('1 operación');
+  await user.click(screen.getByRole('button', { name: 'Adjuntar comprobante' }));
+  await user.click(screen.getByRole('button', { name: 'Registrar pago' }));
+  expect(within(summary).getByRole('alert')).toHaveTextContent('Selecciona la cuenta desde la que se transfiere.');
 });

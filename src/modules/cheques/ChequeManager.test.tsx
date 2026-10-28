@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
@@ -55,8 +55,35 @@ describe('shared cheque manager', () => {
     fireEvent.change(await screen.findByLabelText(/Acción/), { target: { value: 'CONFIRMAR_COBRO_EFECTIVO' } });
     expect(screen.getByRole('columnheader', { name: 'Billetes' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Monedas' })).toBeInTheDocument();
-    expect(screen.getByText(/Total contado \$0\.00 · pendiente de cuadrar/)).toBeInTheDocument();
+    const summary = screen.getByRole('region', { name: 'Resumen del cheque' });
+    expect(within(summary).getByText('Total contado $0.00 · faltan $100.00')).toBeInTheDocument();
+    expect(within(summary).queryByRole('alert')).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Cantidad de $50.00'), { target: { value: '2' } });
-    expect(screen.getByText(/Total contado \$100\.00 · cuadra/)).toBeInTheDocument();
+    expect(within(summary).getByText('Total contado $100.00 · cuadra')).toBeInTheDocument();
+    // Contar de más es un error visible en el resumen, no un pendiente.
+    fireEvent.change(screen.getByLabelText('Cantidad de $50.00'), { target: { value: '3' } });
+    expect(within(summary).getByText('Total contado $150.00 · sobran $50.00')).toBeInTheDocument();
+    expect(within(summary).getByRole('alert')).toHaveTextContent('El conteo excede el monto por $50.00. Debe cuadrar exacto.');
+  });
+  it('valida sin la burbuja del navegador y muestra el error en el resumen', async () => {
+    mocks.role = 'JEFA_CAJAS'; mount();
+    fireEvent.change(await screen.findByLabelText(/Acción/), { target: { value: 'CONFIRMAR_COBRO_EFECTIVO' } });
+    const form = (screen.getByLabelText(/Fecha efectiva/) as HTMLInputElement).form!;
+    expect(form).toHaveAttribute('novalidate');
+    fireEvent.submit(form);
+    expect(await within(screen.getByRole('region', { name: 'Resumen del cheque' })).findByText('Selecciona una fecha válida.')).toBeInTheDocument();
+    expect(mocks.command).not.toHaveBeenCalled();
+  });
+  it('muestra el monto y el error del servidor dentro del resumen fijo del cheque', async () => {
+    mocks.command.mockRejectedValueOnce(new Error('El cheque cambió, recarga la información'));
+    mocks.role = 'JEFA_CAJAS'; mount();
+    fireEvent.change(await screen.findByLabelText(/Acción/), { target: { value: 'CONFIRMAR_COBRO_EFECTIVO' } });
+    fireEvent.change(screen.getByLabelText(/Fecha efectiva/), { target: { value: '2026-09-20' } });
+    fireEvent.change(screen.getByLabelText('Cantidad de $50.00'), { target: { value: '2' } });
+    await screen.findByText(/Caja abierta/);
+    fireEvent.submit((screen.getByRole('button', { name: 'Validar con este conteo' }) as HTMLButtonElement).form!);
+    const card = screen.getByRole('region', { name: 'Resumen del cheque' });
+    expect(within(card).getByText('Monto del cheque')).toBeInTheDocument();
+    expect(await within(card).findByRole('alert')).toHaveTextContent(/.+/);
   });
 });

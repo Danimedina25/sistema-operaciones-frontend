@@ -39,7 +39,8 @@ describe('prellenado de retornos', () => {
     render(<RequestReturnForm {...props} montoSolicitado={100} faltaPorSolicitar={900} onSubmit={vi.fn()} />);
     const summary = screen.getByTestId('return-live-summary');
     expect(summary).toHaveClass('sticky', 'top-0');
-    expect(summary).toHaveClass('rounded-2xl', 'border', 'shadow-lg');
+    expect(summary).toHaveAttribute('aria-label', 'Resumen de la solicitud');
+    expect(summary).toHaveClass('rounded-2xl', 'border');
     expect(within(summary).getByText('Monto total a retornar').parentElement).toHaveClass('bg-blue-50');
     expect(within(summary).getByText('Monto solicitado').parentElement).toHaveClass('bg-emerald-50');
     expect(within(summary).getByText('Falta por solicitar').parentElement).toHaveClass('bg-amber-50');
@@ -53,6 +54,13 @@ describe('prellenado de retornos', () => {
     fireEvent.change(screen.getByPlaceholderText('1,000.00'), { target: { value: '950' } });
     expect(within(summary).getByRole('alert')).toHaveTextContent('$50.00');
     expect(summary).toHaveClass('border-red-300');
+  });
+
+  it('muestra el exceso como alerta dentro de la región del resumen', () => {
+    render(<RequestReturnForm {...props} onSubmit={vi.fn()} />);
+    fireEvent.change(screen.getByPlaceholderText('1,000.00'), { target: { value: '1200' } });
+    expect(within(screen.getByRole('region', { name: 'Resumen de la solicitud' })).getByRole('alert'))
+      .toHaveTextContent('La solicitud excede el monto a retornar por $200.00.');
   });
 
   it('cargar y prellenar no envía; permite editar y registra solo con el botón final', async () => {

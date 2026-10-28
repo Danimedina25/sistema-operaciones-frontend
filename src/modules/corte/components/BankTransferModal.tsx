@@ -4,6 +4,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
 import { MoneyInput } from '@/shared/components/ui/MoneyInput';
 import { moneyInputToNumber } from '@/shared/utils/money-input';
+import { FinancialSummaryCard } from '@/shared/components/ui/FinancialSummaryCard';
 import { BankAccountCombobox } from '@/shared/components/ui/BankAccountCombobox';
 import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts';
 import { getApiErrorMessage } from '@/shared/utils/errors';
@@ -98,13 +99,10 @@ export function BankTransferForm({ onClose, onSubmit, showSummary = false, onBus
         <fieldset disabled={busy} className={showSummary ? 'grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]' : 'space-y-5'}>
           <div className={showSummary ? 'space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm' : 'space-y-5'}>
           {showSummary && <h2 className="text-sm font-semibold text-slate-950">Datos de la transferencia</h2>}
-          {!showSummary && <section aria-label="Resumen de la transferencia" className="sticky top-0 z-10 space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-sm text-slate-600">
-            El monto sale de la cuenta origen y entra a la beneficiaria en el mismo momento. Queda en el
-            libro de movimientos de las dos cuentas.
-          </p>
+          {!showSummary && <FinancialSummaryCard label="Resumen de la transferencia" errors={[error]}
+            note="El monto sale de la cuenta origen y entra a la beneficiaria en el mismo momento. Queda en el libro de movimientos de las dos cuentas.">
             {origenId ? <AvailabilityHint availability={availability} amount={error ? null : amount} /> : null}
-            {error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-          </section>}
+          </FinancialSummaryCard>}
           <div className="grid gap-4 md:grid-cols-2">
             <BankAccountCombobox
               label="Cuenta origen"

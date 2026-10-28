@@ -1,4 +1,5 @@
 import { ActionDrawerFooter } from '@/shared/components/ui/ActionDrawer';
+import { FinancialSummaryCard } from '@/shared/components/ui/FinancialSummaryCard';
 import { ReceiptViewerLink } from '@/shared/components/ui/ReceiptViewerLink';
 import { Landmark, KeyRound, CheckCircle2, Clock3, UserRound, ShieldCheck, Pencil, Trash2 } from 'lucide-react';
 import { StatusBadge } from '@/shared/components/ui/StatusBadge';
@@ -89,15 +90,14 @@ export function CardlessCodePanel({ request, installments, onChanged, readOnly =
     finally { submitting.current = false; setSaving(false); }
   }
   return <div className="space-y-5">
-    <section ref={summaryRef} className={`sticky top-0 z-10 space-y-3 rounded-2xl border bg-white p-4 shadow-lg ${error || excess ? 'border-red-300' : 'border-slate-200'}`}>
-      <p className="text-sm text-slate-600">Solicitud #{request.id} · Operación #{request.operationId}{request.clienteNombre ? ` · ${request.clienteNombre}` : ''}</p>
-      <div className="grid grid-cols-3 gap-2 text-sm">
-        <div className="rounded-xl bg-blue-50 p-3 text-blue-800">Solicitado<strong className="block">{formatCurrency(request.montoSolicitado ?? request.monto)}</strong></div>
-        <div className="rounded-xl bg-emerald-50 p-3 text-emerald-800">Códigos registrados<strong className="block">{formatCurrency((request.montoSolicitado ?? request.monto) - available)}</strong></div>
-        <div className="rounded-xl bg-amber-50 p-3 text-amber-900">Por registrar<strong className="block">{formatCurrency(available)}</strong></div>
-      </div>
-      {(error || excess) && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error || `El código no puede superar ${formatCurrency(available)}.`}</p>}
-    </section>
+    <FinancialSummaryCard ref={summaryRef} label="Resumen de la solicitud"
+      context={`Solicitud #${request.id} · Operación #${request.operationId}${request.clienteNombre ? ` · ${request.clienteNombre}` : ''}`}
+      metrics={[
+        { label: 'Solicitado', value: formatCurrency(request.montoSolicitado ?? request.monto), tone: 'blue' },
+        { label: 'Códigos registrados', value: formatCurrency((request.montoSolicitado ?? request.monto) - available), tone: 'green' },
+        { label: 'Por registrar', value: formatCurrency(available), tone: 'amber' },
+      ]}
+      errors={[error || (excess && `El código no puede superar ${formatCurrency(available)}.`)]} />
     {accountsRole && available > 0 && <form id={formId} className="space-y-4 rounded-2xl border border-slate-200 p-4" onSubmit={e => {
       e.preventDefault(); if (!account || !accounts.some(a => a.id === account) || eligible.isError || !code.trim() || !(numeric > 0) || excess) return;
       void run(() => api.post(`/api/operations/returns/requests/${request.id}/installments`, { monto: numeric, cuentaOrigenId: account, codigoRetiroSinTarjeta: code.trim() }), true);

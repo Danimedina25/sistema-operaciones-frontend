@@ -3,10 +3,11 @@ import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import type { BankAccountResponse } from '@/modules/bank-accounts/types/bank-accounts.types';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { CompactDenominationTables } from '@/modules/caja-general/components/CompactDenominationTables';
-import { countCents, currency, emptyCounts } from '@/modules/caja-general/utils/cash-amounts';
+import { checkCount, countCents, currency, emptyCounts } from '@/modules/caja-general/utils/cash-amounts';
 import { uploadOperationProof } from '@/modules/operations/api/operations-storage.api';
 import { BankAccountCombobox } from '@/shared/components/ui/BankAccountCombobox';
 import { Button } from '@/shared/components/ui/Button';
+import { FinancialSummaryCard } from '@/shared/components/ui/FinancialSummaryCard';
 import { Modal } from '@/shared/components/ui/Modal';
 import { ReceiptUploadField } from '@/shared/components/ui/ReceiptUploadField';
 import { getApiErrorMessage } from '@/shared/utils/errors';
@@ -69,12 +70,15 @@ export function EditCashBankDepositModal({ deposit, accounts, onClose, onSaved }
   }
 
   const countedCents = countCents(counts);
+  const amountValid = /^\d{1,13}(\.\d{1,2})?$/.test(amount);
+  const count = amountValid ? checkCount(countedCents, Math.round(Number(amount) * 100)) : null;
   return <Modal open title={`Editar envío #${deposit.id}`} variant="light" size="wide" busy={busy} onClose={() => { if (!submitting.current) onClose(); }}
     footer={<>
       <Button type="button" variant="neutral" disabled={busy} onClick={onClose}>Cancelar</Button>
       <Button type="submit" form={formId} disabled={!hasEditableDetails || !accountId || busy} isLoading={busy}>Guardar cambios</Button>
     </>}>
-    <form id={formId} onSubmit={submit} className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.96fr)_minmax(300px,1fr)] lg:items-start">
+    {/* En pantallas chicas el resumen va primero y queda fijo (flex); en lg la columna derecha es fija. */}
+    <form id={formId} onSubmit={submit} className="flex min-w-0 flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1.96fr)_minmax(300px,1fr)] lg:items-start">
       <fieldset disabled={busy} className="min-w-0 space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <div><h3 className="text-lg font-semibold text-slate-950">Datos del envío</h3>
           <p className="text-sm text-slate-500">Corrige la cuenta, el efectivo o el comprobante antes de la acreditación.</p></div>
@@ -94,16 +98,13 @@ export function EditCashBankDepositModal({ deposit, accounts, onClose, onSaved }
           <CompactDenominationTables value={counts} onChange={value => { setCounts(value); setError(''); }} dense /></div>
         <ReceiptUploadField file={proof} onChange={setProof} label="Reemplazar comprobante de salida" maxBytes={5_242_880} />
       </fieldset>
-      <aside className="order-first min-w-0 lg:order-last space-y-4 lg:sticky lg:top-0 lg:self-start">
-       <section ref={summaryRef} aria-label="Resumen del envío" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-        <h3 className="text-sm font-semibold text-slate-950">Resumen del envío</h3>
-        <p className="mt-3 text-sm text-slate-500">Total contado</p>
-        <p className="text-2xl font-bold tabular-nums text-slate-950">{Number.isFinite(countedCents) ? currency(countedCents / 100) : '—'}</p>
-        {!hasEditableDetails && <p role="alert" className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">No pudimos cargar los datos completos del envío. Vuelve a abrirlo antes de editar para evitar perder información.</p>}
-        <p className="mt-3 text-sm text-slate-600">El envío permanece en tránsito hasta que Cuentas confirme el depósito. Si no adjuntas otro comprobante, se conserva el actual.</p>
-        {error && <p role="alert" className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-
-       </section>
+      <aside className="contents lg:sticky lg:top-0 lg:block lg:min-w-0 lg:space-y-4 lg:self-start">
+       <FinancialSummaryCard ref={summaryRef} label="Resumen del envío" className="order-first sm:p-6 lg:order-none"
+        metrics={[{ label: 'Monto del envío', value: amountValid ? currency(Number(amount)) : '—', tone: 'blue' },
+          { label: 'Total contado', value: Number.isFinite(countedCents) ? currency(countedCents / 100) : '—', tone: count?.tone ?? 'amber' }]}
+        status={count ? { text: count.text, tone: count.tone } : undefined}
+        note="El envío permanece en tránsito hasta que Cuentas confirme el depósito. Si no adjuntas otro comprobante, se conserva el actual."
+        errors={[!hasEditableDetails && 'No pudimos cargar los datos completos del envío. Vuelve a abrirlo antes de editar para evitar perder información.', count?.error, error]} />
        {deposit.comprobanteSalidaUrl && <SavedProofPreview url={deposit.comprobanteSalidaUrl} />}
       </aside>
     </form>

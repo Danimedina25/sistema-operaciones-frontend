@@ -92,4 +92,12 @@ describe('Retiro de efectivo para Caja General', () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
+  it('muestra el saldo insuficiente dentro del resumen fijo', () => {
+    mount();
+    chooseAccount();
+    fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '900' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar retiro' }));
+    const summary = screen.getByRole('region', { name: 'Resumen del retiro' });
+    expect(within(summary).getByRole('alert')).toHaveTextContent('Saldo insuficiente en la cuenta.');
+  });
 });

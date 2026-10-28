@@ -3,6 +3,7 @@ import { ActionDrawer, ActionDrawerFooter } from '@/shared/components/ui/ActionD
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
 import { MoneyInput } from '@/shared/components/ui/MoneyInput';
+import { FinancialSummaryCard } from '@/shared/components/ui/FinancialSummaryCard';
 import { BankAccountCombobox } from '@/shared/components/ui/BankAccountCombobox';
 import { useBankAccounts } from '@/modules/bank-accounts/hooks/use-bank-accounts';
 import { getApiErrorMessage } from '@/shared/utils/errors';
@@ -82,13 +83,11 @@ export function RegisterWithdrawalForm({ onClose, onSubmit, showSummary = false,
         <fieldset disabled={busy} className={showSummary ? 'grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]' : 'space-y-5'}>
           <div className={showSummary ? 'space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm' : 'space-y-5'}>
           {showSummary && <h2 className="text-sm font-semibold text-slate-950">Datos del retiro</h2>}
-          {!showSummary && <section aria-label="Resumen del retiro" className="sticky top-0 z-10 space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-sm text-slate-600">
-            Beneficiario: <strong className="text-slate-900">Caja General</strong>. El retiro queda en tránsito hasta que
-            la Jefa de Cajas reciba y cuente el efectivo; al confirmarlo entra a la caja y baja el saldo de la cuenta.
-          </p>
+          {!showSummary && <FinancialSummaryCard label="Resumen del retiro" errors={[error || amountProblem]}
+            note={<>Beneficiario: <strong className="text-slate-900">Caja General</strong>. El retiro queda en tránsito hasta que
+              la Jefa de Cajas reciba y cuente el efectivo; al confirmarlo entra a la caja y baja el saldo de la cuenta.</>}>
             {bankAccountId ? <AvailabilityHint availability={availability} amount={error ? null : amount} /> : null}
-            {(error || amountProblem) && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error || amountProblem}</p>}
-          </section>}
+          </FinancialSummaryCard>}
           <div className="grid gap-4 md:grid-cols-2">
             <BankAccountCombobox
               label="Cuenta de la que sale el efectivo"

@@ -5,6 +5,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { emptyCounts, countCents } from '@/modules/caja-general/utils/cash-amounts';
 import type { CashCounts } from '@/modules/caja-general/types/caja-general.types';
 import { ActionDrawer } from '@/shared/components/ui/ActionDrawer';
+import { FinancialSummaryCard } from '@/shared/components/ui/FinancialSummaryCard';
 import { ReceiptUploadField } from '@/shared/components/ui/ReceiptUploadField';
 import { formatCurrency, formatDateTime } from '@/modules/operations/utils/operation-formatters';
 import {
@@ -129,24 +130,25 @@ export function MarkCashReturnDeliveredModal({
       </div>}
     >
       {target ? (
-        <>
+        // El resumen envuelve todo el cuerpo para quedarse fijo arriba mientras se captura el desglose, el receptor y la foto.
+        <section aria-label={requiresCashBreakdown ? 'Desglose y resumen de entrega' : 'Resumen y evidencia de entrega'} className="min-w-0">
+          <FinancialSummaryCard ref={summaryRef} label="Resumen de entrega"
+            metrics={[{ label: 'A entregar', value: formatCurrency(target.monto), tone: 'blue' },
+              ...(requiresCashBreakdown ? [{ label: 'Total contado', tone: !Number.isFinite(differenceCents) || differenceCents > 0 ? 'red' as const : differenceCents === 0 ? 'green' as const : 'amber' as const,
+                value: <strong aria-label="Total de denominaciones" className="font-bold">{Number.isFinite(countedCents) ? formatCurrency(countedCents / 100) : '—'}</strong> }] : [])]}
+            errors={[submitError]}>
+            {requiresCashBreakdown && <p role="status" className={`rounded-lg border px-3 py-2 text-sm font-semibold ${differenceCents === 0 ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : differenceCents > 0 ? 'border-red-200 bg-red-50 text-red-700' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
+              {!Number.isFinite(differenceCents) ? 'Revisa las cantidades capturadas' : differenceCents === 0 ? 'Conteo completo' : differenceCents > 0 ? `Sobran ${formatCurrency(differenceCents / 100)} en el conteo` : `Faltan ${formatCurrency(-differenceCents / 100)} por contar`}
+            </p>}
+          </FinancialSummaryCard>
+
           {requiresCashBreakdown ? (
-            <section aria-label="Desglose y resumen de entrega" className="min-w-0">
+            <div className="mt-4">
               <h3 className="mb-3 text-sm font-semibold text-slate-900">Desglose por denominación</h3>
               <div className="sm:[&>div]:grid-cols-2">
                 <CompactDenominationTables dense value={denominaciones} onChange={setDenominaciones} disabled={busy} />
               </div>
-              <section ref={summaryRef} aria-label="Resumen de entrega" className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-                <div aria-label="Total de denominaciones" className="grid grid-cols-2 gap-3 font-bold text-slate-950">
-                  <div><span className="block text-xs text-slate-500">A entregar</span><strong className="text-lg tabular-nums">{formatCurrency(target.monto)}</strong></div>
-                  <div className="text-right"><span className="block text-xs text-slate-500">Total contado</span><strong className="text-lg tabular-nums">{Number.isFinite(countedCents) ? formatCurrency(countedCents / 100) : '—'}</strong></div>
-                </div>
-                <p role="status" className={`mt-2 border-t border-slate-200 pt-2 text-sm font-semibold ${differenceCents === 0 ? 'text-emerald-700' : differenceCents > 0 ? 'text-red-700' : 'text-amber-800'}`}>
-                  {!Number.isFinite(differenceCents) ? 'Revisa las cantidades capturadas' : differenceCents === 0 ? 'Conteo completo' : differenceCents > 0 ? `Sobran ${formatCurrency(differenceCents / 100)} en el conteo` : `Faltan ${formatCurrency(-differenceCents / 100)} por contar`}
-                </p>
-                {submitError && <p role="alert" className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{submitError}</p>}
-              </section>
-            </section>
+            </div>
           ) : null}
 
           <div className="mt-4 border-t border-slate-200 pt-4">
@@ -236,7 +238,7 @@ export function MarkCashReturnDeliveredModal({
           <p className="mt-3 text-xs text-slate-500">
             {target.confirmadoPorSocio ? 'Recepción confirmada por el socio.' : 'Pendiente de confirmación del socio.'}
           </p>
-        </>
+        </section>
       ) : null}
     </ActionDrawer>
   );

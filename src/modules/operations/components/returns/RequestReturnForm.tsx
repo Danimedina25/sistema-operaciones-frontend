@@ -4,6 +4,7 @@ import { useId, useMemo, useRef, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
 import { ActionDrawerFooter } from '@/shared/components/ui/ActionDrawer';
+import { FinancialSummaryCard } from '@/shared/components/ui/FinancialSummaryCard';
 import { Input } from '@/shared/components/ui/Input';
 import { ReturnDestinationAccountSuggestion, ReturnPaymentResponse } from '../../types/operations.types.ts';
 import { ReturnPaymentType } from '@/shared/utils/form.utils.js';
@@ -469,15 +470,14 @@ export function RequestReturnForm({
   return (
     <form id={formId} className="space-y-6" onChange={() => { if (submitError) setSubmitError(''); }} onSubmit={handleSubmit}>
       <fieldset disabled={isSubmitting} className="min-w-0 space-y-6">
-      <div data-testid="return-live-summary" className={`sticky top-0 z-10 rounded-2xl border bg-white p-3 shadow-lg sm:p-4 ${excedeMonto || cashAmountErrors.length > 0 || validationMessages.length > 0 || submitError ? 'border-red-300' : 'border-slate-200'}`}>
-        {!hideClientName && <p className="mb-3 text-sm text-slate-500">Cliente: <span className="font-semibold text-slate-900">{clienteNombre}</span></p>}
-        <dl className="grid grid-cols-3 gap-2 text-xs sm:gap-4 sm:text-sm">
-          <div className="rounded-xl bg-blue-50 p-2 text-blue-800"><dt>Monto total a retornar</dt><dd className="mt-1 font-bold">{formatMoney(montoTotalRetornar)}</dd></div>
-          <div className="rounded-xl bg-emerald-50 p-2 text-emerald-800"><dt>Monto solicitado</dt><dd className="mt-1 font-bold">{formatMoney(montoSolicitadoEnVivo)}</dd></div>
-          <div className="rounded-xl bg-amber-50 p-2 text-amber-900"><dt>Falta por solicitar</dt><dd className="mt-1 font-bold">{formatMoney(faltaPorSolicitarEnVivo)}</dd></div>
-        </dl>
-        <div aria-live="polite">{[...validationMessages, ...(submitError ? [submitError] : [])].map(message => <p key={message} role="alert" className="mt-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{message}</p>)}{excedeMonto && <p role="alert" className="mt-2 text-sm font-semibold text-red-700">La solicitud excede el monto a retornar por {formatMoney(excedente)}.</p>}{cashAmountErrors.map(message => <p key={message} role="alert" className="mt-2 text-sm font-semibold text-red-700">{message}</p>)}</div>
-      </div>
+      <FinancialSummaryCard label="Resumen de la solicitud" testId="return-live-summary"
+        context={!hideClientName ? <>Cliente: <span className="font-semibold text-slate-900">{clienteNombre}</span></> : undefined}
+        metrics={[
+          { label: 'Monto total a retornar', value: formatMoney(montoTotalRetornar), tone: 'blue' },
+          { label: 'Monto solicitado', value: formatMoney(montoSolicitadoEnVivo), tone: 'green' },
+          { label: 'Falta por solicitar', value: formatMoney(faltaPorSolicitarEnVivo), tone: 'amber' },
+        ]}
+        errors={[...validationMessages, submitError, excedeMonto && `La solicitud excede el monto a retornar por ${formatMoney(excedente)}.`, ...cashAmountErrors]} />
 
       <ReturnExcelImport disabled={isSubmitting} currentTotal={totalSolicitado} available={montoDisponible} onImport={(payments, sheet) => {
         const imported = payments.map(payment => ({ ...payment.draft, id: crypto.randomUUID(), excelSource: `${sheet} · fila ${payment.row}`, importIssues: payment.importIssues }));

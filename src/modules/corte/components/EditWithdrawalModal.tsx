@@ -8,6 +8,7 @@ import { uploadOperationProof } from '@/modules/operations/api/operations-storag
 import { BankAccountCombobox } from '@/shared/components/ui/BankAccountCombobox';
 import { Button } from '@/shared/components/ui/Button';
 import { ActionDrawer } from '@/shared/components/ui/ActionDrawer';
+import { FinancialSummaryCard } from '@/shared/components/ui/FinancialSummaryCard';
 import { MoneyInput } from '@/shared/components/ui/MoneyInput';
 import { ReceiptUploadField } from '@/shared/components/ui/ReceiptUploadField';
 import { getApiErrorMessage } from '@/shared/utils/errors';
@@ -58,10 +59,8 @@ export function EditWithdrawalModal({ withdrawal, onClose, onSaved }: {
       <Button type="submit" form={formId} disabled={!accountId || busy} isLoading={busy}>Guardar cambios</Button>
     </div>}>
     <form id={formId} onSubmit={submit} className="space-y-5">
-      <section aria-label="Resumen del retiro" className="sticky top-0 z-10 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <p className="text-sm text-slate-600">Destino: <strong>Caja General</strong>. Puedes editarlo hasta que Caja confirme su recepción.</p>
-        {error && <p role="alert" className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-      </section>
+      <FinancialSummaryCard label="Resumen del retiro" errors={[error]}
+        note={<>Destino: <strong>Caja General</strong>. Puedes editarlo hasta que Caja confirme su recepción.</>} />
       <fieldset disabled={busy} className="space-y-5">
         <BankAccountCombobox label="Cuenta de la que sale el efectivo" accounts={accounts} value={accountId}
           onChange={id => { setAccountId(id); setError(''); }} isLoading={isLoading} onlyActive clearSelectionOnInput />

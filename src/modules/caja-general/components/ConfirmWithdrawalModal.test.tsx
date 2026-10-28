@@ -41,7 +41,8 @@ describe('Confirmar retiro recibido', () => {
 
   it('explica un retiro que no se puede contar con monedas de 50¢', () => {
     render(<ConfirmWithdrawalModal withdrawal={{ ...withdrawal, monto: 1200.25 }} onClose={vi.fn()} onConfirm={vi.fn()} />);
-    expect(screen.getByRole('alert')).toHaveTextContent('la moneda más chica es de $0.50');
+    const card = screen.getByRole('region', { name: 'Resumen del retiro' });
+    expect(within(card).getByRole('alert')).toHaveTextContent('la moneda más chica es de $0.50');
     expect(screen.getByRole('button', { name: 'Confirmar entrada a caja' })).toBeDisabled();
   });
   it('conserva el conteo y el error visible si la confirmación falla, con acciones fijas', async () => {
@@ -52,7 +53,10 @@ describe('Confirmar retiro recibido', () => {
     expect(dialog.querySelector('footer')).toContainElement(button);
     fireEvent.change(screen.getByLabelText('Cantidad de $100.00'), { target: { value: '12' } });
     fireEvent.click(button);
-    expect(await within(screen.getByRole('complementary', { name: 'Resumen del retiro' })).findByRole('alert')).toHaveTextContent('La caja está cerrada');
+    const card = screen.getByRole('region', { name: 'Resumen del retiro' });
+    expect(await within(card).findByRole('alert')).toHaveTextContent('La caja está cerrada');
+    expect(card).toHaveClass('sticky', 'top-0');
+    expect(within(card).getByText('Monto retirado')).toBeInTheDocument();
     expect(screen.getByLabelText('Cantidad de $100.00')).toHaveValue(12);
     expect(button).toBeEnabled();
   });

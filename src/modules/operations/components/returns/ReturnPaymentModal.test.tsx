@@ -58,12 +58,12 @@ it('reúne los errores en la card fija y retira el de evidencia al adjuntar el a
     canConfirm={() => false} canDeliver={() => false} canCancel={() => false} onConfirm={vi.fn()} onDeliver={vi.fn()} onCancel={vi.fn()} onClose={vi.fn()} />);
   fireEvent.click(screen.getByRole('button', { name: 'Programar recolección' }));
   const summary = screen.getByTestId('cash-collection-summary');
-  await waitFor(() => expect(within(summary).getAllByRole('alert')).toHaveLength(4));
-  expect(within(summary).getByText('La evidencia del importe preparado es obligatoria')).toBeInTheDocument();
-  expect(screen.getAllByText('La evidencia del importe preparado es obligatoria')).toHaveLength(1);
+  // Un solo error a la vez: el primero pendiente, y al corregirlo aparece el siguiente.
+  await waitFor(() => expect(within(summary).getAllByRole('alert').map(alert => alert.textContent)).toEqual(['El importe debe ser mayor a 0']));
   expect(summary).toHaveClass('border-red-300');
   fireEvent.change(screen.getByPlaceholderText('0.00'), { target: { value: '97.50' } });
   await waitFor(() => expect(within(summary).queryByText('El importe debe ser mayor a 0')).not.toBeInTheDocument());
+  expect(within(summary).getAllByRole('alert')).toHaveLength(1);
   vi.stubGlobal('DataTransfer', class {
     files: File[] = [];
     items = { add: (file: File) => this.files.push(file) };
@@ -82,7 +82,10 @@ it('centraliza también los errores de retornos bancarios y ofrece cancelar en e
     canConfirm={() => false} canDeliver={() => false} canCancel={() => false} onConfirm={vi.fn()} onDeliver={vi.fn()} onCancel={vi.fn()} onClose={close} />);
   fireEvent.click(screen.getByRole('button', { name: 'Registrar retorno' }));
   const summary = screen.getByRole('region', { name: 'Resumen del retorno' });
+  await waitFor(() => expect(within(summary).getAllByRole('alert').map(alert => alert.textContent)).toEqual(['El importe debe ser mayor a 0']));
+  fireEvent.change(screen.getByPlaceholderText('0.00'), { target: { value: '100' } });
   await waitFor(() => expect(within(summary).getByText('La cuenta origen es obligatoria')).toBeInTheDocument());
+  expect(within(summary).getAllByRole('alert')).toHaveLength(1);
   expect(screen.getAllByText('La cuenta origen es obligatoria')).toHaveLength(1);
   expect(submit).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));

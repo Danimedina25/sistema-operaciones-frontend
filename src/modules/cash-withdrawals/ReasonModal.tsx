@@ -1,5 +1,6 @@
 import { useId, useRef, useState, type FormEvent } from 'react';
 import { Modal } from '@/shared/components/ui/Modal';
+import { FinancialSummaryCard } from '@/shared/components/ui/FinancialSummaryCard';
 import { Button } from '@/shared/components/ui/Button';
 import { getApiErrorMessage } from '@/shared/utils/errors';
 
@@ -48,10 +49,10 @@ export function ReasonModal({ open, title, description, confirmLabel, onClose, o
       <Button variant="destructive" type="submit" form={formId} isLoading={busy}>{confirmLabel}</Button>
     </>}>
     <form id={formId} onSubmit={submit} className="space-y-4">
-      <section aria-label="Resumen de la acción" className="sticky top-0 z-10 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <p className="text-sm text-slate-600">{description}</p>
-        {error && <p id={errorId} role="alert" className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-      </section>
+      <FinancialSummaryCard label="Resumen de la acción" note={description}>
+        {/* El error conserva su id: el campo Motivo lo referencia con aria-describedby. */}
+        {error && <p id={errorId} role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      </FinancialSummaryCard>
       <label className="block text-sm font-medium text-slate-700">Motivo
         <textarea aria-label="Motivo" value={motivo} maxLength={500} rows={3} disabled={busy}
           aria-invalid={!!error || undefined} aria-describedby={error ? errorId : undefined}

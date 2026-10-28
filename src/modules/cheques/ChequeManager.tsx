@@ -5,10 +5,11 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { ActionDrawer, ActionDrawerFooter } from '@/shared/components/ui/ActionDrawer';
 import { ReceiptUploadField } from '@/shared/components/ui/ReceiptUploadField';
-import { formatDate, formatDateTime } from '@/shared/format';
+import { FinancialSummaryCard } from '@/shared/components/ui/FinancialSummaryCard';
+import { formatAccount, formatDate, formatDateTime } from '@/shared/format';
 import { cajaGeneralApi } from '@/modules/caja-general/api/caja-general.api';
 import { CompactDenominationTables } from '@/modules/caja-general/components/CompactDenominationTables';
-import { countCents, emptyCounts, currency } from '@/modules/caja-general/utils/cash-amounts';
+import { checkCount, countCents, emptyCounts, currency } from '@/modules/caja-general/utils/cash-amounts';
 import { uploadOperationProof } from '@/modules/operations/api/operations-storage.api';
 import { getBankAccounts } from '@/modules/bank-accounts/api/bank-accounts.api';
 import { getApiErrorMessage } from '@/shared/utils/errors';
@@ -17,6 +18,9 @@ import { chequesApi } from './api';
 import { actionLabels, chequeLabels, type Cheque, type ChequeAction, type ChequeCommand, type ChequeState } from './types';
 import { allowedChequeActions, validateChequeCommand } from './rules';
 import { BankAccountSelect } from './BankAccountSelect';
+
+/** Error de captura que se muestra tal cual en el resumen (no viene del servidor). */
+class ChequeFormError extends Error {}
 
 /** Mismos tokens que el cajón de revisión de comprobantes, para que el sistema se vea igual. */
 const fieldLabel = 'mb-2 block text-sm font-medium text-slate-700';
@@ -42,9 +46,6 @@ export function ChequeManager({ paymentId, onClose, onChanged }: { paymentId: nu
     title={data ? `${data.numeroCheque || 'Sin número'} · ${currency(data.monto)} ${data.moneda}` : 'Cheque recibido'}
     onClose={onClose}>
     <div className="space-y-5">
-      {data && <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${data.estado ? STATE_BADGE[data.estado] : 'border-slate-200 bg-slate-100 text-slate-600'}`}>
-        {data.estado ? chequeLabels[data.estado] : 'Pendiente de conciliación'}
-      </span>}
       {cheque.isPending && <p className="text-sm text-slate-500">Cargando cheque…</p>}
       {cheque.isError && <div role="alert" className={alertBanner}>
         <p>No se pudo consultar el cheque. {getApiErrorMessage(cheque.error)}</p>
@@ -67,7 +68,7 @@ function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () =>
   const [file, setFile] = useState<File | null>(null);
   const [counts, setCounts] = useState(emptyCounts);
   const countedCents = countCents(counts);
-  const countMatches = countedCents === Math.round(cheque.monto * 100);
+  const count = checkCount(countedCents, Math.round(cheque.monto * 100));
   const [error, setError] = useState('');
   const [completed, setCompleted] = useState(false);
   // Preserve exactly the same command and idempotency key after an uncertain response.
@@ -76,7 +77,7 @@ function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () =>
   const cash = useQuery({ queryKey: ['caja-general', user?.userId, 'latest'], queryFn: cajaGeneralApi.latest, enabled: action === 'CONFIRMAR_COBRO_EFECTIVO' });
   const mutation = useMutation({
     mutationFn: async () => {
-      if (!action || !user?.userId) throw new Error('Selecciona una acción.');
+      if (!action || !user?.userId) throw new ChequeFormError('Selecciona una acción.');
       if (!pendingCommand.current) {
         const command: ChequeCommand = { requestId: crypto.randomUUID(), version: cheque.version, accion: action, fecha: date,
           ...(['DEPOSITAR', 'COBRAR_BANCO'].includes(action) && account ? { cuentaDestinoId: account } : {}),
@@ -86,10 +87,10 @@ function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () =>
           ...(action === 'CONFIRMAR_COBRO_EFECTIVO' ? { diaCajaId: cash.data && !cash.data.closedAt ? cash.data.id : undefined, denominaciones: counts } : {}),
         };
         const issue = validateChequeCommand(cheque, command, allowed);
-        if (issue) throw new Error(issue);
+        if (issue) throw new ChequeFormError(issue);
         if (command.cuentaDestinoId) {
           const accounts = await getBankAccounts();
-          if (!accounts.some(a => a.id === command.cuentaDestinoId && a.activo)) throw new Error('Selecciona una cuenta bancaria activa.');
+          if (!accounts.some(a => a.id === command.cuentaDestinoId && a.activo)) throw new ChequeFormError('Selecciona una cuenta bancaria activa.');
         }
         if (file && ['DEPOSITAR', 'COBRAR_BANCO', 'CONFIRMAR_COBRO_EFECTIVO'].includes(action)) {
           command.comprobanteUrl = (await uploadOperationProof({ file, userId: user.userId, operationId: cheque.operacionId })).downloadUrl;
@@ -105,14 +106,34 @@ function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () =>
       window.dispatchEvent(new CustomEvent('cheque-updated', { detail: { operationId: cheque.operacionId } }));
       await onChanged?.();
     },
-    onError: e => setError(getApiErrorMessage(e)),
+    onError: e => setError(e instanceof ChequeFormError ? e.message : getApiErrorMessage(e)),
   });
   const locked = mutation.isPending || pendingCommand.current !== null || completed;
   const requiresReason = ['DEVOLVER', 'CANCELAR', 'DEVOLVER_A_CUENTAS', 'RETIRAR_COBRO_EFECTIVO'].includes(action);
   const optionalReason = action === 'ASIGNAR_COBRO_EFECTIVO';
   const requiresProof = ['DEPOSITAR', 'COBRAR_BANCO', 'CONFIRMAR_COBRO_EFECTIVO'].includes(action);
+  const choosesAccount = ['DEPOSITAR', 'COBRAR_BANCO'].includes(action);
+  const confirmsCash = action === 'CONFIRMAR_COBRO_EFECTIVO';
+  // Misma consulta (y caché) que BankAccountSelect: solo se usa para mostrar la cuenta elegida.
+  const accounts = useQuery({ queryKey: ['cheque-bank-accounts'], queryFn: getBankAccounts, enabled: choosesAccount });
+  const chosenAccount = accounts.data?.find(a => a.id === account);
+  const accountLabel = chosenAccount ? formatAccount(chosenAccount.banco, chosenAccount.numeroCuenta) : account !== null ? cheque.cuentaDestinoEtiqueta : null;
+  const cashClosed = confirmsCash && !cash.isPending && !cash.isError && (!cash.data || !!cash.data.closedAt);
 
   return <>
+    <FinancialSummaryCard label="Resumen del cheque"
+      context={<span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${cheque.estado ? STATE_BADGE[cheque.estado] : 'border-slate-200 bg-slate-100 text-slate-600'}`}>
+        {cheque.estado ? chequeLabels[cheque.estado] : 'Pendiente de conciliación'}
+      </span>}
+      metrics={[{ label: 'Monto del cheque', value: `${currency(cheque.monto)} ${cheque.moneda}`, tone: 'blue' },
+        ...(confirmsCash ? [{ label: 'Total contado', value: Number.isFinite(countedCents) ? currency(countedCents / 100) : '—', tone: count.tone }] : [])]}
+      status={confirmsCash ? { text: count.text, tone: count.tone } : undefined}
+      note={choosesAccount && accountLabel ? `Cuenta destino: ${accountLabel}` : undefined}
+      errors={[cheque.requiereConciliacion && 'Este cheque histórico requiere conciliación antes de registrar movimientos.', cashClosed && 'Debes abrir Caja General antes de recibir el efectivo.', confirmsCash && count.error, error]}
+      warnings={[pendingCommand.current && error && 'La solicitud conserva sus datos para reintentar sin duplicar el movimiento. Consulta el estado actualizado antes de iniciar otra acción.']}>
+      {confirmsCash && cash.isError && <p role="alert" className={alertBanner}>No se pudo consultar Caja General. <button type="button" onClick={() => void cash.refetch()} className="font-semibold underline">Reintentar</button></p>}
+    </FinancialSummaryCard>
+
     <div className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
       <p><span className="font-medium">Cliente:</span> {cheque.clienteNombre}</p>
       <p><span className="font-medium">Banco emisor:</span> {cheque.bancoEmisor}</p>
@@ -127,11 +148,7 @@ function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () =>
       <ReceiptViewerLink href={cheque.comprobanteUrl} className={linkStyle}>Ver cheque</ReceiptViewerLink>
     </div>
 
-    {cheque.requiereConciliacion && (
-      <p role="alert" className={alertBanner}>Este cheque histórico requiere conciliación antes de registrar movimientos.</p>
-    )}
-
-    {allowed.length > 0 && !completed && <form id={formId} className="space-y-4" onSubmit={async e => { e.preventDefault(); if (submitting.current) return; submitting.current = true; setError(''); try { await mutation.mutateAsync(); } catch { /* rendered by onError */ } finally { submitting.current = false; } }}>
+    {allowed.length > 0 && !completed && <form id={formId} noValidate className="space-y-4" onSubmit={async e => { e.preventDefault(); if (submitting.current) return; submitting.current = true; setError(''); try { await mutation.mutateAsync(); } catch { /* rendered by onError */ } finally { submitting.current = false; } }}>
       <fieldset disabled={locked} className="space-y-4">
         <div>
           <label htmlFor="cheque-action" className={fieldLabel}>Acción <span className="text-rose-600">*</span></label>
@@ -158,13 +175,8 @@ function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () =>
           {action === 'CONFIRMAR_COBRO_EFECTIVO' && <>
             <p className={noteBanner}>Registra el efectivo recibido en Caja General. No se retirarán fondos de una cuenta propia.</p>
             {cash.isPending ? <p className="text-sm text-slate-500">Consultando caja…</p>
-              : cash.isError ? <p role="alert" className={alertBanner}>No se pudo consultar Caja General. <button type="button" onClick={() => void cash.refetch()} className="font-semibold underline">Reintentar</button></p>
-                : !cash.data || cash.data.closedAt ? <p role="alert" className={alertBanner}>Debes abrir Caja General antes de recibir el efectivo.</p>
-                  : <p className="text-sm text-slate-600">Caja abierta: {formatDate(cash.data.fecha)}</p>}
+              : cash.data && !cash.data.closedAt && <p className="text-sm text-slate-600">Caja abierta: {formatDate(cash.data.fecha)}</p>}
             <CompactDenominationTables value={counts} onChange={setCounts} disabled={locked} dense />
-            <p aria-live="polite" className={`rounded-lg border px-3 py-2 text-xs font-semibold ${countMatches ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
-              Total contado {Number.isFinite(countedCents) ? currency(countedCents / 100) : '—'} · {countMatches ? 'cuadra' : 'pendiente de cuadrar'}
-            </p>
           </>}
 
           {(requiresReason || optionalReason) && (
@@ -177,11 +189,6 @@ function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () =>
             onChange={setFile} disabled={locked} dropHint="Arrastra o sube el comprobante" />}
         </>}
       </fieldset>
-
-      {error && <p role="alert" className={alertBanner}>{error}</p>}
-      {pendingCommand.current && error && (
-        <p className="text-xs text-slate-500">La solicitud conserva sus datos para reintentar sin duplicar el movimiento. Consulta el estado actualizado antes de iniciar otra acción.</p>
-      )}
 
       <ActionDrawerFooter>
       <button

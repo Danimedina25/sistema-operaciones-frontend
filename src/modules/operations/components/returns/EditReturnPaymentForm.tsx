@@ -5,6 +5,7 @@ import { getApiErrorMessage } from '@/shared/utils/errors';
 import { useEffect, useId, useRef, useState } from 'react';
 import { Button } from '@/shared/components/ui/Button';
 import { ActionDrawerFooter } from '@/shared/components/ui/ActionDrawer';
+import { FinancialSummaryCard } from '@/shared/components/ui/FinancialSummaryCard';
 import { Input } from '@/shared/components/ui/Input';
 import { formatCurrencyDisplay, normalizeCurrencyInput, onlyNumbers, parseCurrency, ReturnPaymentType } from '@/shared/utils/form.utils.js';
 import { BankCombobox } from '@/shared/components/ui/BankCombobox';
@@ -298,10 +299,9 @@ export function EditReturnPaymentForm({
             onSubmit={handleSubmit} onChange={() => { if (submitError) setSubmitError(''); }}
         >
           <fieldset disabled={isSubmitting} className="min-w-0 space-y-6">
-            <section aria-label="Resumen del retorno" className="sticky top-0 z-10 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-              <p className="text-sm text-slate-500">Solicitud #{payment.id} · Operación #{payment.operationId}</p>
-              {[...formErrorMessages(errors), ...(submitError ? [submitError] : [])].map(message => <p key={message} role="alert" className="mt-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{message}</p>)}
-            </section>
+            <FinancialSummaryCard label="Resumen del retorno"
+              context={`Solicitud #${payment.id} · Operación #${payment.operationId}`}
+              errors={[...formErrorMessages(errors), submitError]} />
             <div className="grid gap-4 lg:grid-cols-2">
                 <div>
                     <label className="mb-2 block text-sm font-medium text-slate-700">
