@@ -33,6 +33,8 @@ export interface Cheque {
   estado: ChequeState | null; requiereConciliacion: boolean; version: number;
   fechaRecepcion: string; cuentaDestinoId: number | null; cuentaDestinoEtiqueta: string | null;
   destinoCobro: 'EFECTIVO' | 'CUENTA_BANCARIA' | null; comprobanteUrl: string; depositoCompartido?: boolean;
+  /** Envío de Caja a la cuenta que Cuentas confirma o rechaza; solo mientras el cheque está depositado. */
+  depositoId?: number | null;
   historial: { id: number; accion: string; fecha: string; usuarioNombre: string; motivo?: string; comprobanteUrl?: string }[];
 }
 export interface ChequeCommand {

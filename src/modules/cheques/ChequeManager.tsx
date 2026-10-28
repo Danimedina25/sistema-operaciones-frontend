@@ -2,6 +2,7 @@ import { ReceiptViewerLink } from '@/shared/components/ui/ReceiptViewerLink';
 import { useId, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
+import { Button } from '@/shared/components/ui/Button';
 import { useAuth } from '@/modules/auth/store/auth.context';
 import { ActionDrawer, ActionDrawerFooter } from '@/shared/components/ui/ActionDrawer';
 import { ReceiptUploadField } from '@/shared/components/ui/ReceiptUploadField';
@@ -18,6 +19,8 @@ import { chequesApi } from './api';
 import { actionLabels, chequeLabels, type Cheque, type ChequeAction, type ChequeCommand, type ChequeState } from './types';
 import { allowedChequeActions, validateChequeCommand } from './rules';
 import { BankAccountSelect } from './BankAccountSelect';
+import { cashBankDepositsApi } from '@/modules/cash-bank-deposits/api';
+import { ResolveCashBankDepositDrawer, type DepositResolution } from '@/modules/cash-bank-deposits/ResolveCashBankDepositDrawer';
 
 /** Error de captura que se muestra tal cual en el resumen (no viene del servidor). */
 class ChequeFormError extends Error {}
@@ -41,6 +44,17 @@ const STATE_BADGE: Record<ChequeState, string> = {
 export function ChequeManager({ paymentId, onClose, onChanged }: { paymentId: number; onClose: () => void; onChanged?: () => void | Promise<void> }) {
   const cheque = useQuery({ queryKey: ['cheques', 'payment', paymentId], queryFn: () => chequesApi.byPayment(paymentId), retry: false });
   const data = cheque.data;
+  const { hasRole } = useAuth();
+  // Un cheque que Cajas envió a depositar se confirma con el mismo panel de la bandeja de envíos.
+  const resolvesDeposit = !!data?.depositoId && data.estado === 'DEPOSITADO' && hasRole(['JEFA_CUENTAS', 'ADMIN']);
+  const deposits = useQuery({ queryKey: ['cash-bank-deposits', 'pending'], queryFn: cashBankDepositsApi.pending, enabled: resolvesDeposit });
+  const deposit = deposits.data?.find(row => row.id === data?.depositoId) ?? null;
+  const [resolution, setResolution] = useState<DepositResolution | null>(null);
+
+  if (resolution && deposit) {
+    return <ResolveCashBankDepositDrawer deposit={deposit} mode={resolution} onClose={() => setResolution(null)}
+      onResolved={() => { void onChanged?.(); onClose(); }} />;
+  }
 
   return <ActionDrawer open ariaLabel="Gestionar cheque" eyebrow="Gestionar cheque"
     title={data ? `${data.numeroCheque || 'Sin número'} · ${currency(data.monto)} ${data.moneda}` : 'Cheque recibido'}
@@ -51,12 +65,17 @@ export function ChequeManager({ paymentId, onClose, onChanged }: { paymentId: nu
         <p>No se pudo consultar el cheque. {getApiErrorMessage(cheque.error)}</p>
         <button type="button" onClick={() => void cheque.refetch()} className="mt-1 font-semibold underline">Reintentar</button>
       </div>}
-      {data && <ChequeDetail key={`${data.id}-${data.version}`} cheque={data} onChanged={onChanged} />}
+      {data && <ChequeDetail key={`${data.id}-${data.version}`} cheque={data} onChanged={onChanged}
+        depositResolution={resolvesDeposit ? { ready: !!deposit, loading: deposits.isPending, onResolve: setResolution } : undefined} />}
     </div>
   </ActionDrawer>;
 }
 
-function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () => void | Promise<void> }) {
+function ChequeDetail({ cheque, onChanged, depositResolution }: {
+  cheque: Cheque;
+  onChanged?: () => void | Promise<void>;
+  depositResolution?: { ready: boolean; loading: boolean; onResolve: (mode: DepositResolution) => void };
+}) {
   const formId = useId();
   const { hasRole, user } = useAuth();
   const client = useQueryClient();
@@ -147,6 +166,15 @@ function ChequeDetail({ cheque, onChanged }: { cheque: Cheque; onChanged?: () =>
       <Link to={buildOperationDetailPath(cheque.operacionId)} className={linkStyle}>Ver operación #{cheque.operacionId}</Link>
       <ReceiptViewerLink href={cheque.comprobanteUrl} className={linkStyle}>Ver cheque</ReceiptViewerLink>
     </div>
+
+    {cheque.estado === 'DEPOSITADO' && cheque.depositoCompartido && (depositResolution ? <div className="space-y-3">
+      <p className={noteBanner}>Confirma cuando el banco haya acreditado el cheque. Si no se acreditó, recházalo con el motivo.</p>
+      {!depositResolution.loading && !depositResolution.ready && <p role="alert" className={alertBanner}>El envío de este cheque ya no está pendiente. Actualiza la operación.</p>}
+      <div className="flex flex-wrap gap-2">
+        <Button type="button" variant="success" disabled={!depositResolution.ready} onClick={() => depositResolution.onResolve('confirm')}>Confirmar acreditación</Button>
+        <Button type="button" variant="neutral" disabled={!depositResolution.ready} onClick={() => depositResolution.onResolve('reject')}>Rechazar</Button>
+      </div>
+    </div> : <p className={noteBanner}>La Jefa de Cuentas confirma la acreditación cuando el banco refleje el depósito.</p>)}
 
     {allowed.length > 0 && !completed && <form id={formId} noValidate className="space-y-4" onSubmit={async e => { e.preventDefault(); if (submitting.current) return; submitting.current = true; setError(''); try { await mutation.mutateAsync(); } catch { /* rendered by onError */ } finally { submitting.current = false; } }}>
       <fieldset disabled={locked} className="space-y-4">
