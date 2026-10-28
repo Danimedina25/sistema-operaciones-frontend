@@ -1,7 +1,7 @@
 // components/returns/ReturnPaymentsTable.tsx
 
 import { type ReactNode } from 'react';
-import { BanknoteArrowDown, Paperclip, Plus, Send } from 'lucide-react';
+import { BanknoteArrowDown, Eye, Paperclip, Pencil, Plus, Send } from 'lucide-react';
 import { paymentTypeLabels } from '@/modules/operations/constants/operations.constants';
 import { formatMoney as formatCurrency, formatDate } from '@/shared/format';
 import {
@@ -17,6 +17,7 @@ import {
 import { ReturnStatusBadge } from './ReturnStatusBadge.js';
 import { useAuth } from '@/modules/auth/store/auth.context.js';
 import { DataTable, type DataTableColumn } from '@/shared/components/ui/DataTable';
+import { RowActionsMenu } from '@/shared/components/ui/RowActionsMenu';
 
 interface ReturnPaymentsTableProps {
   returns: ReturnPaymentResponse[];
@@ -107,9 +108,10 @@ export function ReturnPaymentsTable({
     });
   }
 
+  const menuItem = 'flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-slate-700 hover:bg-slate-50';
+
+  /** Igual que Ingresos: la acción de trabajo queda visible y lo demás vive en el menú ⋯. */
   function renderRowActions(returnPayment: ReturnPaymentResponse): ReactNode {
-    if (returnPayment.tipoPago === 'RETIRO_SIN_TARJETA' && !isJefaCajas)
-      return <div className="flex flex-wrap gap-2"><button type="button" onClick={() => isJefaCuentas || isAuxiliarCuentas || isAdmin || isSocioComercial ? onManageReturn?.(returnPayment) : onOpenReturn?.(returnPayment)} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white">{isJefaCuentas || isAuxiliarCuentas || isAdmin ? 'Gestionar códigos' : 'Ver códigos de retiro'}</button>{canEditRequestReturnPayments && returnPayment.estatus === 'SOLICITADO' && !returnPayment.numeroParcialidades && <button className="rounded-lg border border-slate-300 px-3 py-2 text-xs" onClick={() => onEditReturn?.(returnPayment)}>Editar solicitud</button>}</div>;
     const totals = resolveReturnRequestTotals(returnPayment);
     const availability = registerAvailability(returnPayment);
     const puedeGestionar =
@@ -118,6 +120,7 @@ export function ReturnPaymentsTable({
       canEditRequestReturnPayments &&
       returnPayment.estatus === 'SOLICITADO' &&
       totals.numeroParcialidades === 0;
+    const cardless = returnPayment.tipoPago === 'RETIRO_SIN_TARJETA' && !isJefaCajas;
 
     const rowActions = resolveReturnRowActions({
       tipoPago: returnPayment.tipoPago,
@@ -127,60 +130,53 @@ export function ReturnPaymentsTable({
       isJefaCajas,
       isAdmin,
     });
-
-    const primaryIsManage = rowActions.primaryVariant === 'manage';
-    const openPrimary = () =>
-      primaryIsManage
-        ? onManageReturn?.(returnPayment)
-        : onOpenReturn?.(returnPayment);
+    const primaryIsManage = !cardless && rowActions.primaryVariant === 'manage';
+    const viewLabel = rowActions.esEfectivo ? 'Ver recolección' : 'Ver retorno';
+    const workButton = 'inline-flex h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 text-xs font-semibold text-white shadow-sm transition';
 
     return (
-      <div className="flex flex-col items-stretch gap-2 max-sm:w-full">
-        <button
-          type="button"
-          onClick={openPrimary}
-          className={
-            primaryIsManage
-              ? 'inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-slate-950 px-3 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-800'
-              : 'inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50'
-          }
-        >
-          {primaryIsManage ? (
-            <>
-              <Plus className="h-3.5 w-3.5" /> {(isJefaCuentas || isAuxiliarCuentas) && !rowActions.esEfectivo && rowActions.primaryLabel === 'Retornar' ? 'Pagar' : rowActions.primaryLabel}
-            </>
-          ) : (
-            rowActions.primaryLabel
+      <div className="flex min-w-0 flex-col items-end gap-1 max-sm:w-full max-sm:items-stretch">
+        <div className="flex min-w-0 items-center justify-end gap-2">
+          {cardless && (
+            <button type="button" onClick={() => isJefaCuentas || isAuxiliarCuentas || isAdmin || isSocioComercial ? onManageReturn?.(returnPayment) : onOpenReturn?.(returnPayment)}
+              className={`${workButton} bg-blue-600 hover:bg-blue-700`}>
+              {isJefaCuentas || isAuxiliarCuentas || isAdmin ? 'Gestionar códigos' : 'Ver códigos de retiro'}
+            </button>
           )}
-        </button>
-
-        {rowActions.showConfirmRecoleccion && (
-          <button
-            type="button"
-            onClick={() => onManageReturn?.(returnPayment)}
-            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700"
-          >
-            {rowActions.collectionActionLabel}
-          </button>
-        )}
-
-        {puedeGestionar && !rowActions.esEfectivo && !availability.canRegister && availability.reason ? (
-          <span className="text-center text-xs text-slate-400">{availability.reason}</span>
+          {primaryIsManage && (
+            <button type="button" onClick={() => onManageReturn?.(returnPayment)} className={`${workButton} bg-slate-950 hover:bg-slate-800`}>
+              <Plus className="h-3.5 w-3.5" /> {(isJefaCuentas || isAuxiliarCuentas) && !rowActions.esEfectivo && rowActions.primaryLabel === 'Retornar' ? 'Pagar' : rowActions.primaryLabel}
+            </button>
+          )}
+          {!cardless && rowActions.showConfirmRecoleccion && (
+            <button type="button" onClick={() => onManageReturn?.(returnPayment)} className={`${workButton} bg-blue-600 hover:bg-blue-700`}>
+              {rowActions.collectionActionLabel}
+            </button>
+          )}
+          <RowActionsMenu triggerLabel="" ariaLabel="Más opciones" triggerClassName="min-w-9 justify-center px-2">
+            {!cardless && (
+              <button type="button" onClick={() => onOpenReturn?.(returnPayment)} className={menuItem}>
+                <Eye className="h-4 w-4" /> {viewLabel}
+              </button>
+            )}
+            {canEdit && (
+              <button type="button" onClick={() => onEditReturn?.(returnPayment)} className={menuItem}>
+                <Pencil className="h-4 w-4" /> Editar solicitud
+              </button>
+            )}
+            {returnPayment.archivoNominaUrl && (
+              <a href={returnPayment.archivoNominaUrl} target="_blank" rel="noreferrer" className={menuItem}>
+                <Paperclip className="h-4 w-4" /> Descargar nómina
+              </a>
+            )}
+            <p className="border-t border-slate-100 px-4 py-2 text-left text-xs text-slate-500">
+              Solicitado: {formatDate(returnPayment.fechaSolicitud)}
+            </p>
+          </RowActionsMenu>
+        </div>
+        {!cardless && puedeGestionar && !rowActions.esEfectivo && !availability.canRegister && availability.reason ? (
+          <span className="text-right text-xs text-slate-400">{availability.reason}</span>
         ) : null}
-
-        {canEdit && (
-          <button
-            type="button"
-            onClick={() => onEditReturn?.(returnPayment)}
-            className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
-          >
-            Editar solicitud
-          </button>
-        )}
-        {returnPayment.archivoNominaUrl && <a href={returnPayment.archivoNominaUrl} target="_blank" rel="noreferrer"
-          className="inline-flex items-center justify-center gap-1 text-xs font-medium text-emerald-700 hover:underline">
-          <Paperclip className="h-3.5 w-3.5" /> Descargar nómina
-        </a>}
       </div>
     );
   }
@@ -323,7 +319,7 @@ export function ReturnPaymentsTable({
               { key: 'progress', header: 'Avance', cell: renderProgress },
               { key: 'pending', header: 'Pendiente', width: '118px', cell: (request: ReturnPaymentResponse) => <span className="font-semibold tabular-nums text-amber-700">{formatCurrency(resolveReturnRequestTotals(request).montoPendiente)}</span> },
               { key: 'status', header: 'Estatus', kind: 'status', width: '170px', cell: (request: ReturnPaymentResponse) => <ReturnStatusBadge status={request.estatus} stage={request.retiroEtapa} /> },
-              { key: 'actions', header: 'Acciones', kind: 'actions', align: 'right', width: '166px', cell: renderRowActions },
+              { key: 'actions', header: 'Acciones', kind: 'actions', align: 'right', width: '210px', cell: renderRowActions },
             ] satisfies DataTableColumn<ReturnPaymentResponse>[]}
             rows={visibleReturns}
             getRowKey={(request) => request.id}
