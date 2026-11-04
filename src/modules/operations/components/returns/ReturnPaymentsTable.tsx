@@ -100,12 +100,16 @@ export function ReturnPaymentsTable({
   }
 
   function registerAvailability(returnPayment: ReturnPaymentResponse) {
-    return resolveRegisterInstallmentAvailability({
+    const availability = resolveRegisterInstallmentAvailability({
       totals: resolveReturnRequestTotals(returnPayment),
       estatus: returnPayment.estatus,
-      hasPermission:
-        canManageReturnPayments && roleCanHandleMethod(returnPayment) && hasPendingAmountToPay,
+      hasPermission: canManageReturnPayments && roleCanHandleMethod(returnPayment),
     });
+    // Sin saldo por retornar en la operación no hay nada que pagar; no es falta de permiso.
+    if (availability.canRegister && !hasPendingAmountToPay) {
+      return { canRegister: false, reason: 'No hay saldo pendiente por retornar' };
+    }
+    return availability;
   }
 
   const menuItem = 'flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-slate-700 hover:bg-slate-50';

@@ -46,4 +46,14 @@ describe('acciones de la tabla de retornos', () => {
     fireEvent.click(within(row).getByRole('button', { name: 'Más opciones' }));
     expect(screen.getByRole('button', { name: /Editar solicitud/ })).toBeInTheDocument();
   });
+
+  it('una transferencia ya pagada explica que se retornó, no que falta permiso', () => {
+    auth.roles = ['JEFA_CUENTAS'];
+    render(<ReturnPaymentsTable operationStatus="RETORNO_TOTAL_SOLICITADO" montoPendientePorRetornar={0} canManageReturnPayments
+      returns={[request(47, 'TRANSFERENCIA', { estatus: 'RETORNADO', montoRetornado: 1000, montoDisponible: 0 })]} />);
+    const row = rowOf('#47');
+    expect(within(row).getByText('La solicitud ya fue retornada por completo')).toBeInTheDocument();
+    expect(within(row).queryByText('No tienes permisos para este método')).toBeNull();
+  });
+
 });
