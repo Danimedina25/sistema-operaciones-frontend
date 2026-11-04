@@ -18,11 +18,11 @@
 - **En pantalla:** "Validar un cheque" · "Jefa de Cajas".
 - **Narración:** "En este tutorial vas a validar un cheque y decidir a dónde va el dinero."
 
-## Escena 2 · Entradas › Cheque (10 s)
+## Escena 2 · Entradas › Confirmar (10 s)
 
-- **Acción:** **Caja › Entradas de efectivo**, pestaña o filtro **Cheque**. Clic en **Revisar** en Miguel Castro.
+- **Acción:** **Caja › Entradas de efectivo**. El cheque aparece en la misma lista. Clic en **Confirmar**: se abre el panel "Gestionar cheque".
 - **Texto en pantalla:** "Los cheques también entran por Caja"
-- **Narración:** "Los cheques también los valida Caja. Búscalos en Entradas y presiona Revisar."
+- **Narración:** "Los cheques también los valida Caja. Están en Entradas de efectivo: presiona Confirmar."
 
 ## Escena 3 · Revisar los datos (15 s)
 
@@ -32,7 +32,7 @@
 
 ## Escena 4 · Elegir el destino (30 s)
 
-- **Acción:** mostrar las dos opciones de destino. Elegir **cobrado en efectivo**: capturar el conteo (45 × $1,000), subir el comprobante y confirmar.
+- **Acción:** en **Acción**, mostrar **Se depositará en una cuenta bancaria** y luego elegir **Se cobró en efectivo**: fecha efectiva, conteo (45 × $1,000), comprobante y **Validar con este conteo**.
 - **Texto en pantalla:** "Cobrado en efectivo o depositado en una cuenta"
 - **Narración:** "Indica qué pasa con el cheque. Si se cobró en efectivo, cuenta los billetes y entran a la caja. Si se deposita en una cuenta, elige la cuenta: se crea un envío que la Jefa de Cuentas confirma cuando el banco lo acredite."
 

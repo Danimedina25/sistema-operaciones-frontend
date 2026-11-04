@@ -29,6 +29,8 @@ environment.update({
     "SERVER_ADDRESS": "127.0.0.1",
     "SERVER_PORT": "8081",
     "APP_FRONTEND_LOCAL_ORIGIN": "http://127.0.0.1:5175",
+    # Acepta comprobantes del Storage Emulator local (http://127.0.0.1:9199). Solo para tutoriales.
+    "APP_STORAGE_ALLOW_EMULATOR": "true",
     "JAVA_TOOL_OPTIONS": (
         os.environ.get("JAVA_TOOL_OPTIONS", "") + " -Duser.timezone=America/Mexico_City"
     ).strip(),
