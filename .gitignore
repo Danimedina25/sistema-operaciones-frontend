@@ -13,6 +13,7 @@ build
 .env
 .env.local
 .qa-local/
+tutoriales/salida/
 .vscode
 .DS_Store
 *.tsbuildinfo
