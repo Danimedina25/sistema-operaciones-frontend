@@ -8,12 +8,12 @@ import { paths } from '@/routes/paths';
 import { secondaryButton } from '@/shared/styles/ui-tokens';
 import { CompactDenominationTables } from './CompactDenominationTables';
 import { countCents, currency, emptyCounts, parseCents, validateCashAmount } from '../utils/cash-amounts';
-import type { CashDay, CloseCashDay, OpenCashDay } from '../types/caja-general.types';
+import { DENOMINATIONS, type CashDay, type CloseCashDay, type OpenCashDay } from '../types/caja-general.types';
 import { officeToday } from '@/shared/utils/period';
 import { formatCashDate } from '../utils/cash-dates';
 
 type Props = { busy: boolean; pendingWithdrawals?: { count: number; amount: number } } & (
-  { mode: 'open'; previous: CashDay | null; onSubmit: (value: OpenCashDay) => Promise<unknown> } |
+  { mode: 'open'; previous: CashDay | null; canEditOpening: boolean; onSubmit: (value: OpenCashDay) => Promise<unknown> } |
   { mode: 'close'; day: CashDay; onSubmit: (value: CloseCashDay) => Promise<unknown> }
 );
 
@@ -33,27 +33,34 @@ export function CashDayForm(props: Props) {
     return emptyCounts();
   });
   const [notes, setNotes] = useState('');
+  const [openingReason, setOpeningReason] = useState('');
   const [error, setError] = useState('');
   const [confirmZero, setConfirmZero] = useState(false);
   const saving = useRef(false);
   const [version] = useState(props.mode === 'close' ? props.day.version : 0);
   const changed = props.mode === 'close' && version !== props.day.version;
   const countedCents = countCents(counts);
-  const capturedAmount = props.mode === 'close' ? countedCents / 100 : parseCents(amount) / 100;
+  const canEditOpening = props.mode === 'open' && props.canEditOpening;
+  const openingChanged = props.mode === 'open' && props.previous !== null && DENOMINATIONS.some(([key]) => counts[key] !== (props.previous?.cierre[key] ?? 0));
+  const capturedAmount = props.mode === 'close' || (props.mode === 'open' && props.previous && canEditOpening)
+    ? countedCents / 100 : parseCents(amount) / 100;
   const reference = props.mode === 'close' ? props.day.saldoActual : props.previous?.saldoContado ?? null;
   const difference = reference === null ? null : countedCents / 100 - reference;
 
   async function save(zeroConfirmed = false) {
     if (props.busy || changed || saving.current) return;
+    if (props.mode === 'open' && !canEditOpening && !props.previous) return;
     const problem = validateCashAmount(String(capturedAmount), counts);
     if (problem) { setError(problem); return; }
+    if (openingChanged && !openingReason.trim()) { setError('Explica el ajuste del conteo inicial antes de abrir la caja.'); return; }
     if (props.mode === 'close' && difference !== 0 && !notes.trim()) { setError('Explica la diferencia antes de cerrar la caja.'); return; }
     setError('');
     if (Object.values(counts).every(quantity => quantity === 0) && !zeroConfirmed) { setConfirmZero(true); return; }
     setConfirmZero(false);
     saving.current = true;
     try {
-      if (props.mode === 'open') await props.onSubmit({ fecha, saldoInicial: parseCents(amount) / 100, denominaciones: counts });
+      if (props.mode === 'open') await props.onSubmit({ fecha, saldoInicial: capturedAmount, denominaciones: counts,
+        ...(openingChanged ? { motivoAjuste: openingReason.trim() } : {}) });
       else await props.onSubmit({ version, saldoContado: capturedAmount, denominaciones: counts, observaciones: notes });
     } catch { /* El hook conserva el formulario y presenta el error del servidor. */ }
     finally { saving.current = false; }
@@ -64,12 +71,14 @@ export function CashDayForm(props: Props) {
   const staleDay = props.mode === 'close' && props.day.fecha !== fecha ? props.day.fecha : null;
   // En pantallas chicas el resumen va primero y queda fijo sobre las tablas (flex); en lg la columna derecha es fija como antes.
   return <><form onSubmit={submit} className="flex min-w-0 flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1.96fr)_minmax(300px,1fr)] lg:items-start">
-    <fieldset aria-label={props.mode === 'close' ? 'Conteo final' : 'Conteo inicial'} disabled={props.busy || changed || confirmZero} className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+    <fieldset aria-label={props.mode === 'close' ? 'Conteo final' : 'Conteo inicial'} disabled={props.busy || changed || confirmZero || (props.mode === 'open' && !canEditOpening)} className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
       <h2 className="text-lg font-semibold text-slate-950">{props.mode === 'close' ? 'Conteo final' : 'Conteo inicial'}</h2>
       <p className="mb-2.5 text-sm leading-5 text-slate-500">{props.mode === 'close'
         ? 'Ya viene prellenado con lo que debería haber en caja. Cuenta el efectivo y corrige solo lo que no coincida.'
         : props.previous
-          ? `Ya viene prellenado con el conteo del último cierre (${formatCashDate(props.previous.fecha)}). Cuenta el efectivo y corrige solo lo que no coincida.`
+          ? canEditOpening
+            ? `Ya viene prellenado con el conteo del último cierre (${formatCashDate(props.previous.fecha)}). Si corriges una cantidad, explica el ajuste.`
+            : `El conteo inicial es el mismo del último cierre (${formatCashDate(props.previous.fecha)}). Revisa las cantidades y abre la caja.`
           : 'Cuenta el efectivo y captura las cantidades para abrir la caja.'}</p>
       <CompactDenominationTables value={counts} onChange={setCounts} />
     </fieldset>
@@ -93,7 +102,10 @@ export function CashDayForm(props: Props) {
       {props.mode === 'open' && !props.previous && <label className="block text-sm font-medium text-slate-700">Saldo inicial
         <input type="text" inputMode="decimal" required value={amount} onChange={event => setAmount(event.target.value)} className="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 tabular-nums outline-none focus:border-blue-500" />
       </label>}
-      {inheritsPreviousClose && <input aria-label="Saldo inicial" readOnly type="hidden" value={amount} />}
+      {inheritsPreviousClose && <input aria-label="Saldo inicial" readOnly type="hidden" value={capturedAmount} />}
+      {props.mode === 'open' && openingChanged && canEditOpening && <label className="block text-sm font-medium text-slate-700">Motivo del ajuste de apertura
+        <textarea maxLength={500} required value={openingReason} onChange={event => setOpeningReason(event.target.value)} className="mt-1 h-20 w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500" />
+      </label>}
       {props.mode === 'close' && pending && pending.count > 0 && <div role="note" className="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-3 py-3 text-sm text-amber-800">
         <div className="flex gap-2"><Truck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /><span>Hay {pending.count} {pending.count === 1 ? 'retiro' : 'retiros'} por ingresar de {currency(pending.amount)}. Si cierras sin confirmarlo, no entra en el conteo de hoy. <Link className="font-semibold underline underline-offset-2" to={`${paths.cashIncome}?tab=withdrawals`}>Ir a Entradas de efectivo › Retiros de cuentas bancarias</Link></span></div>
       </div>}

@@ -5,13 +5,13 @@ Implementación en el frontend y en el backend `Sistema de Operaciones`, módulo
 ## Alcance implementado
 
 - Una única caja abierta. Apertura por fecha y desglose de las once denominaciones: $1,000, $500, $200, $100, $50, $20, $10, $5, $2, $1 y $0.50.
-- Cada apertura posterior hereda automáticamente el saldo contado y el desglose completo del último corte cerrado. Los valores se muestran prellenados y protegidos para que el usuario solo los revise y confirme; únicamente la primera apertura se captura manualmente.
-- Entradas y salidas manuales **sólo de efectivo** (`EFECTIVO`, sin banco ni cuenta). Cheques y retiros con o sin tarjeta de una cuenta entran únicamente al confirmar un retiro que registró Cuentas (ver *Retiros por confirmar*), siempre con su cuenta bancaria real. Transferencias y depósitos se rechazan porque no incorporan efectivo físico a esta caja.
+- Cada apertura posterior hereda automáticamente el saldo contado y el desglose completo del último corte cerrado. La Jefa de Cajas solo revisa y confirma esos valores. Gerencia puede ajustar el desglose y el saldo inicial con un motivo obligatorio; la primera apertura la realiza Gerencia.
+- La captura manual genérica en Corte queda reservada a Administración y admite **sólo efectivo** (`EFECTIVO`, sin banco ni cuenta). La Jefa de Cajas trabaja las entradas y salidas desde sus opciones del menú: pagos, retiros, retornos y envíos. Cheques y retiros de una cuenta entran al confirmar un retiro registrado por Cuentas (ver *Retiros por confirmar*), con su cuenta bancaria real. Transferencias y depósitos se rechazan porque no incorporan efectivo físico a esta caja.
 - La UI v2 presenta saldo y totales diarios en un hero, separa el ciclo de apertura/cierre de los movimientos, muestra el progreso Apertura → En operación → Cierre y permite expandir una sola acción a la vez. El importe de cada movimiento y del cierre se calcula directamente desde las once denominaciones.
 - Los retornos `EFECTIVO` generan automáticamente su salida cuando la Jefa de Cajas registra la entrega física. Ese modal exige el desglose exacto; entrega y salida se guardan en la misma transacción. Si no hay caja abierta del día, falta saldo o el desglose no coincide, ninguna de las dos operaciones se confirma. El importe se lee de la FK: `monto_manual` queda **NULL** y la referencia es única.
 - Libro por día/rango con concepto, entrada, salida y saldo acumulado; apertura, resumen diario, detalle por denominación, vínculo a operación y comprobante. Muestra los saldos originales, no reinicia el acumulado al filtrar.
-- Cierre con saldo esperado, contado, diferencia y explicación obligatoria si existe diferencia. Día cerrado inmutable; la siguiente apertura debe ser posterior y comenzar con el importe contado anterior. No se introduce un ajuste de efectivo automático ni se borra la diferencia.
-- Registro de usuario y fecha para apertura, movimientos y cierre. Administración y Jefa de Cajas pueden registrar; Gerencia y Dirección consultan. Autorización en backend y guardas/menú en frontend.
+- Cierre con saldo esperado, contado, diferencia y explicación obligatoria si existe diferencia. Día cerrado inmutable; la siguiente apertura debe ser posterior. Una diferencia autorizada por Gerencia al abrir figura como entrada o salida de ajuste de apertura en el Corte general.
+- Registro de usuario y fecha para apertura, movimientos y cierre. Gerencia, Jefa de Cajas y Administración pueden abrir y cerrar; los movimientos manuales siguen a cargo de Jefa de Cajas y Administración. Dirección consulta. La bitácora conserva el cierre anterior, la nueva apertura y el motivo del ajuste.
 - Solo Administración puede eliminar un corte de cualquier fecha. La confirmación exige escribir `ELIMINAR`, indicar el motivo y trabajar sobre la versión consultada. Se eliminan el día, movimientos y desgloses, mientras las operaciones/retornos originales permanecen. Una auditoría independiente conserva fecha, saldos, cantidad de movimientos, motivo, usuario y hora de eliminación.
 
 ## Cheque cobrado y cuenta bancaria
@@ -90,6 +90,7 @@ Todas las respuestas usan `ApiResponse<T>`. Los DTO de escritura y lectura está
 | POST | `/days/{id}/close` | Cierre, versión obligatoria |
 
 Las denominaciones se envían como mapa completo `D1000`…`D1`, `D050`, con cantidades enteras y cero donde no aplique. La pantalla no busca ni vincula entregas de otros módulos; toda captura manual es directa y su monto se deriva del desglose.
+Si el Gerente o Administración cambian el conteo heredado, `POST /days` exige `motivoAjuste` (hasta 500 caracteres); Jefa de Cajas debe enviar exactamente el saldo y desglose del cierre anterior.
 
 ## Pendiente / decisiones de negocio
 

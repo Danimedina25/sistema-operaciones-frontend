@@ -45,7 +45,7 @@ export interface CashWithdrawalGroup {
   etiqueta: string;
 }
 export interface CashLedger { dias: CashDay[]; movimientos: CashMovement[]; grupos: CashWithdrawalGroup[] }
-export interface OpenCashDay { fecha: string; saldoInicial: number; denominaciones: CashCounts }
+export interface OpenCashDay { fecha: string; saldoInicial: number; denominaciones: CashCounts; motivoAjuste?: string }
 export interface CloseCashDay { saldoContado: number; version: number; denominaciones: CashCounts; observaciones: string }
 export interface CreateCashMovement {
   requestId: string; direccion: 'ENTRADA' | 'SALIDA'; tipo: CashConcept; concepto: string; banco: string | null;

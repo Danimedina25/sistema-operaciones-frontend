@@ -25,7 +25,7 @@ describe('Formulario de apertura y cierre', () => {
   });
   it('también requiere confirmar una apertura en cero', async () => {
     const submit = vi.fn().mockResolvedValue(undefined);
-    render(<CashDayForm mode="open" previous={null} busy={false} onSubmit={submit} />);
+    render(<CashDayForm mode="open" previous={null} canEditOpening busy={false} onSubmit={submit} />);
     fireEvent.click(screen.getByRole('button', { name: 'Abrir caja con este conteo' }));
     expect(screen.getByRole('dialog')).toHaveTextContent('saldo inicial de apertura');
     expect(submit).not.toHaveBeenCalled();
@@ -40,7 +40,7 @@ describe('Formulario de apertura y cierre', () => {
       saldoContado: 100,
       cierre: { ...emptyCounts(), D50: 2 },
     };
-    render(<CashDayForm mode="open" previous={previous} busy={false} onSubmit={submit} />);
+    render(<CashDayForm mode="open" previous={previous} canEditOpening busy={false} onSubmit={submit} />);
 
     expect(screen.getByLabelText('Saldo inicial')).toHaveValue('100');
     expect(screen.getByLabelText('Saldo inicial')).toHaveAttribute('readonly');
@@ -55,15 +55,31 @@ describe('Formulario de apertura y cierre', () => {
       denominaciones: expect.objectContaining({ D50: 2, D100: 0 }),
     })));
   });
-  it('admite corregir las denominaciones heredadas si conservan el saldo del último cierre', async () => {
+  it('Jefa de Cajas no puede alterar las denominaciones heredadas', async () => {
     const submit = vi.fn().mockResolvedValue(undefined);
     const previous = { ...day, closedAt: '2026-09-14T19:00:00', saldoContado: 100, cierre: { ...emptyCounts(), D50: 2 } };
-    render(<CashDayForm mode="open" previous={previous} busy={false} onSubmit={submit} />);
-    fireEvent.change(screen.getByLabelText('Cantidad de $50.00'), { target: { value: '0' } });
-    fireEvent.change(screen.getByLabelText('Cantidad de $100.00'), { target: { value: '1' } });
+    render(<CashDayForm mode="open" previous={previous} canEditOpening={false} busy={false} onSubmit={submit} />);
+    expect(screen.getByLabelText('Cantidad de $50.00')).toBeDisabled();
+    expect(screen.getByLabelText('Cantidad de $100.00')).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: 'Abrir caja con este conteo' }));
     await waitFor(() => expect(submit).toHaveBeenCalledWith(expect.objectContaining({
-      saldoInicial: 100, denominaciones: expect.objectContaining({ D50: 0, D100: 1 }),
+      saldoInicial: 100, denominaciones: expect.objectContaining({ D50: 2, D100: 0 }),
+    })));
+  });
+  it('Gerente puede ajustar el desglose y el saldo total con motivo', async () => {
+    const submit = vi.fn().mockResolvedValue(undefined);
+    const previous = { ...day, closedAt: '2026-09-14T19:00:00', saldoContado: 100, cierre: { ...emptyCounts(), D50: 2 } };
+    render(<CashDayForm mode="open" previous={previous} canEditOpening busy={false} onSubmit={submit} />);
+    fireEvent.change(screen.getByLabelText('Cantidad de $50.00'), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText('Cantidad de $100.00'), { target: { value: '1' } });
+    expect(screen.getByLabelText('Motivo del ajuste de apertura')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir caja con este conteo' }));
+    expect(submit).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText('Motivo del ajuste de apertura'), { target: { value: 'Corrección del arqueo' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir caja con este conteo' }));
+    await waitFor(() => expect(submit).toHaveBeenCalledWith(expect.objectContaining({
+      saldoInicial: 150, motivoAjuste: 'Corrección del arqueo',
+      denominaciones: expect.objectContaining({ D50: 1, D100: 1 }),
     })));
   });
   it('no permite confirmar cero si la caja cambió mientras el diálogo estaba abierto', () => {
@@ -76,7 +92,7 @@ describe('Formulario de apertura y cierre', () => {
     expect(submit).not.toHaveBeenCalled();
   });
   it('oculta el cero al enfocar y lo restaura al salir sin alterar el conteo', () => {
-    render(<CashDayForm mode="open" previous={null} busy={false} onSubmit={vi.fn()} />);
+    render(<CashDayForm mode="open" previous={null} canEditOpening busy={false} onSubmit={vi.fn()} />);
     const quantity = screen.getByLabelText('Cantidad de $100.00');
     expect(quantity).toHaveValue(0);
     fireEvent.focus(quantity);
@@ -97,7 +113,7 @@ describe('Formulario de apertura y cierre', () => {
   });
   it('impide apertura cuyo desglose no coincide y envía apertura corregida', async () => {
     const submit = vi.fn().mockResolvedValue(undefined);
-    render(<CashDayForm mode="open" previous={null} busy={false} onSubmit={submit} />);
+    render(<CashDayForm mode="open" previous={null} canEditOpening busy={false} onSubmit={submit} />);
     fireEvent.change(screen.getByLabelText('Saldo inicial'), { target: { value: '100.50' } });
     fireEvent.click(screen.getByRole('button', { name: 'Abrir caja con este conteo' }));
     expect(screen.getAllByRole('alert').some(alert => alert.textContent?.includes('exactamente'))).toBe(true); expect(submit).not.toHaveBeenCalled();
@@ -173,7 +189,7 @@ describe('Formulario de apertura y cierre', () => {
   });
 
   it('oculta observaciones en apertura porque no están en el contrato', () => {
-    render(<CashDayForm mode="open" previous={null} busy={false} onSubmit={vi.fn()} />);
+    render(<CashDayForm mode="open" previous={null} canEditOpening busy={false} onSubmit={vi.fn()} />);
     expect(screen.queryByLabelText(/Observaciones/)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Abrir caja con este conteo' })).toBeInTheDocument();
   });

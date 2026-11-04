@@ -41,7 +41,9 @@ export default function CajaGeneralPage() {
   const [params] = useSearchParams();
   const sessionMode = params.get('nav') === 'cash-session';
   const { user } = useAuth();
-  const canWrite = user?.roles.some(role => role === 'ADMIN' || role === 'JEFA_CAJAS');
+  const canManageSession = user?.roles.some(role => role === 'ADMIN' || role === 'JEFA_CAJAS' || role === 'GERENTE');
+  const canEditOpening = user?.roles.some(role => role === 'ADMIN' || role === 'GERENTE') ?? false;
+  const canRegisterManualMovement = user?.roles.includes('ADMIN') ?? false;
   const canDelete = user?.roles.includes('ADMIN') ?? false;
   const today = officeToday();
   // Mismo mecanismo que Cortes y saldos: el periodo elegido sobrevive a la navegación.
@@ -63,13 +65,13 @@ export default function CajaGeneralPage() {
     ? days.find(item => item.fecha === filters.fecha)
     : days[days.length - 1];
   const viewingToday = filters.mode === 'daily' && filters.fecha === today;
-  const canOperate = Boolean(canWrite && viewingToday);
+  const canOperate = Boolean(canManageSession && viewingToday);
   // Caja que quedó abierta de un día anterior: hay que cerrarla antes de poder abrir la de hoy.
   const pendingDay = latest.data && !latest.data.closedAt && latest.data.fecha < today ? latest.data : null;
   const closingDay = day && !day.closedAt ? day : pendingDay;
   const isOpen = !!day && !day.closedAt;
-  const canClose = Boolean(canWrite && viewingToday && closingDay);
-  const canStartAction = canOperate && ledger.isSuccess && (isOpen || (!day && !pendingDay));
+  const canClose = Boolean(canOperate && closingDay);
+  const canStartAction = canOperate && latest.isSuccess && ledger.isSuccess && (isOpen || (!day && !pendingDay && (latest.data || canEditOpening)));
   const busy = open.isPending || movement.isPending || close.isPending || deleteDay.isPending;
   const selectDate = (fecha: string) => {
     setActivePanel(null);
@@ -143,10 +145,10 @@ export default function CajaGeneralPage() {
 
     {visiblePanel === 'open' && canOperate && !day && !pendingDay && <section className={sessionMode ? '' : 'rounded-2xl border border-slate-200 border-t-4 border-t-slate-950 bg-white p-5 shadow-sm'}>
       {!sessionMode && <p className={`mb-4 ${microTitle}`}>Apertura de caja</p>}
-      <CashDayForm key={latest.data?.id ?? 'first'} mode="open" previous={latest.data ?? null} busy={busy} pendingWithdrawals={sessionMode ? pendingSummary.data?.withdrawals : undefined} onSubmit={async value => { const result = await open.mutateAsync(value); selectDate(result.fecha); setActivePanel(null); }} />
+      <CashDayForm key={latest.data?.id ?? 'first'} mode="open" previous={latest.data ?? null} canEditOpening={canEditOpening} busy={busy} pendingWithdrawals={sessionMode ? pendingSummary.data?.withdrawals : undefined} onSubmit={async value => { const result = await open.mutateAsync(value); selectDate(result.fecha); setActivePanel(null); }} />
     </section>}
 
-    {!sessionMode && isOpen && canOperate && activePanel !== 'close' && <section>
+    {!sessionMode && isOpen && canRegisterManualMovement && viewingToday && activePanel !== 'close' && <section>
       <p className={`mb-3 ${microTitle}`}>Registrar movimiento</p>
       <div className="grid grid-cols-2 gap-3">
         <button type="button" onClick={() => toggleMovement('ENTRADA')} aria-pressed={activePanel === 'ENTRADA'} className={`flex items-start gap-3 rounded-2xl border p-5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${activePanel === 'ENTRADA' ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 bg-white hover:border-slate-400'}`}>
@@ -169,7 +171,8 @@ export default function CajaGeneralPage() {
     {sessionMode && viewingToday && day?.closedAt && !pendingDay && <p className={noteNeutral}>La caja de hoy ya está cerrada. Consulta el conteo y los movimientos en Corte.</p>}
 
     {!sessionMode && !viewingToday && ledger.isSuccess && !day && <p className={noteNeutral}>Modo consulta. Las fechas anteriores permiten revisar cortes y movimientos, sin abrir, cerrar ni registrar operaciones.</p>}
-    {!canWrite && viewingToday && latest.isSuccess && <p className={noteNeutral}>Consulta de Caja General. Las aperturas, movimientos y cierres se registran por Jefa de Cajas o Administración.</p>}
+    {!canManageSession && viewingToday && latest.isSuccess && <p className={noteNeutral}>Solo consulta de Caja General.</p>}
+    {sessionMode && canOperate && !latest.data && !canEditOpening && latest.isSuccess && <p className={noteNeutral}>La primera apertura requiere que Gerencia establezca el conteo inicial.</p>}
 
     {!sessionMode && <section className="space-y-5 pt-1">
       <h2 className={sectionTitle}>Libro de movimientos</h2>
