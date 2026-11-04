@@ -124,6 +124,32 @@ const comprobantes = [
     titulo: 'Ficha de depósito en efectivo', monto: '$50,000.00',
     filas: [['Fecha', `${fecha}, 13:30`], ['Sucursal', '0001 · Centro'], ['Depositante', 'Oficina Demo SA de CV'], ['Cuenta', '•••• 1234'], ['Forma', 'Efectivo en ventanilla'], ['Folio', 'EJ-778120']],
   },
+  // Tanda de la Jefa de Cuentas.
+  {
+    archivo: 'transferencia-salida-58500.png', banco: 'BANCO DEMO', color: '#1d4ed8',
+    titulo: 'Comprobante de transferencia SPEI', monto: '$58,500.00',
+    filas: [['Fecha de operación', `${fecha}, 14:10`], ['Ordenante', 'Oficina Demo SA de CV'], ['Cuenta ordenante', '•••• 1234'], ['Beneficiario', 'Miguel Castro'], ['CLABE destino', '•••• 4011'], ['Concepto', 'Retorno de operación'], ['Clave de rastreo', 'DEMO20261104005801']],
+  },
+  {
+    archivo: 'cargo-codigo-39000.png', banco: 'BANCO DEMO', color: '#1d4ed8',
+    titulo: 'Movimiento en cuenta · Cargo', monto: '$39,000.00',
+    filas: [['Fecha', `${fecha}, 15:02`], ['Cuenta', 'Oficina Demo SA de CV · •••• 1234'], ['Tipo de movimiento', 'Retiro sin tarjeta cobrado'], ['Código', 'DEMO-4821-7730']],
+  },
+  {
+    archivo: 'retiro-20000.png', banco: 'BANCO DEMO', color: '#1d4ed8',
+    titulo: 'Comprobante de retiro en ventanilla', monto: '$20,000.00',
+    filas: [['Fecha', `${fecha}, 11:45`], ['Sucursal', '0001 · Centro'], ['Cuenta', 'Oficina Demo SA de CV · •••• 1234'], ['Retiró', 'Gabriela Soto'], ['Folio', 'RT-552031']],
+  },
+  {
+    archivo: 'transferencia-interna-15000.png', banco: 'BANCO DEMO', color: '#1d4ed8',
+    titulo: 'Comprobante de transferencia SPEI', monto: '$15,000.00',
+    filas: [['Fecha de operación', `${fecha}, 16:20`], ['Ordenante', 'Oficina Demo SA de CV · •••• 1234'], ['Beneficiario', 'Oficina Demo SA de CV'], ['Banco destino', 'BANCO EJEMPLO · •••• 5678'], ['Clave de rastreo', 'DEMO20261104009001']],
+  },
+  {
+    archivo: 'abono-envio-50000.png', banco: 'BANCO DEMO', color: '#1d4ed8',
+    titulo: 'Movimiento en cuenta · Abono', monto: '$50,000.00',
+    filas: [['Fecha', `${fecha}, 13:40`], ['Cuenta', 'Oficina Demo SA de CV · •••• 1234'], ['Tipo de movimiento', 'Depósito en efectivo'], ['Folio', 'EJ-778120']],
+  },
   // Validaciones de Cuentas: el abono que se ve en el estado de cuenta.
   ...[
     ['validacion-miguel-60000.png', 'Miguel Castro', '$60,000.00', 'DEMO20261104000202'],

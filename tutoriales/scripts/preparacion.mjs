@@ -176,3 +176,43 @@ function sqlTutorial(query) {
   execFileSync('mysql', ['--no-defaults', '--protocol=TCP', '--host=127.0.0.1', '--port=3306', `--user=${env.MYSQL_USER}`,
     '--database=db_sistema_operaciones_tutorial', '-e', query], { env: { ...process.env, MYSQL_PWD: env.MYSQL_PASSWORD } });
 }
+
+// El Socio solicita un retorno de un solo pago. Devuelve el id de la solicitud.
+export async function solicitarRetorno({ session, BASE_URL }, { operacionId, pago }) {
+  const socio = await session('socio@tutorial.test');
+  const requestId = await inApp(socio.page, BASE_URL, async (api, storage, toFile, i) => {
+    const [request] = await api.requestReturnPayment(i.operacionId, { pagos: [i.pago] });
+    return request.id;
+  }, { operacionId, pago });
+  await socio.close();
+  return requestId;
+}
+
+// El Socio reporta que su cliente ya usó los códigos de retiro de la operación.
+export async function reportarUsoDeCodigos({ session, BASE_URL }, { operacionId }) {
+  const socio = await session('socio@tutorial.test');
+  await inApp(socio.page, BASE_URL, async (api, storage, toFile, i) => {
+    for (const request of await api.getReturnsByOperationId(i.operacionId)) {
+      for (const installment of await api.getReturnInstallments(request.id)) {
+        if (installment.codigoParaCliente && !installment.confirmadoPorSocio) await api.confirmReturnInstallment(installment.id);
+      }
+    }
+  }, { operacionId });
+  await socio.close();
+}
+
+// Caja registra un envío de $50,000.00 a BANCO DEMO que queda en tránsito.
+export async function envioDeCajaEnTransito(ctx) {
+  await abrirCaja(ctx);
+  const cajas = await ctx.session('cajas@tutorial.test');
+  await inApp(cajas.page, ctx.BASE_URL, async (api, storage, toFile, i) => {
+    const { cashBankDepositsApi } = await import('/src/modules/cash-bank-deposits/api.ts');
+    const upload = await storage.uploadOperationProof({ file: toFile(i.ficha), userId: 102, folder: 'envios-caja' });
+    await cashBankDepositsApi.register({
+      requestId: crypto.randomUUID(), bankAccountId: i.cuenta, monto: 50000, forma: 'VENTANILLA', referencia: 'EJ-778120',
+      comprobanteSalidaUrl: upload.downloadUrl,
+      denominaciones: { D1000: 50, D500: 0, D200: 0, D100: 0, D50: 0, D20: 0, D10: 0, D5: 0, D2: 0, D1: 0, D050: 0 },
+    });
+  }, { cuenta: CUENTAS.demo, ficha: fileArg(ctx.comprobantes, 'ficha-deposito-50000.png') });
+  await cajas.close();
+}
