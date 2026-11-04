@@ -90,13 +90,13 @@ export function SocioPendingAccordion() {
   const request = useQuery({ queryKey: ['socio-pending-request-list'], queryFn: () => getOperationsAvailableToRequestReturn(0, PAGE_SIZE, filters), enabled });
   const follow = useQuery({ queryKey: ['socio-pending-follow-list'], queryFn: () => getOperationsWithRequestedReturns(0, PAGE_SIZE, { ...filters, returnStatuses: 'SOLICITADO,EN_RECOLECCION,ENTREGADO,PARCIALMENTE_RETORNADO' }), enabled });
   const rejected = useQuery({ queryKey: ['socio-pending-rejected-list'], queryFn: () => getMyOperations(0, PAGE_SIZE, { ...filters, paymentStatus: 'RECHAZADA' }), enabled });
-  const confirmation = useQuery({ queryKey: ['socio-pending-confirm-list'], queryFn: () => getOperationsWithRequestedReturns(0, PAGE_SIZE, { ...filters, returnStatuses: 'EN_RECOLECCION' }), enabled });
+  const confirmation = useQuery({ queryKey: ['socio-pending-confirm-list'], queryFn: () => getOperationsWithRequestedReturns(0, PAGE_SIZE, filters, undefined, { pendingSocioConfirmation: true }), enabled });
   // El semáforo mide la operación con más tiempo sin cambios: una consulta aparte de un solo registro.
   const oldest = {
     income: useQuery({ queryKey: ['socio-pending-income-oldest'], queryFn: () => getMyOperations(0, 1, filters, { missingIncome: true, sort: OLDEST_FIRST }), enabled }),
     request: useQuery({ queryKey: ['socio-pending-request-oldest'], queryFn: () => getOperationsAvailableToRequestReturn(0, 1, filters, OLDEST_FIRST), enabled }),
     rejected: useQuery({ queryKey: ['socio-pending-rejected-oldest'], queryFn: () => getMyOperations(0, 1, { ...filters, paymentStatus: 'RECHAZADA' }, { sort: OLDEST_FIRST }), enabled }),
-    confirm: useQuery({ queryKey: ['socio-pending-confirm-oldest'], queryFn: () => getOperationsWithRequestedReturns(0, 1, { ...filters, returnStatuses: 'EN_RECOLECCION' }, OLDEST_FIRST), enabled }),
+    confirm: useQuery({ queryKey: ['socio-pending-confirm-oldest'], queryFn: () => getOperationsWithRequestedReturns(0, 1, filters, OLDEST_FIRST, { pendingSocioConfirmation: true }), enabled }),
   };
   const urgencyOf = usePendingUrgency();
   if (!enabled) return null;

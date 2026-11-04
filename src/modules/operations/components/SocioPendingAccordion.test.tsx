@@ -60,7 +60,7 @@ it('navega al detalle para registrar el pago', async () => {
 
 it('separa retornos por solicitar y en seguimiento sin duplicar filas', async () => {
   api.getOperationsAvailableToRequestReturn.mockResolvedValue({ totalElements: 1, content: [{ ...operation, id: 39, clienteNombre: 'Cliente por solicitar', estatus: 'VALIDADA' }] });
-  api.getOperationsWithRequestedReturns.mockImplementation((_page, _size, filters) => Promise.resolve({ totalElements: filters.returnStatuses === 'EN_RECOLECCION' ? 0 : 1, content: filters.returnStatuses === 'EN_RECOLECCION' ? [] : [{ ...operation, id: 40, clienteNombre: 'Cliente en seguimiento', estatus: 'VALIDADA' }] }));
+  api.getOperationsWithRequestedReturns.mockImplementation((_page, _size, filters, _sort, options) => Promise.resolve({ totalElements: options?.pendingSocioConfirmation ? 0 : 1, content: options?.pendingSocioConfirmation ? [] : [{ ...operation, id: 40, clienteNombre: 'Cliente en seguimiento', estatus: 'VALIDADA' }] }));
   renderAccordion();
   await waitFor(() => expect(screen.getByRole('button', { name: 'Ver retornos por solicitar' })).toBeEnabled());
   await userEvent.click(screen.getByRole('button', { name: 'Ver retornos por solicitar' }));
@@ -87,7 +87,7 @@ it('navega al detalle para solicitar el retorno', async () => {
 });
 
 it('muestra retornos por confirmar y abre la pestaña Retornos de su operación', async () => {
- api.getOperationsWithRequestedReturns.mockImplementation((_page, _size, filters) => Promise.resolve({ totalElements: filters.returnStatuses === 'EN_RECOLECCION' ? 1 : 6, content: filters.returnStatuses === 'EN_RECOLECCION' ? [{ ...operation, estatus: 'RETORNO_PARCIAL_ENTREGADO' }] : [] }));
+ api.getOperationsWithRequestedReturns.mockImplementation((_page, _size, filters, _sort, options) => Promise.resolve({ totalElements: options?.pendingSocioConfirmation ? 1 : 6, content: options?.pendingSocioConfirmation ? [{ ...operation, estatus: 'RETORNO_PARCIAL_ENTREGADO' }] : [] }));
  renderAccordion();
  const button = screen.getByRole('button', { name: 'Ver retornos por confirmar' });
  await waitFor(() => expect(button).toBeEnabled());
@@ -96,6 +96,14 @@ it('muestra retornos por confirmar y abre la pestaña Retornos de su operación'
  await userEvent.click(button);
  await userEvent.click(screen.getAllByRole('button', { name: 'Ver retornos' })[0]);
  expect(screen.getByLabelText('destino')).toHaveTextContent('/operaciones/43?action=confirm-return&scrollToReturns=true');
+});
+it('busca los retornos por confirmar por la marca del socio, no por el estatus de la solicitud', async () => {
+ renderAccordion();
+ await waitFor(() => expect(api.getOperationsWithRequestedReturns).toHaveBeenCalledTimes(3));
+ const confirmCalls = api.getOperationsWithRequestedReturns.mock.calls.filter(([, , , , options]) => options?.pendingSocioConfirmation);
+ // Lista y semáforo; ninguno se limita a EN_RECOLECCION, que deja fuera lo ya entregado por Caja.
+ expect(confirmCalls).toHaveLength(2);
+ confirmCalls.forEach(([, , filters]) => expect(filters.returnStatuses).not.toBe('EN_RECOLECCION'));
 });
 it('no presenta errores de carga como cero pendientes', async () => {
  api.getMyOperations.mockRejectedValue(new Error('Sin conexión'));

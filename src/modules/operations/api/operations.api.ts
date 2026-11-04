@@ -343,8 +343,11 @@ export async function getOperationsWithRequestedReturns(
   pageSize: number,
   filters: OperationsFilters,
   sort?: string,
+  /** Solo operaciones con una parcialidad en efectivo o retiro sin tarjeta que el socio aún debe confirmar. */
+  options: { pendingSocioConfirmation?: boolean } = {},
 ): Promise<PageResponse<PaymentOperationResponse>> {
-  const query = buildOperationsQuery(page, pageSize, filters, sort);
+  const query = buildOperationsQuery(page, pageSize, filters, sort)
+    + (options.pendingSocioConfirmation ? '&pendingSocioConfirmation=true' : '');
 
   const response = await api.get<OperationsPageApiResponse>(
     `${RETURNS_BASE_PATH}/requested?${query}`,
