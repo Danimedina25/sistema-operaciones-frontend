@@ -43,8 +43,8 @@ export default {
         'Después escribe el monto total de la operación. El sistema le da formato automáticamente.',
       ],
       async action(h) {
-        await h.type(h.page.getByPlaceholder('Buscar cliente...'), 'Alfa');
-        await h.click(h.page.getByRole('option', { name: 'Comercializadora Alfa' }));
+        await h.type(h.page.getByPlaceholder('Buscar cliente...'), 'Alejandro');
+        await h.click(h.page.getByRole('option', { name: 'Alejandro Torres' }));
         await h.pause(1200);
         await h.type(h.page.getByPlaceholder('1,000.00').first(), '150000');
       },

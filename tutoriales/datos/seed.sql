@@ -25,9 +25,9 @@ INSERT INTO commercial_partner_settings (applies_to_network, created_at, updated
   (b'0', NOW(6), NOW(6), NULL, 101, 'BANCO DEMO', '000000000000001011', 'Laura Méndez', 1.00);
 
 INSERT INTO clientes (activo, created_at, niveles_red_comercial, nombre, porcentaje_comision_socio, porcentaje_comision_oficina, updated_at, user_id) VALUES
-  (b'1', NOW(6), 1, 'Comercializadora Alfa', 1.00, 1.50, NOW(6), 101),
-  (b'1', NOW(6), 2, 'Distribuidora Beta', 1.00, 1.50, NOW(6), 101),
-  (b'1', NOW(6), 1, 'Servicios Gamma', 1.00, 1.50, NOW(6), 101);
+  (b'1', NOW(6), 1, 'Alejandro Torres', 1.00, 1.50, NOW(6), 101),
+  (b'1', NOW(6), 2, 'Sofía Herrera', 1.00, 1.50, NOW(6), 101),
+  (b'1', NOW(6), 1, 'Miguel Castro', 1.00, 1.50, NOW(6), 101);
 
 INSERT INTO commercial_partners (activo, nombre, banco, created_at, cuenta_bancaria, titular_cuenta, updated_at, user_id, porcentaje_comision, commission_configured) VALUES
   (b'1', 'Jorge Navarro', 'BANCO DEMO', NOW(6), '000000000000003011', 'Jorge Navarro', NOW(6), 101, 0.50, b'1'),

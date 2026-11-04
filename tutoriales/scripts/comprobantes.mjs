@@ -20,7 +20,7 @@ const comprobantes = [
     monto: '$100,000.00',
     filas: [
       ['Fecha de operación', `${fecha}, 10:42`],
-      ['Ordenante', 'Comercializadora Alfa'],
+      ['Ordenante', 'Alejandro Torres'],
       ['Cuenta ordenante', '•••• 2021'],
       ['Beneficiario', 'Oficina Demo SA de CV'],
       ['Banco destino', 'BANCO DEMO'],
@@ -38,7 +38,7 @@ const comprobantes = [
     filas: [
       ['Fecha', `${fecha}, 12:15`],
       ['Sucursal', '0001 · Centro'],
-      ['Depositante', 'Comercializadora Alfa'],
+      ['Depositante', 'Alejandro Torres'],
       ['Titular de la cuenta', 'Oficina Demo SA de CV'],
       ['Cuenta', '•••• 5678'],
       ['Forma de depósito', 'Efectivo en ventanilla'],
@@ -47,9 +47,9 @@ const comprobantes = [
   },
   // Preparación del tutorial 01: pagos de otras operaciones y la validación de Cuentas.
   ...[
-    ['transferencia-beta-50000.png', 'Distribuidora Beta', '$50,000.00', '•••• 2032', 'DEMO20261104000201'],
-    ['transferencia-gamma-60000.png', 'Servicios Gamma', '$60,000.00', '•••• 2043', 'DEMO20261104000202'],
-    ['transferencia-alfa-40000.png', 'Comercializadora Alfa', '$40,000.00', '•••• 2021', 'DEMO20261104000203'],
+    ['transferencia-sofia-50000.png', 'Sofía Herrera', '$50,000.00', '•••• 2032', 'DEMO20261104000201'],
+    ['transferencia-miguel-60000.png', 'Miguel Castro', '$60,000.00', '•••• 2043', 'DEMO20261104000202'],
+    ['transferencia-alejandro-40000.png', 'Alejandro Torres', '$40,000.00', '•••• 2021', 'DEMO20261104000203'],
   ].map(([archivo, ordenante, monto, cuenta, rastreo]) => ({
     archivo,
     banco: 'BANCO DEMO',
@@ -68,7 +68,7 @@ const comprobantes = [
     ],
   })),
   {
-    archivo: 'validacion-gamma-60000.png',
+    archivo: 'validacion-miguel-60000.png',
     banco: 'BANCO DEMO',
     color: '#1d4ed8',
     titulo: 'Movimiento en cuenta · Abono',
@@ -77,7 +77,7 @@ const comprobantes = [
       ['Fecha', `${fecha}, 09:31`],
       ['Cuenta', 'Oficina Demo SA de CV · •••• 1234'],
       ['Tipo de movimiento', 'Abono SPEI recibido'],
-      ['Ordenante', 'Servicios Gamma'],
+      ['Ordenante', 'Miguel Castro'],
       ['Clave de rastreo', 'DEMO20261104000202'],
     ],
   },

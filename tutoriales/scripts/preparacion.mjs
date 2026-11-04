@@ -3,7 +3,7 @@
 // IDs fijos de seed.sql (TRUNCATE reinicia los contadores).
 import { readFileSync } from 'node:fs';
 
-export const CLIENTES = { alfa: 1, beta: 2, gamma: 3 };
+export const CLIENTES = { alejandro: 1, sofia: 2, miguel: 3 };
 export const SOCIOS = { jorge: 1, mariana: 2 };
 export const CUENTAS = { demo: 1, ejemplo: 2 };
 export const USUARIOS = { socio: 101 };
@@ -25,7 +25,6 @@ async function inApp(page, BASE_URL, fn, args) {
     const storage = await import('/src/modules/operations/api/operations-storage.api.ts');
     const toFile = ({ name, base64 }) => new File([Uint8Array.from(atob(base64), c => c.charCodeAt(0))], name, { type: 'image/png' });
     try {
-      // eslint-disable-next-line no-new-func
       return await new Function('api', 'storage', 'toFile', 'input', `return (${source})(api, storage, toFile, input);`)(api, storage, toFile, input);
     } catch (error) {
       throw new Error(`${error.message}: ${JSON.stringify(error.response?.data ?? '')}`);

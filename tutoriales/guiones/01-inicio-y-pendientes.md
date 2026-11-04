@@ -11,9 +11,9 @@ Antes de grabar se crean tres operaciones de Laura, para que Mis pendientes teng
 
 | Operación | Cliente | Monto | Estado que se prepara | Aparece en |
 | --- | --- | --- | --- | --- |
-| A | Distribuidora Beta | $80,000.00 | Solo se registró un pago de $50,000.00 | Pagos de ingreso por registrar |
-| B | Servicios Gamma | $60,000.00 | Pago completo, validado por la Jefa de Cuentas | Retornos por solicitar |
-| C | Comercializadora Alfa | $40,000.00 | Pago rechazado: "El monto del comprobante no coincide" | Comprobantes rechazados |
+| A | Sofía Herrera | $80,000.00 | Solo se registró un pago de $50,000.00 | Pagos de ingreso por registrar |
+| B | Miguel Castro | $60,000.00 | Pago completo, validado por la Jefa de Cuentas | Retornos por solicitar |
+| C | Alejandro Torres | $40,000.00 | Pago rechazado: "El monto del comprobante no coincide" | Comprobantes rechazados |
 
 ---
 
@@ -37,19 +37,19 @@ Antes de grabar se crean tres operaciones de Laura, para que Mis pendientes teng
 
 ## Escena 4 · Pagos por registrar (20 s)
 
-- **Acción:** clic en **Ver pagos por registrar**. Se abre la lista con Distribuidora Beta. Señalar el monto que falta.
+- **Acción:** clic en **Ver pagos por registrar**. Se abre la lista con Sofía Herrera. Señalar el monto que falta.
 - **Texto en pantalla:** "Operaciones a las que les faltan pagos"
 - **Narración:** "Aquí están las operaciones a las que les falta registrar pagos de ingreso. Ves al cliente y cuánto falta. Desde aquí entras a la operación para completarla."
 
 ## Escena 5 · Comprobantes rechazados (15 s)
 
-- **Acción:** clic en **Ver comprobantes rechazados**. Aparece Comercializadora Alfa.
+- **Acción:** clic en **Ver comprobantes rechazados**. Aparece Alejandro Torres.
 - **Texto en pantalla:** "Corrige los comprobantes rechazados"
 - **Narración:** "Si un comprobante fue rechazado, aparece aquí. Entra a la operación, revisa el motivo y corrige el pago."
 
 ## Escena 6 · Retornos por solicitar (15 s)
 
-- **Acción:** clic en **Ver retornos por solicitar**. Aparece Servicios Gamma.
+- **Acción:** clic en **Ver retornos por solicitar**. Aparece Miguel Castro.
 - **Texto en pantalla:** "Pagos validados: ya puedes pedir el retorno"
 - **Narración:** "Cuando los pagos de una operación ya están validados, aparece en Retornos por solicitar. Ahí indicas cómo se le devuelve el dinero a tu cliente."
 

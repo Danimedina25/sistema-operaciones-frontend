@@ -27,15 +27,15 @@ export default {
   async prepare({ session, BASE_URL, comprobantes }) {
     const socio = await session('socio@tutorial.test');
     const ctx = { page: socio.page, BASE_URL, comprobantes };
-    await crearOperacion(ctx, { clienteId: CLIENTES.beta, monto: 80000, pagos: [transferencia(50000, 'transferencia-beta-50000.png')] });
-    const gamma = await crearOperacion(ctx, { clienteId: CLIENTES.gamma, monto: 60000, pagos: [transferencia(60000, 'transferencia-gamma-60000.png')] });
-    const alfa = await crearOperacion(ctx, { clienteId: CLIENTES.alfa, monto: 40000, pagos: [transferencia(40000, 'transferencia-alfa-40000.png')] });
+    await crearOperacion(ctx, { clienteId: CLIENTES.sofia, monto: 80000, pagos: [transferencia(50000, 'transferencia-sofia-50000.png')] });
+    const miguel = await crearOperacion(ctx, { clienteId: CLIENTES.miguel, monto: 60000, pagos: [transferencia(60000, 'transferencia-miguel-60000.png')] });
+    const alejandro = await crearOperacion(ctx, { clienteId: CLIENTES.alejandro, monto: 40000, pagos: [transferencia(40000, 'transferencia-alejandro-40000.png')] });
     await socio.close();
 
     const cuentas = await session('cuentas@tutorial.test');
     const staff = { page: cuentas.page, BASE_URL, comprobantes };
-    await validarPago(staff, { operacionId: gamma.id, pagoId: gamma.pagos[0], userId: 103, archivo: 'validacion-gamma-60000.png' });
-    await rechazarPago(staff, { pagoId: alfa.pagos[0], motivo: 'El monto del comprobante no coincide' });
+    await validarPago(staff, { operacionId: miguel.id, pagoId: miguel.pagos[0], userId: 103, archivo: 'validacion-miguel-60000.png' });
+    await rechazarPago(staff, { pagoId: alejandro.pagos[0], motivo: 'El monto del comprobante no coincide' });
     await cuentas.close();
   },
   scenes: [

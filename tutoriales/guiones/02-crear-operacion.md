@@ -5,7 +5,7 @@
 - **Formato:** 16:9, 1920 × 1080
 - **Datos:** ficticios, base `db_sistema_operaciones_tutorial`
 
-Escenario: Laura registra una operación de **$150,000.00** para **Comercializadora Alfa**, con
+Escenario: Laura registra una operación de **$150,000.00** para **Alejandro Torres**, con
 **Jorge Navarro** como socio de nivel 2. El cliente pagó en dos partes: una transferencia de
 **$100,000.00** a BANCO DEMO y un depósito de **$50,000.00** a BANCO EJEMPLO.
 
@@ -24,7 +24,7 @@ Escenario: Laura registra una operación de **$150,000.00** para **Comercializad
 
 ## Escena 3 · Cliente y monto (20 s)
 
-- **Acción:** escribir "Alfa" en el buscador, elegir **Comercializadora Alfa** y capturar **150,000.00** en Monto total.
+- **Acción:** escribir "Alejandro" en el buscador, elegir **Alejandro Torres** y capturar **150,000.00** en Monto total.
 - **Texto en pantalla:** "1. Elige al cliente y el monto total"
 - **Narración:** "Primero busca a tu cliente por su nombre y selecciónalo. Después escribe el monto total de la operación. El sistema le da formato automáticamente."
 
@@ -70,7 +70,7 @@ Escenario: Laura registra una operación de **$150,000.00** para **Comercializad
 
 | Archivo | Tipo | Monto | Banco | Detalle |
 | --- | --- | --- | --- | --- |
-| `transferencia-100000.png` | Transferencia SPEI | $100,000.00 | BANCO DEMO, cuenta ••1234 | Ordenante: Comercializadora Alfa |
-| `deposito-50000.png` | Ficha de depósito | $50,000.00 | BANCO EJEMPLO, cuenta ••5678 | Depositante: Comercializadora Alfa |
+| `transferencia-100000.png` | Transferencia SPEI | $100,000.00 | BANCO DEMO, cuenta ••1234 | Ordenante: Alejandro Torres |
+| `deposito-50000.png` | Ficha de depósito | $50,000.00 | BANCO EJEMPLO, cuenta ••5678 | Depositante: Alejandro Torres |
 
 Ambos con sello "EJEMPLO", sin logos ni marcas de bancos reales.

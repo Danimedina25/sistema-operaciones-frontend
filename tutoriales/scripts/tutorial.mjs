@@ -171,6 +171,6 @@ console.log(`Video listo: ${output} (${(totalMs / 1000).toFixed(1)} s)`);
 
 // 6. Copia ordenada en el Escritorio.
 mkdirSync(`${DESKTOP}/${tutorial.folder}`, { recursive: true });
-const copy = `${DESKTOP}/${tutorial.folder}/${id.slice(0, 2)} - ${tutorial.name}.mp4`;
+const copy = `${DESKTOP}/${tutorial.folder}/${id.split("-")[0]} - ${tutorial.name}.mp4`;
 copyFileSync(output, copy);
 console.log(`Copia: ${copy}`);
