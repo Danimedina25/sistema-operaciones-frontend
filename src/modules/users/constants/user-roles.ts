@@ -15,6 +15,14 @@ export const USER_ROLE_OPTIONS: UserRoleOption[] = [
   { id: 7, name: 'JEFA_CUENTAS', label: 'Jefa de Cuentas' },
   { id: 8, name: 'DIRECCION', label: 'Dirección' },
 ];
+/**
+ * Administrador es el superusuario técnico: solo otro Administrador lo asigna. Si el usuario editado
+ * ya lo tiene, se conserva en la lista para mostrar su rol actual (el backend rechaza cambiarlo).
+ */
+export function assignableRoleOptions(isAdmin: boolean, currentRoleId?: number): UserRoleOption[] {
+  return USER_ROLE_OPTIONS.filter(role => role.name !== 'ADMIN' || isAdmin || role.id === currentRoleId);
+}
+
 export function getRoleLabelById(roleId: number): string {
   return USER_ROLE_OPTIONS.find((role) => role.id === roleId)?.label ?? 'Rol desconocido';
 }

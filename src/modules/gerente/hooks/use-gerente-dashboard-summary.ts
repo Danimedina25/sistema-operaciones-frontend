@@ -74,7 +74,7 @@ export function useGerenteDashboardSummary(period: PeriodRange) {
           getOperationsWithRequestedReturns(0, 1, periodFilters),
           getOperatedMetrics(period.startDate, period.endDate),
           getPendingCommissions({ startDate: period.startDate, endDate: period.endDate }),
-          getStalledOperations(0, 1, 48),
+          getStalledOperations(0, 1),
         ]);
 
       setSummary({

@@ -7,7 +7,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Input } from '@/shared/components/ui/Input';
 import { Button } from '@/shared/components/ui/Button';
-import { USER_ROLE_OPTIONS } from '@/modules/users/constants/user-roles';
+import { USER_ROLE_OPTIONS, assignableRoleOptions } from '@/modules/users/constants/user-roles';
+import { useAuth } from '@/modules/auth/store/auth.context';
 import {
   updateUserSchema,
   type UpdateUserFormInput,
@@ -40,6 +41,8 @@ export function UserForm({
   submitLabel,
   initialValues,
 }: UserFormProps) {
+  const { hasRole } = useAuth();
+  const roleOptions = assignableRoleOptions(hasRole('ADMIN'), initialValues?.roleId);
   const {
     register,
     handleSubmit,
@@ -214,7 +217,7 @@ export function UserForm({
             >
               <option value="">Selecciona un rol</option>
 
-              {USER_ROLE_OPTIONS.map((role) => (
+              {roleOptions.map((role) => (
                 <option
                   key={role.id}
                   value={role.id}

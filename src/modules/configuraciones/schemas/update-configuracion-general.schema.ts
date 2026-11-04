@@ -14,6 +14,11 @@ const hours = (label: string) => z.preprocess(
 export const updateConfiguracionGeneralSchema = z.object({
   horasPendienteAtencion: hours('atender pronto'),
   horasPendienteUrgente: hours('urgente'),
+  horasOperacionDetenida: hours('operación detenida'),
+  diaPagoComisiones: z.preprocess(
+    (value) => (value === '' || value === null || value === undefined ? undefined : Number(value)),
+    z.number({ error: 'El día de pago es obligatorio' }).int().min(1, 'El día de pago no es válido').max(7, 'El día de pago no es válido'),
+  ),
   porcentajeComisionOficina: z.preprocess(
     (value) => {
       if (value === '' || value === null || value === undefined) {

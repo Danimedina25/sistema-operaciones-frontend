@@ -32,6 +32,8 @@ export default function ConfiguracionesPage() {
                     configuracionGeneral.porcentajeComisionOficina,
                   horasPendienteAtencion: configuracionGeneral.horasPendienteAtencion,
                   horasPendienteUrgente: configuracionGeneral.horasPendienteUrgente,
+                  horasOperacionDetenida: configuracionGeneral.horasOperacionDetenida,
+                  diaPagoComisiones: configuracionGeneral.diaPagoComisiones,
                 }
               : undefined
           }

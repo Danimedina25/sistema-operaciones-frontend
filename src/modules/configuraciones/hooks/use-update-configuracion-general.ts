@@ -28,6 +28,8 @@ export function useUpdateConfiguracionGeneral(
         porcentajeComisionOficina: values.porcentajeComisionOficina,
         horasPendienteAtencion: values.horasPendienteAtencion,
         horasPendienteUrgente: values.horasPendienteUrgente,
+        horasOperacionDetenida: values.horasOperacionDetenida,
+        diaPagoComisiones: values.diaPagoComisiones,
       });
 
       toast.success('Configuración actualizada exitosamente');

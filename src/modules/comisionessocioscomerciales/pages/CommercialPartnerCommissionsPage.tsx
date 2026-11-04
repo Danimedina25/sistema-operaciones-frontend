@@ -8,13 +8,15 @@ import { Tabs } from '@/shared/components/ui/Tabs';
 import { QueryState } from '@/shared/components/ui/QueryState';
 import { formatMoney, formatPeriod } from '@/shared/format';
 import { getPresetRange, selectionFromDates, type PeriodSelection } from '@/shared/utils/period';
-import { getSummaryByBeneficiary } from '../api/commercial-partner-commissions.api';
+import { getPaidCommissions, getSummaryByBeneficiary } from '../api/commercial-partner-commissions.api';
 import { CommissionBeneficiariesTable } from '../components/CommissionBeneficiariesTable';
 import { PayBeneficiaryCommissionsModal } from '../components/PayBeneficiaryCommissionsModal';
 import { BeneficiaryCommissionDetailModal } from '../components/BeneficiaryCommissionDetailModal';
 import { usePayBeneficiaryCommissions } from '../hooks/use-pay-beneficiary-commissions';
 import { useBeneficiaryCommissionDetail } from '../hooks/use-beneficiary-commission-detail';
 import type { CommissionPartnerSummaryResponse } from '../types/commercial-partner-commissions.types';
+import { useConfiguracionGeneral } from '@/modules/configuraciones/hooks/use-configuracion-general';
+import { DIAS_SEMANA } from '@/modules/configuraciones/types/configuraciones.types';
 
 type Tab = 'pending' | 'paid' | 'all';
 const initialPeriod = () => { const range = getPresetRange('LAST_WEEK'); return selectionFromDates(range.startDate, range.endDate, 'LAST_WEEK'); };
@@ -30,10 +32,15 @@ export default function CommercialPartnerCommissionsPage() {
   const [detailOpen, setDetailOpen] = useState(false);
   const client = useQueryClient();
   const monthRange = getPresetRange('THIS_MONTH');
+  const { configuracionGeneral } = useConfiguracionGeneral();
+  const payday = configuracionGeneral ? `cada ${DIAS_SEMANA[configuracionGeneral.diaPagoComisiones]}` : 'el día de pago configurado';
   const summary = useQuery({ queryKey: ['commissions', 'beneficiaries', period.startDate, period.endDate],
     queryFn: () => getSummaryByBeneficiary({ startDate: period.startDate, endDate: period.endDate }) });
   const month = useQuery({ queryKey: ['commissions', 'beneficiaries', monthRange.startDate, monthRange.endDate],
     queryFn: () => getSummaryByBeneficiary(monthRange) });
+  // Lo pagado se cuenta por la fecha de pago: el sábado de inicio de mes paga la semana del mes anterior.
+  const paidThisMonth = useQuery({ queryKey: ['commissions', 'paid', monthRange.startDate, monthRange.endDate],
+    queryFn: () => getPaidCommissions(monthRange) });
   const { isLoading: isPaying, handlePayBeneficiaryCommissions } = usePayBeneficiaryCommissions();
   const { detail, isLoading: loadingDetail, fetchDetail, clearDetail } = useBeneficiaryCommissionDetail();
   const beneficiaries = summary.data?.socios ?? [];
@@ -50,7 +57,7 @@ export default function CommercialPartnerCommissionsPage() {
     <PageHeader title="Comisiones" actions={!canManagePayments ? <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">Solo consulta</span> : undefined} />
     <section className="grid gap-3 sm:grid-cols-3">
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-4"><p className="text-[10px] font-semibold uppercase tracking-wide text-amber-800">Por pagar</p><strong className="mt-2 block text-xl text-amber-900">{formatMoney(summary.data?.totalPendientes ?? 0)}</strong><p className="mt-1 text-xs text-amber-800">{pendingCount} {pendingCount === 1 ? 'beneficiario' : 'beneficiarios'} · periodo seleccionado</p></div>
-      <div className="rounded-xl border border-slate-200 bg-white p-4"><p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Pagado este mes</p><strong className="mt-2 block text-xl text-slate-900">{formatMoney(month.data?.totalPagadas ?? 0)}</strong></div>
+      <div className="rounded-xl border border-slate-200 bg-white p-4"><p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Pagado este mes</p><strong className="mt-2 block text-xl text-slate-900">{formatMoney(paidThisMonth.data?.totalPagadas ?? 0)}</strong></div>
       <div className="rounded-xl border border-slate-200 bg-white p-4"><p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Generado este mes</p><strong className="mt-2 block text-xl text-slate-900">{formatMoney(month.data?.totalComisiones ?? 0)}</strong></div>
     </section>
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -65,7 +72,7 @@ export default function CommercialPartnerCommissionsPage() {
           onViewDetail={row => { void viewDetail(row); }} canManagePayments={canManagePayments}
           periodLabel={formatPeriod(period.startDate, period.endDate)} showStatus={tab !== 'pending'} />
       </QueryState>
-      <p className="border-t border-slate-100 px-4 py-3 text-xs text-slate-500">Las comisiones se pagan por transferencia cada sábado. Cada pago se registra como salida de la cuenta origen y aparece en Cortes y movimientos y en los movimientos de esa cuenta.</p>
+      <p className="border-t border-slate-100 px-4 py-3 text-xs text-slate-500">Las comisiones se pagan por transferencia {payday}. Cada pago se registra como salida de la cuenta origen y aparece en Cortes y movimientos y en los movimientos de esa cuenta.</p>
     </section>
     <PayBeneficiaryCommissionsModal open={payOpen} beneficiary={selectedPartner} startDate={period.startDate} endDate={period.endDate}
       isSubmitting={isPaying} onClose={() => setPayOpen(false)}
@@ -74,6 +81,7 @@ export default function CommercialPartnerCommissionsPage() {
         await handlePayBeneficiaryCommissions(selectedPartner.commissionIdsToPay, file, accountId);
         setPayOpen(false);
         await client.invalidateQueries({ queryKey: ['commissions', 'beneficiaries'] });
+        await client.invalidateQueries({ queryKey: ['commissions', 'paid'] });
       }} />
     <BeneficiaryCommissionDetailModal open={detailOpen} detail={detail} isLoading={loadingDetail}
       onClose={() => { setDetailOpen(false); clearDetail(); }} startDate={period.startDate} endDate={period.endDate} />

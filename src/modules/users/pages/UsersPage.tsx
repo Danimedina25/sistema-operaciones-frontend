@@ -97,7 +97,7 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Usuarios" actions={<CanAccess roles={['ADMIN']}><Button variant="primary" onClick={() => setIsCreateModalOpen(true)}>+ Nuevo usuario</Button></CanAccess>} />
+      <PageHeader title="Usuarios" actions={<CanAccess roles={['ADMIN', 'DIRECCION']}><Button variant="primary" onClick={() => setIsCreateModalOpen(true)}>+ Nuevo usuario</Button></CanAccess>} />
 
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <SearchFilterBar search={filters.search} onSearchChange={search => setFilters(current => ({ ...current, search }))}
