@@ -96,3 +96,48 @@ export async function registrarCodigoRetiro({ page, BASE_URL }, { operacionId, c
     });
   }, { operacionId, cuentaId, codigo });
 }
+
+// Deja un retorno en efectivo entregado por Caja y pendiente de la confirmación del Socio.
+export async function entregaEfectivoLista(ctx) {
+  const { session, BASE_URL, comprobantes } = ctx;
+  // La primera apertura de caja la registra Gerencia: $100,000.00 en
+  // 60×$1,000 + 40×$500 + 50×$200 + 50×$100 + 100×$50.
+  const gerente = await session('gerente@tutorial.test');
+  await inApp(gerente.page, BASE_URL, async (api, storage, toFile, i) => {
+    const { cajaGeneralApi } = await import('/src/modules/caja-general/api/caja-general.api.ts');
+    await cajaGeneralApi.open({ fecha: i.fecha, saldoInicial: 100000, denominaciones: {
+      D1000: 60, D500: 40, D200: 50, D100: 50, D50: 100, D20: 0, D10: 0, D5: 0, D2: 0, D1: 0, D050: 0,
+    } });
+  }, { fecha: today });
+  await gerente.close();
+
+  const operacion = await operacionValidada(ctx, { clienteId: CLIENTES.sofia, monto: 30000, archivo: 'transferencia-sofia-30000.png', validacion: 'validacion-sofia-30000.png' });
+
+  const socio = await session('socio@tutorial.test');
+  const requestId = await inApp(socio.page, BASE_URL, async (api, storage, toFile, i) => {
+    const [request] = await api.requestReturnPayment(i.operacionId, { pagos: [{
+      monto: 29250, tipoPago: 'EFECTIVO',
+      autorizadoParaRecibirEfectivo1: 'Carlos Ramírez', autorizadoParaRecibirEfectivo2: 'Ana López',
+    }] });
+    return request.id;
+  }, { operacionId: operacion.id });
+  await socio.close();
+
+  const cajas = await session('cajas@tutorial.test');
+  await inApp(cajas.page, BASE_URL, async (api, storage, toFile, i) => {
+    const preparado = await storage.uploadOperationProof({ file: toFile(i.preparado), userId: 102, operationId: i.operacionId });
+    const installment = await api.createReturnInstallment(i.requestId, {
+      monto: 29250, evidenciaImportePreparadoUrl: preparado.downloadUrl, fechaHoraRecoleccion: `${i.fecha}T12:00:00`,
+    });
+    const acuse = await storage.uploadOperationProof({ file: toFile(i.acuse), userId: 102, operationId: i.operacionId, folder: 'comprobantes-entrega-efectivo' });
+    await api.deliverReturnInstallment(installment.id, {
+      comprobanteEntregaUrl: acuse.downloadUrl, personaQueRecibioEfectivo: 'Carlos Ramírez',
+      denominaciones: { D1000: 29, D500: 0, D200: 1, D100: 0, D50: 1, D20: 0, D10: 0, D5: 0, D2: 0, D1: 0, D050: 0 },
+    });
+  }, {
+    operacionId: operacion.id, requestId, fecha: today,
+    preparado: fileArg(comprobantes, 'importe-preparado-29250.png'), acuse: fileArg(comprobantes, 'acuse-entrega-29250.png'),
+  });
+  await cajas.close();
+  return operacion;
+}

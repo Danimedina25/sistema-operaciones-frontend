@@ -68,6 +68,36 @@ const comprobantes = [
       ['Clave de rastreo', rastreo],
     ],
   })),
+  // Tutorial 04: lo que registra Caja al preparar y entregar el efectivo.
+  {
+    archivo: 'importe-preparado-29250.png',
+    banco: 'OFICINA DEMO',
+    color: '#0f172a',
+    titulo: 'Caja General · Importe preparado',
+    monto: '$29,250.00',
+    filas: [
+      ['Fecha', `${fecha}, 11:20`],
+      ['Cliente', 'Sofía Herrera'],
+      ['Billetes de $1,000', '29'],
+      ['Billetes de $200', '1'],
+      ['Monedas de $50', '1'],
+    ],
+  },
+  {
+    archivo: 'acuse-entrega-29250.png',
+    banco: 'OFICINA DEMO',
+    color: '#0f172a',
+    titulo: 'Acuse de entrega de efectivo',
+    monto: '$29,250.00',
+    filas: [
+      ['Fecha', `${fecha}, 12:05`],
+      ['Cliente', 'Sofía Herrera'],
+      ['Recibió', 'Carlos Ramírez'],
+      ['Identificación', 'INE •••• 4410'],
+      ['Entregó', 'Patricia Ruiz · Caja General'],
+      ['Firma de quien recibe', 'Carlos Ramírez'],
+    ],
+  },
   // Validaciones de Cuentas: el abono que se ve en el estado de cuenta.
   ...[
     ['validacion-miguel-60000.png', 'Miguel Castro', '$60,000.00', 'DEMO20261104000202'],
