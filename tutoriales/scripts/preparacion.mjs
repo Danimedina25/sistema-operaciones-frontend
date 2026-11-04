@@ -77,10 +77,10 @@ export async function rechazarPago({ page, BASE_URL }, { pagoId, motivo }) {
 }
 
 // Operación con un solo pago ya validado por la Jefa de Cuentas: queda lista para solicitar el retorno.
-export async function operacionValidada({ session, BASE_URL, comprobantes }, { clienteId, monto, archivo, validacion }) {
+export async function operacionValidada({ session, BASE_URL, comprobantes }, { clienteId, monto, archivo, validacion, nivel2 }) {
   const socio = await session('socio@tutorial.test');
   const operacion = await crearOperacion({ page: socio.page, BASE_URL, comprobantes }, {
-    clienteId, monto, pagos: [{ monto, tipo: 'TRANSFERENCIA', cuentaId: CUENTAS.demo, archivo }],
+    clienteId, monto, nivel2, pagos: [{ monto, tipo: 'TRANSFERENCIA', cuentaId: CUENTAS.demo, archivo }],
   });
   await socio.close();
   const cuentas = await session('cuentas@tutorial.test');
@@ -215,4 +215,22 @@ export async function envioDeCajaEnTransito(ctx) {
     });
   }, { cuenta: CUENTAS.demo, ficha: fileArg(ctx.comprobantes, 'ficha-deposito-50000.png') });
   await cajas.close();
+}
+
+// Dos operaciones validadas de la semana pasada, con comisiones por pagar a Laura (nivel 1) y a
+// Jorge Navarro (nivel 2). El listado de comisiones filtra por la fecha de la operación, así que
+// operaciones y comisiones se mueven una semana atrás solo en la base de tutoriales.
+export async function comisionesDeLaSemanaPasada(ctx) {
+  const a = await operacionValidada(ctx, { clienteId: CLIENTES.miguel, monto: 60000, archivo: 'transferencia-miguel-60000.png', validacion: 'validacion-miguel-60000.png', nivel2: SOCIOS.jorge });
+  const b = await operacionValidada(ctx, { clienteId: CLIENTES.sofia, monto: 30000, archivo: 'transferencia-sofia-30000.png', validacion: 'validacion-sofia-30000.png' });
+  const ids = [Number(a.id), Number(b.id)].join(',');
+  sqlTutorial(`UPDATE payment_operations SET created_at = created_at - INTERVAL 7 DAY WHERE id IN (${ids})`);
+  sqlTutorial(`UPDATE commercial_partner_commissions SET generated_at = generated_at - INTERVAL 7 DAY WHERE operation_id IN (${ids})`);
+}
+
+// Corte con movimiento: caja abierta, dos pagos validados en BANCO DEMO y un envío de Caja en tránsito.
+export async function corteConMovimiento(ctx) {
+  await envioDeCajaEnTransito(ctx);
+  await operacionValidada(ctx, { clienteId: CLIENTES.miguel, monto: 60000, archivo: 'transferencia-miguel-60000.png', validacion: 'validacion-miguel-60000.png' });
+  await operacionValidada(ctx, { clienteId: CLIENTES.sofia, monto: 30000, archivo: 'transferencia-sofia-30000.png', validacion: 'validacion-sofia-30000.png' });
 }

@@ -150,6 +150,12 @@ const comprobantes = [
     titulo: 'Movimiento en cuenta · Abono', monto: '$50,000.00',
     filas: [['Fecha', `${fecha}, 13:40`], ['Cuenta', 'Oficina Demo SA de CV · •••• 1234'], ['Tipo de movimiento', 'Depósito en efectivo'], ['Folio', 'EJ-778120']],
   },
+  // Tanda de Gerente y Director.
+  {
+    archivo: 'transferencia-comision-900.png', banco: 'BANCO DEMO', color: '#1d4ed8',
+    titulo: 'Comprobante de transferencia SPEI', monto: '$900.00',
+    filas: [['Fecha de operación', `${fecha}, 10:05`], ['Ordenante', 'Oficina Demo SA de CV · •••• 1234'], ['Beneficiario', 'Laura Méndez'], ['Cuenta destino', 'BANCO DEMO · •••• 1011'], ['Concepto', 'Comisiones 25 – 31 oct'], ['Clave de rastreo', 'DEMO20261104010001']],
+  },
   // Validaciones de Cuentas: el abono que se ve en el estado de cuenta.
   ...[
     ['validacion-miguel-60000.png', 'Miguel Castro', '$60,000.00', 'DEMO20261104000202'],
