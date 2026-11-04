@@ -3,7 +3,8 @@
 // Requiere el entorno de tutoriales arriba (backend 8081, frontend 5175, Storage 9199).
 import { chromium } from 'playwright';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { overlayScript } from './overlay.mjs';
 
@@ -11,6 +12,7 @@ const BASE_URL = 'http://127.0.0.1:5175';
 const VOICE = 'Paulina';
 const RATE = '175';
 const VIEWPORT = { width: 1536, height: 864 };
+const DESKTOP = `${homedir()}/Desktop/Tutoriales Sistema de Operaciones`;
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 // Acepta el id completo o solo el número: "02" → "02-crear-operacion".
@@ -41,22 +43,33 @@ for (const scene of tutorial.scenes) {
 // 2. Datos limpios en la base de tutoriales.
 execFileSync(`${root}scripts/seed.sh`, [tutorial.backendPath], { stdio: 'inherit' });
 
-// 3. Sesión iniciada sin grabar.
+// 3. Sesiones sin grabar: la del tutorial y las que use la preparación.
 const browser = await chromium.launch({ args: ['--lang=es-MX'] });
-const loginContext = await browser.newContext({ viewport: VIEWPORT, locale: 'es-MX', timezoneId: 'America/Mexico_City' });
-const loginPage = await loginContext.newPage();
-await loginPage.goto(`${BASE_URL}/login`);
-await loginPage.locator('input[type="email"]').fill(tutorial.user);
-await loginPage.locator('input[type="password"]').fill(password);
-await loginPage.getByRole('checkbox').check();
-await loginPage.locator('button[type="submit"]').click();
-await loginPage.waitForURL(url => !url.pathname.startsWith('/login'));
-const storageState = await loginContext.storageState();
-await loginContext.close();
+const contextOptions = { viewport: VIEWPORT, locale: 'es-MX', timezoneId: 'America/Mexico_City' };
+async function login(email) {
+  const loginContext = await browser.newContext(contextOptions);
+  const loginPage = await loginContext.newPage();
+  await loginPage.goto(`${BASE_URL}/login`);
+  await loginPage.locator('input[type="email"]').fill(email);
+  await loginPage.locator('input[type="password"]').fill(password);
+  await loginPage.getByRole('checkbox').check();
+  await loginPage.locator('button[type="submit"]').click();
+  await loginPage.waitForURL(url => !url.pathname.startsWith('/login'));
+  const state = await loginContext.storageState();
+  await loginContext.close();
+  return state;
+}
+async function session(email) {
+  const sessionContext = await browser.newContext({ ...contextOptions, storageState: await login(email) });
+  const sessionPage = await sessionContext.newPage();
+  return { page: sessionPage, close: () => sessionContext.close() };
+}
+if (tutorial.prepare) await tutorial.prepare({ session, BASE_URL, comprobantes: `${root}comprobantes/` });
+const storageState = tutorial.loggedOut ? undefined : await login(tutorial.user);
 
 // 4. Grabación.
 const context = await browser.newContext({
-  viewport: VIEWPORT, locale: 'es-MX', timezoneId: 'America/Mexico_City', storageState,
+  ...contextOptions, storageState,
   recordVideo: { dir: work, size: VIEWPORT },
 });
 await context.addInitScript(overlayScript);
@@ -77,7 +90,7 @@ async function moveTo(locator) {
   await pause(250);
 }
 const h = {
-  page, pause, moveTo,
+  page, pause, moveTo, password,
   async click(locator) {
     await moveTo(locator);
     await overlay('ripple');
@@ -155,3 +168,9 @@ execFileSync('ffmpeg', [
   '-c:a', 'aac', '-b:a', '160k', '-movflags', '+faststart', output,
 ], { stdio: 'inherit' });
 console.log(`Video listo: ${output} (${(totalMs / 1000).toFixed(1)} s)`);
+
+// 6. Copia ordenada en el Escritorio.
+mkdirSync(`${DESKTOP}/${tutorial.folder}`, { recursive: true });
+const copy = `${DESKTOP}/${tutorial.folder}/${id.slice(0, 2)} - ${tutorial.name}.mp4`;
+copyFileSync(output, copy);
+console.log(`Copia: ${copy}`);

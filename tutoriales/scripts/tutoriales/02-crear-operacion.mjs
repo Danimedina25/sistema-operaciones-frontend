@@ -16,6 +16,8 @@ async function fillPayment(h, index, { amount, type, account, file }) {
 }
 
 export default {
+  name: 'Crear una operación y registrar pagos',
+  folder: '2 Socio Comercial',
   user: 'socio@tutorial.test',
   backendPath: '/Users/danielrubenmedinapoot/IdeaProjects/Sistema de Operaciones',
   startPath: '/',

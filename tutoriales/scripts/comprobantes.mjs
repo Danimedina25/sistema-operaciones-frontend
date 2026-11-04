@@ -45,6 +45,42 @@ const comprobantes = [
       ['Folio', 'EJ-004512'],
     ],
   },
+  // Preparación del tutorial 01: pagos de otras operaciones y la validación de Cuentas.
+  ...[
+    ['transferencia-beta-50000.png', 'Distribuidora Beta', '$50,000.00', '•••• 2032', 'DEMO20261104000201'],
+    ['transferencia-gamma-60000.png', 'Servicios Gamma', '$60,000.00', '•••• 2043', 'DEMO20261104000202'],
+    ['transferencia-alfa-40000.png', 'Comercializadora Alfa', '$40,000.00', '•••• 2021', 'DEMO20261104000203'],
+  ].map(([archivo, ordenante, monto, cuenta, rastreo]) => ({
+    archivo,
+    banco: 'BANCO DEMO',
+    color: '#1d4ed8',
+    titulo: 'Comprobante de transferencia SPEI',
+    monto,
+    filas: [
+      ['Fecha de operación', `${fecha}, 09:30`],
+      ['Ordenante', ordenante],
+      ['Cuenta ordenante', cuenta],
+      ['Beneficiario', 'Oficina Demo SA de CV'],
+      ['Banco destino', 'BANCO DEMO'],
+      ['Cuenta destino', '•••• 1234'],
+      ['Concepto', 'Pago operación'],
+      ['Clave de rastreo', rastreo],
+    ],
+  })),
+  {
+    archivo: 'validacion-gamma-60000.png',
+    banco: 'BANCO DEMO',
+    color: '#1d4ed8',
+    titulo: 'Movimiento en cuenta · Abono',
+    monto: '$60,000.00',
+    filas: [
+      ['Fecha', `${fecha}, 09:31`],
+      ['Cuenta', 'Oficina Demo SA de CV · •••• 1234'],
+      ['Tipo de movimiento', 'Abono SPEI recibido'],
+      ['Ordenante', 'Servicios Gamma'],
+      ['Clave de rastreo', 'DEMO20261104000202'],
+    ],
+  },
 ];
 
 function html(c) {

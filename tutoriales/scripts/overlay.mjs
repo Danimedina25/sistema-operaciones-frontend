@@ -20,6 +20,8 @@ export const overlayScript = `(() => {
     #tut-cover .t { margin-top: 14px; font-size: 56px; font-weight: 800; }
     #tut-cover .s { margin-top: 12px; font-size: 24px; color: #cbd5e1; }
     .tut-hidden { opacity: 0 !important; }
+    /* Espacio al final del contenido para que lo último pueda subir por encima del subtítulo. */
+    main::after { content: ""; display: block; height: 180px; }
   \`;
   const el = (id) => document.getElementById(id);
   function mount() {
