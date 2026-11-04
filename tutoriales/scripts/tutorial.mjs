@@ -126,8 +126,12 @@ for (const scene of tutorial.scenes) {
   timeline.push({ at: start - recordingStart - videoOffset, lines: scene.lines });
   if (!scene.cover) await overlay('cover', null);
   await overlay(scene.cover ? 'cover' : 'title', scene.cover ?? scene.title ?? '');
+  // h.line(n) espera a que empiece la frase n de la narración, para alinear las acciones con la voz.
+  const started = scene.lines.map(() => { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; });
+  h.line = n => started[Math.min(n, started.length - 1)].promise;
   const subtitles = (async () => {
-    for (const line of scene.lines) {
+    for (const [index, line] of scene.lines.entries()) {
+      started[index].resolve();
       await overlay('subtitle', line.text);
       await pause(line.ms + 250);
     }

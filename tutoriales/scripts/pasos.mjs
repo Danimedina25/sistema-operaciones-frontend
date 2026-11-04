@@ -23,3 +23,13 @@ export async function crearSolicitud(h, drawer) {
   await h.page.waitForLoadState('networkidle');
   await h.pause(800);
 }
+
+// Abre un grupo del menú lateral (si está cerrado) y entra a una de sus opciones.
+export async function irAlMenu(h, grupo, opcion) {
+  const item = h.page.getByRole('link', { name: new RegExp(opcion) }).filter({ visible: true }).first();
+  if (!(await item.isVisible().catch(() => false))) {
+    await h.click(h.page.getByRole('button', { name: new RegExp(`^${grupo}`) }).filter({ visible: true }).first());
+  }
+  await h.click(item);
+  await h.page.waitForLoadState('networkidle');
+}

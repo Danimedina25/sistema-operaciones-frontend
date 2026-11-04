@@ -52,7 +52,7 @@ export async function crearOperacion({ page, BASE_URL, comprobantes }, { cliente
       const upload = await storage.uploadOperationProof({ file: toFile(p.file), userId: i.socioId, operationId: operation.id });
       const payment = await api.addOperationPayment({
         operacionId: operation.id, monto: p.monto, tipoPago: p.tipo, cuentaDestinoId: p.cuentaId ?? null,
-        fechaComprobante: i.fecha, comprobanteUrl: upload.downloadUrl,
+        fechaComprobante: i.fecha, comprobanteUrl: upload.downloadUrl, ...p.cheque,
       });
       ids.push(payment.id);
     }
@@ -97,31 +97,39 @@ export async function registrarCodigoRetiro({ page, BASE_URL }, { operacionId, c
   }, { operacionId, cuentaId, codigo });
 }
 
-// Deja un retorno en efectivo entregado por Caja y pendiente de la confirmación del Socio.
-export async function entregaEfectivoLista(ctx) {
-  const { session, BASE_URL, comprobantes } = ctx;
-  // La primera apertura de caja la registra Gerencia: $100,000.00 en
-  // 60×$1,000 + 40×$500 + 50×$200 + 50×$100 + 100×$50.
+// Caja de hoy abierta con $100,000.00: 60×$1,000 + 40×$500 + 50×$200 + 50×$100 + 100×$50.
+// La primera apertura de caja la registra Gerencia.
+export const CONTEO_INICIAL = { D1000: 60, D500: 40, D200: 50, D100: 50, D50: 100, D20: 0, D10: 0, D5: 0, D2: 0, D1: 0, D050: 0 };
+export async function abrirCaja({ session, BASE_URL }, fecha = today) {
   const gerente = await session('gerente@tutorial.test');
-  await inApp(gerente.page, BASE_URL, async (api, storage, toFile, i) => {
+  const day = await inApp(gerente.page, BASE_URL, async (api, storage, toFile, i) => {
     const { cajaGeneralApi } = await import('/src/modules/caja-general/api/caja-general.api.ts');
-    await cajaGeneralApi.open({ fecha: i.fecha, saldoInicial: 100000, denominaciones: {
-      D1000: 60, D500: 40, D200: 50, D100: 50, D50: 100, D20: 0, D10: 0, D5: 0, D2: 0, D1: 0, D050: 0,
-    } });
-  }, { fecha: today });
+    return cajaGeneralApi.open({ fecha: i.fecha, saldoInicial: 100000, denominaciones: i.conteo });
+  }, { fecha, conteo: CONTEO_INICIAL });
   await gerente.close();
+  return day;
+}
 
-  const operacion = await operacionValidada(ctx, { clienteId: CLIENTES.sofia, monto: 30000, archivo: 'transferencia-sofia-30000.png', validacion: 'validacion-sofia-30000.png' });
-
+// El Socio solicita el retorno en efectivo de la operación. Devuelve el id de la solicitud.
+export async function solicitarRetornoEfectivo({ session, BASE_URL }, { operacionId, monto }) {
   const socio = await session('socio@tutorial.test');
   const requestId = await inApp(socio.page, BASE_URL, async (api, storage, toFile, i) => {
     const [request] = await api.requestReturnPayment(i.operacionId, { pagos: [{
-      monto: 29250, tipoPago: 'EFECTIVO',
+      monto: i.monto, tipoPago: 'EFECTIVO',
       autorizadoParaRecibirEfectivo1: 'Carlos Ramírez', autorizadoParaRecibirEfectivo2: 'Ana López',
     }] });
     return request.id;
-  }, { operacionId: operacion.id });
+  }, { operacionId, monto });
   await socio.close();
+  return requestId;
+}
+
+// Deja un retorno en efectivo entregado por Caja y pendiente de la confirmación del Socio.
+export async function entregaEfectivoLista(ctx) {
+  const { session, BASE_URL, comprobantes } = ctx;
+  await abrirCaja(ctx);
+  const operacion = await operacionValidada(ctx, { clienteId: CLIENTES.sofia, monto: 30000, archivo: 'transferencia-sofia-30000.png', validacion: 'validacion-sofia-30000.png' });
+  const requestId = await solicitarRetornoEfectivo(ctx, { operacionId: operacion.id, monto: 29250 });
 
   const cajas = await session('cajas@tutorial.test');
   await inApp(cajas.page, BASE_URL, async (api, storage, toFile, i) => {

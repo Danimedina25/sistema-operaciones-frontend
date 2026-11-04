@@ -98,6 +98,32 @@ const comprobantes = [
       ['Firma de quien recibe', 'Carlos Ramírez'],
     ],
   },
+  // Tanda de la Jefa de Cajas.
+  {
+    archivo: 'recibo-efectivo-25000.png', banco: 'OFICINA DEMO', color: '#0f172a',
+    titulo: 'Recibo de efectivo del cliente', monto: '$25,000.00',
+    filas: [['Fecha', `${fecha}, 10:15`], ['Cliente', 'Alejandro Torres'], ['Recibió', 'Laura Méndez · Socio Comercial'], ['Billetes de $1,000', '25']],
+  },
+  {
+    archivo: 'validacion-caja-25000.png', banco: 'OFICINA DEMO', color: '#047857',
+    titulo: 'Caja General · Entrada validada', monto: '$25,000.00',
+    filas: [['Fecha', `${fecha}, 10:40`], ['Cliente', 'Alejandro Torres'], ['Contó', 'Patricia Ruiz'], ['Billetes de $1,000', '25']],
+  },
+  {
+    archivo: 'cheque-45000.png', banco: 'BANCO EJEMPLO', color: '#047857',
+    titulo: 'Cheque nominativo', monto: '$45,000.00',
+    filas: [['No. de cheque', '0001234'], ['Fecha', fecha], ['Páguese a', 'Oficina Demo SA de CV'], ['Emisor', 'Miguel Castro'], ['Cuenta del emisor', '•••• 3021'], ['Cantidad con letra', 'Cuarenta y cinco mil pesos 00/100 M.N.']],
+  },
+  {
+    archivo: 'validacion-cheque-45000.png', banco: 'OFICINA DEMO', color: '#047857',
+    titulo: 'Caja General · Cheque cobrado en efectivo', monto: '$45,000.00',
+    filas: [['Fecha', `${fecha}, 11:05`], ['Cheque', '0001234 · BANCO EJEMPLO'], ['Cliente', 'Miguel Castro'], ['Billetes de $1,000', '45']],
+  },
+  {
+    archivo: 'ficha-deposito-50000.png', banco: 'BANCO DEMO', color: '#1d4ed8',
+    titulo: 'Ficha de depósito en efectivo', monto: '$50,000.00',
+    filas: [['Fecha', `${fecha}, 13:30`], ['Sucursal', '0001 · Centro'], ['Depositante', 'Oficina Demo SA de CV'], ['Cuenta', '•••• 1234'], ['Forma', 'Efectivo en ventanilla'], ['Folio', 'EJ-778120']],
+  },
   // Validaciones de Cuentas: el abono que se ve en el estado de cuenta.
   ...[
     ['validacion-miguel-60000.png', 'Miguel Castro', '$60,000.00', 'DEMO20261104000202'],
