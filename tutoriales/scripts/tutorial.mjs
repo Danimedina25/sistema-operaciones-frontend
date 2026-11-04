@@ -90,7 +90,7 @@ async function moveTo(locator) {
   await pause(250);
 }
 const h = {
-  page, pause, moveTo, password,
+  page, pause, moveTo, password, session, BASE_URL, comprobantes: `${root}comprobantes/`,
   async click(locator) {
     await moveTo(locator);
     await overlay('ripple');

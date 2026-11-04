@@ -50,6 +50,7 @@ const comprobantes = [
     ['transferencia-sofia-50000.png', 'Sofía Herrera', '$50,000.00', '•••• 2032', 'DEMO20261104000201'],
     ['transferencia-miguel-60000.png', 'Miguel Castro', '$60,000.00', '•••• 2043', 'DEMO20261104000202'],
     ['transferencia-alejandro-40000.png', 'Alejandro Torres', '$40,000.00', '•••• 2021', 'DEMO20261104000203'],
+    ['transferencia-sofia-30000.png', 'Sofía Herrera', '$30,000.00', '•••• 2032', 'DEMO20261104000204'],
   ].map(([archivo, ordenante, monto, cuenta, rastreo]) => ({
     archivo,
     banco: 'BANCO DEMO',
@@ -67,20 +68,25 @@ const comprobantes = [
       ['Clave de rastreo', rastreo],
     ],
   })),
-  {
-    archivo: 'validacion-miguel-60000.png',
+  // Validaciones de Cuentas: el abono que se ve en el estado de cuenta.
+  ...[
+    ['validacion-miguel-60000.png', 'Miguel Castro', '$60,000.00', 'DEMO20261104000202'],
+    ['validacion-alejandro-40000.png', 'Alejandro Torres', '$40,000.00', 'DEMO20261104000203'],
+    ['validacion-sofia-30000.png', 'Sofía Herrera', '$30,000.00', 'DEMO20261104000204'],
+  ].map(([archivo, ordenante, monto, rastreo]) => ({
+    archivo,
     banco: 'BANCO DEMO',
     color: '#1d4ed8',
     titulo: 'Movimiento en cuenta · Abono',
-    monto: '$60,000.00',
+    monto,
     filas: [
       ['Fecha', `${fecha}, 09:31`],
       ['Cuenta', 'Oficina Demo SA de CV · •••• 1234'],
       ['Tipo de movimiento', 'Abono SPEI recibido'],
-      ['Ordenante', 'Miguel Castro'],
-      ['Clave de rastreo', 'DEMO20261104000202'],
+      ['Ordenante', ordenante],
+      ['Clave de rastreo', rastreo],
     ],
-  },
+  })),
 ];
 
 function html(c) {

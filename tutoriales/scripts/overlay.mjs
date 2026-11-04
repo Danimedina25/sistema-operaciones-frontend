@@ -49,5 +49,15 @@ export const overlayScript = `(() => {
       c.querySelector('.k').textContent = value.kicker || ''; c.querySelector('.t').textContent = value.title;
       c.querySelector('.s').textContent = value.subtitle || ''; text('tut-title', ''); },
   };
+  // Con un panel lateral abierto, título y subtítulo se centran en el espacio libre a su izquierda.
+  setInterval(() => {
+    const panel = [...document.querySelectorAll('[role="dialog"][aria-modal="true"]')]
+      .map(d => d.getBoundingClientRect()).find(r => r.width > 0 && r.left > window.innerWidth * 0.3);
+    const free = panel ? panel.left : window.innerWidth;
+    for (const id of ['tut-title', 'tut-sub']) {
+      const node = el(id);
+      if (node) { node.style.left = free / 2 + 'px'; node.style.maxWidth = Math.round(free * 0.86) + 'px'; }
+    }
+  }, 150);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount); else mount();
 })();`;

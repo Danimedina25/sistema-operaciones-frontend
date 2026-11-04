@@ -23,9 +23,10 @@ async function inApp(page, BASE_URL, fn, args) {
   return page.evaluate(async ([source, input]) => {
     const api = await import('/src/modules/operations/api/operations.api.ts');
     const storage = await import('/src/modules/operations/api/operations-storage.api.ts');
+    const { api: http } = await import('/src/shared/lib/axios.ts');
     const toFile = ({ name, base64 }) => new File([Uint8Array.from(atob(base64), c => c.charCodeAt(0))], name, { type: 'image/png' });
     try {
-      return await new Function('api', 'storage', 'toFile', 'input', `return (${source})(api, storage, toFile, input);`)(api, storage, toFile, input);
+      return await new Function('api', 'storage', 'toFile', 'input', 'http', `return (${source})(api, storage, toFile, input, http);`)(api, storage, toFile, input, http);
     } catch (error) {
       throw new Error(`${error.message}: ${JSON.stringify(error.response?.data ?? '')}`);
     }
@@ -70,4 +71,28 @@ export async function rechazarPago({ page, BASE_URL }, { pagoId, motivo }) {
   return inApp(page, BASE_URL, async (api, storage, toFile, i) => {
     await api.rejectPayment(i.pagoId, { observaciones: i.motivo });
   }, { pagoId, motivo });
+}
+
+// Operación con un solo pago ya validado por la Jefa de Cuentas: queda lista para solicitar el retorno.
+export async function operacionValidada({ session, BASE_URL, comprobantes }, { clienteId, monto, archivo, validacion }) {
+  const socio = await session('socio@tutorial.test');
+  const operacion = await crearOperacion({ page: socio.page, BASE_URL, comprobantes }, {
+    clienteId, monto, pagos: [{ monto, tipo: 'TRANSFERENCIA', cuentaId: CUENTAS.demo, archivo }],
+  });
+  await socio.close();
+  const cuentas = await session('cuentas@tutorial.test');
+  await validarPago({ page: cuentas.page, BASE_URL, comprobantes }, { operacionId: operacion.id, pagoId: operacion.pagos[0], userId: 103, archivo: validacion });
+  await cuentas.close();
+  return operacion;
+}
+
+// La Jefa de Cuentas registra el código de retiro sin tarjeta por el total de la solicitud.
+export async function registrarCodigoRetiro({ page, BASE_URL }, { operacionId, cuentaId, codigo }) {
+  return inApp(page, BASE_URL, async (api, storage, toFile, i, http) => {
+    const requests = await api.getReturnsByOperationId(i.operacionId);
+    const request = requests.find(r => r.tipoPago === 'RETIRO_SIN_TARJETA');
+    await http.post(`/api/operations/returns/requests/${request.id}/installments`, {
+      monto: request.monto, cuentaOrigenId: i.cuentaId, codigoRetiroSinTarjeta: i.codigo,
+    });
+  }, { operacionId, cuentaId, codigo });
 }
