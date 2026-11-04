@@ -1,7 +1,10 @@
 // Pasos de preparación (no se graban). Usan los módulos de la app desde el navegador, así que
 // suben comprobantes y llaman a la API igual que la interfaz, con la sesión del rol indicado.
 // IDs fijos de seed.sql (TRUNCATE reinicia los contadores).
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+
+const BACKEND = '/Users/danielrubenmedinapoot/IdeaProjects/Sistema de Operaciones';
 
 export const CLIENTES = { alejandro: 1, sofia: 2, miguel: 3 };
 export const SOCIOS = { jorge: 1, mariana: 2 };
@@ -148,4 +151,28 @@ export async function entregaEfectivoLista(ctx) {
   });
   await cajas.close();
   return operacion;
+}
+
+// Cierre de ayer con el mismo conteo: deja la caja de hoy lista para abrirse con el conteo prellenado.
+// El backend solo abre la caja en la fecha actual, así que se abre y cierra hoy y luego la fila se
+// mueve a ayer directamente en la base de tutoriales.
+export async function cierreDeAyer(ctx) {
+  const day = await abrirCaja(ctx);
+  const gerente = await ctx.session('gerente@tutorial.test');
+  await inApp(gerente.page, ctx.BASE_URL, async (api, storage, toFile, i) => {
+    const { cajaGeneralApi } = await import('/src/modules/caja-general/api/caja-general.api.ts');
+    await cajaGeneralApi.close(i.id, { saldoContado: 100000, version: i.version, denominaciones: i.conteo, observaciones: '' });
+  }, { id: day.id, version: day.version, conteo: CONTEO_INICIAL });
+  await gerente.close();
+  sqlTutorial(`UPDATE cash_general_days SET fecha = fecha - INTERVAL 1 DAY, created_at = created_at - INTERVAL 1 DAY,
+    updated_at = updated_at - INTERVAL 1 DAY, closed_at = closed_at - INTERVAL 1 DAY WHERE id = ${Number(day.id)}`);
+}
+
+// Ejecuta SQL solo en db_sistema_operaciones_tutorial del MySQL local.
+function sqlTutorial(query) {
+  const env = Object.fromEntries(readFileSync(`${BACKEND}/.env.local`, 'utf8').split('\n')
+    .filter(line => line.includes('=') && !line.trim().startsWith('#'))
+    .map(line => { const [k, ...v] = line.split('='); return [k.replace(/^export /, '').trim(), v.join('=').trim().replace(/^['"]|['"]$/g, '')]; }));
+  execFileSync('mysql', ['--no-defaults', '--protocol=TCP', '--host=127.0.0.1', '--port=3306', `--user=${env.MYSQL_USER}`,
+    '--database=db_sistema_operaciones_tutorial', '-e', query], { env: { ...process.env, MYSQL_PWD: env.MYSQL_PASSWORD } });
 }

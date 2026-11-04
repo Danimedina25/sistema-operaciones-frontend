@@ -26,7 +26,7 @@ Existe el cierre del día anterior con un conteo de **$100,000.00** (60 × $1,00
 
 - **Acción:** señalar el aviso de conteo prellenado y el resumen (Saldo del último cierre, Total contado). Recorrer las denominaciones. Clic en **Abrir caja con este conteo**.
 - **Texto en pantalla:** "El conteo viene del último cierre"
-- **Narración:** "El conteo inicial ya viene con lo que quedó en el último cierre. Cuenta el efectivo y revisa cada denominación. Si algo no coincide, corrige la cantidad y explica el ajuste. Cuando todo cuadre, abre la caja."
+- **Narración:** "El conteo inicial ya viene con lo que quedó en el último cierre. Cuenta el efectivo y compara cada denominación. Si algo no coincide, avisa a Gerencia: solo Gerencia puede ajustar el conteo de apertura. Si todo cuadra, abre la caja."
 
 ## Escena 4 · Transición (5 s)
 
