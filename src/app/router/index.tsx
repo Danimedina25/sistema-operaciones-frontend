@@ -22,6 +22,8 @@ import { AdminLayout } from '@/shared/components/layout/AdminLayout';
 import LoginPage from '@/modules/auth/pages/LoginPage';
 import ActivateAccountPage from '@/modules/auth/pages/ActivateAccountPage';
 import VerifyEmailPage from '@/modules/auth/pages/VerifyEmailPage';
+import RequestPasswordResetPage from '@/modules/auth/pages/RequestPasswordResetPage';
+import ResetPasswordPage from '@/modules/auth/pages/ResetPasswordPage';
 
 import DashboardPage from '@/app/pages/DashboardPage';
 
@@ -63,6 +65,14 @@ export const router = createBrowserRouter([
   {
     path: paths.verifyEmail,
     element: <VerifyEmailPage />,
+  },
+  {
+    path: paths.requestPasswordReset,
+    element: <RequestPasswordResetPage />,
+  },
+  {
+    path: paths.resetPassword,
+    element: <ResetPasswordPage />,
   },
   {
     element: <ProtectedRoute />,

@@ -1,8 +1,14 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CashBankDepositOutflow } from './CashBankDepositOutflow';
+
+const mocks = vi.hoisted(() => ({
+  previewSufficient: false,
+  register: vi.fn(),
+  upload: vi.fn(),
+}));
 
 vi.mock('@/modules/auth/store/auth.context', () => ({ useAuth: () => ({
   user: { userId: 4 }, hasRole: (roles: string[]) => roles.includes('JEFA_CAJAS'),
@@ -13,10 +19,12 @@ vi.mock('@/modules/bank-accounts/api/bank-accounts.api', () => ({ getBankAccount
   { id: 2, banco: 'SCOTIABANK', titular: 'Bulmaro Luna', numeroCuenta: '1234565843', activo: true },
 ] }));
 vi.mock('@/modules/caja-general/api/caja-general.api', () => ({ cajaGeneralApi: { latest: async () => ({ fecha: '2026-10-16', closedAt: null }) } }));
+vi.mock('@/modules/operations/api/operations-storage.api', () => ({ uploadOperationProof: mocks.upload }));
 vi.mock('./api', () => ({
   depositMethodLabel: { VENTANILLA: 'Ventanilla', CAJERO: 'Cajero', OXXO: 'OXXO' },
   cashBankDepositsApi: {
-    preview: async () => ({ saldoCaja: 0, saldoCuenta: null, reservadoEnTransito: 0, monto: 0, saldoAlConfirmar: 0, suficiente: false }),
+    preview: async (amount: number) => ({ saldoCaja: 10000, saldoCuenta: 0, reservadoEnTransito: 0, monto: amount, saldoAlConfirmar: 10000 - amount, suficiente: mocks.previewSufficient }),
+    register: mocks.register,
     returns: async () => [],
     list: async () => [
       { id: 1, origen: 'CHEQUE', registradoEn: '2026-10-15T10:00:00', cuenta: 'CUENTA CHEQUE', cuentaTitular: 'Titular cheque', forma: 'CHEQUE', estatus: 'PENDIENTE', monto: 75 },
@@ -30,9 +38,30 @@ vi.mock('./api', () => ({
 }));
 
 describe('Salidas de efectivo', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.previewSufficient = false;
+    mocks.register.mockResolvedValue({ id: 10 });
+    mocks.upload.mockResolvedValue({ downloadUrl: 'https://example.test/receipt' });
+  });
+
   function mount() {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(<QueryClientProvider client={client}><MemoryRouter><CashBankDepositOutflow /></MemoryRouter></QueryClientProvider>);
+  }
+
+  async function selectAccount() {
+    const account = await screen.findByRole('combobox', { name: 'Cuenta bancaria destino' });
+    await waitFor(() => expect(account).toBeEnabled());
+    fireEvent.focus(account);
+    fireEvent.change(account, { target: { value: 'adriana' } });
+    fireEvent.click(screen.getByRole('option', { name: /Adriana Pérez/ }));
+  }
+
+  function attachProof() {
+    fireEvent.change(screen.getByLabelText('Comprobante de salida'), {
+      target: { files: [new File(['comprobante'], 'comprobante.png', { type: 'image/png' })] },
+    });
   }
 
   it('muestra solo depósitos de efectivo en los envíos recientes', async () => {
@@ -81,5 +110,66 @@ describe('Salidas de efectivo', () => {
     expect(screen.getByRole('dialog', { name: 'Editar envío #4' })).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent('No pudimos cargar los datos completos del envío');
     expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeDisabled();
+  });
+
+  it('avisa faltantes y sobrantes al editar denominaciones y habilita el envío al cuadrar', async () => {
+    mocks.previewSufficient = true;
+    mount();
+    await selectAccount();
+    fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '1200' } });
+    attachProof();
+    const submit = screen.getByRole('button', { name: 'Registrar envío' });
+    fireEvent.change(screen.getByLabelText('Cantidad de $1,000.00'), { target: { value: '1' } });
+    expect(screen.getByRole('alert')).toHaveTextContent('El desglose debe sumar exactamente el importe.');
+    expect(submit).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Cantidad de $1,000.00'), { target: { value: '5' } });
+    expect(screen.getByRole('alert')).toHaveTextContent('El desglose debe sumar exactamente el importe.');
+    fireEvent.submit(submit.closest('form')!);
+    expect(mocks.upload).not.toHaveBeenCalled();
+    expect(mocks.register).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText('Cantidad de $1,000.00'), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText('Cantidad de $100.00'), { target: { value: '2' } });
+    expect(screen.queryByText('El desglose debe sumar exactamente el importe.')).not.toBeInTheDocument();
+    expect(screen.getByText('Total contado $1,200.00 · cuadra con el monto')).toBeInTheDocument();
+    await waitFor(() => expect(submit).toBeEnabled());
+    fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '1300' } });
+    expect(screen.getByRole('alert')).toHaveTextContent('El desglose debe sumar exactamente el importe.');
+    expect(submit).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '1200' } });
+    expect(screen.queryByText('El desglose debe sumar exactamente el importe.')).not.toBeInTheDocument();
+    await waitFor(() => expect(submit).toBeEnabled());
+    fireEvent.change(screen.getByLabelText('Cantidad de $100.00'), { target: { value: '-1' } });
+    expect(screen.getByRole('alert')).toHaveTextContent('Revisa las cantidades capturadas.');
+    expect(submit).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Cantidad de $100.00'), { target: { value: '2' } });
+    await waitFor(() => expect(submit).toBeEnabled());
+    fireEvent.click(submit);
+    await waitFor(() => expect(mocks.register).toHaveBeenCalledWith(expect.objectContaining({
+      monto: 1200, denominaciones: expect.objectContaining({ D1000: 1, D100: 2 }),
+    })));
+  });
+
+  it('mantiene el botón deshabilitado con campos obligatorios incompletos o saldo insuficiente', async () => {
+    mocks.previewSufficient = true;
+    mount();
+    const submit = screen.getByRole('button', { name: 'Registrar envío' });
+    expect(submit).toBeDisabled();
+    await selectAccount();
+    fireEvent.change(screen.getByLabelText('Cantidad de $1,000.00'), { target: { value: '1' } });
+    expect(screen.getByRole('alert')).toHaveTextContent('Captura un monto válido para comprobar el desglose.');
+    fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '1000' } });
+    expect(screen.queryByText('Captura un monto válido para comprobar el desglose.')).not.toBeInTheDocument();
+    expect(submit).toBeDisabled();
+    attachProof();
+    await waitFor(() => expect(submit).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Quitar' }));
+    expect(submit).toBeDisabled();
+    mocks.previewSufficient = false;
+    fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '1001' } });
+    attachProof();
+    fireEvent.change(screen.getByLabelText('Cantidad de $1.00'), { target: { value: '1' } });
+    await waitFor(() => expect(screen.queryByText('El desglose debe sumar exactamente el importe.')).not.toBeInTheDocument());
+    expect(submit).toBeDisabled();
+    expect(mocks.register).not.toHaveBeenCalled();
   });
 });

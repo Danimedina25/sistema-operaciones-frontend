@@ -14,23 +14,38 @@ describe('authStorage', () => {
     sessionStorage.clear();
   });
 
-  it('guarda la sesión en el almacenamiento compartido entre pestañas', () => {
-    authStorage.setToken('token-compartido');
+  it('guarda una sesión temporal cuando Recordarme está desmarcado', () => {
+    authStorage.setToken('token-temporal');
     authStorage.setUser(user);
 
-    expect(localStorage.getItem('auth_token')).toBe('token-compartido');
+    expect(sessionStorage.getItem('auth_token')).toBe('token-temporal');
+    expect(sessionStorage.getItem('auth_user')).toBe(JSON.stringify(user));
+    expect(localStorage.getItem('auth_token')).toBeNull();
+    expect(localStorage.getItem('auth_user')).toBeNull();
+  });
+
+  it('guarda una sesión persistente al marcar Recordarme y limpia una sesión temporal previa', () => {
+    authStorage.setToken('token-temporal');
+    authStorage.setUser(user);
+    authStorage.setToken('token-recordado', true);
+    authStorage.setUser(user, true);
+
+    expect(authStorage.getToken()).toBe('token-recordado');
+    expect(authStorage.getUser()).toEqual(user);
+    expect(localStorage.getItem('auth_token')).toBe('token-recordado');
     expect(localStorage.getItem('auth_user')).toBe(JSON.stringify(user));
     expect(sessionStorage.getItem('auth_token')).toBeNull();
     expect(sessionStorage.getItem('auth_user')).toBeNull();
   });
 
-  it('migra una sesión anterior desde sessionStorage', () => {
-    sessionStorage.setItem('auth_token', 'token-anterior');
-    sessionStorage.setItem('auth_user', JSON.stringify(user));
+  it('limpia una sesión persistente al iniciar sesión sin Recordarme', () => {
+    authStorage.setToken('token-recordado', true);
+    authStorage.setUser(user, true);
+    authStorage.setToken('token-temporal');
+    authStorage.setUser(user);
 
-    expect(authStorage.getToken()).toBe('token-anterior');
-    expect(authStorage.getUser()).toEqual(user);
-    expect(localStorage.getItem('auth_token')).toBe('token-anterior');
-    expect(localStorage.getItem('auth_user')).toBe(JSON.stringify(user));
+    expect(authStorage.getToken()).toBe('token-temporal');
+    expect(localStorage.getItem('auth_token')).toBeNull();
+    expect(localStorage.getItem('auth_user')).toBeNull();
   });
 });

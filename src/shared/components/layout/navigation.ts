@@ -99,6 +99,7 @@ const managementEntries: NavEntry[] = [
   group('money', 'Dinero', icon(wallet, walletActive), [
     item('general-cut', 'Corte general', paths.generalCut, 'generalCut', icon(scroll, scrollActive)),
     balances,
+    item('cash-session', 'Abrir/Cerrar caja', `${paths.cajaGeneral}?nav=cash-session`, 'cajaGeneral', icon(unlock, unlockActive), { cashAction: true }),
   ]),
   group('catalogs', 'Catálogos', icon(book, bookActive), [clients, partners]),
   group('administration', 'Administración', icon(shield, shieldActive), [
@@ -110,7 +111,8 @@ const managementEntries: NavEntry[] = [
 // Reportes y Bitácora se agregarán cuando exista una pantalla real.
 // Dirección y Administración consultan Comisiones, sin contador de trabajo.
 const directorEntries: NavEntry[] = managementEntries.map(entry =>
-  entry.kind === 'item' && entry.id === 'commissions' ? { ...entry, badge: undefined } : entry);
+  entry.kind === 'item' && entry.id === 'commissions' ? { ...entry, badge: undefined }
+    : entry.kind === 'group' && entry.id === 'money' ? { ...entry, children: entry.children.filter(child => child.id !== 'cash-session') } : entry);
 
 export const NAVIGATION_BY_ROLE: Record<RoleName, NavProfile> = {
   SOCIO_COMERCIAL: { role: 'SOCIO_COMERCIAL', label: 'Socio Comercial', headerTitle: 'Panel administrativo', entries: [

@@ -100,6 +100,20 @@ describe('Sidebar', () => {
     expect(screen.getByRole('link', { name: 'Comisiones' })).not.toHaveTextContent('4');
   });
 
+  it('permite al Gerente abrir o cerrar caja desde Dinero y no ofrece la acción a Dirección', async () => {
+    mocks.roles = ['GERENTE']; mocks.cashOpen = false;
+    show('/caja-general?nav=cash-session');
+    expect(screen.getByRole('link', { name: 'Abrir caja' })).toHaveAttribute('aria-current', 'page');
+    cleanup();
+    mocks.cashOpen = true;
+    show('/caja-general?nav=cash-session');
+    expect(screen.getByRole('link', { name: 'Cerrar caja' })).toHaveAttribute('aria-current', 'page');
+    cleanup();
+    mocks.roles = ['DIRECCION'];
+    show('/corte-general');
+    expect(screen.queryByRole('link', { name: /Abrir caja|Cerrar caja/ })).not.toBeInTheDocument();
+  });
+
   it('pinta en rojo el contador con pendientes urgentes, también en su grupo cerrado', () => {
     mocks.urgency = { cashIncome: 'urgent', cashOutflow: 'attention' };
     show('/caja/entradas');

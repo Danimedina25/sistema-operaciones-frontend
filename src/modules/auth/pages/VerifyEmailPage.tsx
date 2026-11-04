@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { MailCheck, MailX, LoaderCircle } from 'lucide-react';
 import { paths } from '@/routes/paths';
@@ -12,9 +12,11 @@ export default function VerifyEmailPage() {
     useCompleteEmailVerification();
 
   const hasToken = useMemo(() => token.trim().length > 0, [token]);
+  const submittedToken = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!hasToken) return;
+    if (!hasToken || submittedToken.current === token) return;
+    submittedToken.current = token;
     void verifyEmail(token);
   }, [hasToken, token, verifyEmail]);
 

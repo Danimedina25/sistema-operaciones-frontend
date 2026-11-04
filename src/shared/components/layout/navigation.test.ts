@@ -13,7 +13,7 @@ describe('navegación por rol', () => {
     ['JEFA_CAJAS', ['Mis pendientes', 'Caja (Corte, Entradas de efectivo, Salidas de efectivo, Cheques enviados a banco, Abrir/Cerrar caja)', 'Operaciones']],
     ['JEFA_CUENTAS', ['Mis pendientes', 'Cuentas (Cuentas bancarias y saldos, Cortes y movimientos, Entradas bancarias, Salidas bancarias, Transferir entre cuentas)', 'Operaciones']],
     ['AUXILIAR_CUENTAS', ['Mis pendientes', 'Cuentas (Cuentas bancarias y saldos, Cortes y movimientos, Entradas bancarias, Salidas bancarias)', 'Operaciones']],
-    ['GERENTE', ['Inicio', 'Operaciones', 'Comisiones', 'Dinero (Corte general, Cuentas bancarias y saldos)', 'Catálogos (Clientes, Socios comerciales)', 'Administración (Usuarios, Configuración)']],
+    ['GERENTE', ['Inicio', 'Operaciones', 'Comisiones', 'Dinero (Corte general, Cuentas bancarias y saldos, Abrir/Cerrar caja)', 'Catálogos (Clientes, Socios comerciales)', 'Administración (Usuarios, Configuración)']],
     ['DIRECCION', ['Inicio', 'Operaciones', 'Comisiones', 'Dinero (Corte general, Cuentas bancarias y saldos)', 'Catálogos (Clientes, Socios comerciales)', 'Administración (Usuarios, Configuración)']],
     ['ADMIN', ['Inicio', 'Operaciones', 'Comisiones', 'Dinero (Corte general, Cuentas bancarias y saldos)', 'Catálogos (Clientes, Socios comerciales)', 'Administración (Usuarios, Configuración)']],
   ])('%s respeta el orden y las opciones disponibles', (role, expected) => {

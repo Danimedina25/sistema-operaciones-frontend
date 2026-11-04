@@ -61,7 +61,7 @@ export function useNavigationState(role: RoleName | undefined) {
   const cashDay = useQuery({
     queryKey: ['caja-general', user?.userId, 'latest'],
     queryFn: cajaGeneralApi.latest,
-    enabled: isCash,
+    enabled: isCash || isManager,
     refetchInterval: 30_000,
   });
 

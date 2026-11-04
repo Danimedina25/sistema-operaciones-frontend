@@ -4,7 +4,7 @@ import { useAuth } from '@/modules/auth/store/auth.context';
 import { getBankAccounts } from '@/modules/bank-accounts/api/bank-accounts.api';
 import { cajaGeneralApi } from '@/modules/caja-general/api/caja-general.api';
 import { CompactDenominationTables } from '@/modules/caja-general/components/CompactDenominationTables';
-import { checkCount, countCents, emptyCounts } from '@/modules/caja-general/utils/cash-amounts';
+import { checkCount, countCents, emptyCounts, parseCents } from '@/modules/caja-general/utils/cash-amounts';
 import type { CashCounts } from '@/modules/caja-general/types/caja-general.types';
 import { uploadOperationProof } from '@/modules/operations/api/operations-storage.api';
 import { Button } from '@/shared/components/ui/Button';
@@ -34,6 +34,7 @@ export function CashBankDepositOutflow() {
   const [amount, setAmount] = useState('');
   const [reference, setReference] = useState('');
   const [counts, setCounts] = useState<CashCounts>(emptyCounts);
+  const [countsTouched, setCountsTouched] = useState(false);
   const [proof, setProof] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -60,6 +61,16 @@ export function CashBankDepositOutflow() {
   const returns = useQuery({ queryKey: ['cash-bank-deposits', 'returns'], queryFn: cashBankDepositsApi.returns });
   const account = accounts.data?.find(row => row.id === Number(accountId));
   const open = day.data && day.data.fecha === today && !day.data.closedAt;
+  const amountCents = parseCents(amount);
+  const countedCents = countCents(counts);
+  const validAmount = Number.isSafeInteger(amountCents) && amountCents > 0;
+  const countsMatch = validAmount && countedCents === amountCents;
+  const countError = !countsTouched ? ''
+    : !Number.isFinite(countedCents) ? 'Revisa las cantidades capturadas.'
+      : !validAmount ? 'Captura un monto válido para comprobar el desglose.'
+        : !countsMatch ? 'El desglose debe sumar exactamente el importe.' : '';
+  const canSubmit = Boolean(user && canRegister && open && account?.activo && proof && validAmount
+    && countsMatch && amount === deferredAmount && preview.data?.suficiente && !preview.isFetching && !preview.isError && !busy);
 
   async function refresh() {
     await Promise.all([
@@ -73,8 +84,7 @@ export function CashBankDepositOutflow() {
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (submitting.current) return;
-    if (!user || !canRegister || !open || !accountId || !proof || !numericAmount || amount !== deferredAmount) return;
-    if (!preview.data?.suficiente) { setError('Saldo disponible insuficiente en Caja General.'); return; }
+    if (!canSubmit || !user || !proof) return;
     submitting.current = true; setBusy(true); setError('');
     try {
       const uploadedUrl = uploadedProof.current?.file === proof
@@ -94,7 +104,7 @@ export function CashBankDepositOutflow() {
         comprobanteSalidaUrl: uploadedUrl, denominaciones: counts,
       });
       requestId.current = null; requestSignature.current = null; uploadedProof.current = null;
-      setAccountId(''); setMethod('VENTANILLA'); setAmount(''); setReference(''); setCounts(emptyCounts()); setProof(null);
+      setAccountId(''); setMethod('VENTANILLA'); setAmount(''); setReference(''); setCounts(emptyCounts()); setCountsTouched(false); setProof(null);
       await refresh();
     } catch (caught) { setError(getApiErrorMessage(caught)); }
     finally { submitting.current = false; setBusy(false); }
@@ -122,7 +132,7 @@ export function CashBankDepositOutflow() {
           <p className="text-sm text-slate-500">Registra el efectivo que depositarás en una cuenta bancaria.</p></div>
         <div>
           <BankAccountCombobox label="Cuenta bancaria destino" accounts={accounts.data ?? []}
-            value={accountId ? Number(accountId) : null} onChange={id => setAccountId(id === null ? '' : String(id))}
+            value={accountId ? Number(accountId) : null} onChange={id => { setAccountId(id === null ? '' : String(id)); setError(''); }}
             placeholder="Busca por banco, titular o número…" disabled={!canRegister || !open || busy}
             isLoading={accounts.isPending} loadError={accounts.isError ? 'No fue posible cargar cuentas.' : null}
             onlyActive clearSelectionOnInput />
@@ -136,7 +146,7 @@ export function CashBankDepositOutflow() {
               {Object.entries(depositMethodLabel).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select></label>
           <label className="text-sm font-semibold text-slate-700">Monto
-            <input value={amount} onChange={event => setAmount(event.target.value)} required inputMode="decimal"
+            <input value={amount} onChange={event => { setAmount(event.target.value); setError(''); }} required inputMode="decimal"
               pattern="\d{1,13}(\.\d{1,2})?" placeholder="0.00" disabled={!canRegister || !open || busy}
               className={`mt-2 ${inputClass}`} /></label>
         </div>
@@ -144,11 +154,15 @@ export function CashBankDepositOutflow() {
           <input value={reference} onChange={event => setReference(event.target.value)} maxLength={300}
             placeholder="Folio del depósito" disabled={!canRegister || !open || busy} className={`mt-2 ${inputClass}`} /></label>
         <div><h3 className="mb-3 text-sm font-semibold text-slate-900">Desglose del efectivo que sale</h3>
-          <CompactDenominationTables value={counts} onChange={setCounts} disabled={!canRegister || !open || busy} dense /></div>
-        <ReceiptUploadField file={proof} onChange={setProof} label="Comprobante de salida" disabled={!canRegister || !open || busy} maxBytes={5_242_880} />
+          <CompactDenominationTables value={counts} onChange={value => { setCounts(value); setCountsTouched(true); setError(''); }} disabled={!canRegister || !open || busy} dense />
+          {countsTouched && <p role={countError ? 'alert' : 'status'} className={`mt-3 rounded-lg border px-3 py-2 text-sm ${countError ? 'border-red-200 bg-red-50 text-red-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`}>
+            {countError || `Total contado ${formatMoney(countedCents / 100)} · cuadra con el monto`}
+          </p>}
+        </div>
+        <ReceiptUploadField file={proof} onChange={value => { setProof(value); setError(''); }} label="Comprobante de salida" disabled={!canRegister || !open || busy} maxBytes={5_242_880} />
         {!open && <p role="alert" className="text-sm text-amber-800">Abre la Caja General de hoy para registrar envíos.</p>}
         {canRegister && <div className="flex justify-end border-t border-slate-100 pt-4">
-          <Button type="submit" variant="dark" disabled={busy || !open || !account || !proof || !numericAmount || amount !== deferredAmount || !preview.data?.suficiente}>
+          <Button type="submit" variant="dark" disabled={!canSubmit}>
             {busy ? 'Registrando…' : 'Registrar envío'}</Button></div>}
       </form>
       <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-5 shadow-sm xl:sticky xl:top-5">

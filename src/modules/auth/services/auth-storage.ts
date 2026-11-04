@@ -4,18 +4,7 @@ const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'auth_user';
 
 function getStoredValue(key: string): string | null {
-  const sharedValue = localStorage.getItem(key);
-  if (sharedValue) return sharedValue;
-
-  // Migra sesiones creadas por versiones anteriores, que se guardaban por
-  // pestaña y por eso no estaban disponibles al abrir enlaces desde WhatsApp.
-  const legacyValue = sessionStorage.getItem(key);
-  if (legacyValue) {
-    localStorage.setItem(key, legacyValue);
-    sessionStorage.removeItem(key);
-  }
-
-  return legacyValue;
+  return sessionStorage.getItem(key) ?? localStorage.getItem(key);
 }
 
 function clearStorage(storage: Storage) {
@@ -29,9 +18,9 @@ export const authStorage = {
   },
 
   setToken(token: string, rememberMe = false) {
-    void rememberMe;
+    localStorage.removeItem(TOKEN_KEY);
     sessionStorage.removeItem(TOKEN_KEY);
-    localStorage.setItem(TOKEN_KEY, token);
+    (rememberMe ? localStorage : sessionStorage).setItem(TOKEN_KEY, token);
   },
 
   getUser(): AuthUser | null {
@@ -46,9 +35,9 @@ export const authStorage = {
   },
 
   setUser(user: AuthUser, rememberMe = false) {
-    void rememberMe;
+    localStorage.removeItem(USER_KEY);
     sessionStorage.removeItem(USER_KEY);
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
+    (rememberMe ? localStorage : sessionStorage).setItem(USER_KEY, JSON.stringify(user));
   },
 
   clear() {

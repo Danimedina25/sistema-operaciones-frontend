@@ -147,10 +147,6 @@ class NotificationsSocketService {
   private getWsBaseUrl() {
     const apiUrl = env.apiUrl;
 
-    if (!apiUrl) {
-      return 'ws://localhost:8080';
-    }
-
     const normalizedApiUrl = apiUrl.replace(/\/api\/?$/, '');
 
     if (normalizedApiUrl.startsWith('https://')) {

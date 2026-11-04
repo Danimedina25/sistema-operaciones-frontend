@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { Link } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff, LockKeyhole, ShieldCheck, Building2 } from 'lucide-react';
 
@@ -8,6 +9,7 @@ import { useLogin } from '@/modules/auth/hooks/use-login';
 import { Input } from '@/shared/components/ui/Input';
 import { Button } from '@/shared/components/ui/Button';
 import logo from '@/assets/logo.png';
+import { paths } from '@/routes/paths';
 
 export default function LoginPage() {
   const { submitLogin, isSubmitting } = useLogin();
@@ -182,12 +184,12 @@ export default function LoginPage() {
                     Recordarme
                   </label>
 
-                  <a
-                    href="/forgot-password"
+                  <Link
+                    to={paths.requestPasswordReset}
                     className="text-sm font-semibold text-slate-700 transition hover:text-blue-700 hover:underline"
                   >
                     ¿Olvidaste tu contraseña?
-                  </a>
+                  </Link>
                 </div>
 
                 <Button variant="primary"
